@@ -191,8 +191,14 @@ jobs:
         if: github.event_name != 'pull_request'
         env:
           DIGEST: ${{ steps.push.outputs.digest }}
+          GHCR_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USERNAME: ${{ github.actor }}
           IMAGE_REF: "${{ steps.image.outputs.image_ref }}"
         run: |
+          printf '%s' "${GHCR_PASSWORD}" \
+            | cosign login ghcr.io \
+                --username "${GHCR_USERNAME}" \
+                --password-stdin
           cosign sign --yes "${IMAGE_REF}@${DIGEST}"
 
       - name: Attest Image
