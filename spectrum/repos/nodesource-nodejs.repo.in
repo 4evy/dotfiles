@@ -1,8 +1,0 @@
-[nodesource-nodejs]
-name=Node.js Current Packages for Linux RPM based distros - @NODE_ARCH@
-baseurl=https://rpm.nodesource.com/pub_26.x/nodistro/nodejs/@NODE_ARCH@
-priority=9
-enabled=1
-gpgcheck=1
-gpgkey=https://rpm.nodesource.com/gpgkey/ns-operations-public.key
-module_hotfixes=1

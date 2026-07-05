@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nix-dotfiles-python"
+version = "0.1.0"
+description = "Python tooling for nix-dotfiles."
+requires-python = ">=3.11"
+dependencies = [
+  "astral>=3.2,<4",
+  "boltons>=25,<27",
+  "humanize>=4.13,<5",
+  "requests>=2.32,<3",
+  "urllib3>=2,<3",
+]
+
+[project.scripts]
+spectrum-build = "spectrum_build.cli:entrypoint"
+
+[dependency-groups]
+dev = ["ty"]
+
+[tool.setuptools]
+package-dir = { "" = "spectrum/scripts" }
+
+[tool.setuptools.packages.find]
+where = ["spectrum/scripts"]
+include = ["spectrum_build*"]
+
+[tool.pyright]
+pythonVersion = "3.11"
+extraPaths = ["spectrum/scripts", "packages/toshy", "ansible/files/scripts"]

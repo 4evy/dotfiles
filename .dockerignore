@@ -6,7 +6,8 @@
 !.dockerignore
 !go.mod
 !go.sum
-!scaffold.scm
+!pyproject.toml
+!uv.lock
 
 !cmd/
 !cmd/chezmoi-support/
@@ -14,12 +15,6 @@
 
 !internal/
 !internal/**
-
-!.scaffold/
-!.scaffold/**
-
-!scaffold/
-!scaffold/**
 
 !crates/
 !crates/**

@@ -1,15 +1,45 @@
+ARG BLUEFIN_BASE_IMAGE=ghcr.io/ublue-os/bluefin-nvidia-open:stable@sha256:82abcda61cd79547f8242b43c819ab84d3688e14f13bde74279b708a26a733ac
+ARG BLUEFIN_BASE_IMAGE_NAME=bluefin-nvidia-open
+ARG BLUEFIN_BASE_IMAGE_TAG=stable
+
 FROM scratch AS ctx
-COPY spectrum /image
+COPY spectrum /image/spectrum
+COPY pyproject.toml uv.lock /image/
 
-FROM ghcr.io/ublue-os/bluefin:stable
+FROM ${BLUEFIN_BASE_IMAGE}
 
-ARG IMAGE_TITLE="nix-dotfiles-bluefin"
-ARG IMAGE_DESCRIPTION="Spectrum Bluefin image for nix-dotfiles"
-ARG IMAGE_SOURCE="https://github.com/FlameFlag/nix-dotfiles"
+ARG BLUEFIN_BASE_IMAGE
+ARG BLUEFIN_BASE_IMAGE_NAME
+ARG BLUEFIN_BASE_IMAGE_TAG
+ARG IMAGE_NAME="spectrum"
+ARG IMAGE_VENDOR="4evy"
+ARG IMAGE_TAG="latest"
+ARG IMAGE_REF="ostree-image:docker://ghcr.io/4evy/spectrum"
+ARG IMAGE_TITLE="spectrum"
+ARG IMAGE_DESCRIPTION="Spectrum Bluefin image for dotfiles"
+ARG IMAGE_SOURCE="https://github.com/4evy/dotfiles"
+ARG IMAGE_URL="https://github.com/4evy/dotfiles"
+ARG IMAGE_DOCUMENTATION="https://github.com/4evy/dotfiles#readme"
+ARG IMAGE_LICENSES="MIT"
+ARG IMAGE_CREATED
+ARG IMAGE_REVISION
+ARG IMAGE_VERSION
 
 LABEL org.opencontainers.image.title="${IMAGE_TITLE}" \
       org.opencontainers.image.description="${IMAGE_DESCRIPTION}" \
-      org.opencontainers.image.source="${IMAGE_SOURCE}"
+      org.opencontainers.image.source="${IMAGE_SOURCE}" \
+      org.opencontainers.image.url="${IMAGE_URL}" \
+      org.opencontainers.image.documentation="${IMAGE_DOCUMENTATION}" \
+      org.opencontainers.image.licenses="${IMAGE_LICENSES}" \
+      org.opencontainers.image.created="${IMAGE_CREATED}" \
+      org.opencontainers.image.revision="${IMAGE_REVISION}" \
+      org.opencontainers.image.version="${IMAGE_VERSION}" \
+      org.opencontainers.image.vendor="${IMAGE_VENDOR}" \
+      containers.bootc=1 \
+      io.artifacthub.package.deprecated=false \
+      io.artifacthub.package.keywords="bootc,bluefin,ublue,spectrum,dotfiles" \
+      io.artifacthub.package.license="${IMAGE_LICENSES}" \
+      io.artifacthub.package.prerelease=false
 
 RUN rm -rf /opt && mkdir /opt
 
@@ -17,7 +47,18 @@ RUN --mount=type=bind,from=ctx,source=/image,target=/ctx \
     --mount=type=cache,target=/var/cache/libdnf5 \
     --mount=type=cache,target=/var/cache/dnf \
     --mount=type=cache,target=/var/log \
+    --mount=type=tmpfs,target=/boot \
+    --mount=type=tmpfs,target=/run \
     --mount=type=tmpfs,target=/tmp \
-    bash /ctx/build.sh
+    --mount=type=secret,id=github_token,required=false \
+    mkdir -p /var/roothome && \
+    dnf5 -y install --setopt=install_weak_deps=False uv && \
+    cp -a /ctx /tmp/spectrum-src && \
+    GITHUB_TOKEN="$(cat /run/secrets/github_token 2>/dev/null || true)" \
+    UV_CACHE_DIR=/tmp/uv-cache \
+    UV_PROJECT_ENVIRONMENT=/tmp/spectrum-build-venv \
+    bash /tmp/spectrum-src/spectrum/build.sh
 
-RUN bootc container lint
+CMD ["/sbin/init"]
+
+RUN bootc container lint --fatal-warnings

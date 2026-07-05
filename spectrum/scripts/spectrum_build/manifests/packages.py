@@ -1,0 +1,130 @@
+from __future__ import annotations
+
+from collections.abc import Iterable
+from collections.abc import Mapping, Sequence
+from itertools import chain
+
+from spectrum_build.core.common import fail
+
+
+PackageGroups = Mapping[str, Sequence[str]]
+
+
+REQUIRED_PACKAGES: PackageGroups = {
+    "bootstrap": (
+        "bootc",
+        "bubblewrap",
+        "curl",
+        "distrobox",
+        "git",
+        "just",
+        "procps-ng",
+        "python3",
+        "python3-libdnf5",
+    ),
+    "toolchain": (
+        "binutils",
+        "clang",
+        "cmake",
+        "dbus-devel",
+        "fontconfig-devel",
+        "freetype-devel",
+        "gcc",
+        "gcc-c++",
+        "glibc-devel",
+        "libdrm-devel",
+        "libglvnd-devel",
+        "libxkbcommon-devel",
+        "lld",
+        "lldb",
+        "make",
+        "mesa-libgbm-devel",
+        "meson",
+        "ninja-build",
+        "openssl-devel",
+        "pango-devel",
+        "patch",
+        "perl",
+        "pkgconf-pkg-config",
+        "rpm-build",
+        "systemd-devel",
+        "zlib-devel",
+    ),
+    "editors": (
+        "code",
+        "vim-enhanced",
+    ),
+    "fonts": (
+        "google-noto-color-emoji-fonts",
+        "google-noto-emoji-fonts",
+        "google-noto-sans-cjk-fonts",
+        "google-noto-sans-mono-cjk-vf-fonts",
+        "google-noto-sans-mono-vf-fonts",
+        "google-noto-sans-symbols-2-fonts",
+        "google-noto-sans-symbols-vf-fonts",
+        "google-noto-sans-vf-fonts",
+        "liberation-mono-fonts",
+        "liberation-sans-fonts",
+        "liberation-serif-fonts",
+    ),
+    "system": (
+        "1password",
+        "1password-cli",
+        "opensc",
+        "openssh-clients",
+        "openssl",
+        "ncurses",
+        "pcsc-lite",
+        "pinentry",
+        "pinentry-gnome3",
+        "gtk4-layer-shell",
+        "libxdo",
+        "podman",
+        "podman-compose",
+        "pipewire-gstreamer",
+        "selinux-policy-devel",
+        "tailscale",
+        "systemd-oomd-defaults",
+        "uresourced",
+        "vulkan-tools",
+        "xdg-desktop-portal",
+        "xdg-desktop-portal-gnome",
+        "xdg-desktop-portal-gtk",
+    ),
+}
+
+OPTIONAL_PACKAGES: PackageGroups = {}
+
+VALIDATION_PACKAGES: Sequence[str] = (
+    "1password",
+    "bootc",
+    "code",
+    "distrobox",
+    "git",
+    "just",
+    "podman",
+    "systemd-oomd-defaults",
+    "tailscale",
+    "uresourced",
+)
+
+
+def package_names(groups: PackageGroups) -> Iterable[str]:
+    return chain.from_iterable(groups.values())
+
+
+def validate_package_groups() -> None:
+    for label, groups in {
+        "required": REQUIRED_PACKAGES,
+        "optional": OPTIONAL_PACKAGES,
+    }.items():
+        if not isinstance(groups, dict):
+            fail(f"{label} packages must be grouped in a dict")
+
+        for group_name, packages in groups.items():
+            if not isinstance(group_name, str) or not group_name:
+                fail(f"{label} package group names must be non-empty strings")
+            if not isinstance(packages, tuple) or not all(
+                isinstance(package, str) for package in packages
+            ):
+                fail(f"{label}.{group_name} packages must be a tuple of strings")
