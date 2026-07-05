@@ -9,24 +9,20 @@ ARG TEST_UID=1000
 ARG TEST_GID=${TEST_UID}
 ARG TEST_HOME=/home/dotfiles
 
+# Keep this smoke-test Dockerfile on Podman/Buildah-compatible syntax. GitHub
+# Actions installs Podman from Ubuntu apt, whose imagebuilder rejects BuildKit
+# conveniences like COPY --link and heredoc RUN blocks.
 COPY containers/fedora-smoke-test-packages.txt /tmp/fedora-smoke-test-packages.txt
 RUN --mount=type=cache,id=dotfiles-dnf4-${TARGETPLATFORM},sharing=locked,target=/var/cache/dnf \
     --mount=type=cache,id=dotfiles-dnf5-${TARGETPLATFORM},sharing=locked,target=/var/cache/libdnf5 \
-    <<EOF
-set -eu
+    set -eu; \
+    dnf install -y --setopt=install_weak_deps=False $(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' /tmp/fedora-smoke-test-packages.txt)
 
-dnf install -y --setopt=install_weak_deps=False $(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' /tmp/fedora-smoke-test-packages.txt)
-EOF
-
-RUN <<EOF
-set -eu
-
-mkdir -p "$(dirname "${TEST_HOME}")"
-groupadd --gid "${TEST_GID}" "${TEST_USER}"
-useradd --uid "${TEST_UID}" --gid "${TEST_GID}" --create-home --home-dir "${TEST_HOME}" "${TEST_USER}"
-
-chown -R "${TEST_UID}:${TEST_GID}" "${TEST_HOME}"
-EOF
+RUN set -eu; \
+    mkdir -p "$(dirname "${TEST_HOME}")"; \
+    groupadd --gid "${TEST_GID}" "${TEST_USER}"; \
+    useradd --uid "${TEST_UID}" --gid "${TEST_GID}" --create-home --home-dir "${TEST_HOME}" "${TEST_USER}"; \
+    chown -R "${TEST_UID}:${TEST_GID}" "${TEST_HOME}"
 
 USER ${TEST_USER}
 ENV HOME=${TEST_HOME}
@@ -56,54 +52,46 @@ USER ${TEST_USER}
 
 RUN --mount=type=cache,id=dotfiles-go-mod-${TARGETPLATFORM},target=/home/dotfiles/go/pkg/mod,uid=${TEST_UID},gid=${TEST_GID} \
     --mount=type=cache,id=dotfiles-go-build-${TARGETPLATFORM},target=/home/dotfiles/.cache/go-build,uid=${TEST_UID},gid=${TEST_GID} \
-    <<EOF
-set -eu
-
-ansible-galaxy collection install -r ansible/requirements.yml -p .ansible/collections
-ansible-playbook --syntax-check ansible/playbooks/site.yml
-ansible-playbook ansible/playbooks/site.yml --tags local
-ansible-lint --version >/dev/null
-yamllint --version >/dev/null
-EOF
+    set -eu; \
+    ansible-galaxy collection install -r ansible/requirements.yml -p .ansible/collections; \
+    ansible-playbook --syntax-check ansible/playbooks/site.yml; \
+    ansible-playbook ansible/playbooks/site.yml --tags local; \
+    ansible-lint --version >/dev/null; \
+    yamllint --version >/dev/null
 
 USER root
 RUN chown -R "${TEST_UID}:${TEST_GID}" "${TEST_HOME}" /workspace/dotfiles
 USER ${TEST_USER}
 
-RUN <<EOF
-set -eu
-
-chezmoi_targets="
-  .zshrc
-  .bashrc
-  .gitconfig
-  .gitignore_global
-  .ssh/config
-  .ssh/allowed_signers
-  .codex
-  .cache/starship
-  .cache/zellij
-  .config
-  .local/bin
-  .local/share/applications
-  .local/share/zellij
-"
-
-set --
-for target in ${chezmoi_targets}; do
-  set -- "$@" "${HOME}/${target}"
-done
-
-chezmoi \
-  --source=/workspace/dotfiles/dotfiles \
-  --destination="${HOME}" \
-  apply \
-  --force \
-  --no-tty \
-  --parent-dirs \
-  --exclude=scripts \
-  "$@"
-EOF
+RUN set -eu; \
+    chezmoi_targets=" \
+      .zshrc \
+      .bashrc \
+      .gitconfig \
+      .gitignore_global \
+      .ssh/config \
+      .ssh/allowed_signers \
+      .codex \
+      .cache/starship \
+      .cache/zellij \
+      .config \
+      .local/bin \
+      .local/share/applications \
+      .local/share/zellij \
+    "; \
+    set --; \
+    for target in ${chezmoi_targets}; do \
+      set -- "$@" "${HOME}/${target}"; \
+    done; \
+    chezmoi \
+      --source=/workspace/dotfiles/dotfiles \
+      --destination="${HOME}" \
+      apply \
+      --force \
+      --no-tty \
+      --parent-dirs \
+      --exclude=scripts \
+      "$@"
 
 RUN ansible-playbook --version >/dev/null
 RUN ansible-lint --version >/dev/null
