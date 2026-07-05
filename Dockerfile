@@ -9,7 +9,7 @@ ARG TEST_UID=1000
 ARG TEST_GID=${TEST_UID}
 ARG TEST_HOME=/home/dotfiles
 
-COPY --link containers/fedora-smoke-test-packages.txt /tmp/fedora-smoke-test-packages.txt
+COPY containers/fedora-smoke-test-packages.txt /tmp/fedora-smoke-test-packages.txt
 RUN --mount=type=cache,id=dotfiles-dnf4-${TARGETPLATFORM},sharing=locked,target=/var/cache/dnf \
     --mount=type=cache,id=dotfiles-dnf5-${TARGETPLATFORM},sharing=locked,target=/var/cache/libdnf5 \
     <<EOF
@@ -44,11 +44,11 @@ RUN mkdir -p "${TMPDIR}" "${GOCACHE}" "${GOMODCACHE}" "${HOME}/.local/bin"
 
 WORKDIR /workspace/dotfiles
 
-COPY --link --chown=${TEST_USER}:${TEST_USER} go.mod go.sum ./
+COPY --chown=${TEST_USER}:${TEST_USER} go.mod go.sum ./
 RUN --mount=type=cache,id=dotfiles-go-mod-${TARGETPLATFORM},target=/home/dotfiles/go/pkg/mod,uid=${TEST_UID},gid=${TEST_GID} \
     go mod download
 
-COPY --link --chown=${TEST_USER}:${TEST_USER} . .
+COPY --chown=${TEST_USER}:${TEST_USER} . .
 
 USER root
 RUN chown -R "${TEST_UID}:${TEST_GID}" "${TEST_HOME}" /workspace/dotfiles
