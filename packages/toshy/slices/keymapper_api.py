@@ -49,12 +49,12 @@ throttle_delays(
 
 devices_api(
     only_devices=_nd_env_list(
-        "NIX_DOTFILES_TOSHY_ONLY_DEVICES",
+        "DOTFILES_TOSHY_ONLY_DEVICES",
         default=[
             "/run/kanata-main/main",
         ],
     ),
-    ignore_devices=_nd_env_list("NIX_DOTFILES_TOSHY_IGNORE_DEVICES"),
+    ignore_devices=_nd_env_list("DOTFILES_TOSHY_IGNORE_DEVICES"),
 )
 
 try:

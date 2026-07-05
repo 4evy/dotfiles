@@ -1,6 +1,0 @@
-{
-    "uuid": "logitech-battery@flame.local",
-    "name": "Device Battery",
-    "description": "Shows mouse, keyboard, and headset battery levels in GNOME Quick Settings.",
-    "shell-version": ["50"]
-}

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Merge nix-dotfiles Toshy slices into an upstream Toshy config.
+"""Merge dotfiles Toshy slices into an upstream Toshy config.
 
 Toshy's installer preserves named regions delimited by SLICE_MARK comments.
-Using the same boundary keeps our config customizations compatible with both
-the NixOS package path and host-installed Toshy on Bluefin.
+Using the same boundary keeps our config customizations compatible with
+host-installed Toshy on Bluefin.
 """
 
 from __future__ import annotations

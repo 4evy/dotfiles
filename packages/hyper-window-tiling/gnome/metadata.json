@@ -1,5 +1,5 @@
 {
-    "uuid": "hyper-window-tiling@flame.local",
+    "uuid": "hyper-window-tiling@4evy.local",
     "name": "Hyper Window Tiling",
     "description": "Cycles focused GNOME windows through the same Hyper-key layouts used by the macOS Kanata config.",
     "shell-version": ["50"],

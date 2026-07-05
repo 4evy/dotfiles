@@ -5,6 +5,7 @@ import {
     CYCLE_BINDING_NAMES,
     CYCLE_LAYOUT_PRESETS,
     createCycleState,
+    fitLayoutPresetRectToMinimumSize,
     resolveLayoutPresetRect,
 } from './lib.js';
 
@@ -245,5 +246,35 @@ describe('resolveLayoutPresetRect', () => {
                 expect(ALL_PRESETS).toContain(preset);
             }
         }
+    });
+
+    test('keeps right layouts attached to the right edge when minimum width is larger than the preset', () => {
+        const workArea = { x: 0, y: 0, width: 1280, height: 720 };
+        const rect = resolveLayoutPresetRect(workArea, workArea, 'last-third');
+
+        expectRect(
+            fitLayoutPresetRectToMinimumSize(workArea, rect, 'last-third', {
+                width: 760,
+                height: 1,
+            }),
+            { x: 520, y: 0, width: 760, height: 720 },
+        );
+    });
+
+    test('keeps bottom layouts attached to the bottom edge when minimum height is larger than the preset', () => {
+        const workArea = { x: 0, y: 0, width: 1280, height: 720 };
+        const rect = resolveLayoutPresetRect(
+            workArea,
+            workArea,
+            'bottom-third',
+        );
+
+        expectRect(
+            fitLayoutPresetRectToMinimumSize(workArea, rect, 'bottom-third', {
+                width: 1,
+                height: 360,
+            }),
+            { x: 0, y: 360, width: 1280, height: 360 },
+        );
     });
 });

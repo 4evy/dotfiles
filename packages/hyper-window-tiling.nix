@@ -8,7 +8,7 @@
 let
   root = ./hyper-window-tiling;
   pluginId = "hyper-window-tiling";
-  extensionUuid = "hyper-window-tiling@flame.local";
+  extensionUuid = "hyper-window-tiling@4evy.local";
   pname = "hyper-window-tiling";
   version = "1.0.0";
 
@@ -26,10 +26,9 @@ let
   };
 
   nodeModulesHash = {
-    "aarch64-darwin" = "sha256-nD2QxKJY1nugYDeqgUR55ISzz+NwJhEOgJ7H5heC7lY=";
     "x86_64-linux" = "sha256-vtirCtBKF1HLTj9lwXxNef+AWXhY1Sl2SmnEZcK97ak=";
   };
-  bunOS = if stdenv.hostPlatform.isDarwin then "darwin" else "linux";
+  bunOS = "linux";
   bunCPU =
     {
       "aarch64" = "arm64";

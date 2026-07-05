@@ -9,6 +9,11 @@ export type Rect = {
     height: number;
 };
 
+export type Size = {
+    width: number;
+    height: number;
+};
+
 export type CycleBindingName =
     | 'move-up'
     | 'move-left'
@@ -43,6 +48,11 @@ type CycleState = {
 };
 
 type LayoutPresetResolver = (workArea: Rect, current: Rect) => Rect;
+type Anchor = 'start' | 'center' | 'end';
+type LayoutPresetAnchor = {
+    horizontal: Anchor;
+    vertical: Anchor;
+};
 
 const LAYOUT_PRESET_RESOLVERS = {
     maximize: (workArea) => gridRect(workArea, 0, 0, 1, 1),
@@ -62,6 +72,24 @@ const LAYOUT_PRESET_RESOLVERS = {
     'top-two-thirds': (workArea) => spanRect(workArea, 0, 0, 1, 2, 1, 3),
     'bottom-two-thirds': (workArea) => spanRect(workArea, 0, 1, 1, 2, 1, 3),
 } as const satisfies Record<LayoutPreset, LayoutPresetResolver>;
+
+const LAYOUT_PRESET_ANCHORS = {
+    maximize: { horizontal: 'start', vertical: 'start' },
+    'almost-maximize': { horizontal: 'center', vertical: 'center' },
+    center: { horizontal: 'center', vertical: 'center' },
+    'left-half': { horizontal: 'start', vertical: 'start' },
+    'right-half': { horizontal: 'end', vertical: 'start' },
+    'top-half': { horizontal: 'start', vertical: 'start' },
+    'bottom-half': { horizontal: 'start', vertical: 'end' },
+    'first-third': { horizontal: 'start', vertical: 'start' },
+    'last-third': { horizontal: 'end', vertical: 'start' },
+    'left-two-thirds': { horizontal: 'start', vertical: 'start' },
+    'right-two-thirds': { horizontal: 'end', vertical: 'start' },
+    'top-third': { horizontal: 'start', vertical: 'start' },
+    'bottom-third': { horizontal: 'start', vertical: 'end' },
+    'top-two-thirds': { horizontal: 'start', vertical: 'start' },
+    'bottom-two-thirds': { horizontal: 'start', vertical: 'end' },
+} as const satisfies Record<LayoutPreset, LayoutPresetAnchor>;
 
 export const CYCLE_LAYOUT_PRESETS = {
     'move-up': ['top-half', 'top-two-thirds', 'top-third'],
@@ -110,6 +138,43 @@ export function resolveLayoutPresetRect(
     preset: LayoutPreset,
 ): Rect {
     return LAYOUT_PRESET_RESOLVERS[preset](workArea, current);
+}
+
+export function fitLayoutPresetRectToMinimumSize(
+    workArea: Rect,
+    rect: Rect,
+    preset: LayoutPreset,
+    minimum: Size,
+): Rect {
+    const width = Math.min(Math.max(rect.width, minimum.width), workArea.width);
+    const height = Math.min(
+        Math.max(rect.height, minimum.height),
+        workArea.height,
+    );
+    const anchor = LAYOUT_PRESET_ANCHORS[preset];
+
+    return roundedWithin(workArea, {
+        x: anchoredPosition(rect.x, rect.width, width, anchor.horizontal),
+        y: anchoredPosition(rect.y, rect.height, height, anchor.vertical),
+        width,
+        height,
+    });
+}
+
+function anchoredPosition(
+    rectStart: number,
+    rectSize: number,
+    nextSize: number,
+    anchor: Anchor,
+) {
+    switch (anchor) {
+        case 'center':
+            return rectStart + (rectSize - nextSize) / 2;
+        case 'end':
+            return rectStart + rectSize - nextSize;
+        default:
+            return rectStart;
+    }
 }
 
 function roundedWithin(workArea: Rect, rect: Rect): Rect {

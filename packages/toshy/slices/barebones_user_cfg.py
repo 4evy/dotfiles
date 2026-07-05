@@ -111,7 +111,7 @@ def _nd_filemanager_reset(command):
 
 
 keymap(
-    "nix-dotfiles macOS-style navigation",
+    "dotfiles macOS-style navigation",
     {
         C("C-Left"): C("Home"),
         C("C-Right"): C("End"),
@@ -130,7 +130,7 @@ keymap(
 )
 
 keymap(
-    "nix-dotfiles file manager Enter to rename",
+    "dotfiles file manager Enter to rename",
     {
         C("Enter"): _nd_enter_to_rename,
         C("C-L"): _nd_filemanager_passthrough([bind, C("C-L")]),
