@@ -1,15 +1,15 @@
 "{{ .chezmoi.homeDir }}/.local/share/zellij/plugins/zjstatus.wasm" {
-    ChangeApplicationState
-    ReadApplicationState
     RunCommands
+    ReadApplicationState
+    ChangeApplicationState
 }
-"zjstatus" {
+zjstatus {
+    RunCommands
     ChangeApplicationState
     ReadApplicationState
-    RunCommands
 }
 "file:{{ .chezmoi.homeDir }}/.local/share/zellij/plugins/zjstatus.wasm" {
     ChangeApplicationState
-    ReadApplicationState
     RunCommands
+    ReadApplicationState
 }
