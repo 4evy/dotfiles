@@ -182,5 +182,10 @@ func withStorage(profileDir, area, extensionID string, operation func(*leveldb.D
 }
 
 func isStorageTemporarilyUnavailable(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "resource temporarily unavailable")
+	if err == nil {
+		return false
+	}
+	message := err.Error()
+	return strings.Contains(message, "resource temporarily unavailable") ||
+		strings.Contains(message, "file missing")
 }
