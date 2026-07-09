@@ -2,6 +2,7 @@ package chromiumbrowser
 
 import (
 	_ "embed"
+	"encoding/json"
 	"errors"
 	"os"
 	"slices"
@@ -11,7 +12,7 @@ import (
 	"github.com/buildkite/shellwords"
 )
 
-//go:embed scripts/wrapper.sh
+//go:embed scripts/wrapper.py
 var wrapperScriptTemplate string
 
 func writeWrapper(target, launcher string, options *InstallOptions) error {
@@ -33,11 +34,11 @@ func WriteWrapper(target, launcher, flagsText string, extraFlags []string) error
 }
 
 func renderWrapperScript(args []string) string {
-	quoted := make([]string, 0, len(args))
-	for _, arg := range args {
-		quoted = append(quoted, shellwords.QuotePosix(arg))
+	encoded, err := json.Marshal(args)
+	if err != nil {
+		panic(err)
 	}
-	return strings.ReplaceAll(wrapperScriptTemplate, "__COMMAND__", strings.Join(quoted, " "))
+	return strings.ReplaceAll(wrapperScriptTemplate, "__COMMAND_JSON__", string(encoded))
 }
 
 func replaceSymlink(oldname, newname string) error {

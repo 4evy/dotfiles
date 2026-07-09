@@ -5,8 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/buildkite/shellwords"
 )
 
 func TestWriteWrapperParsesAndQuotesFlags(t *testing.T) {
@@ -29,29 +27,29 @@ func TestWriteWrapperParsesAndQuotesFlags(t *testing.T) {
 	text := string(data)
 	if !strings.Contains(
 		text,
-		"unset DESKTOP_STARTUP_ID STARTUP_NOTIFICATION_ID XDG_ACTIVATION_TOKEN",
+		`"DESKTOP_STARTUP_ID",`,
 	) {
 		t.Fatalf("wrapper %q does not clear startup notification tokens", text)
 	}
 	for _, want := range []string{
-		`unset FONTCONFIG_SYSROOT`,
-		`export FONTCONFIG_FILE="${FONTCONFIG_FILE:-/etc/fonts/fonts.conf}"`,
-		`export FONTCONFIG_PATH="${FONTCONFIG_PATH:-/etc/fonts}"`,
-		`export XDG_DATA_DIRS="${XDG_DATA_DIRS:+$XDG_DATA_DIRS:}/usr/local/share:/usr/share"`,
-		`append_flags_file "$XDG_CONFIG_HOME/helium-flags.conf"`,
-		`"${runtime_flags[@]}" "$@"`,
+		`"FONTCONFIG_SYSROOT",`,
+		`os.environ.setdefault("FONTCONFIG_FILE", "/etc/fonts/fonts.conf")`,
+		`os.environ.setdefault("FONTCONFIG_PATH", "/etc/fonts")`,
+		`os.environ["XDG_DATA_DIRS"]`,
+		`flags_file = config_home / "helium-flags.conf"`,
+		`*flags, *sys.argv[1:]`,
 	} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("wrapper %q does not contain %q", text, want)
 		}
 	}
 	for _, want := range []string{
-		shellwords.QuotePosix("/opt/Helium/helium-wrapper"),
+		`/opt/Helium/helium-wrapper`,
 		"--user-data-dir",
-		shellwords.QuotePosix("/tmp/Helium Profile"),
+		`/tmp/Helium Profile`,
 		"--name",
-		shellwords.QuotePosix("O'Brien"),
-		shellwords.QuotePosix("--class=helium-browser"),
+		`O'Brien`,
+		`--class=helium-browser`,
 	} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("wrapper %q does not contain %q", text, want)
