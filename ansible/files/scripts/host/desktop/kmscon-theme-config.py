@@ -4,11 +4,13 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
-import math
 import os
 import pathlib
 import tempfile
 from dataclasses import dataclass
+
+from astral import Observer
+from astral.sun import elevation, sunrise, sunset
 
 ANSI_ROLE_MAP = {
     "black": "surface1",
@@ -47,7 +49,6 @@ class ThemeChoice:
 
 DEFAULT_LATITUDE = 42.6977
 DEFAULT_LONGITUDE = 23.3219
-SUN_ZENITH_DEGREES = 90.8333
 
 
 def hex_to_rgb_csv(value: str) -> str:
@@ -69,94 +70,12 @@ def coordinate_from_env(name: str, minimum: float, maximum: float) -> float | No
     return coordinate
 
 
-def normalize_degrees(value: float) -> float:
-    return value % 360.0
-
-
-def normalize_hours(value: float) -> float:
-    return value % 24.0
-
-
-def sun_event_utc_hour(
-    date: dt.date,
-    latitude: float,
-    longitude: float,
-    *,
-    sunrise: bool,
-) -> float | None:
-    day_of_year = date.timetuple().tm_yday
-    longitude_hour = longitude / 15.0
-    approximate_time = day_of_year + (
-        ((6.0 if sunrise else 18.0) - longitude_hour) / 24.0
-    )
-
-    mean_anomaly = (0.9856 * approximate_time) - 3.289
-    true_longitude = normalize_degrees(
-        mean_anomaly
-        + (1.916 * math.sin(math.radians(mean_anomaly)))
-        + (0.020 * math.sin(math.radians(2.0 * mean_anomaly)))
-        + 282.634
-    )
-
-    right_ascension = normalize_degrees(
-        math.degrees(math.atan(0.91764 * math.tan(math.radians(true_longitude))))
-    )
-    longitude_quadrant = math.floor(true_longitude / 90.0) * 90.0
-    ascension_quadrant = math.floor(right_ascension / 90.0) * 90.0
-    right_ascension = (right_ascension + longitude_quadrant - ascension_quadrant) / 15.0
-
-    sin_declination = 0.39782 * math.sin(math.radians(true_longitude))
-    cos_declination = math.cos(math.asin(sin_declination))
-    latitude_radians = math.radians(latitude)
-    cos_hour_angle = (
-        math.cos(math.radians(SUN_ZENITH_DEGREES))
-        - (sin_declination * math.sin(latitude_radians))
-    ) / (cos_declination * math.cos(latitude_radians))
-    if cos_hour_angle > 1.0 or cos_hour_angle < -1.0:
-        return None
-
-    hour_angle = math.degrees(math.acos(cos_hour_angle))
-    if sunrise:
-        hour_angle = 360.0 - hour_angle
-    hour_angle /= 15.0
-
-    local_mean_time = (
-        hour_angle + right_ascension - (0.06571 * approximate_time) - 6.622
-    )
-    return normalize_hours(local_mean_time - longitude_hour)
-
-
-def local_sun_event(
-    date: dt.date,
-    timezone: dt.tzinfo,
-    latitude: float,
-    longitude: float,
-    *,
-    sunrise: bool,
-) -> dt.datetime | None:
-    utc_hour = sun_event_utc_hour(
-        date,
-        latitude,
-        longitude,
-        sunrise=sunrise,
-    )
-    if utc_hour is None:
-        return None
-    utc_midnight = dt.datetime.combine(date, dt.time(), tzinfo=dt.UTC)
-    return (utc_midnight + dt.timedelta(hours=utc_hour)).astimezone(timezone)
-
-
-def daylight_theme() -> ThemeChoice:
+def daylight_theme(now: dt.datetime | None = None) -> ThemeChoice:
     forced = os.environ.get("DOTFILES_KMSCON_THEME")
     if forced:
         if forced not in {"latte", "frappe"}:
             raise ValueError(f"unsupported DOTFILES_KMSCON_THEME: {forced}")
         return ThemeChoice(forced, "DOTFILES_KMSCON_THEME")
-    desktop_scheme = os.environ.get("COLOR_SCHEME") or os.environ.get("GTK_THEME")
-    if desktop_scheme and "dark" in desktop_scheme.lower():
-        return ThemeChoice("frappe", "desktop-env")
-    if desktop_scheme and "light" in desktop_scheme.lower():
-        return ThemeChoice("latte", "desktop-env")
     latitude = coordinate_from_env("DOTFILES_KMSCON_LATITUDE", -90.0, 90.0)
     longitude = coordinate_from_env("DOTFILES_KMSCON_LONGITUDE", -180.0, 180.0)
     if latitude is None and longitude is None:
@@ -169,40 +88,30 @@ def daylight_theme() -> ThemeChoice:
         raise ValueError(
             "set both DOTFILES_KMSCON_LATITUDE and DOTFILES_KMSCON_LONGITUDE for sun-based theme selection"
         )
-    now = dt.datetime.now().astimezone()
+    now = now or dt.datetime.now().astimezone()
     if now.tzinfo is None:
-        raise RuntimeError("local timezone is unavailable")
-    sunrise = local_sun_event(
-        now.date(),
-        now.tzinfo,
-        latitude,
-        longitude,
-        sunrise=True,
-    )
-    sunset = local_sun_event(
-        now.date(),
-        now.tzinfo,
-        latitude,
-        longitude,
-        sunrise=False,
-    )
-    if sunrise is None or sunset is None:
+        raise ValueError("now must include timezone information")
+    observer = Observer(latitude=latitude, longitude=longitude)
+    try:
+        sunrise_at = sunrise(observer, date=now.date(), tzinfo=now.tzinfo)
+        sunset_at = sunset(observer, date=now.date(), tzinfo=now.tzinfo)
+    except ValueError:
+        solar_elevation = elevation(observer, now)
+        theme = "latte" if solar_elevation >= 0 else "frappe"
         return ThemeChoice(
-            "frappe", f"polar-day-night latitude={latitude} longitude={longitude}"
+            theme,
+            f"sun polar latitude={latitude} longitude={longitude} elevation={solar_elevation:.2f}",
         )
-    if sunset <= sunrise:
-        if now < sunrise:
-            sunrise -= dt.timedelta(days=1)
-        else:
-            sunset += dt.timedelta(days=1)
-    theme = "latte" if sunrise <= now < sunset else "frappe"
+    theme = "latte" if sunrise_at <= now < sunset_at else "frappe"
     return ThemeChoice(
         theme, f"sun {location_source} latitude={latitude} longitude={longitude}"
     )
 
 
-def render_config(palette: dict[str, dict[str, str]]) -> str:
-    choice = daylight_theme()
+def render_config(
+    palette: dict[str, dict[str, str]], now: dt.datetime | None = None
+) -> str:
+    choice = daylight_theme(now)
     colors = palette[choice.name]
     role_map = dict(ANSI_ROLE_MAP)
     if choice.name == "latte":

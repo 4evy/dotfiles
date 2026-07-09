@@ -13,8 +13,10 @@ from spectrum_build.integrations.source_build import (
 )
 
 KMSCON_BUILD_COMMANDS = (
+    "cp",
     "git",
     "infocmp",
+    "install",
     "ldconfig",
     "meson",
     "ninja",
@@ -42,6 +44,12 @@ KMSCON = MesonProject(
 
 
 def install(runner: CommandRunner) -> None:
+    astral = pinned_git_project(
+        "astral",
+        repo="https://github.com/sffjunkie/astral.git",
+        tag="3.2",
+        revision="0be1187d09aadfdadc1b7331b918082213764b5d",
+    )
     libtsm = pinned_git_project(
         "libtsm",
         repo="https://github.com/kmscon/libtsm.git",
@@ -58,8 +66,23 @@ def install(runner: CommandRunner) -> None:
 
     with tempfile.TemporaryDirectory(prefix="spectrum-kmscon-") as work_dir_name:
         work_dir = Path(work_dir_name)
+        astral_source = work_dir / astral.name
         libtsm_source = work_dir / LIBTSM.name
         kmscon_source = work_dir / KMSCON.name
+
+        clone_pinned_git_ref(astral, astral_source, runner)
+        purelib = Path(
+            runner.output([
+                "/usr/bin/python3",
+                "-c",
+                "import sysconfig; print(sysconfig.get_path('purelib'))",
+            ])
+        )
+        runner.run(["install", "-d", purelib])
+        runner.run(["cp", "-a", astral_source / "src/astral", purelib])
+        license_dir = Path("/usr/share/licenses/python3-astral")
+        runner.run(["install", "-d", license_dir])
+        runner.run(["install", "-m", "0644", astral_source / "LICENSE", license_dir])
 
         clone_pinned_git_ref(libtsm, libtsm_source, runner)
         install_meson_project(LIBTSM, libtsm_source, work_dir / "libtsm-build", runner)
@@ -76,6 +99,14 @@ def install(runner: CommandRunner) -> None:
         require_readable_file(terminfo)
         runner.run(["tic", "-x", "-o", "/usr/share/terminfo", terminfo])
         runner.run(["ldconfig"])
+
+    astral_version = runner.output([
+        "/usr/bin/python3",
+        "-c",
+        "import astral; print(astral.__version__)",
+    ])
+    if astral_version != astral.tag:
+        fail(f"unexpected Astral version: {astral_version}")
 
     expected_version = f"kmscon version {kmscon.tag}"
     actual_version = runner.output(["kmscon", "--version"])

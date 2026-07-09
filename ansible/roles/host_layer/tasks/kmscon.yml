@@ -18,8 +18,21 @@
         path: "{{ item }}"
       loop:
         - /usr/bin/python3
+        - /usr/bin/loginctl
+        - /usr/bin/systemctl
         - /usr/lib/systemd/system/kmsconvt@.service
       register: host_layer_kmscon_prerequisites
+
+    - name: Check KMSCON theme Python dependency
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/python3
+          - -c
+          - import astral; assert astral.__version__ == "3.2"
+      changed_when: false
+      check_mode: false
+      failed_when: false
+      register: host_layer_kmscon_astral
 
     - name: Check KMSCON terminfo
       ansible.builtin.command:
@@ -40,9 +53,10 @@
             | list
             | length == 0
           - host_layer_kmscon_terminfo.rc == 0
+          - host_layer_kmscon_astral.rc == 0
         fail_msg: >-
-          KMSCON is installed, but its Python runtime, systemd template, or
-          terminfo entry is missing from the host image.
+          KMSCON is installed, but its Astral 3.2 Python runtime, systemd tools,
+          service template, or terminfo entry is missing from the host image.
 
     - name: Create KMSCON configuration directories
       ansible.builtin.file:
@@ -101,7 +115,7 @@
           content: |
             [Service]
             EnvironmentFile=-/etc/default/kmscon-dotfiles
-            ExecStartPre=-/usr/bin/python3 /usr/local/libexec/dotfiles/kmscon-theme-config /usr/local/share/dotfiles/catppuccin_palette.json /etc/kmscon/kmscon.conf
+            ExecStartPre=/usr/bin/python3 /usr/local/libexec/dotfiles/kmscon-theme-config /usr/local/share/dotfiles/catppuccin_palette.json /etc/kmscon/kmscon.conf
         - dest: /etc/systemd/system/kmscon-theme-refresh.service
           content: |
             [Unit]
@@ -111,8 +125,8 @@
             [Service]
             Type=oneshot
             EnvironmentFile=-/etc/default/kmscon-dotfiles
-            ExecStart=-/usr/bin/python3 /usr/local/libexec/dotfiles/kmscon-theme-config /usr/local/share/dotfiles/catppuccin_palette.json /etc/kmscon/kmscon.conf
-            ExecStartPost=-/usr/bin/python3 /usr/local/libexec/dotfiles/kmscon-refresh
+            ExecStart=/usr/bin/python3 /usr/local/libexec/dotfiles/kmscon-theme-config /usr/local/share/dotfiles/catppuccin_palette.json /etc/kmscon/kmscon.conf
+            ExecStartPost=/usr/bin/python3 /usr/local/libexec/dotfiles/kmscon-refresh /etc/kmscon/kmscon.conf
         - dest: /etc/systemd/system/kmscon-theme-refresh.timer
           content: |
             [Unit]
@@ -120,8 +134,8 @@
 
             [Timer]
             OnBootSec=2m
-            OnCalendar=*-*-* 00,02,04,06,18,20,22:05:00
-            Persistent=true
+            OnUnitActiveSec=5m
+            AccuracySec=30s
 
             [Install]
             WantedBy=timers.target
