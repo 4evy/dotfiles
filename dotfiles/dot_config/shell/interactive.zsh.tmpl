@@ -1,14 +1,13 @@
-# zsh adapter / compdef splice
-#  shared command bus ⟶ compdef(_python, _pip)
-#  ⠁ completion names stay native after aliases load
+# Zsh-specific interactive setup.
+# Shared commands load first so completions attach to the final aliases.
 
-# Pull in the shared command bus.
+# Load shared aliases and functions.
 
 if [[ -r "$HOME/.config/shell/interactive.common.sh" ]]; then
   source "$HOME/.config/shell/interactive.common.sh"
 fi
 
-# Finish with Zsh completion wiring for Python and pip.
+# Add Zsh completions for Python and pip.
 
 if (( $+functions[compdef] )); then
   compdef _python python python3

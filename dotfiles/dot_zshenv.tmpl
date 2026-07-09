@@ -1,14 +1,11 @@
 # ░▀▀█░█▀▀░█░█░█▀▀░█▀█░█░█
 # ░▄▀░░▀▀█░█▀█░█▀▀░█░█░▀▄▀
 # ░▀▀▀░▀▀▀░▀░▀░▀▀▀░▀░▀░░▀░
-# zshenv / quiet preflight
-#      path[] ━━┳━━ wrappers
-#               ┣━━ shared env
-#               ┗━━ fpath[] after brew prefix
-#  ⠁⠂⠄⡀ zsh reads this constantly, so no prompt tricks in here
+# zshenv / environment setup
+# Keep this file quiet: Zsh reads it for every invocation.
 
-# preflight 01 / path[] rail
-#   zsh arrays keep the route readable and de-duplicated
+# 01 / PATH
+# Use unique Zsh arrays to preserve order without duplicate entries.
 
 typeset -U path PATH fpath FPATH
 path=(
@@ -66,23 +63,23 @@ path=(
   "${path[@]}"
 )
 
-# preflight 02 / NixOS wrappers
-#   wrapper binaries get first crack at the command name
+# 02 / NixOS wrappers
+# Prefer privileged wrapper binaries where NixOS provides them.
 
 if [[ -d /run/wrappers/bin ]]; then
   path=(/run/wrappers/bin "${path[@]}")
 fi
 export PATH FPATH
 
-# preflight 03 / shared env handoff
-#   Homebrew metadata, SSH agent, and tool defaults cross over from the shared file
+# 03 / shared environment
+# Load Homebrew metadata, the SSH agent, and shared tool defaults.
 
 if [[ -r "$HOME/.config/shell/environment.sh" ]]; then
   source "$HOME/.config/shell/environment.sh"
 fi
 
-# preflight 04 / completion sidecar
-#   Homebrew completions join fpath after the prefix shows up
+# 04 / Homebrew completions
+# Add site-functions after HOMEBREW_PREFIX has been resolved.
 
 if [[ -n "${HOMEBREW_PREFIX:-}" ]]; then
   fpath=("$HOMEBREW_PREFIX/share/zsh/site-functions" "${fpath[@]}")

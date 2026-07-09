@@ -1,28 +1,28 @@
 # ░▀▀█░█▀▀░█░█░░░█▀▀░█▀█░█▀█░█▀▀░█▀█░█░░░█▀▀
 # ░▄▀░░▀▀█░█▀█░░░█░░░█░█░█░█░▀▀█░█░█░█░░░█▀▀
 # ░▀▀▀░▀▀▀░▀░▀░░░▀▀▀░▀▀▀░▀░▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀
-# zsh / console deck
+# zsh / interactive setup
 #   ⣀⣀ ⢀⣀ ⣇⡀   ⢀⣀ ⢀⡀ ⣀⡀ ⢀⣀ ⢀⡀ ⡀   ⢀⡀
 #   ⠴⠥ ⠭⠕ ⠇⠸   ⠣⠤ ⠣⠜ ⠇⠸ ⠭⠕ ⠣⠜ ⠧⠤ ⠣⠭
 #
 #      ╭──── A / TERM + Ghostty ──────╮
-#      │ Ghostty  TERM  Zellij truce   │
+#      │ Ghostty / TERM / Zellij      │
 #      ╰───────────────┬──────────────╯
 #                      ▼
-#      ╭──── B / plugin + prompt rail ────────────────────────╮
-#      │ OMZ → syntax inks → fzf-tab → fzf → Starship → Atuin │
+#      ╭──── B / plugins + prompt ────────────────────────────╮
+#      │ OMZ → highlight → fzf-tab → Starship → Atuin         │
 #      ╰───────────────┬──────────────────────────────────────╯
 #                      ▼
-#      ╭──── C / typed surface ─────────────────────────────╮
-#      │ interactive.zsh → zoxide owns cd → fzf-tab enable  │
+#      ╭──── C / shared commands ───────────────────────────╮
+#      │ shared commands → zoxide owns cd → fzf-tab         │
 #      ╰────────────────────────────────────────────────────╯
 #
-# cache if warm :: live if fresh :: quiet title/cwd reporting inside Zellij
+# Prefer cached init scripts; generate them directly on a fresh install.
 
 #  /"\/\_..--------------------._/\/"\
 # (     _|| A1 TERM + GHOSTTY  ||_     )
 #  \_/\/ || Ghostty + fallback || \/\_/
-#        || Zellij gets peace  ||
+#        || avoid Zellij clash ||
 #  /"\/\_|---------------------|_/\/"\
 # (     _|                     |_     )
 #  \_/\/ `---------------------' \/\_/
@@ -36,8 +36,8 @@ if [[ -z "${ZELLIJ:-}" ]] \
   source "${GHOSTTY_RESOURCES_DIR}/shell-integration/zsh/ghostty-integration"
 fi
 
-# A2 ∿ boot tools
-#   ⟦ command path ⟧──wrap while init runs──⟦ unset before prompt ⟧
+# A2 / startup helpers
+# Resolve binaries before generated init scripts replace command names.
 
 _dotfiles_wrap_command() {
   emulate -L zsh
@@ -46,11 +46,9 @@ _dotfiles_wrap_command() {
   eval "$command_name() { command ${(q)command_path} \"\$@\"; }"
 }
 
-# A3 ∿ repo compass
-#        DOTFILES_REPO
-#            ├─ Darwin → ~/Developer/dotfiles → ~/dotfiles
-#            └─ else   → ~/dotfiles
-#   update/check/rebuild come back here before doing heavier work
+# A3 / dotfiles repository
+# DOTFILES_REPO takes priority. macOS also checks ~/Developer/dotfiles before
+# falling back to ~/dotfiles.
 
 _dotfiles_repo_path="${DOTFILES_REPO:-}"
 if [[ -z "$_dotfiles_repo_path" ]]; then
@@ -87,8 +85,8 @@ _dotfiles_command_path() {
   print -r -- "$commands[$1]"
 }
 
-# A4 ∿ provision shim
-#   ansible-playbook when it exists; uvx when the machine is still bare
+# A4 / Ansible fallback
+# Use uvx when ansible-playbook is not installed yet.
 
 _dotfiles_ansible_playbook() {
   emulate -L zsh
@@ -103,11 +101,11 @@ _dotfiles_ansible_playbook() {
 }
 
 #      __^__                         __^__
-#     ( ___ )──── B1 PLUGIN RACK ───( ___ )
+#     ( ___ )──── B1 PLUGINS ───────( ___ )
 #      | / |                         | \ |
-#      | / | OMZ wakes plugins       | \ |
+#      | / | Oh My Zsh + plugins     | \ |
 #      | / | fzf-tab keeps Tab       | \ |
-#      | / | syntax inks load early  | \ |
+#      | / | highlighting first      | \ |
 #      |___|                         |___|
 #     (_____)───────────────────────(_____)
 # Starship owns the prompt; Atuin waits for a real TTY.
@@ -119,7 +117,7 @@ DISABLE_AUTO_UPDATE="true"
 # shellcheck disable=SC2034
 DISABLE_UNTRACKED_FILES_DIRTY="true"
 
-# Plugin list, curated and explicit. No surprise guests.
+# Keep the plugin list explicit.
 plugins=(
   git
   rust
@@ -138,10 +136,10 @@ if _dotfiles_command_path gh >/dev/null; then
   plugins+=(gh)
 fi
 
-# Cached definitions walk in before compinit.
+# Make cached completions available before compinit.
 fpath=("$HOME/.cache/zsh/completions" "${fpath[@]}")
 
-# Syntax palette loads before Oh My Zsh wakes the plugin.
+# The highlighting plugin reads this palette when Oh My Zsh loads it.
 
 if [[ -r "$HOME/.config/shell/zsh-syntax-highlighting.zsh" ]]; then
   # shellcheck source=/dev/null
@@ -164,8 +162,8 @@ if [[ -n "${ZELLIJ:-}" ]]; then
   chpwd_functions=(${chpwd_functions:#_ghostty_report_pwd})
 fi
 
-# B2 ∿ ZLE focus sink
-#   focus bytes  ESC [ I / ESC [ O  ──▶ silent widget ──▶ no prompt junk
+# B2 / terminal focus events
+# Bind focus-in and focus-out escape sequences to a no-op widget.
 
 _dotfiles_disable_terminal_focus_reporting() {
   emulate -L zsh
@@ -178,12 +176,9 @@ zle -N _dotfiles_ignore_terminal_focus_event
 bindkey $'\e[I' _dotfiles_ignore_terminal_focus_event
 bindkey $'\e[O' _dotfiles_ignore_terminal_focus_event
 
-# B3 ∿ picker / prompt / history lane
-#      fzf keymap ─┬─ keeps Tab free for fzf-tab
-#      zstyle hints│
-#      Starship ───┼─ prompt chrome
-#      Atuin ──────┘  history search, only on real terminals
-#      cache lane: ~/.cache/*/init.zsh  |  fallback: direct init
+# B3 / completions, prompt, and history
+# fzf leaves Tab to fzf-tab. Starship and Atuin use cached init scripts when
+# available; Atuin only loads on a real terminal.
 
 # Load fzf's key bindings without letting its completion widget steal Tab from
 # fzf-tab.
@@ -283,19 +278,16 @@ if [[ -t 0 && -t 1 && -n "$_atuin_bin" && -r "$HOME/.cache/atuin/init.zsh" ]]; t
 fi
 unset _atuin_bin
 
-# C1 ∿ command bus
-#   ~/.config/shell/interactive.zsh
-#      ├─ shared aliases + workflows
-#      └─ zsh compdefs after aliases exist
+# C1 / shared commands
+# interactive.zsh loads cross-shell aliases and then adds Zsh completions.
 
 if [[ -r "$HOME/.config/shell/interactive.zsh" ]]; then
   # shellcheck source=/dev/null
   source "$HOME/.config/shell/interactive.zsh"
 fi
 
-# C2 ∿ zoxide last word
-#   framework first, zoxide after; `cd` gets the final say here
-#      cwd stream ───────────────▶ zoxide db ───────────────▶ z / zi
+# C2 / zoxide
+# Load it after the framework so its `cd` alias wins.
 
 if [[ -r "$HOME/.config/shell/zoxide.zsh" ]]; then
   # shellcheck source=/dev/null
@@ -306,7 +298,7 @@ if (( $+functions[enable-fzf-tab] )); then
   enable-fzf-tab
 fi
 
-# C3 ∿ clean exit
-#   startup-only helpers leave before the prompt opens
+# C3 / cleanup
+# Remove startup-only helpers from the interactive shell.
 
 unset -f _dotfiles_wrap_command _dotfiles_command_path

@@ -1,8 +1,8 @@
 # ░█▀▀░█░█░█▀█░▀█▀░█▀█░█░█
 # ░▀▀█░░█░░█░█░░█░░█▀█░▄▀▄
 # ░▀▀▀░░▀░░▀░▀░░▀░░▀░▀░▀░▀
-# zsh syntax palette / Catppuccin signal inks
-# loaded before OMZ because the plugin reads the map while waking up
+# zsh syntax highlighting / Catppuccin Frappé Pink
+# Load before Oh My Zsh so the plugin sees the palette during initialization.
 
 {{- $ctpZshSyntax := include ".chezmoitemplates/catppuccin_palette.json" | fromJson }}
 {{- $zshSyntax := index $ctpZshSyntax "frappe" }}

@@ -1,18 +1,18 @@
 # ░█▀▄░█▀█░█▀▀░█░█░█▀▀░█▀█░█░█
 # ░█▀▄░█▀█░▀▀█░█▀█░█▀▀░█░█░▀▄▀
 # ░▀▀░░▀░▀░▀▀▀░▀░▀░▀▀▀░▀░▀░░▀░
-# bashenv / quiet floor, loud sign
+# bashenv / environment setup
 #  / ~~~~~~~~~~~~~~~~~~~~~~~~~~~ \
 # |  /~~\                   /~~\  |
-# |\ \   | PATH first      |   / /|
-# | \   /| shared env      |\   / |
-# |  ~~  | no prompt noise |  ~~  |
+# |\ \   | PATH            |   / /|
+# | \   /| shared exports  |\   / |
+# |  ~~  | non-interactive |  ~~  |
 #  \     |~~~~~~~~~~~~~~~~~|     /
 #   \   /                   \   /
 #    ~~~                     ~~~
 
-# PATH deck
-#   favorite tools cut the line; inherited PATH keeps its order after that
+# PATH
+# Prepend preferred tools while retaining the inherited order.
 
 _dotfiles_path_prepend_once() {
 	local -a current_path=() new_path=()
@@ -98,7 +98,7 @@ _dotfiles_path_prepend_once "${_dotfiles_path_entries[@]}"
 unset _dotfiles_path_entries
 
 # NixOS wrappers
-#   wrapper binaries need front-row seats on NixOS
+# Prefer privileged wrapper binaries where NixOS provides them.
 
 if [[ -d /run/wrappers/bin ]]; then
 	_dotfiles_path_prepend_once /run/wrappers/bin
@@ -107,8 +107,8 @@ fi
 unset -f _dotfiles_path_prepend_once
 export PATH
 
-# Shared env handoff
-#   Homebrew metadata, SSH agent, and shared defaults live next door
+# Shared environment
+# Load Homebrew metadata, the SSH agent, and shared defaults.
 
 if [[ -r "$HOME/.config/shell/environment.sh" ]]; then
 	# shellcheck source=/dev/null

@@ -1,10 +1,9 @@
 # ░▀▀█░█▀█░█░█░▀█▀░█▀▄░█▀▀
 # ░▄▀░░█░█░▄▀▄░░█░░█░█░█▀▀
 # ░▀▀▀░▀▀▀░▀░▀░▀▀▀░▀▀░░▀▀▀
-# zoxide / Bash last-mile cd
-#     cwd history  …/work ─┬─ z  → jump
-#                          └─ zi → choose
-# cached init must contain the cd wrapper; otherwise build it live
+# zoxide / Bash integration
+# Load the cached init script when it includes the `cd` wrapper; otherwise
+# generate the integration directly.
 
 _zoxide_bin="$(_dotfiles_command_path zoxide 2>/dev/null || true)"
 if [[ -n "$_zoxide_bin" ]]; then

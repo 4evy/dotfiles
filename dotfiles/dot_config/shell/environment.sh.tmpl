@@ -1,14 +1,11 @@
 # ░█▀▀░█▀█░█░█
 # ░█▀▀░█░█░▀▄▀
 # ░▀▀▀░▀░▀░░▀░
-# shared env / export bus
-# HOMEBREW_PREFIX ─┬─ MANPATH / INFOPATH
-# SSH_AUTH_SOCK ───┤
-# tool defaults ───┘
-# ⠄⠂⠁ one export booth, two shells, zero startup chatter
+# shared environment / Bash and Zsh
+# Homebrew paths, SSH agent selection, and tool defaults.
 
-# pass 01 / Homebrew address book
-#   find the prefix once; everybody else reads HOMEBREW_PREFIX
+# 01 / Homebrew
+# Resolve the prefix once and expose the standard Homebrew variables.
 
 _dotfiles_homebrew_prefix=
 {{- if eq .chezmoi.os "linux" }}
@@ -48,8 +45,8 @@ if [[ -n "$_dotfiles_homebrew_prefix" ]]; then
 fi
 unset _dotfiles_homebrew_prefix
 
-# pass 02 / SSH agent handoff
-#   local shells use 1Password; remote sessions keep sshd's forwarded agent
+# 02 / SSH agent
+# Local shells use 1Password; remote sessions keep sshd's forwarded agent.
 
 {{- if eq .chezmoi.os "darwin" }}
 _dotfiles_ssh_auth_sock="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
@@ -61,8 +58,8 @@ if [[ -z "${SSH_CONNECTION:-}" ]]; then
 fi
 unset _dotfiles_ssh_auth_sock
 
-# pass 03 / shared defaults
-#   stable knobs for scripts and interactive shells
+# 03 / tool defaults
+# Defaults shared by scripts and interactive shells.
 
 export BASH_ENV="${BASH_ENV:-$HOME/.bashenv}"
 export UV_PYTHON_PREFERENCE="${UV_PYTHON_PREFERENCE:-only-managed}"

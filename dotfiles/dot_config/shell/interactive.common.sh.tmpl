@@ -2,26 +2,24 @@
 # ░█▀▀░█▄█░█▀▄░█▀▀
 # ░█░░░█░█░█░█░▀▀█
 # ░▀▀▀░▀░▀░▀▀░░▀▀▀
-# C M D S / shared command bus
+# C M D S / shared commands
 #  .+"+.+"+.+"+.+"+.+"+.+"+.
 # (                         )
-#  ) one command bus       (
-# (  Bash and Zsh share it  )
-#  ) no alias drift        (
+#  ) Bash and Zsh agree    (
+# (  aliases stay in sync   )
+#  ) loaded once           (
 # (                         )
 #  "+.+"+.+"+.+"+.+"+.+"+.+"
-# A lane: editor / files / media
-# B lane: host runner / codex / Brewfile
-# C lane: repo chores / yazi / uv / fzf palette
+# Editor, files, media, host tools, repo maintenance, and completions.
 #
-# loaded late on purpose: frameworks first, daily commands after
+# Loaded after shell frameworks so shared aliases take precedence.
 
 # Interactive tools should keep their styling even when a parent process (for
 # example a long-running Zellij server) was started with NO_COLOR set.
 unset NO_COLOR
 
-# A1 / editor default
-#      h v vi vim ───────────────> hx, no ceremony
+# A1 / editor
+#      h v vi vim ───────────────> hx
 
 export EDITOR="hx"
 export VISUAL="hx"
@@ -31,8 +29,8 @@ alias v="hx"
 alias vi="hx"
 alias vim="hx"
 
-# A2 / looking around
-#      eza gets icons; btop stays themed; neofetch quietly becomes pfetch
+# A2 / file and system views
+# eza uses icons; btop uses the current terminal theme; neofetch maps to pfetch.
 
 alias l="eza --icons"
 alias la="eza -la --icons"
@@ -44,7 +42,7 @@ alias htop="zellij-theme-run btop"
 alias top="zellij-theme-run btop"
 alias neofetch="pfetch"
 
-# A3 / media cuts
+# A3 / media helpers
 #      m4a ─┐  mp3 ─┐  mp4 ─┐
 #           └─ cut variants share one yt-dlp runner
 
@@ -59,8 +57,7 @@ mp3-cut() { _dotfiles_ytdlp mp3-cut "$@"; }
 mp4() { _dotfiles_ytdlp mp4 "$@"; }
 mp4-cut() { _dotfiles_ytdlp mp4-cut "$@"; }
 
-# A4 / tiny commands
-#      oo cza pmclean jj :: short names because muscle memory is real
+# A4 / aliases and wrappers
 
 alias oo="opencode"
 alias cza="chezmoi apply --force"
@@ -255,7 +252,7 @@ tk() (
 )
 
 # B1 / host runner
-#      uses sudo -n and stays honest
+# Run host commands through system-runner with non-interactive sudo.
 
 _dotfiles_system_runner() {
 	local runner="$HOME/.local/bin/system-runner"
@@ -305,8 +302,8 @@ f() {
 	esac
 }
 
-# B2 / codex wrapper
-#      focus reset ⇢ themed zellij ⇢ optional debug tools ⇢ focus reset
+# B2 / Codex wrapper
+# Reset focus reporting around the themed Zellij session and optional debuggers.
 
 cx() {
 	local cmd_status
@@ -579,8 +576,8 @@ cxg() (
 	exit "$cmd_status"
 )
 
-# B3 / Brewfile receipts
-#      one explicit file path, loud errors, no ambient Brewfile guessing
+# B3 / Brewfile
+# Always use the repository Brewfile and report missing prerequisites clearly.
 
 _dotfiles_brewfile_path() {
 	printf '%s\n' "$_dotfiles_repo_path/Brewfile"
@@ -615,10 +612,9 @@ brewup() {
 	_dotfiles_brew_bundle install --jobs auto --force-cleanup "$@"
 }
 
-# C1 / repo choreography
-#      update  ▰▱▱ apply userland and refresh chezmoi
-#      rebuild ▰▰▱ bootstrap or image switch
-#      check   ▰▰▰ syntax/lint runway
+# C1 / repository maintenance
+# update applies userland state, rebuild provisions the host, and check runs
+# syntax and lint validation.
 
 {{- if eq .chezmoi.os "darwin" }}
 update() {
@@ -698,8 +694,8 @@ micfix() {
 }
 {{- end }}
 
-# C2 / yazi handoff
-#      yazi writes the destination; the parent shell follows it there
+# C2 / yazi
+# Follow the directory selected by yazi when it exits.
 
 yy() {
 	local tmp cwd cmd_status
@@ -716,8 +712,7 @@ yy() {
 }
 
 # C3 / Python via uv
-#      python ⇢ uv run
-#      pip    ⇢ venv only when the project has none
+# Route Python through uv and create a virtual environment for pip when needed.
 
 python() { uv run python "$@"; }
 python3() { uv run python3 "$@"; }
@@ -733,7 +728,7 @@ pip3() {
 }
 
 # C4 / fzf palette
-#      Catppuccin Frappe :: pink prompt ◇ lavender marker ◇ calm border
+# Catppuccin Frappé Pink. Pink is a neutral.
 
 {{- $ctp := include ".chezmoitemplates/catppuccin_palette.json" | fromJson }}
 {{- $p := index $ctp "frappe" }}

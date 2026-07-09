@@ -6,18 +6,17 @@
 #       ██    ██  ▄██▀▀▀██   ▀▀▀▀██▄  ██    ██
 #       ███▄▄██▀  ██▄▄▄███  █▄▄▄▄▄██  ██    ██
 #       ▀▀ ▀▀▀     ▀▀▀▀ ▀▀   ▀▀▀▀▀▀   ▀▀    ▀▀
-#       B A S H / signal deck
-#  .bashenv 〰 terminal tune-up 〰 Oh My Bash
-#  starship/fzf/atuin 〰 shared commands 〰 zoxide
-#  ░▒▓ scripts stay quiet; interactive shells get the full rig
+#       B A S H / interactive setup
+#  .bashenv / Ghostty / Oh My Bash / Starship / Atuin / zoxide
+#  Non-interactive shells return before prompt setup.
 
-# ✦ 00 / airlock
-#      .bashenv brings PATH + exports; prompt work waits behind `$-`.
+# 00 / environment
+# .bashenv provides PATH and shared exports.
 # shellcheck source=/dev/null
 [[ -r "$HOME/.bashenv" ]] && source "$HOME/.bashenv"
 
-# ✦ 01 / terminal tuning fork
-#      Ghostty gets its integration; missing terminfo drops to a common signal.
+# 01 / terminal integration
+# Load Ghostty integration and fall back when its terminfo is unavailable.
 if [[ -n "${GHOSTTY_RESOURCES_DIR:-}" ]] &&
 	[[ -r "${GHOSTTY_RESOURCES_DIR}/shell-integration/bash/ghostty.bash" ]]; then
 	builtin source "${GHOSTTY_RESOURCES_DIR}/shell-integration/bash/ghostty.bash"
@@ -65,12 +64,12 @@ unset _dotfiles_brew_prefix
 unset -f _dotfiles_path_append_once
 {{- end }}
 
-# ✦ 02 / tiny Bash manners
-#      shopt keeps glob and array expansion behavior predictable.
+# 02 / shell options
+# Keep glob and array expansion behavior predictable.
 shopt -s array_expand_once globskipdots
 
-# ✦ 03 / loader rig
-#      Resolve real binaries once, then wrap them while init scripts load.
+# 03 / startup helpers
+# Resolve real binaries before generated init scripts replace command names.
 
 _dotfiles_wrap_command() {
 	local -r command_name=$1
@@ -88,8 +87,8 @@ _dotfiles_command_path() {
 	printf '%s\n' "$command_path"
 }
 
-# ✦ 04 / repo coordinate
-#      DOTFILES_REPO wins; platform defaults are probed and normalized after.
+# 04 / dotfiles repository
+# DOTFILES_REPO takes priority, followed by platform defaults.
 
 _dotfiles_ansible_playbook() {
 	if command -v ansible-playbook >/dev/null 2>&1; then
@@ -131,13 +130,13 @@ if [[ -d "$_dotfiles_repo_path" ]]; then
 fi
 unset _dotfiles_repo_candidate _dotfiles_repo_candidates
 
-# ✦ 05 / Oh My Bash frame
-#      Framework plugins load here; daily commands wait in the shared bus.
+# 05 / Oh My Bash
+# Load the framework before shared aliases and functions.
 export OSH="$HOME/.oh-my-bash"
 # shellcheck disable=SC2034
 OSH_THEME=""
 
-# Plugin list, no mystery guests.
+# Keep the plugin list explicit.
 # shellcheck disable=SC2034
 plugins=(git bashmarks)
 
@@ -156,8 +155,8 @@ if [[ -r "$OSH/oh-my-bash.sh" ]]; then
 	source "$OSH/oh-my-bash.sh"
 fi
 
-# ✦ 06 / Readline focus sink
-#      Terminal focus events become no-op Readline keys.
+# 06 / terminal focus events
+# Bind focus-in and focus-out escape sequences to no-op Readline keys.
 
 _dotfiles_disable_terminal_focus_reporting() {
 	[[ -t 1 ]] || return 0
@@ -167,8 +166,8 @@ _dotfiles_disable_terminal_focus_reporting() {
 bind '"\e[I": ""' 2>/dev/null || true
 bind '"\e[O": ""' 2>/dev/null || true
 
-# ✦ 07 / prompt + picker rail
-#      starship ⇢ fzf ⇢ atuin; cache wins, live init covers first boot.
+# 07 / prompt, picker, and history
+# Prefer cached init scripts; generate them directly on a fresh install.
 _starship_bin="$(_dotfiles_command_path starship 2>/dev/null || true)"
 if [[ -n "$_starship_bin" ]]; then
 	_dotfiles_wrap_command starship "$_starship_bin"
@@ -213,30 +212,30 @@ if [[ -t 0 && -t 1 && -n "$_atuin_bin" && -r "$HOME/.cache/atuin/init.bash" ]]; 
 fi
 unset _atuin_bin
 
-# ✦ 08 / completion cache
-#      Generated shards stay in ~/.cache/bash/completions.
+# 08 / completion cache
+# Load generated completions from ~/.cache/bash/completions.
 for f in "$HOME/.cache/bash/completions"/*; do
 	# shellcheck source=/dev/null
 	[[ -f "$f" ]] && source "$f"
 done
 
-# ✦ 09 / command bus
-#      Shared aliases enter after prompt and framework wiring.
+# 09 / shared commands
+# Load aliases and functions after prompt and framework setup.
 
 if [[ -r "$HOME/.config/shell/interactive.bash" ]]; then
 	# shellcheck source=/dev/null
 	source "$HOME/.config/shell/interactive.bash"
 fi
 
-# ✦ 10 / zoxide last word
-#      zoxide loads late so its cd wrapper wins.
+# 10 / zoxide
+# Load it late so its `cd` wrapper wins.
 
 if [[ -r "$HOME/.config/shell/zoxide.bash" ]]; then
 	# shellcheck source=/dev/null
 	source "$HOME/.config/shell/zoxide.bash"
 fi
 
-# ✦ 11 / clean exit
-#      Startup helpers leave before the prompt appears.
+# 11 / cleanup
+# Remove startup-only helpers from the interactive shell.
 
 unset -f _dotfiles_wrap_command _dotfiles_command_path

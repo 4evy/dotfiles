@@ -1,10 +1,9 @@
 # ░▀▀█░█▀█░█░█░▀█▀░█▀▄░█▀▀
 # ░▄▀░░█░█░▄▀▄░░█░░█░█░█▀▀
 # ░▀▀▀░▀▀▀░▀░▀░▀▀▀░▀▀░░▀▀▀
-# zoxide / Zsh late hook
-#   chpwd ── async add ──→ zoxide db
-#   z/zi completion stays clean; prompt does not wait around
-#   alias cd=z only after the framework has had its turn
+# zoxide / Zsh integration
+# Record directory changes asynchronously, provide z/zi completion, and alias
+# `cd` only after the shell framework has loaded.
 
 _zoxide_bin="$(_dotfiles_command_path zoxide 2>/dev/null || true)"
 if [[ -n "$_zoxide_bin" ]]; then
