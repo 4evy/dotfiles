@@ -90,6 +90,77 @@ def _patch_current(discord_dir: Path, equilotl: Path) -> None:
         _patch_location(max(locations, key=_version_key), equilotl)
 
 
+def _macos_equilotl(package_bin: Path) -> Path | None:
+    configured = os.environ.get("DISCORD_EQUICORD_EQUILOTL")
+    candidates = (
+        Path(configured) if configured else None,
+        Path.home() / ".local/bin/EquilotlCli-darwin-arm64",
+        package_bin / "EquilotlCli-darwin-arm64",
+    )
+    return next(
+        (
+            candidate
+            for candidate in candidates
+            if candidate is not None
+            and candidate.is_file()
+            and os.access(candidate, os.X_OK)
+        ),
+        None,
+    )
+
+
+def _macos_asars(resources: Path) -> tuple[Path, ...]:
+    return tuple(
+        path
+        for path in (resources / "app.asar", resources / "_app.asar")
+        if path.is_file()
+    )
+
+
+def _set_macos_asar_lock(resources: Path, *, locked: bool) -> None:
+    asars = _macos_asars(resources)
+    if asars:
+        run(("chflags", "uchg" if locked else "nouchg", *asars), check=False)
+
+
+def _macos_equicord_is_patched(resources: Path) -> bool:
+    app_asar = resources / "app.asar"
+    if not app_asar.is_file() or app_asar.stat().st_size > 131072:
+        return False
+    content = app_asar.read_bytes()
+    return b"Equicord/equicord.asar" in content and b'"name": "discord"' in content
+
+
+def _repair_macos(package_bin: Path) -> None:
+    app = Path(os.environ.get("DISCORD_EQUICORD_APP", "/Applications/Discord.app"))
+    resources = app / "Contents/Resources"
+    if not (resources / "app.asar").is_file():
+        return
+    if _macos_equicord_is_patched(resources):
+        _set_macos_asar_lock(resources, locked=True)
+        return
+    equilotl = _macos_equilotl(package_bin)
+    if equilotl is None:
+        return
+
+    _set_macos_asar_lock(resources, locked=False)
+    environment = {"HOME": os.fspath(Path.home())}
+    result = run(
+        (equilotl, "--repair", "--branch", "stable"),
+        check=False,
+        env=environment,
+    )
+    if result.returncode != 0:
+        result = run(
+            (equilotl, "--install", "--branch", "stable"),
+            check=False,
+            env=environment,
+        )
+    if result.returncode != 0 or not _macos_equicord_is_patched(resources):
+        raise DotfilesError("discord-equicord: failed to patch Discord on macOS")
+    _set_macos_asar_lock(resources, locked=True)
+
+
 def main(argv: list[str] | None = None) -> int:
     arguments = list(sys.argv[1:] if argv is None else argv)
     config_home = user_config_home()
@@ -100,9 +171,16 @@ def main(argv: list[str] | None = None) -> int:
         os.environ.get("DISCORD_EQUICORD_EQUILOTL", package_bin / "EquilotlCli-linux")
     )
     if arguments[:1] == ["--repair-only"]:
+        if sys.platform == "darwin":
+            _repair_macos(package_bin)
+            return 0
         _configure_gpu(discord_dir)
         _patch_current(discord_dir, equilotl)
         return 0
+    if sys.platform == "darwin":
+        raise DotfilesError(
+            "discord-equicord: launching Discord is only supported on Linux"
+        )
     if not discord_host.is_file() or not os.access(discord_host, os.X_OK):
         ensure_directory(discord_dir)
         bootstrap = next(

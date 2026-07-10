@@ -7,6 +7,7 @@ from pathlib import Path
 
 import typer
 
+from workstation.apps.discord import main as discord_main
 from workstation.console import error_console
 from workstation.lib.commands import run, which
 from workstation.lib.files import ensure_directory, write_if_changed
@@ -101,6 +102,14 @@ def desktop_integrations() -> None:
         ),
         cwd=repository,
     )
+
+
+@app.command("discord-equicord")
+def discord_equicord() -> None:
+    """Repair Equicord after Discord replaces its application bundle."""
+    returncode = discord_main(["--repair-only"])
+    if returncode != 0:
+        raise typer.Exit(returncode)
 
 
 def _extensions(path: Path) -> list[str]:
