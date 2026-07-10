@@ -90,7 +90,6 @@ RUN set -eu; \
       .cache/starship \
       .cache/zellij \
       .config \
-      .local/bin \
       .local/share/applications \
       .local/share/zellij \
     "; \
