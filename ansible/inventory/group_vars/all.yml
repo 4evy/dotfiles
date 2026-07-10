@@ -16,4 +16,4 @@ dotfiles_automation_context:
   data_dir: "{{ dotfiles_data_dir }}"
   bin_dir: "{{ dotfiles_bin_dir }}"
   system: "{{ common_system }}"
-  architecture: "{{ ansible_facts.architecture }}"
+  architecture: "{{ ansible_facts.get('architecture', ansible_facts.get('ansible_architecture')) }}"

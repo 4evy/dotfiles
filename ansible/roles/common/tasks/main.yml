@@ -13,15 +13,15 @@
 
 - name: Gather missing operating system facts
   ansible.builtin.setup:
-  when: "'system' not in ansible_facts"
+  when: ansible_facts.get('system', ansible_facts.get('ansible_system', '')) == ''
   tags:
     - common
 
 - name: Set operating system facts
   ansible.builtin.set_fact:
-    common_system: "{{ ansible_facts.system }}"
-    common_is_macos: "{{ ansible_facts.system == 'Darwin' }}"
-    common_is_linux: "{{ ansible_facts.system == 'Linux' }}"
+    common_system: "{{ ansible_facts.get('system', ansible_facts.get('ansible_system')) }}"
+    common_is_macos: "{{ ansible_facts.get('system', ansible_facts.get('ansible_system')) == 'Darwin' }}"
+    common_is_linux: "{{ ansible_facts.get('system', ansible_facts.get('ansible_system')) == 'Linux' }}"
   tags:
     - common
 
