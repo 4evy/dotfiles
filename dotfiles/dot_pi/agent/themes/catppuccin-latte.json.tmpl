@@ -1,7 +1,7 @@
 {{- $ctp := include ".chezmoitemplates/catppuccin_palette.json" | fromJson -}}
 {{- $p := index $ctp "latte" -}}
 {
-  "$schema": "https://raw.githubusercontent.com/badlogic/pi-mono/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
+  "$schema": "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
   "name": "catppuccin-latte-pink",
   "vars": {
     "rosewater": "{{ index $p "rosewater" }}",
@@ -87,6 +87,7 @@
     "thinkingMedium": "teal",
     "thinkingHigh": "mauve",
     "thinkingXhigh": "red",
+    "thinkingMax": "maroon",
 
     "bashMode": "green"
   },

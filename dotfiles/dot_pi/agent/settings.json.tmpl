@@ -1,0 +1,28 @@
+{{- $settingsPath := joinPath .chezmoi.homeDir ".pi/agent/settings.json" -}}
+{{- $settings := dict -}}
+{{- if stat $settingsPath -}}
+{{-   $settings = output "cat" $settingsPath | fromJson -}}
+{{- end -}}
+{{- $extensions := list -}}
+{{- $extensionDirs := list
+  (joinPath .chezmoi.homeDir ".nix-profile/bin")
+  "/run/current-system/sw/bin"
+-}}
+{{- range $name := list "agent-statusline-pi" "pi-ssh-tools" "web-search-pi" -}}
+{{-   $extensionPath := lookPath $name -}}
+{{-   if not $extensionPath -}}
+{{-     range $dir := $extensionDirs -}}
+{{-       $candidate := joinPath $dir $name -}}
+{{-       if and (not $extensionPath) (stat $candidate) -}}
+{{-         $extensionPath = $candidate -}}
+{{-       end -}}
+{{-     end -}}
+{{-   end -}}
+{{-   if $extensionPath -}}
+{{-     $extensions = append $extensions $extensionPath -}}
+{{-   end -}}
+{{- end -}}
+{{- $_ := set $settings "theme" "catppuccin-latte-pink/catppuccin-frappe-pink" -}}
+{{- $_ = set $settings "extensions" $extensions -}}
+{{- $_ = unset $settings "themes" -}}
+{{ $settings | toPrettyJson }}
