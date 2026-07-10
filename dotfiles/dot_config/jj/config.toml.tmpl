@@ -11,13 +11,14 @@ default-command = "log"
 
 [git]
 sign-on-push = true
-auto-local-bookmark = false
 
+{{ if lookPath "watchman" -}}
 [fsmonitor]
 backend = "watchman"
 
 [fsmonitor.watchman]
 register-snapshot-trigger = true
+{{ end -}}
 
 [signing]
 behavior = "drop"
@@ -34,17 +35,14 @@ allowed-signers = "{{ .chezmoi.homeDir }}/.ssh/allowed_signers"
 
 [aliases]
 d = ["describe"]
-p = ["git push"]
+p = ["git", "push"]
 e = ["edit"]
 n = ["new"]
 redate.definition = ["util", "exec", "--", "jj-redate"]
 redate.doc = "Interactively set author and committer timestamps on a revision"
 get.definition = ["util", "exec", "--", "jj-get"]
-get.doc = "Fetch a remote Git branch/bookmark and track it locally"
+get.doc = "Fetch and track a remote Git branch or GitHub pull request"
 
 [templates]
 git_push_bookmark = '"4evy/push-" ++ change_id.short()'
 duplicate_description = 'concat(description, "\n(cherry picked from commit ", commit_id, ")")'
-
-[revsets]
-log = "present(@) | ancestors(immutable_heads().., 2) | ancestors(bookmarks(), 2) | trunk()"
