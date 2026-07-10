@@ -115,6 +115,120 @@ def alt_tab_license_entrypoint() -> None:
     raise SystemExit("Usage: alt-tab-license <install|remove|status>")
 
 
+def _shottr_license_key() -> str:
+    repository = find_repo_root(Path.cwd())
+    secrets = repository / "secrets/secrets.yaml"
+    key = output(
+        (
+            "sops",
+            "--decrypt",
+            "--extract",
+            '["shottr-license-key"]',
+            os.fspath(secrets),
+        )
+    ).strip()
+    if not re.fullmatch(r"[A-Z0-9]{6}(?:-[A-Z0-9]{6}){4}", key):
+        raise DotfilesError("Shottr license key in SOPS has an unexpected format")
+    return key
+
+
+def _applescript_string(value: str) -> str:
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def _activate_shottr_license(key: str) -> None:
+    script = f"""
+set licenseCode to {_applescript_string(key)}
+
+open location "shottr://settings/license"
+delay 0.5
+
+tell application "System Events"
+  repeat 50 times
+    if exists process "Shottr" then exit repeat
+    delay 0.1
+  end repeat
+
+  tell process "Shottr"
+    set frontmost to true
+    repeat 50 times
+      if exists window "Preferences" then exit repeat
+      delay 0.1
+    end repeat
+    if not (exists window "Preferences") then error "Shottr preferences window did not appear"
+
+    tell window "Preferences"
+      if exists button "License" of toolbar 1 then click button "License" of toolbar 1
+      delay 0.2
+
+      if exists button "Change" of group 1 then
+        click button "Change" of group 1
+        delay 0.2
+      end if
+
+      set value of text field 1 of group 1 to licenseCode
+      delay 0.2
+
+      if exists button "Activate" of group 1 then
+        click button "Activate" of group 1
+      else
+        error "Shottr activation button was not found"
+      end if
+    end tell
+  end tell
+end tell
+"""
+    result = subprocess.run(
+        ("/usr/bin/osascript", "-"),
+        input=script,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        details = result.stderr.strip() or result.stdout.strip()
+        message = "Shottr activation UI automation failed"
+        if details:
+            message = f"{message}\n{details}"
+        raise DotfilesError(message)
+
+
+def _shottr_is_activated(domain: str) -> bool:
+    stored_license = output(
+        ("defaults", "read", domain, "kc-license"),
+        check=False,
+    ).strip()
+    vault = output(
+        ("defaults", "read", domain, "kc-vault"),
+        check=False,
+    ).strip()
+    return bool(stored_license and vault)
+
+
+def shottr_license_entrypoint() -> None:
+    domain = "cc.ffitch.shottr"
+    action = sys.argv[1] if len(sys.argv) == 2 else ""
+    if action == "install":
+        if _shottr_is_activated(domain):
+            error_console.print(
+                "shottr-license: Shottr already has activation state; leaving it in place"
+            )
+            return
+        key = _shottr_license_key()
+        _activate_shottr_license(key)
+        error_console.print(
+            "shottr-license: submitted license key through Shottr activation UI"
+        )
+        return
+    if action == "status":
+        if _shottr_is_activated(domain):
+            console.print("shottr-license: installed")
+        else:
+            console.print("shottr-license: not installed")
+        return
+    raise SystemExit("Usage: shottr-license <install|status>")
+
+
 def _real_codex(home: Path, wrapper: Path) -> Path:
     candidates = (
         os.environ.get("CODEX_REAL_BIN"),

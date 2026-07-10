@@ -333,3 +333,18 @@
           - "{{ applications_raycast_beta_mount }}"
       changed_when: false
       failed_when: false
+
+- name: Activate Shottr with the SOPS-managed license key
+  ansible.builtin.command:
+    argv:
+      - "{{ dotfiles_bin_dir }}/dotfiles-scripts"
+      - chezmoi
+      - shottr-license
+      - install
+  args:
+    chdir: "{{ dotfiles_repo_root }}"
+  environment:
+    PATH: "{{ prerequisites_homebrew_path | default(dotfiles_path) }}"
+  changed_when: false
+  tags:
+    - shottr

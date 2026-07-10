@@ -16,6 +16,7 @@ from workstation.local.raycast import main as raycast_patch
 from workstation.local.user_commands import (
     _gnome_accent_apply,
     alt_tab_license_entrypoint,
+    shottr_license_entrypoint,
 )
 
 app = typer.Typer(no_args_is_help=True, pretty_exceptions_enable=False)
@@ -28,6 +29,17 @@ def alt_tab_license() -> None:
     try:
         sys.argv = [original[0], "status"]
         alt_tab_license_entrypoint()
+    finally:
+        sys.argv = original
+
+
+@app.command("shottr-license")
+def shottr_license(action: str = typer.Argument("status")) -> None:
+    """Install or show the Shottr license state."""
+    original = sys.argv
+    try:
+        sys.argv = [original[0], action]
+        shottr_license_entrypoint()
     finally:
         sys.argv = original
 
