@@ -9,6 +9,7 @@
   register: prerequisites_dotfiles_python_tool_state
   tags:
     - bootstrap
+    - local
     - python
     - scripts
     - system-runner
@@ -20,11 +21,13 @@
     or prerequisites_dotfiles_python_tool_state.results[0].stat.checksum | default('')
       != prerequisites_dotfiles_python_tool_metadata | hash('sha256')
   vars:
+    prerequisites_uv_command: "{{ prerequisites_homebrew_prefix ~ '/bin/uv' if prerequisites_homebrew_prefix is defined else 'uv' }}"
     prerequisites_dotfiles_python_tool_metadata: >-
       {{ lookup('ansible.builtin.file', dotfiles_repo_root ~ '/pyproject.toml') }}
       {{ lookup('ansible.builtin.file', dotfiles_repo_root ~ '/uv.lock') }}
   tags:
     - bootstrap
+    - local
     - python
     - scripts
     - system-runner
@@ -32,7 +35,7 @@
     - name: Export locked Python runtime constraints
       ansible.builtin.command:
         argv:
-          - "{{ prerequisites_homebrew_prefix }}/bin/uv"
+          - "{{ prerequisites_uv_command }}"
           - export
           - --locked
           - --no-dev
@@ -50,7 +53,7 @@
     - name: Install repository Python commands with uv
       ansible.builtin.command:
         argv:
-          - "{{ prerequisites_homebrew_prefix }}/bin/uv"
+          - "{{ prerequisites_uv_command }}"
           - tool
           - install
           - --editable
@@ -80,5 +83,6 @@
   changed_when: false
   tags:
     - bootstrap
+    - local
     - scripts
     - system-runner

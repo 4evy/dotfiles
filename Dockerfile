@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1
 
 ARG FEDORA_VERSION=44
+FROM ghcr.io/astral-sh/uv:0.11.28@sha256:0f36cb9361a3346885ca3677e3767016687b5a170c1a6b88465ec14aefec90aa AS uv
+
 FROM registry.fedoraproject.org/fedora:${FEDORA_VERSION} AS dotfiles-test
 
 ARG TARGETPLATFORM
@@ -41,6 +43,8 @@ ENV GOCACHE=${TEST_HOME}/.cache/go-build
 ENV GOMODCACHE=${TEST_HOME}/go/pkg/mod
 
 RUN mkdir -p "${TMPDIR}" "${GOCACHE}" "${GOMODCACHE}" "${HOME}/.local/bin"
+
+COPY --from=uv /uv /usr/local/bin/uv
 
 WORKDIR /workspace/dotfiles
 
