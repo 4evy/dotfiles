@@ -127,7 +127,7 @@
     scope: user
     daemon_reload: true
   when:
-    - ansible_service_mgr == 'systemd'
+    - ansible_facts.service_mgr == 'systemd'
     - host_layer_carmenta_prewarm_service.stat.exists | default(false)
   tags:
     - host

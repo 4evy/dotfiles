@@ -1,7 +1,7 @@
 ---
 - name: Gather host service state
   ansible.builtin.service_facts:
-  when: ansible_service_mgr == 'systemd'
+  when: ansible_facts.service_mgr == 'systemd'
   tags:
     - host
     - services
@@ -15,7 +15,7 @@
   become: true
   loop: "{{ host_layer_slow_boot_units }}"
   when:
-    - ansible_service_mgr == 'systemd'
+    - ansible_facts.service_mgr == 'systemd'
     - item in ansible_facts.services
   tags:
     - host
