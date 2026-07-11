@@ -5,7 +5,7 @@
 
 let
   repoRoot = ../.;
-  defaultVendorHash = "sha256-hpmD0gVDDM8+vop0yQ6SsCy4RUQUS7QirsUCbgbN+Ms=";
+  defaultVendorHash = "sha256-xTpoVJ3gwx629GO453xy0RS8Df+bngRWUvnRknyZurQ=";
   defaultSource =
     extraSourceFiles:
     lib.fileset.toSource {

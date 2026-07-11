@@ -9,7 +9,7 @@
     nixcord.url = "github:4evy/nixcord";
 
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05-small";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     sops-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
     sops-nix.url = "github:Mic92/sops-nix";
