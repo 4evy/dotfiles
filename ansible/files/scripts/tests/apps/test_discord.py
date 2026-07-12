@@ -20,6 +20,21 @@ def _discord_app(tmp_path: Path) -> tuple[Path, Path]:
     return app, resources
 
 
+def test_linux_equilotl_finds_user_install_when_launcher_is_symlinked(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = tmp_path / "home"
+    equilotl = home / ".local/bin/EquilotlCli-linux"
+    equilotl.parent.mkdir(parents=True)
+    equilotl.write_text("#!/bin/sh\n")
+    equilotl.chmod(0o755)
+
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.delenv("DISCORD_EQUICORD_EQUILOTL", raising=False)
+
+    assert discord._linux_equilotl(tmp_path / "uv-tool/bin") == equilotl
+
+
 def test_macos_repair_falls_back_to_install_and_locks_asars(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

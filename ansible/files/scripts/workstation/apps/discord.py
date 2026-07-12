@@ -109,6 +109,25 @@ def _macos_equilotl(package_bin: Path) -> Path | None:
     )
 
 
+def _linux_equilotl(package_bin: Path) -> Path:
+    configured = os.environ.get("DISCORD_EQUICORD_EQUILOTL")
+    candidates = (
+        Path(configured) if configured else None,
+        Path.home() / ".local/bin/EquilotlCli-linux",
+        package_bin / "EquilotlCli-linux",
+    )
+    return next(
+        (
+            candidate
+            for candidate in candidates
+            if candidate is not None
+            and candidate.is_file()
+            and os.access(candidate, os.X_OK)
+        ),
+        package_bin / "EquilotlCli-linux",
+    )
+
+
 def _macos_asars(resources: Path) -> tuple[Path, ...]:
     return tuple(
         path
@@ -167,9 +186,7 @@ def main(argv: list[str] | None = None) -> int:
     discord_dir = config_home / "discord"
     discord_host = discord_dir / "Discord"
     package_bin = Path(sys.argv[0]).resolve().parent
-    equilotl = Path(
-        os.environ.get("DISCORD_EQUICORD_EQUILOTL", package_bin / "EquilotlCli-linux")
-    )
+    equilotl = _linux_equilotl(package_bin)
     if arguments[:1] == ["--repair-only"]:
         if sys.platform == "darwin":
             _repair_macos(package_bin)
