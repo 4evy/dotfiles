@@ -18,8 +18,16 @@ from spectrum_build.image.platform_info import (
 from spectrum_build.image.rootfs import validate_rootfs_files
 from spectrum_build.image.services import validate_required_units
 from spectrum_build.image.shell import validate_shell_defaults
-from spectrum_build.integrations.repositories import validate_repositories_disabled
+from spectrum_build.integrations.repositories import (
+    validate_repositories_disabled,
+    validate_repository_files_disabled,
+)
 from spectrum_build.manifests.packages import VALIDATION_PACKAGES
+from spectrum_build.programs.operations import (
+    program_generated_repository_files,
+    program_repositories,
+    program_validation_packages,
+)
 from spectrum_build.settings import ImageConfig
 
 IMAGE_INFO = Path("/usr/share/ublue-os/image-info.json")
@@ -79,10 +87,11 @@ def validate_image(context_dir: Path, image_name: str, runner: CommandRunner) ->
         if key not in os_release:
             fail(f"missing {key} in {OS_RELEASE}")
 
-    for package in VALIDATION_PACKAGES:
+    for package in (*VALIDATION_PACKAGES, *program_validation_packages()):
         runner.run(["rpm", "-q", package], discard_output=True)
 
     validate_rootfs_files(context_dir)
-    validate_repositories_disabled(context_dir)
+    validate_repositories_disabled(program_repositories())
+    validate_repository_files_disabled(program_generated_repository_files())
     validate_required_units(runner)
     validate_shell_defaults()

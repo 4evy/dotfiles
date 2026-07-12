@@ -1,20 +1,19 @@
 import tempfile
 from pathlib import Path
 
-from spectrum_build.core.common import CommandRunner, fail, require_readable_file
+from spectrum_build.core.common import fail, require_readable_file
+from spectrum_build.core.context import BuildContext
 from spectrum_build.integrations.source_build import (
     MesonProject,
     clone_pinned_git_ref,
     install_meson_project,
     pinned_git_project,
 )
+from spectrum_build.programs.models import CustomProgram
 
-PYTHON_SYSTEM_SITE_PACKAGES = (
-    "import sys; "
-    "print(f'/usr/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages')"
-)
+ASTRAL_VENDOR_PATH = Path("/usr/lib/dotfiles/python")
 
-KMSCON_BUILD_COMMANDS = (
+BUILD_COMMANDS = (
     "cp",
     "git",
     "infocmp",
@@ -45,11 +44,8 @@ KMSCON = MesonProject(
 )
 
 
-def python_system_site_packages(runner: CommandRunner) -> Path:
-    return Path(runner.output(["/usr/bin/python3", "-c", PYTHON_SYSTEM_SITE_PACKAGES]))
-
-
-def install(runner: CommandRunner) -> None:
+def install(context: BuildContext) -> None:
+    runner = context.runner
     astral = pinned_git_project(
         "astral",
         repo="https://github.com/sffjunkie/astral.git",
@@ -68,7 +64,7 @@ def install(runner: CommandRunner) -> None:
         tag="v10.0.1",
         revision="c9d0e23336c6bb7645a1f5f48a4a82f1d5a589d9",
     )
-    runner.require(*KMSCON_BUILD_COMMANDS)
+    runner.require(*BUILD_COMMANDS)
 
     with tempfile.TemporaryDirectory(prefix="spectrum-kmscon-") as work_dir_name:
         work_dir = Path(work_dir_name)
@@ -77,9 +73,13 @@ def install(runner: CommandRunner) -> None:
         kmscon_source = work_dir / KMSCON.name
 
         clone_pinned_git_ref(astral, astral_source, runner)
-        purelib = python_system_site_packages(runner)
-        runner.run(["install", "-d", purelib])
-        runner.run(["cp", "-a", astral_source / "src/astral", purelib])
+        runner.run(["install", "-d", ASTRAL_VENDOR_PATH])
+        runner.run([
+            "cp",
+            "-a",
+            astral_source / "src/astral",
+            ASTRAL_VENDOR_PATH,
+        ])
         license_dir = Path("/usr/share/licenses/python3-astral")
         runner.run(["install", "-d", license_dir])
         runner.run(["install", "-m", "0644", astral_source / "LICENSE", license_dir])
@@ -103,7 +103,11 @@ def install(runner: CommandRunner) -> None:
     astral_version = runner.output([
         "/usr/bin/python3",
         "-c",
-        "import astral; print(astral.__version__)",
+        (
+            "import sys; "
+            f"sys.path.insert(0, {str(ASTRAL_VENDOR_PATH)!r}); "
+            "import astral; print(astral.__version__)"
+        ),
     ])
     if astral_version != astral.tag:
         fail(f"unexpected Astral version: {astral_version}")
@@ -115,3 +119,6 @@ def install(runner: CommandRunner) -> None:
 
     require_readable_file(Path("/usr/lib/systemd/system/kmsconvt@.service"))
     runner.run(["infocmp", "kmscon"], discard_output=True)
+
+
+PROGRAM = CustomProgram(name="KMSCON", installer=install)

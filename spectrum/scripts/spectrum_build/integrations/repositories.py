@@ -1,14 +1,12 @@
 import configparser
 import io
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
 from spectrum_build.core.common import atomic_write, fail, require_readable_file
 from spectrum_build.core.context import BuildContext
 from spectrum_build.integrations.http import download
-
-ONEPASSWORD_GPG_KEY = Path("/etc/pki/rpm-gpg/RPM-GPG-KEY-1password")
-REPO_DIR = "image/repos"
 
 
 @dataclass(frozen=True, slots=True)
@@ -17,32 +15,6 @@ class RepositoryFile:
     source: Path | str
     repo_ids: tuple[str, ...] = ()
     import_rpm_key: bool = False
-
-
-def repository_files(context_dir: Path) -> tuple[RepositoryFile, ...]:
-    repo_dir = Path("/etc/yum.repos.d")
-    return (
-        RepositoryFile(
-            destination=repo_dir / "vscode.repo",
-            source=context_dir / f"{REPO_DIR}/vscode.repo",
-            repo_ids=("code",),
-        ),
-        RepositoryFile(
-            destination=ONEPASSWORD_GPG_KEY,
-            source="https://downloads.1password.com/linux/keys/1password.asc",
-            import_rpm_key=True,
-        ),
-        RepositoryFile(
-            destination=repo_dir / "1password.repo",
-            source=context_dir / f"{REPO_DIR}/1password.repo",
-            repo_ids=("1password",),
-        ),
-        RepositoryFile(
-            destination=repo_dir / "tailscale.repo",
-            source="https://pkgs.tailscale.com/stable/fedora/tailscale.repo",
-            repo_ids=("tailscale-stable",),
-        ),
-    )
 
 
 def disabled_repository_config(content: bytes, repo_ids: tuple[str, ...]) -> bytes:
@@ -61,11 +33,29 @@ def disabled_repository_config(content: bytes, repo_ids: tuple[str, ...]) -> byt
     return output.getvalue().encode()
 
 
-def install_repositories(context: BuildContext) -> None:
-    for source in repository_files(context.config.context_dir):
+def disable_repository_files(paths: Iterable[Path]) -> None:
+    for path in paths:
+        require_readable_file(path)
+        parser = configparser.ConfigParser(interpolation=None)
+        parser.read(path)
+        for repo_id in parser.sections():
+            parser[repo_id]["enabled"] = "0"
+
+        output = io.StringIO()
+        parser.write(output, space_around_delimiters=False)
+        atomic_write(path, output.getvalue().encode())
+
+
+def install_repositories(
+    context: BuildContext, repositories: Iterable[RepositoryFile]
+) -> None:
+    for source in repositories:
         if isinstance(source.source, Path):
-            require_readable_file(source.source)
-            content = source.source.read_bytes()
+            source_path = source.source
+            if not source_path.is_absolute():
+                source_path = context.config.context_dir / source_path
+            require_readable_file(source_path)
+            content = source_path.read_bytes()
         else:
             content = download(source.source)
 
@@ -78,8 +68,8 @@ def install_repositories(context: BuildContext) -> None:
             context.runner.run(["rpm", "--import", source.destination])
 
 
-def disable_repositories(context_dir: Path) -> None:
-    for repository in repository_files(context_dir):
+def disable_repositories(repositories: Iterable[RepositoryFile]) -> None:
+    for repository in repositories:
         if not repository.repo_ids:
             continue
         require_readable_file(repository.destination)
@@ -91,12 +81,23 @@ def disable_repositories(context_dir: Path) -> None:
         )
 
 
-def validate_repositories_disabled(context_dir: Path) -> None:
-    for repository in repository_files(context_dir):
+def validate_repositories_disabled(repositories: Iterable[RepositoryFile]) -> None:
+    for repository in repositories:
         if not repository.repo_ids:
             continue
+        require_readable_file(repository.destination)
         parser = configparser.ConfigParser(interpolation=None)
         parser.read(repository.destination)
         for repo_id in repository.repo_ids:
+            if parser.getboolean(repo_id, "enabled", fallback=True):
+                fail(f"external repository is enabled in final image: {repo_id}")
+
+
+def validate_repository_files_disabled(paths: Iterable[Path]) -> None:
+    for path in paths:
+        require_readable_file(path)
+        parser = configparser.ConfigParser(interpolation=None)
+        parser.read(path)
+        for repo_id in parser.sections():
             if parser.getboolean(repo_id, "enabled", fallback=True):
                 fail(f"external repository is enabled in final image: {repo_id}")

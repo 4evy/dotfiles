@@ -10,6 +10,7 @@ from spectrum_build.core.common import fail
 
 @dataclass(frozen=True, slots=True)
 class ReleaseRpm:
+    name: str
     repo: str
     asset_pattern: str
 
@@ -17,12 +18,6 @@ class ReleaseRpm:
         return latest_github_asset_url(
             self.repo, self.asset_pattern.format(arch=re.escape(arch))
         )
-
-
-RELEASE_RPMS = (
-    ReleaseRpm("getsops/sops", r"sops-[0-9].*-1\.{arch}\.rpm"),
-    ReleaseRpm("rustdesk/rustdesk", r"rustdesk-[0-9].*-0\.{arch}\.rpm"),
-)
 
 
 def latest_github_asset_url(repo: str, asset_pattern: str) -> str:

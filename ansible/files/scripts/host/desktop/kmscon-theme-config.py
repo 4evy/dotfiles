@@ -5,11 +5,15 @@ import datetime as dt
 import json
 import os
 import pathlib
+import sys
 import tempfile
 from dataclasses import dataclass
 
-from astral import Observer
-from astral.sun import elevation, sunrise, sunset
+ASTRAL_VENDOR_PATH = pathlib.Path("/usr/lib/dotfiles/python")
+sys.path.insert(0, str(ASTRAL_VENDOR_PATH))
+
+from astral import Observer  # noqa: E402
+from astral.sun import elevation, sunrise, sunset  # noqa: E402
 
 ANSI_ROLE_MAP = {
     "black": "surface1",

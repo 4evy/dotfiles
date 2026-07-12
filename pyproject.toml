@@ -57,11 +57,7 @@ yaml-language-server = "workstation.host.devtools:yaml_language_server_entrypoin
 zellij-default-shell = "workstation.local.user_commands:zellij_default_shell_entrypoint"
 
 [dependency-groups]
-dev = [
-  "pytest>=9,<10",
-  "ruff>=0.15.20,<0.16",
-  "ty>=0.0.57,<0.1",
-]
+dev = ["pytest>=9,<10", "ruff>=0.15.20,<0.16", "ty>=0.0.57,<0.1"]
 
 [tool.uv]
 required-version = ">=0.11.26,<0.12"
@@ -84,10 +80,10 @@ packages = [
   "workstation.macos",
   "spectrum_build",
   "spectrum_build.core",
-  "spectrum_build.features",
   "spectrum_build.image",
   "spectrum_build.integrations",
   "spectrum_build.manifests",
+  "spectrum_build.programs",
 ]
 
 [tool.pytest.ini_options]

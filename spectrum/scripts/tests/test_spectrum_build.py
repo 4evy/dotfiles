@@ -1,12 +1,11 @@
 import os
 from pathlib import Path
 from types import SimpleNamespace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import pytest
 
 from spectrum_build.core.common import BuildError, CommandRunner, atomic_write
-from spectrum_build.features import kmscon
 from spectrum_build.image import platform_info
 from spectrum_build.image.shell import (
     BLUEFIN_OPEN_ALIAS,
@@ -22,10 +21,16 @@ from spectrum_build.integrations.source_build import (
     clone_pinned_git_ref,
     pinned_git_project,
 )
+from spectrum_build.programs import kmscon
+from spectrum_build.programs.manifest import PROGRAMS
+from spectrum_build.programs.models import DnfProgram
+from spectrum_build.programs.operations import validate_program_manifest
 from spectrum_build.settings import BuildConfig, ImageConfig
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from spectrum_build.core.context import BuildContext
 
 
 def test_image_config_derives_defaults_and_honors_environment(
@@ -131,9 +136,165 @@ def test_repository_configuration_is_disabled_and_validated() -> None:
         repositories.disabled_repository_config(content, ("other",))
 
 
-def test_installed_repository_configuration_is_redisabled(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_disable_repository_files(tmp_path: Path) -> None:
+    repository_file = tmp_path / "vendor.repo"
+    repository_file.write_text(
+        "[base]\nenabled=1\nbaseurl=https://example.invalid/base\n"
+        "[updates]\nenabled=1\nbaseurl=https://example.invalid/updates\n"
+    )
+
+    repositories.disable_repository_files((repository_file,))
+
+    content = repository_file.read_text()
+    assert content.count("enabled=0") == 2
+
+
+def test_dnf_program_installs_repository_package_and_cleans_up(
+    tmp_path: Path,
 ) -> None:
+    repository_file = tmp_path / "vendor.repo"
+    repository_file.write_text("[vendor]\nenabled=1\n")
+    calls: list[tuple[tuple[str, ...], dict[str, object]]] = []
+    context = SimpleNamespace(
+        dnf=SimpleNamespace(
+            install=lambda packages, **kwargs: calls.append((tuple(packages), kwargs))
+        )
+    )
+    program = DnfProgram(
+        "Example",
+        ("example",),
+        repository_packages=("vendor-release",),
+        enabled_repositories=("vendor",),
+        generated_repository_files=(repository_file,),
+        validation_packages=("example",),
+    )
+
+    program.install(cast("BuildContext", context))
+
+    assert calls == [
+        (("vendor-release",), {}),
+        (
+            ("example",),
+            {"enabled_repositories": ("vendor",), "nogpgcheck": False},
+        ),
+    ]
+    assert "enabled=0" in repository_file.read_text()
+
+
+def test_dnf_program_preserves_install_error_when_repository_was_not_created(
+    tmp_path: Path,
+) -> None:
+    repository_file = tmp_path / "missing.repo"
+
+    def fail_install(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("DNF failed")
+
+    context = SimpleNamespace(dnf=SimpleNamespace(install=fail_install))
+    program = DnfProgram(
+        "Example",
+        ("example",),
+        generated_repository_files=(repository_file,),
+        validation_packages=("example",),
+    )
+
+    with pytest.raises(RuntimeError, match="DNF failed"):
+        program.install(cast("BuildContext", context))
+
+
+def test_dnf_program_requires_repository_files_after_success(tmp_path: Path) -> None:
+    repository_file = tmp_path / "missing.repo"
+    context = SimpleNamespace(
+        dnf=SimpleNamespace(install=lambda *_args, **_kwargs: None)
+    )
+    program = DnfProgram(
+        "Example",
+        ("example",),
+        generated_repository_files=(repository_file,),
+        validation_packages=("example",),
+    )
+
+    with pytest.raises(BuildError, match="required file is not readable"):
+        program.install(cast("BuildContext", context))
+
+
+def test_repository_backed_program_owns_repository_lifecycle(tmp_path: Path) -> None:
+    source = tmp_path / "repos/vendor.repo"
+    source.parent.mkdir()
+    source.write_text("[vendor]\nenabled=1\n")
+    destination = tmp_path / "installed/vendor.repo"
+    calls: list[tuple[str, ...]] = []
+    context = SimpleNamespace(
+        config=SimpleNamespace(context_dir=tmp_path),
+        dnf=SimpleNamespace(
+            install=lambda packages, **_kwargs: calls.append(tuple(packages))
+        ),
+    )
+    program = DnfProgram(
+        "Example",
+        ("example",),
+        repositories=(
+            repositories.RepositoryFile(
+                destination=destination,
+                source=Path("repos/vendor.repo"),
+                repo_ids=("vendor",),
+            ),
+        ),
+        enabled_repositories=("vendor",),
+        validation_packages=("example",),
+    )
+
+    program.install(cast("BuildContext", context))
+
+    assert calls == [("example",)]
+    assert "enabled=0" in destination.read_text()
+
+
+def test_program_manifest_contains_one_declaration_per_program() -> None:
+    assert {program.name for program in PROGRAMS} == {
+        "1Password",
+        "Discord",
+        "KMSCON",
+        "RustDesk",
+        "SOPS",
+        "Tailscale",
+        "Telegram",
+        "Visual Studio Code",
+    }
+    validate_program_manifest()
+
+
+def test_program_manifest_rejects_duplicate_names() -> None:
+    first = DnfProgram("duplicate", ("one",), validation_packages=("one",))
+    second = DnfProgram(" Duplicate ", ("two",), validation_packages=("two",))
+
+    with pytest.raises(BuildError, match="duplicate program name"):
+        validate_program_manifest((first, second))
+
+
+def test_program_manifest_rejects_duplicate_repository_ownership(
+    tmp_path: Path,
+) -> None:
+    repository_file = tmp_path / "vendor.repo"
+    first = DnfProgram(
+        "one",
+        ("one",),
+        generated_repository_files=(repository_file,),
+        validation_packages=("one",),
+    )
+    second = DnfProgram(
+        "two",
+        ("two",),
+        repositories=(
+            repositories.RepositoryFile(repository_file, "https://example.invalid"),
+        ),
+        validation_packages=("two",),
+    )
+
+    with pytest.raises(BuildError, match="duplicate program repository path"):
+        validate_program_manifest((first, second))
+
+
+def test_installed_repository_configuration_is_redisabled(tmp_path: Path) -> None:
     destination = tmp_path / "vendor.repo"
     destination.write_text(
         "[vendor]\nname=Vendor\nenabled=1\nbaseurl=https://example.invalid\n"
@@ -143,9 +304,7 @@ def test_installed_repository_configuration_is_redisabled(
         source=destination,
         repo_ids=("vendor",),
     )
-    monkeypatch.setattr(repositories, "repository_files", lambda _: (repository,))
-
-    repositories.disable_repositories(tmp_path)
+    repositories.disable_repositories((repository,))
 
     assert "enabled=0" in destination.read_text()
 
@@ -187,28 +346,8 @@ def test_pinned_project_environment_is_namespaced(
     )
 
 
-def test_kmscon_uses_system_python_site_packages(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    runner = CommandRunner()
-    calls: list[Sequence[str | Path]] = []
-
-    def fake_output(args: Sequence[str | Path]) -> str:
-        calls.append(args)
-        return "/usr/lib/python3.14/site-packages"
-
-    monkeypatch.setattr(runner, "output", fake_output)
-
-    assert kmscon.python_system_site_packages(runner) == Path(
-        "/usr/lib/python3.14/site-packages"
-    )
-    assert calls == [
-        [
-            "/usr/bin/python3",
-            "-c",
-            kmscon.PYTHON_SYSTEM_SITE_PACKAGES,
-        ]
-    ]
+def test_kmscon_astral_path_is_independent_of_python_version() -> None:
+    assert Path("/usr/lib/dotfiles/python") == kmscon.ASTRAL_VENDOR_PATH
 
 
 def test_clone_rejects_tag_resolving_to_unexpected_revision(

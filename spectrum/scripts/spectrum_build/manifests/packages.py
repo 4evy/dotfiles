@@ -82,21 +82,12 @@ REQUIRED_PACKAGES: PackageGroups = {
 
 OPTIONAL_PACKAGES: PackageGroups = {}
 
-EXTERNAL_REPOSITORY_PACKAGES: PackageGroups = {
-    "1password": ("1password", "1password-cli"),
-    "code": ("code",),
-    "tailscale-stable": ("tailscale",),
-}
-
 VALIDATION_PACKAGES: Sequence[str] = (
-    "1password",
     "bootc",
-    "code",
     "git",
     "just",
     "podman",
     "systemd-oomd-defaults",
-    "tailscale",
     "uresourced",
 )
 
@@ -105,7 +96,6 @@ def validate_package_groups() -> None:
     for label, groups in {
         "required": REQUIRED_PACKAGES,
         "optional": OPTIONAL_PACKAGES,
-        "external": EXTERNAL_REPOSITORY_PACKAGES,
     }.items():
         if not isinstance(groups, dict):
             fail(f"{label} packages must be grouped in a dict")
