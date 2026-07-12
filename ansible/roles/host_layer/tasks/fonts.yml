@@ -92,6 +92,43 @@
     - fonts
     - color-emoji-font
 
+- name: Detect bitmap-backed Noto Color Emoji alias
+  ansible.builtin.command:
+    argv:
+      - fc-match
+      - --format=%{family}
+      - Noto Color Emoji Bitmap
+  changed_when: >-
+    'Noto Color Emoji Bitmap' not in host_layer_color_emoji_match.stdout
+  failed_when: false
+  check_mode: false
+  register: host_layer_color_emoji_match
+  notify: Refresh user font cache
+  tags:
+    - host
+    - fonts
+    - color-emoji-font
+    - font-cache
+
+- name: Refresh fontconfig before color emoji verification
+  ansible.builtin.meta: flush_handlers
+
+- name: Verify bitmap-backed Noto Color Emoji alias
+  ansible.builtin.command:
+    argv:
+      - fc-match
+      - --format=%{file}
+      - Noto Color Emoji Bitmap
+  changed_when: false
+  register: host_layer_color_emoji_verify
+  failed_when: >-
+    host_layer_color_emoji_verify.stdout != host_layer_color_emoji_font_file
+  tags:
+    - host
+    - fonts
+    - color-emoji-font
+    - font-cache
+
 - name: Detect writable GNOME font settings
   ansible.builtin.command:
     argv:
