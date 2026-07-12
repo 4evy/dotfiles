@@ -74,5 +74,5 @@ default_args = [
   "--mirror-session",
   "false",
   "--on-force-close",
-  "quit",
+  "detach",
 ]

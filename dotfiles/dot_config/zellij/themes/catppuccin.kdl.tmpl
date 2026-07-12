@@ -1,32 +1,9 @@
-{{- $ctp := include ".chezmoitemplates/catppuccin_palette.json" | fromJson -}}
-{{- $latte := index $ctp "latte" -}}
-{{- $frappe := index $ctp "frappe" -}}
 themes {
   catppuccin-latte-pink {
-    bg "{{ index $latte "surface2" }}" // Surface2
-    fg "{{ index $latte "text" }}" // Text
-    red "{{ index $latte "red" }}"
-    green "{{ index $latte "green" }}"
-    blue "{{ index $latte "blue" }}"
-    yellow "{{ index $latte "yellow" }}"
-    magenta "{{ index $latte "pink" }}" // Pink
-    orange "{{ index $latte "peach" }}" // Peach
-    cyan "{{ index $latte "sky" }}" // Sky
-    black "{{ index $latte "mantle" }}" // Mantle
-    white "{{ index $latte "text" }}" // Text
+{{ template "catppuccin_zellij_pink.kdl.tmpl" "latte" }}
   }
 
   catppuccin-frappe-pink {
-    bg "{{ index $frappe "surface2" }}" // Surface2
-    fg "{{ index $frappe "text" }}" // Text
-    red "{{ index $frappe "red" }}"
-    green "{{ index $frappe "green" }}"
-    blue "{{ index $frappe "blue" }}"
-    yellow "{{ index $frappe "yellow" }}"
-    magenta "{{ index $frappe "pink" }}" // Pink
-    orange "{{ index $frappe "peach" }}" // Peach
-    cyan "{{ index $frappe "sky" }}" // Sky
-    black "{{ index $frappe "mantle" }}" // Mantle
-    white "{{ index $frappe "text" }}" // Text
+{{ template "catppuccin_zellij_pink.kdl.tmpl" "frappe" }}
   }
 }

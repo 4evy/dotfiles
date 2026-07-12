@@ -54,7 +54,7 @@ func RunZellij(extraArgs []string) (int, error) {
 			"--mirror-session",
 			"false",
 			"--on-force-close",
-			"quit",
+			"detach",
 		}
 	}
 	theme := DetectSystemTheme()

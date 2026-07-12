@@ -683,7 +683,7 @@ def ghostty_zellij_entrypoint() -> None:
                 "--mirror-session",
                 "false",
                 "--on-force-close",
-                "quit",
+                "detach",
             ],
             environment,
         )
