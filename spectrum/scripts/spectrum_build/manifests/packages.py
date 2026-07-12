@@ -1,10 +1,8 @@
-from __future__ import annotations
-
 from collections.abc import Mapping, Sequence
 
 from spectrum_build.core.common import fail
 
-PackageGroups = Mapping[str, Sequence[str]]
+type PackageGroups = Mapping[str, Sequence[str]]
 
 
 REQUIRED_PACKAGES: PackageGroups = {

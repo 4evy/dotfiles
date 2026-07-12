@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 import json
-import subprocess
 from pathlib import Path
+from typing import Literal
+
+from pydantic import BaseModel, Field, ValidationError
 
 from spectrum_build.core.common import (
     CommandRunner,
@@ -33,6 +33,14 @@ VALIDATION_COMMANDS = (
 )
 
 
+class ImageInfo(BaseModel):
+    name: str = Field(alias="image-name", min_length=1)
+    flavor: Literal["spectrum"] = Field(alias="image-flavor")
+    base_image_ref: str = Field(alias="base-image-ref", min_length=1)
+    base_image_digest: str = Field(alias="base-image-digest", pattern=r"^sha256:.+")
+    fedora_version: str = Field(alias="fedora-version", min_length=1)
+
+
 def write_image_metadata(image: ImageConfig) -> None:
     os_release = read_os_release()
     atomic_write(
@@ -59,24 +67,12 @@ def validate_image(context_dir: Path, image_name: str, runner: CommandRunner) ->
     runner.require(*VALIDATION_COMMANDS)
     require_readable_file(IMAGE_INFO)
 
-    with IMAGE_INFO.open(encoding="utf-8") as handle:
-        image_info = json.load(handle)
-    match image_info:
-        case {
-            "image-name": str(name),
-            "image-flavor": "spectrum",
-            "base-image-ref": str(base_image_ref),
-            "base-image-digest": str(base_image_digest),
-            "fedora-version": str(fedora_version),
-        } if (
-            name == image_name
-            and base_image_ref
-            and base_image_digest.startswith("sha256:")
-            and fedora_version
-        ):
-            pass
-        case _:
-            fail(f"invalid Spectrum image metadata: {IMAGE_INFO}")
+    try:
+        image_info = ImageInfo.model_validate_json(IMAGE_INFO.read_bytes())
+    except OSError, ValidationError:
+        fail(f"invalid Spectrum image metadata: {IMAGE_INFO}")
+    if image_info.name != image_name:
+        fail(f"invalid Spectrum image metadata: {IMAGE_INFO}")
 
     os_release = read_os_release()
     for key in ("IMAGE_ID", "IMAGE_VERSION"):
@@ -84,7 +80,7 @@ def validate_image(context_dir: Path, image_name: str, runner: CommandRunner) ->
             fail(f"missing {key} in {OS_RELEASE}")
 
     for package in VALIDATION_PACKAGES:
-        runner.run(["rpm", "-q", package], stdout=subprocess.DEVNULL)
+        runner.run(["rpm", "-q", package], discard_output=True)
 
     validate_rootfs_files(context_dir)
     validate_repositories_disabled(context_dir)

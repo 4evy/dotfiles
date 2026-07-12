@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import os
 import re
 from dataclasses import dataclass
@@ -10,7 +8,7 @@ from githubkit.exception import GitHubException
 from spectrum_build.core.common import fail
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ReleaseRpm:
     repo: str
     asset_pattern: str

@@ -1,6 +1,3 @@
-from __future__ import annotations
-
-import shutil
 from pathlib import Path
 
 from spectrum_build.core.common import fail, require_readable_file
@@ -24,7 +21,7 @@ def install_rootfs_files(context_dir: Path, root: Path = Path("/")) -> None:
                 destination.mkdir(parents=True, exist_ok=True)
         elif source.is_file():
             destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, destination)
+            source.copy(destination, preserve_metadata=True)
         else:
             fail(f"unsupported rootfs entry type: {source}")
 

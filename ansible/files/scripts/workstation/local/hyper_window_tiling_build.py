@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import os
 import platform
 import shutil
@@ -78,7 +76,7 @@ def _stage_gnome(package_root: Path, destination: Path) -> None:
     schemas = package_root / "gnome/schemas"
     if not schemas.is_dir():
         raise DotfilesError(f"required directory does not exist: {schemas}")
-    shutil.copytree(schemas, destination / "schemas")
+    schemas.copy(destination / "schemas", preserve_metadata=True)
 
 
 def _stage_kde(package_root: Path, destination: Path) -> None:
@@ -117,9 +115,9 @@ def build_package(
         run(
             ("bun", "install", "--frozen-lockfile"),
             cwd=package_root,
-            stdout_to_stderr=True,
+            output_mode="stderr",
         )
-        run(("bun", "run", "build"), cwd=package_root, stdout_to_stderr=True)
+        run(("bun", "run", "build"), cwd=package_root, output_mode="stderr")
 
         with tempfile.TemporaryDirectory(
             prefix=".build-", dir=stage_root.parent

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -7,7 +5,7 @@ from pathlib import Path
 from spectrum_build.core.common import CommandRunner, fail
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class PinnedGitProject:
     name: str
     repo: str
@@ -28,7 +26,7 @@ def pinned_git_project(
     )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class MesonProject:
     name: str
     options: tuple[str, ...] = ()

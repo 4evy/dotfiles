@@ -1,14 +1,18 @@
-from __future__ import annotations
-
 import os
 import shutil
+import subprocess
 import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from plumbum import local
-from plumbum.commands.processes import ProcessExecutionError
+from plumbum.commands.processes import (
+    CommandNotFound,
+    ProcessExecutionError,
+    ProcessTimedOut,
+)
 
 from workstation.errors import DotfilesError
 
@@ -45,12 +49,16 @@ def run(
     env: Mapping[str, str] | None = None,
     input_text: str | None = None,
     timeout: float | None = None,
-    stdout_to_stderr: bool = False,
+    output_mode: Literal["inherit", "stderr", "discard"] = "inherit",
 ) -> CommandResult:
     if not argv:
         raise DotfilesError("run requires a command")
     arguments = [os.fspath(argument) for argument in argv]
-    command = local[arguments[0]][arguments[1:]]
+    try:
+        command = local[arguments[0]][arguments[1:]]
+    except CommandNotFound as error:
+        raise DotfilesError(f"command is not available: {arguments[0]}") from error
+
     command_env = dict(local.env)
     if env:
         command_env.update(env)
@@ -62,11 +70,18 @@ def run(
     }
     if input_text is not None:
         kwargs["stdin"] = input_text
-    if not capture:
-        kwargs["stdout"] = sys.stderr if stdout_to_stderr else None
+    if output_mode == "discard":
+        kwargs["stdout"] = subprocess.DEVNULL
+        kwargs["stderr"] = None
+    elif not capture:
+        kwargs["stdout"] = sys.stderr if output_mode == "stderr" else None
         kwargs["stderr"] = None
     try:
         returncode, stdout, stderr = command.run((), **kwargs)
+    except ProcessTimedOut as error:
+        raise DotfilesError(
+            f"command timed out after {timeout} seconds: {' '.join(arguments)}"
+        ) from error
     except ProcessExecutionError as error:
         details = error.stderr.strip() or error.stdout.strip()
         message = f"command failed ({error.retcode}): {' '.join(arguments)}"

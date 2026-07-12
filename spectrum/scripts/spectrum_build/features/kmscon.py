@@ -1,6 +1,3 @@
-from __future__ import annotations
-
-import subprocess
 import tempfile
 from pathlib import Path
 
@@ -117,4 +114,4 @@ def install(runner: CommandRunner) -> None:
         fail(f"unexpected kmscon version: {actual_version}")
 
     require_readable_file(Path("/usr/lib/systemd/system/kmsconvt@.service"))
-    runner.run(["infocmp", "kmscon"], stdout=subprocess.DEVNULL)
+    runner.run(["infocmp", "kmscon"], discard_output=True)

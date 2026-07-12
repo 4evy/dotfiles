@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -81,7 +79,7 @@ class BuildEnvironment(BaseSettings):
     context_dir: Path | None = Field(None, validation_alias="CTX_DIR")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class BuildConfig:
     context_dir: Path
     image: ImageConfig

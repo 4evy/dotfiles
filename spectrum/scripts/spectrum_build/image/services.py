@@ -1,7 +1,4 @@
-from __future__ import annotations
-
 import shutil
-import subprocess
 
 from spectrum_build.core.common import CommandRunner, fail
 
@@ -36,7 +33,7 @@ def validate_required_units(runner: CommandRunner) -> None:
         status = runner.run(
             ["systemctl", "is-enabled", unit],
             check=False,
-            stdout=subprocess.PIPE,
+            capture=True,
         )
         if status.stdout.strip() != "enabled":
             fail(f"systemd unit is not enabled: {unit}")

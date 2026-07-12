@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import httpx
 
 from spectrum_build.core.common import fail

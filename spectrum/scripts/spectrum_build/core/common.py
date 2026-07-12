@@ -1,15 +1,14 @@
-from __future__ import annotations
-
 import os
 import shlex
-import shutil
-import subprocess
 import sys
 from collections.abc import Sequence
 from pathlib import Path
 from typing import NoReturn
 
 from boltons.fileutils import atomic_save
+
+from workstation.errors import DotfilesError
+from workstation.lib.commands import CommandResult, run, which
 
 
 class BuildError(RuntimeError):
@@ -26,19 +25,27 @@ class CommandRunner:
         args: Sequence[str | Path],
         *,
         check: bool = True,
-        stdout: int | None = None,
-    ) -> subprocess.CompletedProcess[str]:
-        command = [str(arg) for arg in args]
-        print(f"+ {shlex.join(command)}", file=sys.stderr)
-        return subprocess.run(command, check=check, stdout=stdout, text=True)
+        capture: bool = False,
+        discard_output: bool = False,
+    ) -> CommandResult:
+        print(f"+ {shlex.join(map(str, args))}", file=sys.stderr)
+        try:
+            return run(
+                args,
+                check=check,
+                capture=capture,
+                output_mode="discard" if discard_output else "inherit",
+            )
+        except DotfilesError as error:
+            fail(str(error))
 
     def output(self, args: Sequence[str | Path]) -> str:
-        return self.run(args, stdout=subprocess.PIPE).stdout.strip()
+        return self.run(args, capture=True).stdout.strip()
 
     @staticmethod
     def require(*commands: str) -> None:
         if command := next(
-            (command for command in commands if not shutil.which(command)), None
+            (command for command in commands if which(command) is None), None
         ):
             fail(f"required command not found: {command}")
 

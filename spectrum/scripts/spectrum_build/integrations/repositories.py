@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import configparser
 import io
 from dataclasses import dataclass
@@ -13,7 +11,7 @@ ONEPASSWORD_GPG_KEY = Path("/etc/pki/rpm-gpg/RPM-GPG-KEY-1password")
 REPO_DIR = "image/repos"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class RepositoryFile:
     destination: Path
     source: Path | str
