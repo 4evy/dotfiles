@@ -1,4 +1,5 @@
 from spectrum_build.programs.discord import PROGRAM as DISCORD
+from spectrum_build.programs.ghostty import PROGRAM as GHOSTTY
 from spectrum_build.programs.kmscon import PROGRAM as KMSCON
 from spectrum_build.programs.onepassword import PROGRAM as ONEPASSWORD
 from spectrum_build.programs.rustdesk import PROGRAM as RUSTDESK
@@ -15,5 +16,6 @@ PROGRAMS = (
     RUSTDESK,
     DISCORD,
     TELEGRAM,
+    GHOSTTY,
     KMSCON,
 )

@@ -1,10 +1,10 @@
 ---
 local_tools_go_tools:
-  - name: zellij-theme-tools
+  - name: terminal-theme-tools
     packages:
-      - ./cmd/zellij-theme-run
+      - ./cmd/terminal-theme-run
     bins:
-      - zellij-theme-run
+      - terminal-theme-run
     platforms:
       - Darwin
       - Linux

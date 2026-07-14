@@ -226,7 +226,6 @@ def shell_init() -> None:
         completions = (
             ("chezmoi", ("chezmoi", "completion", shell)),
             ("jj", ("jj", "util", "completion", shell)),
-            ("zellij", ("zellij", "setup", "--generate-completion", shell)),
             ("starship", ("starship", "completions", shell)),
             ("deno", ("deno", "completions", shell)),
             ("delta", ("delta", "--generate-completion", shell)),

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import hashlib
 import os
 import subprocess
 import tarfile
@@ -16,6 +17,7 @@ def main() -> int:
             "install",
             "--setopt=install_weak_deps=False",
             "ca-certificates",
+            "blueprint-compiler",
             "curl",
             "file",
             "findutils",
@@ -44,12 +46,21 @@ def main() -> int:
         ),
         check=True,
     )
+    if hashlib.sha256(archive.read_bytes()).hexdigest() != os.environ["ZIG_SHA256"]:
+        raise RuntimeError("Zig archive checksum mismatch")
     with tarfile.open(archive) as source:
         source.extractall("/opt", filter="data")
     environment = dict(os.environ)
     environment["PATH"] = f"/opt/{name}:{environment['PATH']}"
     subprocess.run(
-        ("zig", "build", "-p", "/work/stage", "-Doptimize=ReleaseFast"),
+        (
+            "zig",
+            "build",
+            "-p",
+            "/work/stage",
+            "-Doptimize=ReleaseFast",
+            f"-Dversion-string={os.environ['GHOSTTY_VERSION']}",
+        ),
         check=True,
         env=environment,
     )

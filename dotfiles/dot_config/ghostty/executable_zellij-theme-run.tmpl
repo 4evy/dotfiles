@@ -1,5 +1,0 @@
-#!/bin/sh
-if command -v ghostty-zellij >/dev/null 2>&1; then
-	exec ghostty-zellij
-fi
-exec {{ joinPath .chezmoi.homeDir ".local/bin/ghostty-zellij" | quote }}

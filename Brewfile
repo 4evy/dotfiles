@@ -114,7 +114,6 @@ if OS.mac?
   brew "helix"
 end
 brew "yazi"
-brew "zellij"
 
 # File management and archives
 brew "chafa"
@@ -165,6 +164,7 @@ brew "ghidra"
 if OS.mac?
   brew "hidapi"
   brew "4evy/dotfiles/kanata-with-cmd"
+  brew "4evy/dotfiles/ghostty-patched"
 end
 brew "lsof"
 brew "ncdu"
@@ -190,7 +190,6 @@ if OS.mac?
   cask "discord"
   cask "docker-desktop", args: { "no-binaries": true }, no_upgrade: true
   cask "firefox"
-  cask "ghostty@tip", greedy: true
   cask "google-chrome"
   cask "helium-browser"
   cask "iina"

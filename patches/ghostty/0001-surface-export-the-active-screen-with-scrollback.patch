@@ -1,0 +1,40 @@
+From d1e4ab2dfde45e854893ca899566600a490127bb Mon Sep 17 00:00:00 2001
+From: 4evy <git@evy.pink>
+Date: Sun, 12 Jul 2026 15:54:17 +0300
+Subject: [PATCH 1/5] surface: export the active screen with scrollback
+
+Include visible rows when writing scrollback so the exported file matches what the user can inspect in the terminal. Alternate screens have no history, so export their active screen instead.
+---
+ src/Surface.zig | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
+
+diff --git a/src/Surface.zig b/src/Surface.zig
+index 2c4edc497..0797c2a01 100644
+--- a/src/Surface.zig
++++ b/src/Surface.zig
+@@ -5696,15 +5696,14 @@ fn writeScreenFile(
+         const pages = &self.io.terminal.screens.active.pages;
+         const sel_: ?terminal.Selection = switch (loc) {
+             .history => history: {
+-                // We do not support this for alternate screens
+-                // because they don't have scrollback anyways.
+-                if (self.io.terminal.screens.active_key == .alternate) {
+-                    break :history null;
+-                }
+-
+                 break :history terminal.Selection.init(
+-                    pages.getTopLeft(.history),
+-                    pages.getBottomRight(.history) orelse
++                    pages.getTopLeft(
++                        if (self.io.terminal.screens.active_key == .alternate)
++                            .screen
++                        else
++                            .history,
++                    ),
++                    pages.getBottomRight(.screen) orelse
+                         break :history null,
+                     false,
+                 );
+-- 
+2.55.0
+

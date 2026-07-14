@@ -62,9 +62,9 @@ builds:
     binary: system-runner
 
   - <<: *build_defaults
-    id: zellij-theme-run
-    main: ./cmd/zellij-theme-run
-    binary: zellij-theme-run
+    id: terminal-theme-run
+    main: ./cmd/terminal-theme-run
+    binary: terminal-theme-run
 
 archives:
   - id: platform-binaries
@@ -77,7 +77,7 @@ archives:
       - lsp-diagnostic-filter
       - system-run-mcp
       - system-runner
-      - zellij-theme-run
+      - terminal-theme-run
     formats:
       - tar.gz
     format_overrides:

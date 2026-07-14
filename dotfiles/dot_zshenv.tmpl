@@ -87,9 +87,11 @@ if [[ -r "$HOME/.config/shell/environment.sh" ]]; then
 fi
 
 # 04 / Homebrew completions
-# Add site-functions after HOMEBREW_PREFIX has been resolved.
+# Add Homebrew commands and site-functions after HOMEBREW_PREFIX has been
+# resolved. Desktop-launched terminals may not inherit Homebrew in PATH.
 
 if [[ -n "${HOMEBREW_PREFIX:-}" ]]; then
+  path+=("$HOMEBREW_PREFIX/bin" "$HOMEBREW_PREFIX/sbin")
   fpath=("$HOMEBREW_PREFIX/share/zsh/site-functions" "${fpath[@]}")
-  export FPATH
+  export PATH FPATH
 fi

@@ -1,6 +1,13 @@
 {
   "private": true,
+  "scripts": {
+    "check:ghostty-swirl": "tsc -p dotfiles/dot_local/bin/tsconfig.json && biome check --config-path=dotfiles/dot_local/bin/biome.jsonc dotfiles/dot_local/bin/executable_ghostty-dreamy-swirl.ts",
+    "format:ghostty-swirl": "biome check --write --config-path=dotfiles/dot_local/bin/biome.jsonc dotfiles/dot_local/bin/executable_ghostty-dreamy-swirl.ts"
+  },
   "devDependencies": {
-    "renovate": "^43.252.0"
+    "@biomejs/biome": "^2.5.3",
+    "@types/bun": "^1.3.14",
+    "renovate": "^43.252.0",
+    "typescript": "^7.0.2"
   }
 }

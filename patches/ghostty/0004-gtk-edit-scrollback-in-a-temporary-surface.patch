@@ -1,0 +1,339 @@
+From 4b5e74f60b9a88dde3aec566cea79915cbb3f5c8 Mon Sep 17 00:00:00 2001
+From: 4evy <git@evy.pink>
+Date: Sun, 12 Jul 2026 18:36:14 +0300
+Subject: [PATCH 4/5] gtk: edit scrollback in a temporary surface
+
+Add a configurable terminal editor for scrollback files. Replace the current pane while the editor runs, restore the original surface on exit, and clean up the temporary export directory.
+---
+ src/apprt/gtk/class/application.zig | 163 +++++++++++++++++++++++++++-
+ src/apprt/gtk/class/split_tree.zig  |  26 +++++
+ src/config/Config.zig               |  16 +++
+ src/datastruct/split_tree.zig       |  46 ++++++++
+ 4 files changed, 249 insertions(+), 2 deletions(-)
+
+diff --git a/src/apprt/gtk/class/application.zig b/src/apprt/gtk/class/application.zig
+index a627086eb..5ed94dbde 100644
+--- a/src/apprt/gtk/class/application.zig
++++ b/src/apprt/gtk/class/application.zig
+@@ -721,7 +721,7 @@ pub const Application = extern struct {
+ 
+             .open_config => return Action.openConfig(self),
+ 
+-            .open_url => Action.openUrl(self, value),
++            .open_url => Action.openUrl(self, target, value),
+ 
+             .pwd => Action.pwd(target, value),
+ 
+@@ -2339,14 +2339,21 @@ const Action = struct {
+ 
+         // Open it using openURL. "path" isn't actually a URL but
+         // at the time of writing that works just fine for GTK.
+-        openUrl(self, .{ .kind = .text, .url = path });
++        openUrl(self, .app, .{ .kind = .text, .url = path });
+         return true;
+     }
+ 
+     pub fn openUrl(
+         self: *Application,
++        target: apprt.Target,
+         value: apprt.action.OpenUrl,
+     ) void {
++        if (value.kind == .terminal_text and
++            openTerminalText(self, target, value.url))
++        {
++            return;
++        }
++
+         if (std.mem.startsWith(u8, value.url, "/")) {
+             self.openUrlFallback(value.kind, value.url);
+             return;
+@@ -2363,6 +2370,158 @@ const Action = struct {
+         };
+     }
+ 
++    fn openTerminalText(
++        self: *Application,
++        target: apprt.Target,
++        path: []const u8,
++    ) bool {
++        const editor = self.private().config.get().@"scrollback-editor" orelse
++            return false;
++        const core = switch (target) {
++            .app => return false,
++            .surface => |surface| surface,
++        };
++        const surface = core.rt_surface.surface;
++        const split_tree = ext.getAncestor(
++            SplitTree,
++            surface.as(gtk.Widget),
++        ) orelse return false;
++
++        // A temporary surface is already being shown in this pane.
++        if (split_tree.getActiveSurface() != surface) return false;
++
++        var arena: std.heap.ArenaAllocator = .init(self.allocator());
++        defer arena.deinit();
++        const alloc = arena.allocator();
++
++        const command: configpkg.Command = switch (editor) {
++            .direct => |editor_argv| command: {
++                const argv = alloc.alloc(
++                    [:0]const u8,
++                    editor_argv.len + 1,
++                ) catch return false;
++                @memcpy(argv[0..editor_argv.len], editor_argv);
++                argv[editor_argv.len] = alloc.dupeZ(u8, path) catch
++                    return false;
++                break :command .{ .direct = argv };
++            },
++
++            .shell => |editor_shell| command: {
++                var writer: std.Io.Writer.Allocating = .init(alloc);
++                writer.writer.writeAll(editor_shell) catch return false;
++                writer.writer.writeByte(' ') catch return false;
++                var escaped: internal_os.ShellEscapeWriter =
++                    .init(&writer.writer);
++                escaped.writer.writeAll(path) catch return false;
++                const shell = writer.toOwnedSliceSentinel(0) catch
++                    return false;
++                break :command .{ .shell = shell };
++            },
++        };
++
++        const editor_surface: *Surface = .new(.{
++            .command = command,
++            .title = "Scrollback",
++        });
++        _ = editor_surface.refSink();
++        editor_surface.setParent(core, .tab);
++
++        const temp_path = self.allocator().dupe(u8, path) catch {
++            editor_surface.unref();
++            return false;
++        };
++        const overlay = self.allocator().create(TerminalTextState) catch {
++            self.allocator().free(temp_path);
++            editor_surface.unref();
++            return false;
++        };
++        overlay.* = .{
++            .app = self,
++            .split_tree = split_tree.ref(),
++            .original_surface = surface.ref(),
++            .editor_surface = editor_surface,
++            .temp_path = temp_path,
++        };
++
++        overlay.close_handler = Surface.signals.@"close-request".connect(
++            editor_surface,
++            *TerminalTextState,
++            terminalTextClose,
++            overlay,
++            .{},
++        );
++
++        if (!(split_tree.replaceSurface(surface, editor_surface) catch false)) {
++            gobject.signalHandlerDisconnect(
++                editor_surface.as(gobject.Object),
++                overlay.close_handler,
++            );
++            split_tree.unref();
++            surface.unref();
++            self.allocator().free(temp_path);
++            self.allocator().destroy(overlay);
++            editor_surface.unref();
++            return false;
++        }
++        editor_surface.grabFocus();
++        return true;
++    }
++
++    const TerminalTextState = struct {
++        app: *Application,
++        split_tree: *SplitTree,
++        original_surface: *Surface,
++        editor_surface: *Surface,
++        temp_path: []u8,
++        close_handler: c_ulong = 0,
++        restoring: bool = false,
++    };
++
++    fn terminalTextClose(
++        _: *Surface,
++        overlay: *TerminalTextState,
++    ) callconv(.c) void {
++        if (overlay.restoring) return;
++        overlay.restoring = true;
++
++        if (overlay.split_tree.replaceSurface(
++            overlay.editor_surface,
++            overlay.original_surface,
++        ) catch false) {
++            overlay.original_surface.grabFocus();
++        }
++
++        // Keep the state and temporary surface alive until signal emission
++        // finishes, then release everything on the next main-loop turn.
++        _ = glib.idleAdd(terminalTextCleanup, overlay);
++    }
++
++    fn terminalTextCleanup(ud: ?*anyopaque) callconv(.c) c_int {
++        const overlay: *TerminalTextState = @ptrCast(@alignCast(
++            ud orelse return 0,
++        ));
++        if (overlay.close_handler != 0) {
++            gobject.signalHandlerDisconnect(
++                overlay.editor_surface.as(gobject.Object),
++                overlay.close_handler,
++            );
++        }
++        overlay.editor_surface.unref();
++        overlay.original_surface.unref();
++        overlay.split_tree.unref();
++        const app = overlay.app;
++        if (std.fs.path.dirname(overlay.temp_path)) |dir| {
++            std.fs.deleteTreeAbsolute(dir) catch |err|
++                log.warn("failed to delete scrollback directory path={s} err={}", .{
++                    dir,
++                    err,
++                });
++        }
++        app.allocator().free(overlay.temp_path);
++        app.allocator().destroy(overlay);
++        return 0;
++    }
++
+     pub fn pwd(
+         target: apprt.Target,
+         value: apprt.action.Pwd,
+diff --git a/src/apprt/gtk/class/split_tree.zig b/src/apprt/gtk/class/split_tree.zig
+index 7a6b66def..56bd185ae 100644
+--- a/src/apprt/gtk/class/split_tree.zig
++++ b/src/apprt/gtk/class/split_tree.zig
+@@ -387,6 +387,32 @@ pub const SplitTree = extern struct {
+         return true;
+     }
+ 
++    /// Replace a surface without changing its position in the split tree.
++    pub fn replaceSurface(
++        self: *Self,
++        old: *Surface,
++        new: *Surface,
++    ) Allocator.Error!bool {
++        const old_tree = self.getTree() orelse return false;
++        var it = old_tree.iterator();
++        while (it.next()) |entry| {
++            if (entry.view != old) continue;
++
++            var new_tree = try old_tree.replace(
++                Application.default().allocator(),
++                entry.handle,
++                new,
++            );
++            defer new_tree.deinit();
++
++            self.private().last_focused.set(new);
++            self.setTree(&new_tree);
++            return true;
++        }
++
++        return false;
++    }
++
+     fn disconnectSurfaceHandlers(self: *Self) void {
+         const tree = self.getTree() orelse return;
+         var it = tree.iterator();
+diff --git a/src/config/Config.zig b/src/config/Config.zig
+index d6a038d9d..bc48ee4b2 100644
+--- a/src/config/Config.zig
++++ b/src/config/Config.zig
+@@ -1417,6 +1417,22 @@ input: RepeatableReadableIO = .{},
+ /// already compressed remain compressed until their contents are accessed.
+ @"scrollback-compression": bool = true,
+ 
++/// A terminal-based editor to use when opening a scrollback file. When set,
++/// `write_scrollback_file:open` temporarily replaces the current surface with
++/// this command instead of using the operating system's default text editor.
++/// The temporary file path is appended as the final argument.
++///
++/// This is currently supported by the GTK runtime only. Other runtimes fall
++/// back to the default text editor.
++///
++/// For example:
++///
++/// ```ini
++/// scrollback-editor = direct:hx
++/// ```
++///
++@"scrollback-editor": ?Command = null,
++
+ /// Control when the scrollbar is shown to scroll the scrollback buffer.
+ ///
+ /// The default value is `system`.
+diff --git a/src/datastruct/split_tree.zig b/src/datastruct/split_tree.zig
+index 1dc924ca7..353e3941a 100644
+--- a/src/datastruct/split_tree.zig
++++ b/src/datastruct/split_tree.zig
+@@ -164,6 +164,28 @@ pub fn SplitTree(comptime V: type) type {
+             };
+         }
+ 
++        /// Replace the view at a leaf while preserving the tree topology.
++        pub fn replace(
++            self: *const Self,
++            gpa: Allocator,
++            at: Node.Handle,
++            view: *View,
++        ) Allocator.Error!Self {
++            assert(at.idx() < self.nodes.len);
++            assert(self.nodes[at.idx()] == .leaf);
++
++            var result = try self.clone(gpa);
++            errdefer result.deinit();
++
++            const replacement = try viewRef(view, gpa);
++            const node: *Node = @constCast(&result.nodes[at.idx()]);
++            const previous_view = node.leaf;
++            node.* = .{ .leaf = replacement };
++            viewUnref(previous_view, gpa);
++
++            return result;
++        }
++
+         /// Returns true if this is an empty tree.
+         pub fn isEmpty(self: *const Self) bool {
+             // An empty tree has no nodes.
+@@ -1440,6 +1462,30 @@ test "SplitTree: single node" {
+     );
+ }
+ 
++test "SplitTree: replace leaf" {
++    const testing = std.testing;
++    const alloc = testing.allocator;
++
++    var left_view: TestTree.View = .{ .label = "A" };
++    var left: TestTree = try .init(alloc, &left_view);
++    defer left.deinit();
++    var right_view: TestTree.View = .{ .label = "B" };
++    var right: TestTree = try .init(alloc, &right_view);
++    defer right.deinit();
++    var tree = try left.split(alloc, .root, .right, 0.5, &right);
++    defer tree.deinit();
++
++    var replacement_view: TestTree.View = .{ .label = "C" };
++    var replaced = try tree.replace(alloc, tree.nodes[0].split.right, &replacement_view);
++    defer replaced.deinit();
++
++    const old_right = tree.nodes[tree.nodes[0].split.right.idx()].leaf;
++    const new_right = replaced.nodes[replaced.nodes[0].split.right.idx()].leaf;
++    try testing.expectEqualStrings("B", old_right.label);
++    try testing.expectEqualStrings("C", new_right.label);
++    try testing.expectEqual(tree.nodes[0].split, replaced.nodes[0].split);
++}
++
+ test "SplitTree: split horizontal" {
+     const testing = std.testing;
+     const alloc = testing.allocator;
+-- 
+2.55.0
+

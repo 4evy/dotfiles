@@ -89,6 +89,43 @@ def test_ghostty_check_mode_does_not_create_directories(tmp_path: Path) -> None:
     assert not (tmp_path / "prefix").exists()
 
 
+def test_ghostty_source_toolchain_and_patch_order_are_pinned() -> None:
+    assert installers.GHOSTTY_REVISION == ("a887df42c56f6de86c0fe6da9c4eeca37931e083")
+    assert installers.GHOSTTY_VERSION == "1.3.2-dev.a887df4"
+    assert len(installers.GHOSTTY_SOURCE_SHA256) == 64
+    assert set(installers.GHOSTTY_ZIG_SHA256) == {
+        "x86_64-linux",
+        "aarch64-linux",
+    }
+    assert [patch.name for patch in installers._ghostty_patches()] == [
+        "0001-surface-export-the-active-screen-with-scrollback.patch",
+        "0002-apprt-identify-terminal-scrollback-text.patch",
+        "0003-embedded-honor-command-wait-after-command-setting.patch",
+        "0004-gtk-edit-scrollback-in-a-temporary-surface.patch",
+        "0005-macos-edit-scrollback-in-a-temporary-surface.patch",
+    ]
+
+
+def test_ghostty_staged_prefix_merge_replaces_links_without_rewriting_dirs(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source"
+    destination = tmp_path / "destination"
+    (source / "lib").mkdir(parents=True)
+    (destination / "lib").mkdir(parents=True)
+    (source / "lib/libghostty.so.1").write_text("new")
+    (source / "lib/libghostty.so.1").chmod(0o751)
+    (source / "lib/libghostty.so").symlink_to("libghostty.so.1")
+    (destination / "lib/libghostty.so.0").write_text("old")
+    (destination / "lib/libghostty.so").symlink_to("libghostty.so.0")
+
+    installers._merge_install_tree(source, destination)
+
+    assert (destination / "lib/libghostty.so.1").read_text() == "new"
+    assert (destination / "lib/libghostty.so.1").stat().st_mode & 0o777 == 0o751
+    assert (destination / "lib/libghostty.so").readlink() == Path("libghostty.so.1")
+
+
 def test_ghostty_current_state_is_idempotent(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -97,11 +134,15 @@ def test_ghostty_current_state_is_idempotent(
     prefix = tmp_path / "prefix"
     executable = prefix / "bin/ghostty"
     executable.parent.mkdir(parents=True)
-    executable.write_text("#!/bin/sh\n")
+    executable.write_text(f"#!/bin/sh\necho 'Ghostty {installers.GHOSTTY_VERSION}'\n")
     executable.chmod(0o755)
     (prefix / ".ghostty-tip-checked-at").write_text(f"{int(time.time())}\n")
-    (prefix / ".ghostty-tip-source-key").write_text("current\n")
-    (prefix / ".ghostty-tip-state-version").write_text("1\n")
+    (prefix / ".ghostty-tip-source-key").write_text(installers.GHOSTTY_REVISION + "\n")
+    patches = installers._ghostty_patches()
+    (prefix / ".ghostty-tip-patch-key").write_text(
+        installers._ghostty_patch_key(patches) + "\n"
+    )
+    (prefix / ".ghostty-tip-state-version").write_text("2\n")
     payload = _payload(
         tmp_path,
         [

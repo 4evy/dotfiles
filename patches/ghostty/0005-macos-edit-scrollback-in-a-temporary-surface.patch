@@ -1,0 +1,176 @@
+From 01d2ceacedc1256dc22ecce5ba039cc14e012b03 Mon Sep 17 00:00:00 2001
+From: 4evy <git@evy.pink>
+Date: Sun, 12 Jul 2026 18:36:14 +0300
+Subject: [PATCH 5/5] macos: edit scrollback in a temporary surface
+
+Open terminal scrollback text in a themed Helix surface that temporarily replaces the current pane. Restore the original surface and remove the exported file directory when the editor exits.
+---
+ macos/Sources/Ghostty/Ghostty.Action.swift |   3 +
+ macos/Sources/Ghostty/Ghostty.App.swift    | 101 ++++++++++++++++++++-
+ 2 files changed, 103 insertions(+), 1 deletion(-)
+
+diff --git a/macos/Sources/Ghostty/Ghostty.Action.swift b/macos/Sources/Ghostty/Ghostty.Action.swift
+index f3842fc56..11153ca9d 100644
+--- a/macos/Sources/Ghostty/Ghostty.Action.swift
++++ b/macos/Sources/Ghostty/Ghostty.Action.swift
+@@ -46,6 +46,7 @@ extension Ghostty.Action {
+             case unknown
+             case text
+             case html
++            case terminalText
+ 
+             init(_ c: ghostty_action_open_url_kind_e) {
+                 switch c {
+@@ -53,6 +54,8 @@ extension Ghostty.Action {
+                     self = .text
+                 case GHOSTTY_ACTION_OPEN_URL_KIND_HTML:
+                     self = .html
++                case GHOSTTY_ACTION_OPEN_URL_KIND_TERMINAL_TEXT:
++                    self = .terminalText
+                 default:
+                     self = .unknown
+                 }
+diff --git a/macos/Sources/Ghostty/Ghostty.App.swift b/macos/Sources/Ghostty/Ghostty.App.swift
+index 583357077..f6e88c2f9 100644
+--- a/macos/Sources/Ghostty/Ghostty.App.swift
++++ b/macos/Sources/Ghostty/Ghostty.App.swift
+@@ -324,6 +324,27 @@ extension Ghostty {
+ 
+         static func closeSurface(_ userdata: UnsafeMutableRawPointer?, processAlive: Bool) {
+             let surface = self.surfaceUserdata(from: userdata)
++            if let temporary = temporarySurfaces.removeValue(forKey: ObjectIdentifier(surface)) {
++                defer { try? FileManager.default.removeItem(at: temporary.directory) }
++                if let controller = temporary.controller,
++                   let node = controller.surfaceTree.root?.node(view: surface) {
++                    do {
++                        let restored = try controller.surfaceTree.replacing(
++                            node: node,
++                            with: .leaf(view: temporary.original)
++                        )
++                        controller.replaceSurfaceTree(
++                            restored,
++                            moveFocusTo: temporary.original,
++                            moveFocusFrom: surface
++                        )
++                        return
++                    } catch {
++                        logger.warning("failed to restore scrollback surface: \(error, privacy: .public)")
++                    }
++                }
++            }
++
+             NotificationCenter.default.post(name: Notification.ghosttyCloseSurface, object: surface, userInfo: [
+                 "process_alive": processAlive,
+             ])
+@@ -630,7 +651,7 @@ extension Ghostty {
+                 checkForUpdates(app)
+ 
+             case GHOSTTY_ACTION_OPEN_URL:
+-                return openURL(action.action.open_url)
++                return openURL(app, target: target, action.action.open_url)
+ 
+             case GHOSTTY_ACTION_UNDO:
+                 return undo(app, target: target)
+@@ -707,7 +728,31 @@ extension Ghostty {
+             }
+         }
+ 
++        private final class TemporarySurface {
++            weak var controller: BaseTerminalController?
++            let original: Ghostty.SurfaceView
++            let directory: URL
++
++            init(
++                controller: BaseTerminalController,
++                original: Ghostty.SurfaceView,
++                directory: URL
++            ) {
++                self.controller = controller
++                self.original = original
++                self.directory = directory
++            }
++        }
++
++        private static var temporarySurfaces: [ObjectIdentifier: TemporarySurface] = [:]
++
++        private static func openURL(_ v: ghostty_action_open_url_s) -> Bool {
++            openURL(nil, target: nil, v)
++        }
++
+         private static func openURL(
++            _ app: ghostty_app_t?,
++            target: ghostty_target_s?,
+             _ v: ghostty_action_open_url_s
+         ) -> Bool {
+             let action = Ghostty.Action.OpenURL(c: v)
+@@ -727,6 +772,12 @@ extension Ghostty {
+             }
+ 
+             switch action.kind {
++            case .terminalText:
++                if let app, let target, openTerminalText(app, target: target, url: url) {
++                    return true
++                }
++                fallthrough
++
+             case .text:
+                 // Open with the default editor for `*.ghostty` file or just system text editor
+                 let editor = NSWorkspace.shared.defaultApplicationURL(forExtension: url.pathExtension) ?? NSWorkspace.shared.defaultTextEditor
+@@ -748,6 +799,54 @@ extension Ghostty {
+             return true
+         }
+ 
++        private static func openTerminalText(
++            _ app: ghostty_app_t,
++            target: ghostty_target_s,
++            url: URL
++        ) -> Bool {
++            guard target.tag == GHOSTTY_TARGET_SURFACE,
++                  let surface = target.target.surface,
++                  let original = surfaceView(from: surface),
++                  let controller = original.window?.windowController as? BaseTerminalController,
++                  let node = controller.surfaceTree.root?.node(view: original),
++                  !temporarySurfaces.values.contains(where: { $0.original === original })
++            else { return false }
++
++            var config = SurfaceConfiguration(
++                from: ghostty_surface_inherited_config(surface, GHOSTTY_SURFACE_CONTEXT_SPLIT)
++            )
++            config.command = "\"$HOME/.local/bin/terminal-theme-run\" helix \(shellQuote(url.path))"
++            config.context = GHOSTTY_SURFACE_CONTEXT_SPLIT
++
++            let editor = SurfaceView(app, baseConfig: config)
++            guard editor.surface != nil else { return false }
++
++            do {
++                let replacement = try controller.surfaceTree.replacing(
++                    node: node,
++                    with: .leaf(view: editor)
++                )
++                temporarySurfaces[ObjectIdentifier(editor)] = .init(
++                    controller: controller,
++                    original: original,
++                    directory: url.deletingLastPathComponent()
++                )
++                controller.replaceSurfaceTree(
++                    replacement,
++                    moveFocusTo: editor,
++                    moveFocusFrom: original
++                )
++                return true
++            } catch {
++                logger.warning("failed to open scrollback surface: \(error, privacy: .public)")
++                return false
++            }
++        }
++
++        private static func shellQuote(_ value: String) -> String {
++            "'\(value.replacingOccurrences(of: "'", with: "'\\''"))'"
++        }
++
+         private static func undo(_ app: ghostty_app_t, target: ghostty_target_s) -> Bool {
+             let undoManager: UndoManager?
+             switch target.tag {
+-- 
+2.55.0
+

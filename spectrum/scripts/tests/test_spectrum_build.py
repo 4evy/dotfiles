@@ -21,7 +21,7 @@ from spectrum_build.integrations.source_build import (
     clone_pinned_git_ref,
     pinned_git_project,
 )
-from spectrum_build.programs import kmscon
+from spectrum_build.programs import ghostty, kmscon
 from spectrum_build.programs.manifest import PROGRAMS
 from spectrum_build.programs.models import DnfProgram
 from spectrum_build.programs.operations import validate_program_manifest
@@ -253,6 +253,7 @@ def test_program_manifest_contains_one_declaration_per_program() -> None:
     assert {program.name for program in PROGRAMS} == {
         "1Password",
         "Discord",
+        "Ghostty",
         "KMSCON",
         "RustDesk",
         "SOPS",
@@ -261,6 +262,23 @@ def test_program_manifest_contains_one_declaration_per_program() -> None:
         "Visual Studio Code",
     }
     validate_program_manifest()
+
+
+def test_ghostty_source_and_toolchain_are_pinned() -> None:
+    assert ghostty.REVISION == "a887df42c56f6de86c0fe6da9c4eeca37931e083"
+    assert ghostty.ZIG_VERSION == "0.15.2"
+    assert len(ghostty.SOURCE_SHA256) == 64
+    assert set(ghostty.ZIG_SHA256) == {"x86_64-linux", "aarch64-linux"}
+    assert all(len(digest) == 64 for digest in ghostty.ZIG_SHA256.values())
+
+
+def test_ghostty_download_rejects_wrong_checksum(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(ghostty, "download", lambda _url: b"unexpected")
+
+    with pytest.raises(BuildError, match="checksum mismatch"):
+        ghostty._verified_download("https://example.invalid/archive", "0" * 64)
 
 
 def test_program_manifest_rejects_duplicate_names() -> None:

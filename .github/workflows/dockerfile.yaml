@@ -79,7 +79,6 @@ jobs:
         run: |
           sudo podman run --rm dotfiles:fedora-test sh -eu -c '
             ! command -v starship
-            ! command -v zellij
             ansible-playbook --version >/dev/null
             ansible-lint --version >/dev/null
             yamllint --version >/dev/null

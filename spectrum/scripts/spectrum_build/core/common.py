@@ -1,7 +1,7 @@
 import os
 import shlex
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import NoReturn
 
@@ -26,7 +26,9 @@ class CommandRunner:
         *,
         check: bool = True,
         capture: bool = False,
+        cwd: str | Path | None = None,
         discard_output: bool = False,
+        env: Mapping[str, str] | None = None,
     ) -> CommandResult:
         print(f"+ {shlex.join(map(str, args))}", file=sys.stderr)
         try:
@@ -34,6 +36,8 @@ class CommandRunner:
                 args,
                 check=check,
                 capture=capture,
+                cwd=cwd,
+                env=env,
                 output_mode="discard" if discard_output else "inherit",
             )
         except DotfilesError as error:

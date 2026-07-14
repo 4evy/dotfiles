@@ -1,11 +1,14 @@
 ---
-- name: Remove stable Ghostty cask before installing tip
+- name: Remove Ghostty casks before installing the patched formula
   community.general.homebrew_cask:
-    name: ghostty
+    name: "{{ item }}"
     state: absent
     install_options: force
     path: "{{ prerequisites_homebrew_prefix }}/bin"
   when: common_is_macos
+  loop:
+    - ghostty
+    - ghostty@tip
   tags:
     - bootstrap
     - ghostty
@@ -22,6 +25,7 @@
   when: common_is_macos
   tags:
     - bootstrap
+    - ghostty
     - homebrew
     - kanata
 
@@ -33,6 +37,7 @@
   when: common_is_macos
   tags:
     - bootstrap
+    - ghostty
     - homebrew
     - kanata
 
@@ -46,6 +51,29 @@
     - bootstrap
     - homebrew
     - kanata
+
+- name: Sync patched Ghostty formula into local tap
+  ansible.builtin.copy:
+    src: "{{ dotfiles_repo_root }}/Formula/ghostty-patched.rb"
+    dest: "{{ prerequisites_homebrew_prefix }}/Library/Taps/4evy/homebrew-dotfiles/Formula/ghostty-patched.rb"
+    mode: "0644"
+  when: common_is_macos
+  tags:
+    - bootstrap
+    - ghostty
+    - homebrew
+
+- name: Sync Ghostty patches into local Homebrew tap
+  ansible.builtin.copy:
+    src: "{{ dotfiles_repo_root }}/patches/ghostty/"
+    dest: "{{ prerequisites_homebrew_prefix }}/Library/Taps/4evy/homebrew-dotfiles/Patches/ghostty/"
+    mode: "0644"
+    directory_mode: "0755"
+  when: common_is_macos
+  tags:
+    - bootstrap
+    - ghostty
+    - homebrew
 
 - name: Trust local dotfiles Homebrew tap
   ansible.builtin.command:
@@ -63,6 +91,7 @@
     - bootstrap
     - homebrew
     - kanata
+    - ghostty
 
 - name: Clear Discord cask ASAR locks before Homebrew changes
   ansible.builtin.command:
@@ -219,6 +248,18 @@
   when: prerequisites_homebrew_enabled | default(false)
   tags:
     - bootstrap
+    - homebrew
+
+- name: Link patched Ghostty application bundle
+  ansible.builtin.file:
+    src: "{{ prerequisites_homebrew_prefix }}/opt/ghostty-patched/Ghostty.app"
+    dest: /Applications/Ghostty.app
+    state: link
+    force: true
+  when: common_is_macos
+  tags:
+    - bootstrap
+    - ghostty
     - homebrew
 
 - name: Verify required Homebrew-provided commands are on PATH

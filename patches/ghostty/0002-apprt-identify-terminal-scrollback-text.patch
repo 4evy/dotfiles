@@ -1,0 +1,72 @@
+From 2feefa875bfd352de2a486d34a9378f7db31f04f Mon Sep 17 00:00:00 2001
+From: 4evy <git@evy.pink>
+Date: Sun, 12 Jul 2026 18:35:57 +0300
+Subject: [PATCH 2/5] apprt: identify terminal scrollback text
+
+Give scrollback text its own open-URL kind so runtimes can choose an in-terminal editor while preserving the existing platform text-editor fallback.
+---
+ include/ghostty.h    | 1 +
+ src/Surface.zig      | 5 ++++-
+ src/apprt/action.zig | 4 ++++
+ src/os/open.zig      | 2 +-
+ 4 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/include/ghostty.h b/include/ghostty.h
+index 72bbb57a8..32f3c23d4 100644
+--- a/include/ghostty.h
++++ b/include/ghostty.h
+@@ -812,6 +812,7 @@ typedef enum {
+   GHOSTTY_ACTION_OPEN_URL_KIND_UNKNOWN,
+   GHOSTTY_ACTION_OPEN_URL_KIND_TEXT,
+   GHOSTTY_ACTION_OPEN_URL_KIND_HTML,
++  GHOSTTY_ACTION_OPEN_URL_KIND_TERMINAL_TEXT,
+ } ghostty_action_open_url_kind_e;
+ 
+ // apprt.action.OpenUrl.C
+diff --git a/src/Surface.zig b/src/Surface.zig
+index 0797c2a01..2b0433681 100644
+--- a/src/Surface.zig
++++ b/src/Surface.zig
+@@ -5763,7 +5763,10 @@ fn writeScreenFile(
+         },
+         .open => try self.openUrl(.{
+             .kind = switch (write_screen.emit) {
+-                .plain, .vt => .text,
++                .plain, .vt => if (loc == .history)
++                    .terminal_text
++                else
++                    .text,
+                 .html => .html,
+             },
+             .url = path,
+diff --git a/src/apprt/action.zig b/src/apprt/action.zig
+index 4728d73ce..2adb3e615 100644
+--- a/src/apprt/action.zig
++++ b/src/apprt/action.zig
+@@ -909,6 +909,10 @@ pub const OpenUrl = struct {
+         /// The URL is known to contain HTML content.
+         html,
+ 
++        /// The URL is a scrollback text file that should preferably be
++        /// opened in a terminal-based editor.
++        terminal_text,
++
+         test "ghostty.h OpenUrl.Kind" {
+             try lib.checkGhosttyHEnum(Kind, "GHOSTTY_ACTION_OPEN_URL_KIND_");
+         }
+diff --git a/src/os/open.zig b/src/os/open.zig
+index 86c3d76fd..3aea212df 100644
+--- a/src/os/open.zig
++++ b/src/os/open.zig
+@@ -32,7 +32,7 @@ pub fn open(
+ 
+         .macos => .init(
+             switch (kind) {
+-                .text => &.{ "open", "-t", url },
++                .text, .terminal_text => &.{ "open", "-t", url },
+                 .html, .unknown => &.{ "open", url },
+             },
+             alloc,
+-- 
+2.55.0
+

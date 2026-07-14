@@ -251,19 +251,19 @@ def codex_entrypoint() -> None:
     real = _real_codex(home, wrapper)
     arguments = list(sys.argv[1:])
     themed_arguments = arguments.copy()
-    if not os.environ.get("ZELLIJ_THEME_RUN_CODEX_BIN"):
+    if not os.environ.get("TERMINAL_THEME_RUN_CODEX_BIN"):
         themed_arguments = [
             value
             for value in themed_arguments
             if value != "--dangerously-bypass-approvals-and-sandbox"
         ]
-    theme_runner = home / ".local/bin/zellij-theme-run"
+    theme_runner = home / ".local/bin/terminal-theme-run"
     if not (theme_runner.is_file() and os.access(theme_runner, os.X_OK)):
-        theme_runner = which("zellij-theme-run") or theme_runner
+        theme_runner = which("terminal-theme-run") or theme_runner
     if theme_runner.is_file() and os.access(theme_runner, os.X_OK):
         environment = dict(os.environ)
-        environment["ZELLIJ_THEME_RUN_CODEX_BIN"] = os.fspath(real)
-        environment["ZELLIJ_THEME_RUN_CODEX_WRAPPER"] = os.fspath(wrapper)
+        environment["TERMINAL_THEME_RUN_CODEX_BIN"] = os.fspath(real)
+        environment["TERMINAL_THEME_RUN_CODEX_WRAPPER"] = os.fspath(wrapper)
         _exec(theme_runner, ["codex", *themed_arguments], environment)
     _exec(real, arguments)
 
@@ -566,125 +566,3 @@ def vscode_nixd_entrypoint() -> None:
 
 def vscode_nixfmt_entrypoint() -> None:
     _exec(os.environ.get("VSCODE_NIXFMT_PATH", "nixfmt"), sys.argv[1:] or ["-"])
-
-
-def _command_path(home: Path) -> str:
-    paths = (
-        (
-            home / ".local/share/dotfiles/helix-tip/bin",
-            Path("/opt/homebrew/bin"),
-            Path("/opt/homebrew/sbin"),
-            Path("/usr/bin"),
-            Path("/bin"),
-            Path("/usr/sbin"),
-            Path("/sbin"),
-            home / ".local/bin",
-            home / ".cargo/bin",
-            home / ".bun/bin",
-            home / ".bun/install/global/node_modules/.bin",
-            home / ".cache/.bun/bin",
-        )
-        if sys.platform == "darwin"
-        else (
-            home / ".local/share/dotfiles/helix-tip/bin",
-            home / ".local/bin",
-            home / ".cargo/bin",
-            home / ".bun/bin",
-            home / ".bun/install/global/node_modules/.bin",
-            home / ".cache/.bun/bin",
-            Path("/run/wrappers/bin"),
-            Path("/run/current-system/sw/bin"),
-            Path("/usr/local/bin"),
-            Path("/usr/bin"),
-            Path("/bin"),
-            Path("/usr/sbin"),
-            Path("/sbin"),
-            Path("/home/linuxbrew/.linuxbrew/bin"),
-            Path("/home/linuxbrew/.linuxbrew/sbin"),
-        )
-    )
-    return os.pathsep.join(os.fspath(path) for path in paths)
-
-
-def zellij_default_shell_entrypoint() -> None:
-    environment = dict(os.environ)
-    environment["PATH"] = _command_path(Path.home())
-    candidates = (
-        (
-            Path("/opt/homebrew/bin/zsh"),
-            Path("/usr/bin/zsh"),
-            Path("/bin/zsh"),
-            Path(environment.get("SHELL", "")),
-            Path("/opt/homebrew/bin/bash"),
-            Path("/usr/bin/bash"),
-            Path("/bin/bash"),
-        )
-        if sys.platform == "darwin"
-        else (
-            Path("/usr/bin/zsh"),
-            Path("/bin/zsh"),
-            Path(environment.get("SHELL", "")),
-            Path("/home/linuxbrew/.linuxbrew/bin/zsh"),
-            Path("/home/linuxbrew/.linuxbrew/bin/bash"),
-            Path("/usr/bin/bash"),
-            Path("/bin/bash"),
-        )
-    )
-    for candidate in candidates:
-        usable = candidate.is_file() and os.access(candidate, os.X_OK)
-        if (
-            usable
-            and run((candidate, "--version"), check=False, capture=True).returncode == 0
-        ):
-            environment["SHELL"] = os.fspath(candidate)
-            _exec(candidate, sys.argv[1:], environment)
-    _exec("/bin/sh", sys.argv[1:], environment)
-
-
-def ghostty_zellij_entrypoint() -> None:
-    home = Path.home()
-    environment = dict(os.environ)
-    environment["PATH"] = _command_path(home)
-    agent = (
-        home / "Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
-        if sys.platform == "darwin"
-        else home / ".1password/agent.sock"
-    )
-    if not environment.get("SSH_CONNECTION") and agent.is_socket():
-        environment["SSH_AUTH_SOCK"] = os.fspath(agent)
-    zellij = which("zellij", path=environment["PATH"])
-    shells = (
-        (Path("/opt/homebrew/bin/zsh"),)
-        if sys.platform == "darwin"
-        else (
-            Path("/usr/bin/zsh"),
-            Path("/bin/zsh"),
-            Path("/home/linuxbrew/.linuxbrew/bin/zsh"),
-        )
-    )
-    shell = next(
-        (path for path in shells if path.is_file() and os.access(path, os.X_OK)),
-        None,
-    )
-    if shell:
-        environment["SHELL"] = os.fspath(shell)
-    if zellij:
-        theme = home / ".local/bin/zellij-theme-run"
-        if theme.is_file() and os.access(theme, os.X_OK):
-            _exec(theme, ["zellij"], environment)
-        _exec(
-            zellij,
-            [
-                "options",
-                "--default-layout",
-                "compact",
-                "--attach-to-session",
-                "false",
-                "--mirror-session",
-                "false",
-                "--on-force-close",
-                "detach",
-            ],
-            environment,
-        )
-    _exec(shell or environment.get("SHELL", "/bin/bash"), ["-l"], environment)

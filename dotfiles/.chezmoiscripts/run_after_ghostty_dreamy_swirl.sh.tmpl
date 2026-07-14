@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+generator={{ joinPath .chezmoi.homeDir ".local/bin/ghostty-dreamy-swirl.ts" | quote }}
+if [[ -x "$generator" ]]; then
+  "$generator"
+fi

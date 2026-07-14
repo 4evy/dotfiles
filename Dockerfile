@@ -88,10 +88,8 @@ RUN set -eu; \
       .ssh/allowed_signers \
       .codex \
       .cache/starship \
-      .cache/zellij \
       .config \
       .local/share/applications \
-      .local/share/zellij \
     "; \
     set --; \
     for target in ${chezmoi_targets}; do \

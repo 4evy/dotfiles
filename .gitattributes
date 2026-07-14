@@ -43,7 +43,6 @@ dotfiles/dot_bash_profile.tmpl linguist-language=Shell linguist-detectable
 dotfiles/dot_bashenv.tmpl linguist-language=Shell linguist-detectable
 dotfiles/dot_bashrc.tmpl linguist-language=Shell linguist-detectable
 dotfiles/dot_config/ghostty/config.tmpl linguist-language=INI linguist-detectable
-dotfiles/dot_config/ghostty/executable_zellij-theme-run.tmpl linguist-language=Python
 dotfiles/dot_gitconfig.tmpl linguist-language=gitconfig linguist-detectable
 dotfiles/dot_gitignore_global linguist-language=Ignore-List linguist-detectable
 dotfiles/dot_local/bin/executable_* linguist-language=Shell
@@ -77,6 +76,7 @@ Containerfile linguist-language=Dockerfile linguist-detectable
 # s-expression syntax, so Scheme is the closest supported highlighter.
 dotfiles/dot_config/kanata/*.kbd linguist-language=Scheme
 spectrum/repos/*.repo.in linguist-language=INI linguist-detectable
+patches/**/*.patch -whitespace linguist-language=Diff linguist-detectable
 
 # GitHub and VS Code configuration are repo-owned source here, but Linguist
 # treats these directories as vendored by default.

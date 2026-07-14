@@ -27,7 +27,6 @@
 .config/kanata/
 .config/raycast/
 .config/yazi/
-.config/zellij/
 .ssh/config
 .ssh/github_key
 Library/
@@ -42,6 +41,7 @@ Library/
 .local/bin/package.json
 .local/bin/package-lock.json
 .local/bin/tsconfig.json
+.local/bin/biome.jsonc
 
 {{ if eq .chezmoi.os "darwin" }}
 .config/Code/

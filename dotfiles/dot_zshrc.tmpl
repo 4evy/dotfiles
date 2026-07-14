@@ -6,7 +6,7 @@
 #   ⠴⠥ ⠭⠕ ⠇⠸   ⠣⠤ ⠣⠜ ⠇⠸ ⠭⠕ ⠣⠜ ⠧⠤ ⠣⠭
 #
 #      ╭──── A / TERM + Ghostty ──────╮
-#      │ Ghostty / TERM / Zellij      │
+#      │ Ghostty / TERM               │
 #      ╰───────────────┬──────────────╯
 #                      ▼
 #      ╭──── B / plugins + prompt ────────────────────────────╮
@@ -22,7 +22,7 @@
 #  /"\/\_..--------------------._/\/"\
 # (     _|| A1 TERM + GHOSTTY  ||_     )
 #  \_/\/ || Ghostty + fallback || \/\_/
-#        || avoid Zellij clash ||
+#        || shell integration  ||
 #  /"\/\_|---------------------|_/\/"\
 # (     _|                     |_     )
 #  \_/\/ `---------------------' \/\_/
@@ -30,8 +30,7 @@ if [[ "${TERM:-}" == "xterm-ghostty" ]] && ! infocmp xterm-ghostty &>/dev/null; 
   export TERM=xterm-256color
 fi
 
-if [[ -z "${ZELLIJ:-}" ]] \
-  && [[ -n "${GHOSTTY_RESOURCES_DIR:-}" ]] \
+if [[ -n "${GHOSTTY_RESOURCES_DIR:-}" ]] \
   && [[ -r "${GHOSTTY_RESOURCES_DIR}/shell-integration/zsh/ghostty-integration" ]]; then
   source "${GHOSTTY_RESOURCES_DIR}/shell-integration/zsh/ghostty-integration"
 fi
@@ -151,17 +150,6 @@ if [[ -r "$ZSH/oh-my-zsh.sh" ]]; then
   source "$ZSH/oh-my-zsh.sh"
 fi
 
-# Zellij already manages terminal state; trim duplicate title/cwd reporters.
-if [[ -n "${ZELLIJ:-}" ]]; then
-  precmd_functions=(${precmd_functions:#_ghostty_deferred_init})
-  precmd_functions=(${precmd_functions:#_ghostty_precmd})
-  precmd_functions=(${precmd_functions:#omz_termsupport_precmd})
-  precmd_functions=(${precmd_functions:#omz_termsupport_cwd})
-  preexec_functions=(${preexec_functions:#_ghostty_preexec})
-  preexec_functions=(${preexec_functions:#omz_termsupport_preexec})
-  chpwd_functions=(${chpwd_functions:#_ghostty_report_pwd})
-fi
-
 # B2 / terminal focus events
 # Bind focus-in and focus-out escape sequences to a no-op widget.
 
@@ -184,6 +172,9 @@ bindkey $'\e[O' _dotfiles_ignore_terminal_focus_event
 # fzf-tab.
 _fzf_init() {
   emulate -L zsh
+  # Keep fzf completion/history support, but do not bind its file picker to
+  # Ctrl-T. An explicitly empty value is fzf's supported opt-out.
+  local FZF_CTRL_T_COMMAND=''
   local fzf_bin
   fzf_bin="$(_dotfiles_command_path fzf)" || return
   _dotfiles_wrap_command fzf "$fzf_bin"

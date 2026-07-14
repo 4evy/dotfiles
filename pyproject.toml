@@ -40,7 +40,6 @@ discord-equicord = "workstation.apps.discord:entrypoint"
 dotfiles-python = "workstation.local.user_commands:python_entrypoint"
 dotfiles-python3 = "workstation.local.user_commands:python3_entrypoint"
 dotfiles-scripts = "workstation.cli:entrypoint"
-ghostty-zellij = "workstation.local.user_commands:ghostty_zellij_entrypoint"
 gnome-catppuccin-accent = "workstation.local.user_commands:gnome_catppuccin_accent_entrypoint"
 hyper-window-tiling-build = "workstation.local.hyper_window_tiling_build:entrypoint"
 install-ghidra-mcp = "workstation.apps.ghidra_mcp:entrypoint"
@@ -54,7 +53,6 @@ system-runner = "workstation.local.system_runner:entrypoint"
 vscode-nixd = "workstation.local.user_commands:vscode_nixd_entrypoint"
 vscode-nixfmt = "workstation.local.user_commands:vscode_nixfmt_entrypoint"
 yaml-language-server = "workstation.host.devtools:yaml_language_server_entrypoint"
-zellij-default-shell = "workstation.local.user_commands:zellij_default_shell_entrypoint"
 
 [dependency-groups]
 dev = ["pytest>=9,<10", "ruff>=0.15.20,<0.16", "ty>=0.0.57,<0.1"]

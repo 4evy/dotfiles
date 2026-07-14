@@ -130,7 +130,6 @@ prerequisites_macos_defaults:
 
 prerequisites_homebrew_required_commands:
   - btop
-  - zellij
 
 prerequisites_bootstrap_packages:
   apt:

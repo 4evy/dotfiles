@@ -49,12 +49,12 @@
             #!${final.python3}/bin/python3
             ${builtins.readFile ../../ansible/files/scripts/workstation/local/system_runner.py}
           '';
-          zellij-theme-tools = goWorkspacePackage {
-            pname = "zellij-theme-tools";
-            subPackages = [ "cmd/zellij-theme-run" ];
+          terminal-theme-tools = goWorkspacePackage {
+            pname = "terminal-theme-tools";
+            subPackages = [ "cmd/terminal-theme-run" ];
             meta = {
-              description = "Theme helpers for Zellij and Codex sessions";
-              mainProgram = "zellij-theme-run";
+              description = "Theme-aware wrappers for terminal applications";
+              mainProgram = "terminal-theme-run";
               platforms = final.lib.platforms.linux;
             };
           };

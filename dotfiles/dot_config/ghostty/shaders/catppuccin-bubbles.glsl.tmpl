@@ -1,0 +1,40 @@
+// A quiet Catppuccin-pink corner glow behind the emoji background image.
+// Generated per platform because Metal and OpenGL disagree about +Y.
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 sample_uv = fragCoord / iResolution.xy;
+    vec2 screen_uv = sample_uv;
+{{- if ne .chezmoi.os "darwin" }}
+    // OpenGL gives us a bottom-left origin; use a top-left design space.
+    screen_uv.y = 1.0 - screen_uv.y;
+{{- end }}
+
+    vec4 terminal = texture(iChannel0, sample_uv);
+
+    // Theme color uniforms can retain the flavor that was active when the
+    // surface was created. Sample the rendered terminal instead so a live
+    // appearance change selects the matching Catppuccin pink.
+    vec3 rendered_background = texture(iChannel0, vec2(0.5, 0.5)).rgb;
+    float background_luma = dot(
+        rendered_background,
+        vec3(0.2126, 0.7152, 0.0722)
+    );
+    vec3 latte_pink = vec3(234.0, 118.0, 203.0) / 255.0;
+    vec3 frappe_pink = vec3(244.0, 184.0, 228.0) / 255.0;
+    vec3 pink = background_luma < 0.5 ? frappe_pink : latte_pink;
+
+    // Let a restrained diagonal bleed extend out from the emoji corner without
+    // concentrating the tint at the edge. Linear-space blending makes even a
+    // few percent read strongly, so keep the peak deliberately low.
+    float bleed = smoothstep(
+        0.05,
+        1.10,
+        (screen_uv.x + screen_uv.y) * 0.5
+    );
+    float glow_strength = background_luma < 0.5 ? 0.021 : 0.045;
+    float glow = bleed * glow_strength;
+
+    // Apply after terminal rendering so the flavor survives full-screen TUIs.
+    vec3 color = mix(terminal.rgb, pink, clamp(glow, 0.0, 0.045));
+    fragColor = vec4(color, terminal.a);
+}

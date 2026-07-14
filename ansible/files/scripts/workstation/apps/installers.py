@@ -33,9 +33,75 @@ from workstation.lib.files import (
 from workstation.lib.http import download
 from workstation.lib.paths import find_repo_root
 
+GHOSTTY_REVISION = "a887df42c56f6de86c0fe6da9c4eeca37931e083"
+GHOSTTY_VERSION = "1.3.2-dev.a887df4"
+GHOSTTY_SOURCE_URL = (
+    f"https://github.com/ghostty-org/ghostty/archive/{GHOSTTY_REVISION}.tar.gz"
+)
+GHOSTTY_SOURCE_SHA256 = (
+    "fb4b2f9ffa0af125983041fdbe4ef94d3fa79fb9f2d22b9c213c0e3847a866b6"
+)
+GHOSTTY_ZIG_SHA256 = {
+    "x86_64-linux": "02aa270f183da276e5b5920b1dac44a63f1a49e55050ebde3aecc9eb82f93239",
+    "aarch64-linux": "958ed7d1e00d0ea76590d27666efbf7a932281b3d7ba0c6b01b0ff26498f667f",
+}
+
 
 def _repo_root() -> Path:
     return find_repo_root(Path(__file__))
+
+
+def _ghostty_patches() -> tuple[Path, ...]:
+    patch_dir = _repo_root() / "patches/ghostty"
+    patches = tuple(sorted(patch_dir.glob("*.patch")))
+    if not patches:
+        raise DotfilesError(f"Ghostty patch series is empty: {patch_dir}")
+    return patches
+
+
+def _ghostty_patch_key(patches: tuple[Path, ...]) -> str:
+    digest = hashlib.sha256()
+    for patch in patches:
+        digest.update(patch.name.encode())
+        digest.update(b"\0")
+        digest.update(patch.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def _apply_ghostty_patches(source: Path, patches: tuple[Path, ...]) -> None:
+    arguments = tuple(os.fspath(patch) for patch in patches)
+    result = run(("git", "apply", "--check", *arguments), cwd=source, check=False)
+    if result.returncode != 0:
+        raise DotfilesError("Ghostty patch series does not apply to the tip source")
+    run(("git", "apply", *arguments), cwd=source)
+
+
+def _merge_install_tree(source: Path, destination: Path) -> None:
+    """Merge a staged prefix without copying directory ownership or timestamps."""
+    ensure_directory(destination)
+    for source_path in source.iterdir():
+        destination_path = destination / source_path.name
+        if source_path.is_symlink():
+            if destination_path.is_dir() and not destination_path.is_symlink():
+                shutil.rmtree(destination_path)
+            else:
+                destination_path.unlink(missing_ok=True)
+            destination_path.symlink_to(source_path.readlink())
+        elif source_path.is_dir():
+            if destination_path.is_symlink() or (
+                destination_path.exists() and not destination_path.is_dir()
+            ):
+                destination_path.unlink()
+            _merge_install_tree(source_path, destination_path)
+        else:
+            if destination_path.is_dir():
+                shutil.rmtree(destination_path)
+            install_file_if_changed(
+                source_path,
+                destination_path,
+                f"{source_path.stat().st_mode & 0o777:04o}",
+            )
 
 
 class InstallerSettings(BaseSettings):
@@ -109,6 +175,13 @@ def _verify_ghostty_runtime(executable: Path) -> None:
     raise DotfilesError(message)
 
 
+def _ghostty_version_current(executable: Path) -> bool:
+    if not executable.is_file() or not os.access(executable, os.X_OK):
+        return False
+    result = run((executable, "+version"), check=False, capture=True)
+    return result.returncode == 0 and GHOSTTY_VERSION in result.stdout
+
+
 def _zig_architecture() -> str:
     architecture = platform.machine().lower()
     if architecture == "x86_64":
@@ -152,26 +225,40 @@ def _rewrite_ghostty_files(prefix: Path, executable: Path) -> None:
             write_if_changed(service, content)
 
 
-def install_ghostty_tip_linux(
+def install_ghostty_tip_linux(  # noqa: PLR0914
     cache_dir: Annotated[Path, typer.Argument()],
     install_prefix: Annotated[Path, typer.Argument()],
 ) -> OperationResult:
     """Build the Ghostty tip release in a disposable Fedora container."""
-    cache = cache_dir
-    prefix = install_prefix
-    executable = prefix / "bin/ghostty"
-    checked_at = prefix / ".ghostty-tip-checked-at"
-    source_key_file = prefix / ".ghostty-tip-source-key"
-    state_file = prefix / ".ghostty-tip-state-version"
+    executable = install_prefix / "bin/ghostty"
+    checked_at = install_prefix / ".ghostty-tip-checked-at"
+    source_key_file = install_prefix / ".ghostty-tip-source-key"
+    patch_key_file = install_prefix / ".ghostty-tip-patch-key"
+    state_file = install_prefix / ".ghostty-tip-state-version"
+    source_current = (
+        source_key_file.is_file()
+        and source_key_file.read_text(encoding="utf-8").strip() == GHOSTTY_REVISION
+    )
+    patches = _ghostty_patches()
+    patch_key = _ghostty_patch_key(patches)
+    patches_current = (
+        patch_key_file.is_file()
+        and patch_key_file.read_text(encoding="utf-8").strip() == patch_key
+    )
     settings = _settings()
     interval = settings.ghostty_tip_check_interval_seconds
     fresh = _fresh_check(
         executable=executable,
         checked_at=checked_at,
         state_file=state_file,
-        state_version="1",
+        state_version="2",
         interval=interval,
-        extra=(not _missing_libraries(executable), source_key_file.is_file()),
+        extra=(
+            not _missing_libraries(executable),
+            _ghostty_version_current(executable),
+            source_current,
+            patches_current,
+        ),
     )
     if automation_check_mode():
         return OperationResult(
@@ -182,9 +269,9 @@ def install_ghostty_tip_linux(
                 else "Would check and install the current Ghostty tip"
             ),
         )
-    require_commands("gh", "podman")
-    cache = ensure_directory(cache)
-    prefix = ensure_directory(prefix)
+    require_commands("git", "podman")
+    cache_dir = ensure_directory(cache_dir)
+    install_prefix = ensure_directory(install_prefix)
     if fresh:
         console.print(
             f"Ghostty tip was checked less than {interval} seconds ago; skipping."
@@ -192,64 +279,41 @@ def install_ghostty_tip_linux(
         return OperationResult(msg="Ghostty tip was checked recently")
     if executable.exists():
         _verify_ghostty_runtime(executable)
-    if run(("gh", "auth", "status"), check=False, capture=True).returncode != 0:
-        raise DotfilesError("gh must be authenticated; run `gh auth login` and retry")
-
-    source_key = output((
-        "gh",
-        "release",
-        "view",
-        "tip",
-        "--repo",
-        "ghostty-org/ghostty",
-        "--json",
-        "assets",
-        "--jq",
-        '.assets[] | select(.name == "ghostty-source.tar.gz") | [.name, .size, .updatedAt] | @tsv',
-    ))
-    if not source_key:
-        raise DotfilesError(
-            "Ghostty tip release does not include ghostty-source.tar.gz"
-        )
     if (
         executable.is_file()
+        and _ghostty_version_current(executable)
         and source_key_file.is_file()
-        and source_key_file.read_text().strip() == source_key
+        and source_key_file.read_text().strip() == GHOSTTY_REVISION
+        and patches_current
     ):
         _verify_ghostty_runtime(executable)
         _write_check_state(
-            state_key=source_key,
+            state_key=GHOSTTY_REVISION,
             key_file=source_key_file,
             checked_at=checked_at,
             state_file=state_file,
-            version="1",
+            version="2",
         )
+        write_if_changed(patch_key_file, patch_key + "\n")
         console.print("Ghostty tip source is already current.")
         return OperationResult(
             msg="Ghostty tip source is already current",
-            data={"source_key": source_key},
+            data={"source_key": GHOSTTY_REVISION},
         )
 
-    build_log = cache / "ghostty-tip-build.log"
-    with tempfile.TemporaryDirectory(prefix="build-", dir=cache) as temporary:
+    build_log = cache_dir / "ghostty-tip-build.log"
+    with tempfile.TemporaryDirectory(prefix="build-", dir=cache_dir) as temporary:
         work = Path(temporary)
-        download_dir = ensure_directory(work / "download")
         source_dir = ensure_directory(work / "source")
         stage_dir = ensure_directory(work / "stage")
-        run((
-            "gh",
-            "release",
-            "download",
-            "tip",
-            "--repo",
-            "ghostty-org/ghostty",
-            "--pattern",
-            "ghostty-source.tar.gz",
-            "--clobber",
-            "--dir",
-            download_dir,
-        ))
-        with tarfile.open(download_dir / "ghostty-source.tar.gz") as archive:
+        source_archive = work / "ghostty-source.tar.gz"
+        download(GHOSTTY_SOURCE_URL, source_archive)
+        if (
+            hashlib.sha256(source_archive.read_bytes()).hexdigest()
+            != GHOSTTY_SOURCE_SHA256
+        ):
+            raise DotfilesError("Ghostty source archive checksum mismatch")
+        with tarfile.open(source_archive) as archive:
             extract_tar_archive(archive, source_dir)
         extracted = next((path for path in source_dir.iterdir() if path.is_dir()), None)
         if extracted is None:
@@ -258,10 +322,12 @@ def install_ghostty_tip_linux(
             )
         ghostty_source = work / "ghostty"
         extracted.replace(ghostty_source)
+        _apply_ghostty_patches(ghostty_source, patches)
         container_script = (
             _repo_root()
             / "ansible/files/scripts/apps/install-ghostty-tip-linux.container.py"
         )
+        zig_architecture = _zig_architecture()
         result = run(
             (
                 "podman",
@@ -276,12 +342,20 @@ def install_ghostty_tip_linux(
                 "--workdir",
                 "/work/ghostty",
                 "--env",
-                f"ZIG_ARCH={_zig_architecture()}",
+                f"ZIG_ARCH={zig_architecture}",
                 "--env",
                 "ZIG_VERSION=0.15.2",
+                "--env",
+                f"ZIG_SHA256={GHOSTTY_ZIG_SHA256[zig_architecture]}",
+                "--env",
+                f"GHOSTTY_VERSION={GHOSTTY_VERSION}",
                 settings.ghostty_build_container_image,
-                "python3",
-                "/tmp/ghostty-build.py",
+                "sh",
+                "-ceu",
+                (
+                    "dnf -y install --setopt=install_weak_deps=False python3 && "
+                    "exec python3 /tmp/ghostty-build.py"
+                ),
             ),
             check=False,
             capture=True,
@@ -296,28 +370,33 @@ def install_ghostty_tip_linux(
         pending = work / ".ghostty-bin"
         if built_binary.is_file():
             built_binary.replace(pending)
-        shutil.copytree(stage_dir, prefix, dirs_exist_ok=True, symlinks=True)
+        _merge_install_tree(stage_dir, install_prefix)
         if pending.is_file():
             ensure_directory(executable.parent)
-            install_file_if_changed(pending, executable, pending.stat().st_mode & 0o777)
+            install_file_if_changed(
+                pending,
+                executable,
+                f"{pending.stat().st_mode & 0o777:04o}",
+            )
 
-    _rewrite_ghostty_files(prefix, executable)
-    desktop_dir = prefix / "share/applications"
+    _rewrite_ghostty_files(install_prefix, executable)
+    desktop_dir = install_prefix / "share/applications"
     if which("update-desktop-database") is not None and desktop_dir.is_dir():
         run(("update-desktop-database", desktop_dir), check=False, capture=True)
     _verify_ghostty_runtime(executable)
     _write_check_state(
-        state_key=source_key,
+        state_key=GHOSTTY_REVISION,
         key_file=source_key_file,
         checked_at=checked_at,
         state_file=state_file,
-        version="1",
+        version="2",
     )
-    console.print(f"Installed native Ghostty tip release build into {prefix}.")
+    write_if_changed(patch_key_file, patch_key + "\n")
+    console.print(f"Installed native Ghostty tip release build into {install_prefix}.")
     return OperationResult(
         changed=True,
-        msg=f"Installed native Ghostty tip release build into {prefix}",
-        data={"source_key": source_key},
+        msg=f"Installed native Ghostty tip release build into {install_prefix}",
+        data={"source_key": GHOSTTY_REVISION},
     )
 
 
