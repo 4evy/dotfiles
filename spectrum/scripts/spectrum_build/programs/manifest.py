@@ -1,3 +1,4 @@
+from spectrum_build.programs.copyous import PROGRAM as COPYOUS
 from spectrum_build.programs.discord import PROGRAM as DISCORD
 from spectrum_build.programs.ghostty import PROGRAM as GHOSTTY
 from spectrum_build.programs.kmscon import PROGRAM as KMSCON
@@ -16,6 +17,7 @@ PROGRAMS = (
     RUSTDESK,
     DISCORD,
     TELEGRAM,
+    COPYOUS,
     GHOSTTY,
     KMSCON,
 )

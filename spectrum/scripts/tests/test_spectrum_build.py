@@ -1,4 +1,6 @@
 import os
+import zipfile
+from io import BytesIO
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, cast
@@ -21,7 +23,7 @@ from spectrum_build.integrations.source_build import (
     clone_pinned_git_ref,
     pinned_git_project,
 )
-from spectrum_build.programs import ghostty, kmscon
+from spectrum_build.programs import copyous, ghostty, kmscon
 from spectrum_build.programs.manifest import PROGRAMS
 from spectrum_build.programs.models import DnfProgram
 from spectrum_build.programs.operations import validate_program_manifest
@@ -252,6 +254,7 @@ def test_repository_backed_program_owns_repository_lifecycle(tmp_path: Path) -> 
 def test_program_manifest_contains_one_declaration_per_program() -> None:
     assert {program.name for program in PROGRAMS} == {
         "1Password",
+        "Copyous",
         "Discord",
         "Ghostty",
         "KMSCON",
@@ -358,6 +361,30 @@ def test_github_sdk_selects_matching_release_asset(
     assert github.latest_github_asset_url(
         "owner/repo", r"example-[0-9]\.x86_64\.rpm"
     ) == ("https://example.invalid/example.rpm")
+
+
+def test_copyous_release_archive_is_validated_and_extracted(tmp_path: Path) -> None:
+    archive = BytesIO()
+    with zipfile.ZipFile(archive, "w") as bundle:
+        bundle.writestr("metadata.json", f'{{"uuid": "{copyous.UUID}"}}')
+        bundle.writestr("extension.js", "")
+        bundle.writestr(
+            "schemas/org.gnome.shell.extensions.copyous.gschema.xml", "<schemalist/>"
+        )
+
+    destination = tmp_path / copyous.UUID
+    destination.mkdir()
+    copyous._extract_archive(archive.getvalue(), destination)
+    copyous._validate_extension(destination)
+
+
+def test_copyous_release_archive_rejects_path_traversal(tmp_path: Path) -> None:
+    archive = BytesIO()
+    with zipfile.ZipFile(archive, "w") as bundle:
+        bundle.writestr("../outside", "unsafe")
+
+    with pytest.raises(BuildError, match="unsafe Copyous release archive member"):
+        copyous._extract_archive(archive.getvalue(), tmp_path)
 
 
 def test_pinned_project_environment_is_namespaced(
