@@ -149,6 +149,10 @@ if OS.mac?
 end
 brew "wget"
 
+# Android device access and screen mirroring
+cask "android-platform-tools"
+brew "scrcpy"
+
 # Text processing and viewing
 brew "jq"
 brew "less"
