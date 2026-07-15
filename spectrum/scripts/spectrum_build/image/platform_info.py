@@ -2,7 +2,8 @@ import platform
 import re
 from pathlib import Path
 
-from spectrum_build.core.common import atomic_write, fail
+from spectrum_build.core.common import fail
+from workstation.lib.files import write_if_changed
 
 OS_RELEASE = Path("/usr/lib/os-release")
 
@@ -35,4 +36,4 @@ def set_os_release_value(key: str, value: str) -> None:
     else:
         lines.append(replacement)
 
-    atomic_write(OS_RELEASE, ("\n".join(lines) + "\n").encode())
+    write_if_changed(OS_RELEASE, ("\n".join(lines) + "\n").encode())

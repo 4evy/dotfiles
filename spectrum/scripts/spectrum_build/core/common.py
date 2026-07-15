@@ -5,8 +5,6 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import NoReturn
 
-from boltons.fileutils import atomic_save
-
 from workstation.errors import DotfilesError
 from workstation.lib.commands import CommandResult, run, which
 
@@ -52,16 +50,6 @@ class CommandRunner:
             (command for command in commands if which(command) is None), None
         ):
             fail(f"required command not found: {command}")
-
-
-def atomic_write(path: Path, data: bytes, mode: int = 0o644) -> None:
-    if path.exists() and path.read_bytes() == data:
-        path.chmod(mode)
-        return
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with atomic_save(str(path), file_perms=mode, overwrite_part=True) as handle:
-        handle.write(data)
 
 
 def require_readable_file(path: Path) -> None:

@@ -3,9 +3,7 @@ from pathlib import Path
 
 DNF_CLEANUP_PATTERNS = (
     "/run/dnf",
-    "/var/cache/dnf/*",
     "/var/cache/ldconfig/aux-cache",
-    "/var/cache/libdnf5/*",
     "/var/lib/dnf/repos",
     "/var/lib/dnf/system-repo.lock",
     "/var/lib/sepolgen",

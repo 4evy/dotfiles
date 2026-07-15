@@ -1,8 +1,8 @@
 import sys
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Literal
 
-import typer
+from cyclopts import App
 
 from spectrum_build.core.common import BuildError, CommandRunner
 from spectrum_build.core.context import BuildContext
@@ -14,12 +14,16 @@ from spectrum_build.settings import BuildConfig
 
 
 def main(
-    command: Annotated[
-        Literal["build", "check"],
-        typer.Argument(help="Operation to run."),
-    ] = "build",
+    command: Literal["build", "check"] = "build",
 ) -> int:
-    """Build or statically check the Spectrum bootc image layer."""
+    """Build or statically check the Spectrum bootc image layer.
+
+    Parameters
+    ----------
+    command
+        Operation to run.
+
+    """
     if command == "check":
         validate_package_groups()
         validate_program_manifest()
@@ -42,9 +46,16 @@ def main(
     return 0
 
 
+app = App(
+    default_command=main,
+    version_flags=[],
+    result_action="return_int_as_exit_code_else_zero",
+)
+
+
 def entrypoint() -> None:
     try:
-        typer.run(main)
+        app()
     except BuildError as error:
         print(f"error: {error}", file=sys.stderr)
         raise SystemExit(1) from error

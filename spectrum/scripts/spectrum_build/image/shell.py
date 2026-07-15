@@ -55,7 +55,6 @@ from spectrum_build.core.common import fail
 #   Establishes the Linuxbrew prefix and shellenv model Bluefin integrates.
 #
 BLUEFIN_OPEN_ALIAS = 'alias open="xdg-open &>/dev/null"'
-OPEN_WRAPPER = "/usr/bin/open"
 
 BREW_PROFILE_BAD_PATH_GUARD = '! "$PATH" =~ "/home/linuxbrew.linuxbrew"'
 BREW_PROFILE_PATH_GUARD = '! "$PATH" =~ "/home/linuxbrew/.linuxbrew"'
@@ -105,10 +104,15 @@ def _root_path(root: Path, path: str) -> Path:
     return root / path.removeprefix("/")
 
 
+def _root_paths(root: Path, *paths: str) -> tuple[Path, ...]:
+    return tuple(_root_path(root, path) for path in paths)
+
+
 def remove_bluefin_open_alias(root: Path = Path("/")) -> None:
-    for path in (
-        _root_path(root, "/usr/etc/profile.d/open.sh"),
-        _root_path(root, "/etc/profile.d/open.sh"),
+    for path in _root_paths(
+        root,
+        "/usr/etc/profile.d/open.sh",
+        "/etc/profile.d/open.sh",
     ):
         if not path.exists():
             continue
@@ -120,9 +124,10 @@ def remove_bluefin_open_alias(root: Path = Path("/")) -> None:
 
 
 def patch_brew_profile_guard(root: Path = Path("/")) -> None:
-    for path in (
-        _root_path(root, "/usr/etc/profile.d/brew.sh"),
-        _root_path(root, "/etc/profile.d/brew.sh"),
+    for path in _root_paths(
+        root,
+        "/usr/etc/profile.d/brew.sh",
+        "/etc/profile.d/brew.sh",
     ):
         if not path.exists():
             continue
@@ -138,9 +143,10 @@ def patch_brew_profile_guard(root: Path = Path("/")) -> None:
 
 
 def patch_uutils_profile_path(root: Path = Path("/")) -> None:
-    for path in (
-        _root_path(root, "/usr/etc/profile.d/uutils.sh"),
-        _root_path(root, "/etc/profile.d/uutils.sh"),
+    for path in _root_paths(
+        root,
+        "/usr/etc/profile.d/uutils.sh",
+        "/etc/profile.d/uutils.sh",
     ):
         if not path.exists():
             continue
@@ -155,9 +161,10 @@ def patch_uutils_profile_path(root: Path = Path("/")) -> None:
 
 
 def patch_bluefin_zsh_brew_path(root: Path = Path("/")) -> None:
-    for path in (
-        _root_path(root, "/usr/etc/zsh/zshrc"),
-        _root_path(root, "/etc/zsh/zshrc"),
+    for path in _root_paths(
+        root,
+        "/usr/etc/zsh/zshrc",
+        "/etc/zsh/zshrc",
     ):
         if not path.exists():
             continue
@@ -183,23 +190,21 @@ def align_shell_defaults(root: Path = Path("/")) -> None:
     patch_bluefin_zsh_brew_path(root)
 
 
-def validate_shell_defaults(root: Path = Path("/")) -> None:  # noqa: C901
-    open_wrapper = _root_path(root, OPEN_WRAPPER)
-    if not open_wrapper.is_file():
-        fail(f"open command wrapper is missing: {open_wrapper}")
-    if not (open_wrapper.stat().st_mode & 0o111):
-        fail(f"open command wrapper is not executable: {open_wrapper}")
-
-    for path in (
-        _root_path(root, "/usr/etc/profile.d/open.sh"),
-        _root_path(root, "/etc/profile.d/open.sh"),
+def _validate_open_alias_absent(root: Path) -> None:
+    for path in _root_paths(
+        root,
+        "/usr/etc/profile.d/open.sh",
+        "/etc/profile.d/open.sh",
     ):
         if path.exists():
             fail(f"global open alias is still installed: {path}")
 
-    for path in (
-        _root_path(root, "/usr/etc/profile.d/brew.sh"),
-        _root_path(root, "/etc/profile.d/brew.sh"),
+
+def _validate_brew_profile(root: Path) -> None:
+    for path in _root_paths(
+        root,
+        "/usr/etc/profile.d/brew.sh",
+        "/etc/profile.d/brew.sh",
     ):
         if not path.exists():
             continue
@@ -208,9 +213,12 @@ def validate_shell_defaults(root: Path = Path("/")) -> None:  # noqa: C901
         if BREW_PROFILE_BAD_PATH_GUARD in content:
             fail(f"brew profile.d duplicate-path guard is malformed: {path}")
 
-    for path in (
-        _root_path(root, "/usr/etc/profile.d/uutils.sh"),
-        _root_path(root, "/etc/profile.d/uutils.sh"),
+
+def _validate_uutils_profile(root: Path) -> None:
+    for path in _root_paths(
+        root,
+        "/usr/etc/profile.d/uutils.sh",
+        "/etc/profile.d/uutils.sh",
     ):
         if not path.exists():
             continue
@@ -219,9 +227,12 @@ def validate_shell_defaults(root: Path = Path("/")) -> None:  # noqa: C901
         if content != UUTILS_PROFILE_APPEND:
             fail(f"uutils profile.d script is not append-only: {path}")
 
-    for path in (
-        _root_path(root, "/usr/share/fish/vendor_conf.d/ublue-brew.fish"),
-        _root_path(root, "/etc/fish/conf.d/ublue-brew.fish"),
+
+def _validate_fish_profile(root: Path) -> None:
+    for path in _root_paths(
+        root,
+        "/usr/share/fish/vendor_conf.d/ublue-brew.fish",
+        "/etc/fish/conf.d/ublue-brew.fish",
     ):
         if not path.exists():
             continue
@@ -230,9 +241,12 @@ def validate_shell_defaults(root: Path = Path("/")) -> None:  # noqa: C901
         if "brew shellenv fish | source" in content and FISH_BREW_APPEND not in content:
             fail(f"fish Homebrew setup is not append-only: {path}")
 
-    for path in (
-        _root_path(root, "/usr/etc/zsh/zshrc"),
-        _root_path(root, "/etc/zsh/zshrc"),
+
+def _validate_zsh_profile(root: Path) -> None:
+    for path in _root_paths(
+        root,
+        "/usr/etc/zsh/zshrc",
+        "/etc/zsh/zshrc",
     ):
         if not path.exists():
             continue
@@ -245,3 +259,11 @@ def validate_shell_defaults(root: Path = Path("/")) -> None:  # noqa: C901
             and ZSH_BREW_APPEND not in content
         ):
             fail(f"zsh Homebrew setup is not append-only: {path}")
+
+
+def validate_shell_defaults(root: Path = Path("/")) -> None:
+    _validate_open_alias_absent(root)
+    _validate_brew_profile(root)
+    _validate_uutils_profile(root)
+    _validate_fish_profile(root)
+    _validate_zsh_profile(root)

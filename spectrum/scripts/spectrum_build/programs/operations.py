@@ -9,29 +9,37 @@ from spectrum_build.programs.manifest import PROGRAMS
 from spectrum_build.programs.models import DnfProgram, Program
 
 
+def _register_program_name(program: Program, names: set[str]) -> None:
+    normalized = program.name.strip().casefold()
+    if not normalized:
+        fail("program names must not be empty")
+    if normalized in names:
+        fail(f"duplicate program name: {program.name}")
+    names.add(normalized)
+
+
+def _register_validation_packages(program: Program, packages: set[str]) -> None:
+    for package in program.validation_packages:
+        if not package.strip():
+            fail(f"empty validation package for program: {program.name}")
+        if package in packages:
+            fail(f"duplicate program validation package: {package}")
+        packages.add(package)
+
+
 def validate_program_manifest(programs: Iterable[Program] = PROGRAMS) -> None:
     names: set[str] = set()
     repository_paths: set[Path] = set()
     validation_packages: set[str] = set()
     for program in programs:
-        normalized_name = program.name.strip().casefold()
-        if not normalized_name:
-            fail("program names must not be empty")
-        if normalized_name in names:
-            fail(f"duplicate program name: {program.name}")
+        _register_program_name(program, names)
         if isinstance(program, DnfProgram) and not program.validation_packages:
             fail(f"DNF program has no validation packages: {program.name}")
         for repository in getattr(program, "repositories", ()):
             _register_repository_path(repository.destination, repository_paths)
         for path in getattr(program, "generated_repository_files", ()):
             _register_repository_path(path, repository_paths)
-        for package in program.validation_packages:
-            if not package.strip():
-                fail(f"empty validation package for program: {program.name}")
-            if package in validation_packages:
-                fail(f"duplicate program validation package: {package}")
-            validation_packages.add(package)
-        names.add(normalized_name)
+        _register_validation_packages(program, validation_packages)
 
 
 def _register_repository_path(path: Path, paths: set[Path]) -> None:

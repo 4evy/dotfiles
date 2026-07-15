@@ -152,13 +152,13 @@ jobs:
             --build-arg "IMAGE_VENDOR=${IMAGE_VENDOR}" \
             --build-arg "IMAGE_TAG=latest" \
             --build-arg "IMAGE_REF=ostree-image:docker://${IMAGE_REF}" \
-            --build-arg "IMAGE_CREATED=${CREATED}" \
             --build-arg "IMAGE_REVISION=${REVISION}" \
             --build-arg "IMAGE_VERSION=${VERSION}" \
             --build-arg "IMAGE_SOURCE=${SOURCE}" \
             --build-arg "IMAGE_URL=${URL}" \
             --build-arg "IMAGE_DOCUMENTATION=${DOCUMENTATION}" \
             --build-arg "IMAGE_README=${README}" \
+            --label "org.opencontainers.image.created=${CREATED}" \
             --label "org.opencontainers.image.base.name=${base_image_ref}" \
             --label "org.opencontainers.image.base.digest=${base_image_digest}" \
             --file spectrum/Containerfile \
@@ -269,7 +269,7 @@ jobs:
       - name: Download Syft
         id: syft
         if: github.event_name != 'pull_request'
-        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0
+        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
           syft-version: v1.42.3
 

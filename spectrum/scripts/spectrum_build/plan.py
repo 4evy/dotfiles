@@ -5,7 +5,6 @@ from spectrum_build.core.steps import BuildStep
 from spectrum_build.image.boot import report_boot_artifacts
 from spectrum_build.image.cleanup import cleanup_paths
 from spectrum_build.image.metadata import validate_image, write_image_metadata
-from spectrum_build.image.rootfs import install_rootfs_files
 from spectrum_build.image.services import (
     disable_authselect_feature,
     enable_required_units,
@@ -32,12 +31,12 @@ def install_package_manifest(context: BuildContext) -> None:
 def configure_system(context: BuildContext) -> None:
     disable_authselect_feature("with-fingerprint", context.runner)
     align_shell_defaults()
-    install_rootfs_files(context.config.context_dir)
     enable_required_units(context.runner)
 
 
-def clean_dnf_metadata(context: BuildContext) -> None:
-    context.dnf.clean()
+def clean_transient_image_state(_: BuildContext) -> None:
+    # Package-manager and uv caches live on Containerfile cache mounts, outside
+    # the committed image. Leave those populated for the next rebuild.
     cleanup_paths()
 
 
@@ -52,10 +51,8 @@ BUILD_STEPS = (
     BuildStep("configure system", configure_system),
     BuildStep(
         "validate image",
-        lambda context: validate_image(
-            context.config.context_dir, context.config.image.name, context.runner
-        ),
+        lambda context: validate_image(context.config.image.name, context.runner),
     ),
     BuildStep("report boot artifacts", lambda _: report_boot_artifacts()),
-    BuildStep("clean DNF metadata", clean_dnf_metadata),
+    BuildStep("clean transient image state", clean_transient_image_state),
 )

@@ -68,6 +68,7 @@ REQUIRED_PACKAGES: PackageGroups = {
         "liberation-serif-fonts",
     ),
     "system": (
+        "fuse3",
         "opensc",
         "openssh-clients",
         "openssl",
@@ -94,6 +95,7 @@ OPTIONAL_PACKAGES: PackageGroups = {}
 
 VALIDATION_PACKAGES: Sequence[str] = (
     "bootc",
+    "fuse3",
     "git",
     "just",
     "podman",

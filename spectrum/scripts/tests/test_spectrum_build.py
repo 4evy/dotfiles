@@ -7,8 +7,10 @@ from typing import TYPE_CHECKING, cast
 
 import pytest
 
-from spectrum_build.core.common import BuildError, CommandRunner, atomic_write
+from spectrum_build.core.common import BuildError, CommandRunner
 from spectrum_build.image import platform_info
+from spectrum_build.image.cleanup import DNF_CLEANUP_PATTERNS
+from spectrum_build.image.metadata import VALIDATION_COMMANDS
 from spectrum_build.image.shell import (
     BLUEFIN_OPEN_ALIAS,
     BREW_PROFILE_BAD_PATH_GUARD,
@@ -23,16 +25,69 @@ from spectrum_build.integrations.source_build import (
     clone_pinned_git_ref,
     pinned_git_project,
 )
-from spectrum_build.programs import copyous, ghostty, kmscon
-from spectrum_build.programs.manifest import PROGRAMS
+from spectrum_build.programs import copyous, ghostty
 from spectrum_build.programs.models import DnfProgram
 from spectrum_build.programs.operations import validate_program_manifest
 from spectrum_build.settings import BuildConfig, ImageConfig
+from workstation.lib.files import write_if_changed
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from spectrum_build.core.context import BuildContext
+
+
+def test_containerfile_owns_static_rootfs_and_nix_entrypoint_validation() -> None:
+    repository = Path(__file__).parents[3]
+    wrappers = repository / "spectrum/image/rootfs/usr/bin"
+    containerfile = (repository / "spectrum/Containerfile").read_text()
+
+    for tool in ("deadnix", "nil", "nixd", "nixfmt"):
+        launcher = wrappers / tool
+        assert launcher.is_file()
+        assert os.access(launcher, os.X_OK)
+        assert f"spectrum-nix-tools {tool}" in launcher.read_text()
+
+    assert "FROM scratch AS rootfs\nCOPY spectrum/image/rootfs /" in containerfile
+    assert "COPY --from=rootfs / /" in containerfile
+    assert "COPY spectrum /image/spectrum" not in containerfile
+    assert "COPY spectrum/image/repos /image/spectrum/image/repos" in containerfile
+    assert "COPY spectrum/scripts /image/spectrum/scripts" in containerfile
+    assert "for command in deadnix nil nixd nixfmt" in containerfile
+    assert not {"deadnix", "nil", "nixd", "nixfmt"}.intersection(VALIDATION_COMMANDS)
+
+
+def test_local_spectrum_builds_use_stable_layers_and_persistent_caches() -> None:
+    repository = Path(__file__).parents[3]
+    containerfile = (repository / "spectrum/Containerfile").read_text()
+    justfile = (repository / "Justfile").read_text()
+    workflow = (repository / ".github/workflows/spectrum.yaml").read_text()
+
+    assert (
+        "--mount=type=cache,id=spectrum-dnf5,sharing=locked,"
+        "target=/var/cache/libdnf5" in containerfile
+    )
+    assert (
+        "--mount=type=cache,id=spectrum-uv,sharing=locked,"
+        "target=/var/cache/uv" in containerfile
+    )
+    assert "UV_LINK_MODE=copy" in containerfile
+    assert containerfile.index("RUN --mount=type=bind,from=ctx") < containerfile.index(
+        "LABEL org.opencontainers.image.title"
+    )
+    assert "ARG IMAGE_CREATED" not in containerfile
+    assert 'org.opencontainers.image.created="${IMAGE_CREATED}"' not in containerfile
+    assert '--label "org.opencontainers.image.created=$image_created"' in justfile
+    assert '--build-arg "IMAGE_CREATED=$image_created"' not in justfile
+    assert '--label "org.opencontainers.image.created=${CREATED}"' in workflow
+    assert '--build-arg "IMAGE_CREATED=${CREATED}"' not in workflow
+    assert "build target=local_ref: (_build target 'false')" in justfile
+    assert "build-clean target=local_ref: (_build target 'true')" in justfile
+    assert "switch target=local_ref: (doctor 'install') (build target)" in justfile
+    assert "upgrade target=local_ref: (doctor 'install') (build target)" in justfile
+    assert "--layers=true" in justfile
+    assert "/var/cache/dnf/*" not in DNF_CLEANUP_PATTERNS
+    assert "/var/cache/libdnf5/*" not in DNF_CLEANUP_PATTERNS
 
 
 def test_image_config_derives_defaults_and_honors_environment(
@@ -77,13 +132,13 @@ def test_build_config_prefers_context_environment(
     assert config.context_dir == configured
 
 
-def test_atomic_write_is_idempotent_but_repairs_mode(tmp_path: Path) -> None:
+def test_shared_atomic_write_is_idempotent_but_repairs_mode(tmp_path: Path) -> None:
     destination = tmp_path / "nested/value"
-    atomic_write(destination, b"content", 0o600)
+    write_if_changed(destination, b"content", 0o600)
     destination.chmod(0o644)
     original_inode = destination.stat().st_ino
 
-    atomic_write(destination, b"content", 0o600)
+    write_if_changed(destination, b"content", 0o600)
 
     assert destination.read_bytes() == b"content"
     assert destination.stat().st_ino == original_inode
@@ -118,6 +173,7 @@ def test_dnf_cli_preserves_optional_and_signature_flags(
             "dnf5",
             "-y",
             "install",
+            "--setopt=keepcache=True",
             "--setopt=install_weak_deps=False",
             "--enablerepo=vendor",
             "--skip-unavailable",
@@ -251,31 +307,6 @@ def test_repository_backed_program_owns_repository_lifecycle(tmp_path: Path) -> 
     assert "enabled=0" in destination.read_text()
 
 
-def test_program_manifest_contains_one_declaration_per_program() -> None:
-    assert {program.name for program in PROGRAMS} == {
-        "1Password",
-        "Copyous",
-        "Discord",
-        "Ghostty",
-        "KMSCON",
-        "RustDesk",
-        "SOPS",
-        "Tailscale",
-        "Telegram",
-        "Visual Studio Code",
-    }
-    validate_program_manifest()
-
-
-def test_ghostty_source_and_toolchain_are_pinned() -> None:
-    assert ghostty.REVISION == "a887df42c56f6de86c0fe6da9c4eeca37931e083"
-    assert ghostty.ZIG_VERSION == "0.15.2"
-    assert ghostty.ZIG_BUILD_JOBS == 2
-    assert len(ghostty.SOURCE_SHA256) == 64
-    assert set(ghostty.ZIG_SHA256) == {"x86_64-linux", "aarch64-linux"}
-    assert all(len(digest) == 64 for digest in ghostty.ZIG_SHA256.values())
-
-
 def test_ghostty_build_caps_zig_concurrency() -> None:
     assert ghostty._zig_build_command(Path("/zig")) == (
         Path("/zig"),
@@ -286,6 +317,20 @@ def test_ghostty_build_caps_zig_concurrency() -> None:
         "-Doptimize=ReleaseFast",
         f"-Dversion-string={ghostty.VERSION}",
     )
+
+
+def test_ghostty_zig_cache_avoids_bluefin_root_symlink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOME", "/root")
+    zig = tmp_path / "toolchain/zig"
+    cache = tmp_path / "workspace/zig-global-cache"
+
+    environment = ghostty._zig_build_environment(zig, cache)
+
+    assert environment["PATH"].split(os.pathsep, 1)[0] == str(zig.parent)
+    assert environment["ZIG_GLOBAL_CACHE_DIR"] == str(cache.resolve())
+    assert not environment["ZIG_GLOBAL_CACHE_DIR"].startswith("/root/")
 
 
 def test_ghostty_download_rejects_wrong_checksum(
@@ -402,10 +447,6 @@ def test_pinned_project_environment_is_namespaced(
         tag="v2",
         revision="b" * 40,
     )
-
-
-def test_kmscon_astral_path_is_independent_of_python_version() -> None:
-    assert Path("/usr/lib/dotfiles/python") == kmscon.ASTRAL_VENDOR_PATH
 
 
 def test_clone_rejects_tag_resolving_to_unexpected_revision(

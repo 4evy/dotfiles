@@ -11,6 +11,8 @@ from spectrum_build.integrations.source_build import (
 )
 from spectrum_build.programs.models import CustomProgram
 
+# Keep this independent of the system Python minor version so image upgrades do
+# not invalidate the KMSCON theme helper's import path.
 ASTRAL_VENDOR_PATH = Path("/usr/lib/dotfiles/python")
 
 BUILD_COMMANDS = (

@@ -5,10 +5,11 @@ import tarfile
 import tempfile
 from pathlib import Path
 
-from spectrum_build.core.common import atomic_write, fail, require_readable_file
+from spectrum_build.core.common import fail, require_readable_file
 from spectrum_build.core.context import BuildContext
 from spectrum_build.integrations.http import download
 from spectrum_build.programs.models import CustomProgram
+from workstation.lib.files import extract_tar_archive, write_if_changed
 
 REVISION = "a887df42c56f6de86c0fe6da9c4eeca37931e083"
 VERSION = "1.3.2-dev.a887df4"
@@ -50,6 +51,13 @@ def _zig_build_command(zig: Path) -> tuple[str | Path, ...]:
     )
 
 
+def _zig_build_environment(zig: Path, global_cache: Path) -> dict[str, str]:
+    environment = dict(os.environ)
+    environment["PATH"] = f"{zig.parent}:{environment['PATH']}"
+    environment["ZIG_GLOBAL_CACHE_DIR"] = str(global_cache.resolve())
+    return environment
+
+
 def install(context: BuildContext) -> None:
     runner = context.runner
     runner.require("git", "tar", "xz")
@@ -61,11 +69,11 @@ def install(context: BuildContext) -> None:
     with tempfile.TemporaryDirectory(prefix="spectrum-ghostty-") as work_name:
         work = Path(work_name)
         source_archive = work / "ghostty.tar.gz"
-        atomic_write(source_archive, _verified_download(SOURCE_URL, SOURCE_SHA256))
+        write_if_changed(source_archive, _verified_download(SOURCE_URL, SOURCE_SHA256))
         with tarfile.open(source_archive) as archive:
-            archive.extractall(work / "source", filter="data")
+            extract_tar_archive(archive, work / "source")
         source = next(
-            (path for path in (work / "source").iterdir() if path.is_dir()), None
+            (path for path in (work / "source").iterdir() if path.info.is_dir()), None
         )
         if source is None:
             fail("Ghostty source archive did not contain a source directory")
@@ -76,7 +84,7 @@ def install(context: BuildContext) -> None:
         zig_arch = _zig_architecture()
         zig_name = f"zig-{zig_arch}-{ZIG_VERSION}"
         zig_archive = work / f"{zig_name}.tar.xz"
-        atomic_write(
+        write_if_changed(
             zig_archive,
             _verified_download(
                 f"https://ziglang.org/download/{ZIG_VERSION}/{zig_name}.tar.xz",
@@ -84,12 +92,16 @@ def install(context: BuildContext) -> None:
             ),
         )
         with tarfile.open(zig_archive) as archive:
-            archive.extractall(work / "zig", filter="data")
+            extract_tar_archive(archive, work / "zig")
         zig = work / "zig" / zig_name / "zig"
         require_readable_file(zig)
 
-        environment = dict(os.environ)
-        environment["PATH"] = f"{zig.parent}:{environment['PATH']}"
+        # Bluefin's /root is a symlink to /var/roothome. Zig derives relative
+        # run-artifact paths from its global cache, and those paths resolve one
+        # directory too deep when the cache is reached through that symlink.
+        # Keep the cache beside the source so its logical and physical paths
+        # agree, and so build-only cache data is removed with the workspace.
+        environment = _zig_build_environment(zig, work / "zig-global-cache")
         runner.run(_zig_build_command(zig), cwd=source, env=environment)
 
     executable = Path("/usr/bin/ghostty")

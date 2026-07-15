@@ -29,15 +29,13 @@ class Dnf:
             *self.command,
             "-y",
             "install",
+            "--setopt=keepcache=True",
             "--setopt=install_weak_deps=False",
             *(f"--enablerepo={repo_id}" for repo_id in enabled_repositories),
             *(("--skip-unavailable",) if optional else ()),
             *(("--nogpgcheck",) if nogpgcheck else ()),
             *packages,
         ])
-
-    def clean(self) -> None:
-        self.runner.run([*self.command, "clean", "all"])
 
     @staticmethod
     def _find_command() -> tuple[str, ...]:

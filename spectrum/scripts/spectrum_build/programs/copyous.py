@@ -1,21 +1,27 @@
-import json
-import shutil
 import stat
 import tempfile
 import zipfile
 from io import BytesIO
 from pathlib import Path, PurePosixPath
+from typing import Literal
+
+from pydantic import BaseModel, ValidationError
 
 from spectrum_build.core.common import fail, require_readable_file
 from spectrum_build.core.context import BuildContext
 from spectrum_build.integrations.github import latest_github_asset_url
 from spectrum_build.integrations.http import download
 from spectrum_build.programs.models import CustomProgram
+from workstation.lib.files import remove_path
 
 UUID = "copyous@boerdereinar.dev"
 REPOSITORY = "boerdereinar/copyous"
 DESTINATION = Path("/usr/share/gnome-shell/extensions") / UUID
 DEPENDENCIES = ("libgda", "libgda-sqlite", "gsound")
+
+
+class ExtensionMetadata(BaseModel):
+    uuid: Literal["copyous@boerdereinar.dev"]
 
 
 def _extract_archive(archive: bytes, destination: Path) -> None:
@@ -39,12 +45,9 @@ def _validate_extension(source: Path) -> None:
         source / "schemas/org.gnome.shell.extensions.copyous.gschema.xml"
     )
     try:
-        metadata = json.loads(metadata_path.read_bytes())
-    except (json.JSONDecodeError, OSError) as error:
+        ExtensionMetadata.model_validate_json(metadata_path.read_bytes())
+    except (OSError, ValidationError) as error:
         fail(f"invalid Copyous extension metadata: {error}")
-    if not isinstance(metadata, dict) or metadata.get("uuid") != UUID:
-        actual_uuid = metadata.get("uuid") if isinstance(metadata, dict) else None
-        fail(f"unexpected Copyous extension UUID: {actual_uuid!r}")
 
 
 def install(context: BuildContext) -> None:
@@ -56,9 +59,9 @@ def install(context: BuildContext) -> None:
         _extract_archive(download(asset_url), source)
         _validate_extension(source)
         context.runner.run(["glib-compile-schemas", source / "schemas"])
-        shutil.rmtree(DESTINATION, ignore_errors=True)
         DESTINATION.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(source, DESTINATION)
+        remove_path(DESTINATION)
+        source.copy(DESTINATION, preserve_metadata=True)
 
 
 PROGRAM = CustomProgram(

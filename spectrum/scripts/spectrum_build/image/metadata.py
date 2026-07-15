@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field, ValidationError
 
 from spectrum_build.core.common import (
     CommandRunner,
-    atomic_write,
     fail,
     require_readable_file,
 )
@@ -15,7 +14,6 @@ from spectrum_build.image.platform_info import (
     read_os_release,
     set_os_release_value,
 )
-from spectrum_build.image.rootfs import validate_rootfs_files
 from spectrum_build.image.services import validate_required_units
 from spectrum_build.image.shell import validate_shell_defaults
 from spectrum_build.integrations.repositories import (
@@ -29,6 +27,7 @@ from spectrum_build.programs.operations import (
     program_validation_packages,
 )
 from spectrum_build.settings import ImageConfig
+from workstation.lib.files import write_if_changed
 
 IMAGE_INFO = Path("/usr/share/ublue-os/image-info.json")
 VALIDATION_COMMANDS = (
@@ -51,7 +50,7 @@ class ImageInfo(BaseModel):
 
 def write_image_metadata(image: ImageConfig) -> None:
     os_release = read_os_release()
-    atomic_write(
+    write_if_changed(
         IMAGE_INFO,
         json.dumps(
             image.image_info(fedora_version=os_release.get("VERSION_ID")), indent=2
@@ -71,7 +70,7 @@ def write_image_metadata(image: ImageConfig) -> None:
         set_os_release_value("BUILD_ID", image.revision)
 
 
-def validate_image(context_dir: Path, image_name: str, runner: CommandRunner) -> None:
+def validate_image(image_name: str, runner: CommandRunner) -> None:
     runner.require(*VALIDATION_COMMANDS)
     require_readable_file(IMAGE_INFO)
 
@@ -90,7 +89,6 @@ def validate_image(context_dir: Path, image_name: str, runner: CommandRunner) ->
     for package in (*VALIDATION_PACKAGES, *program_validation_packages()):
         runner.run(["rpm", "-q", package], discard_output=True)
 
-    validate_rootfs_files(context_dir)
     validate_repositories_disabled(program_repositories())
     validate_repository_files_disabled(program_generated_repository_files())
     validate_required_units(runner)

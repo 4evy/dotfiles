@@ -4,9 +4,10 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-from spectrum_build.core.common import atomic_write, fail, require_readable_file
+from spectrum_build.core.common import fail, require_readable_file
 from spectrum_build.core.context import BuildContext
 from spectrum_build.integrations.http import download
+from workstation.lib.files import write_if_changed
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,7 +44,7 @@ def disable_repository_files(paths: Iterable[Path]) -> None:
 
         output = io.StringIO()
         parser.write(output, space_around_delimiters=False)
-        atomic_write(path, output.getvalue().encode())
+        write_if_changed(path, output.getvalue().encode())
 
 
 def install_repositories(
@@ -61,7 +62,7 @@ def install_repositories(
 
         if source.repo_ids:
             content = disabled_repository_config(content, source.repo_ids)
-        atomic_write(source.destination, content)
+        write_if_changed(source.destination, content)
 
         if source.import_rpm_key:
             context.runner.require("rpm")
@@ -73,7 +74,7 @@ def disable_repositories(repositories: Iterable[RepositoryFile]) -> None:
         if not repository.repo_ids:
             continue
         require_readable_file(repository.destination)
-        atomic_write(
+        write_if_changed(
             repository.destination,
             disabled_repository_config(
                 repository.destination.read_bytes(), repository.repo_ids
