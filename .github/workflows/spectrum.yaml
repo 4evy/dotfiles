@@ -281,11 +281,14 @@ jobs:
           LOCAL_REF: "${{ steps.image.outputs.local_ref }}"
           SYFT_CMD: "${{ steps.syft.outputs.cmd }}"
           SYFT_FILE_METADATA_SELECTION: none
+          SYFT_RELATIONSHIPS_PACKAGE_FILE_OWNERSHIP: "false"
         run: |
           set -euo pipefail
           mount_path=$(sudo podman image mount "${LOCAL_REF}")
           trap 'sudo podman image unmount "${LOCAL_REF}" >/dev/null' EXIT
-          sudo "${SYFT_CMD}" scan \
+          sudo \
+            --preserve-env=SYFT_FILE_METADATA_SELECTION,SYFT_RELATIONSHIPS_PACKAGE_FILE_OWNERSHIP \
+            "${SYFT_CMD}" scan \
             "dir:${mount_path}" \
             --source-name "${IMAGE_REF}@${DIGEST}" \
             --output spdx-json=spectrum.spdx.json
