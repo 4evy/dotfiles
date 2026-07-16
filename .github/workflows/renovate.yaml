@@ -24,7 +24,8 @@ jobs:
     name: Update Dependencies
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
+      pull-requests: read
     steps:
       - name: Checkout Repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -34,7 +35,7 @@ jobs:
       - name: Check Renovate Token
         id: token
         env:
-          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+          RENOVATE_TOKEN: ${{ github.token }}
         run: |
           if [ -n "${RENOVATE_TOKEN}" ]; then
             echo "configured=true" >>"$GITHUB_OUTPUT"
@@ -63,7 +64,7 @@ jobs:
           done
         env:
           LOG_LEVEL: info
-          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+          RENOVATE_TOKEN: ${{ github.token }}
           RENOVATE_GIT_AUTHOR: "4evy <git@evy.pink>"
           RENOVATE_GIT_PRIVATE_KEY: ${{ secrets.RENOVATE_GIT_PRIVATE_KEY }}
           RENOVATE_ONBOARDING: "false"
