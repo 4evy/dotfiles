@@ -2,6 +2,9 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:best-practices"],
   "gitAuthor": "4evy <git@evy.pink>",
+  "gitIgnoredAuthors": [
+    "41898282+github-actions[bot]@users.noreply.github.com"
+  ],
   "dependencyDashboard": false,
   "configMigration": false,
   "automerge": true,
