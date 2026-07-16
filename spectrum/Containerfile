@@ -10,10 +10,12 @@ FROM docker.io/library/debian:bookworm-slim@sha256:7b140f374b289a7c2befc338f42eb
 
 ARG DETERMINATE_NIX_INSTALLER_VERSION=v3.21.5
 ADD --chmod=0755 \
-    --checksum=sha256:ee9c560d6f093baf7a8b342d8a00e9f8b47dd4a6367f3f523482ee96897c4179 \
     https://install.determinate.systems/nix/tag/${DETERMINATE_NIX_INSTALLER_VERSION}/nix-installer-x86_64-linux \
     /tmp/nix-installer
-RUN /tmp/nix-installer install linux \
+RUN printf '%s  %s\n' \
+    'ee9c560d6f093baf7a8b342d8a00e9f8b47dd4a6367f3f523482ee96897c4179' \
+    /tmp/nix-installer | sha256sum --check - && \
+    /tmp/nix-installer install linux \
     --extra-conf 'sandbox = false' \
     --init none \
     --no-confirm && \
