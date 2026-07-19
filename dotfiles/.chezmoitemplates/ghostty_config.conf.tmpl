@@ -48,8 +48,9 @@ font-thicken = true
 # Keybindings
 keybind = clear
 {{- if eq .chezmoi.os "darwin" }}
-keybind = super+left=text:\x01
-keybind = super+right=text:\x05
+# Emit terminal-native Home/End sequences instead of legacy Ctrl+A/Ctrl+E.
+keybind = super+left=text:\x1bOH
+keybind = super+right=text:\x1bOF
 keybind = super+alt+left=previous_tab
 keybind = super+alt+right=next_tab
 keybind = super+shift+left=goto_split:left
@@ -126,11 +127,12 @@ keybind = super+up=jump_to_prompt:-1
 keybind = super+down=jump_to_prompt:1
 keybind = super+ctrl+f=toggle_fullscreen
 {{- end }}
-keybind = ctrl+left=text:\x01
-keybind = ctrl+right=text:\x05
-keybind = ctrl+space=text:\x00
+# Emit terminal-native Home/End sequences for line navigation.
+keybind = ctrl+left=text:\x1bOH
+keybind = ctrl+right=text:\x1bOF
 keybind = ctrl+alt+left=previous_tab
 keybind = ctrl+alt+right=next_tab
+# These shell-compatible sequences are the standard Alt+B/Alt+F word motions.
 keybind = alt+left=text:\x1b\x62
 keybind = alt+right=text:\x1b\x66
 keybind = ctrl+shift+left=goto_split:left
