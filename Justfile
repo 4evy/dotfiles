@@ -1,5 +1,7 @@
 #!/usr/bin/env -S just --justfile
 
+set default-list
+set default-script
 set script-interpreter := ['bash', '-euo', 'pipefail']
 
 image_name := env("SPECTRUM_IMAGE_NAME", "spectrum")
@@ -7,21 +9,124 @@ local_tag := env("SPECTRUM_LOCAL_TAG", "local")
 local_ref := "localhost/" + image_name + ":" + local_tag
 remote_ref := env("SPECTRUM_REMOTE_REF", "ghcr.io/4evy/" + image_name + ":latest")
 base_image := env("SPECTRUM_BLUEFIN_BASE_IMAGE", "ghcr.io/ublue-os/bluefin-nvidia-open:stable@sha256:1e7a59c83f104652bd06308f0a6439669cb3ea327d4e968695af85c67abea352")
+base_image_digest := if base_image =~ '@sha256:[0-9a-f]{64}$' { replace_regex(base_image, '^.*@', '') } else { error('Spectrum base images must end in a sha256 digest') }
+base_image_ref := replace_regex(base_image, '@sha256:[0-9a-f]{64}$', '')
 base_image_name := env("SPECTRUM_BLUEFIN_BASE_IMAGE_NAME", "bluefin-nvidia-open")
 base_image_tag := env("SPECTRUM_BLUEFIN_BASE_IMAGE_TAG", "stable")
 compose := env("COMPOSE", "podman-compose")
-ansible_playbooks := "ansible/playbooks/bootstrap.yml ansible/playbooks/userland.yml ansible/playbooks/host.yml ansible/playbooks/site.yml"
 podman := env("PODMAN", "podman")
-homebrew_path := "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin"
 determinate_nix_installer_url := "https://install.determinate.systems/nix"
 nixos_nix_installer_url := "https://artifacts.nixos.org/nix-installer"
+
+host_os := os()
+repo_dir := justfile_directory()
+ansible_dir := repo_dir / "ansible"
+dotfiles_dir := repo_dir / "dotfiles"
+hyper_dir := repo_dir / "packages/hyper-window-tiling"
+ansible_playbooks := prepend("ansible/playbooks/", "bootstrap.yml userland.yml host.yml site.yml")
+
+homebrew_prefix := env("HOMEBREW_PREFIX", if host_os == "macos" { "/opt/homebrew" } else { "/home/linuxbrew/.linuxbrew" })
+homebrew_gnu_formulae := "coreutils findutils gnu-sed grep gawk gnu-tar gnu-which diffutils make"
+homebrew_gnu_path := if host_os == "macos" { replace(append("/libexec/gnubin", prepend(homebrew_prefix / "opt/", homebrew_gnu_formulae)), " ", PATH_VAR_SEP) + PATH_VAR_SEP } else { "" }
+homebrew_path := homebrew_gnu_path + homebrew_prefix / "bin" + PATH_VAR_SEP + homebrew_prefix / "sbin"
 nix_bin_dir := "/nix/var/nix/profiles/default/bin"
-nix_bin := "/nix/var/nix/profiles/default/bin/nix"
-nix_profile_bin_dir := env("HOME", "") + "/.nix-profile/bin"
+nix_bin := nix_bin_dir / "nix"
+nix_profile_bin_dir := home_directory() / ".nix-profile/bin"
 nixos_profile_bin_dir := "/run/current-system/sw/bin"
 nix_profile_tools := "deadnix:deadnix nh:nh nil:nil nix-instantiate:nix nom:nix-output-monitor nix-tree:nix-tree nixd:nixd nixfmt:nixfmt"
 pi_extension_profile_tools := "agent-statusline:github:euvlok/pkgs#agent-statusline agent-statusline-pi:github:euvlok/pkgs#agent-statusline-pi pi-ssh-tools:github:euvlok/pkgs#pi-ssh-tools web-search-pi:github:euvlok/pkgs#web-search-pi"
-export PATH := env("PATH", "") + ":" + nix_bin_dir + ":" + nix_profile_bin_dir + ":" + nixos_profile_bin_dir + ":" + homebrew_path
+
+doctor_setup_commands := "bash curl git sudo"
+doctor_format_commands := "bun git go gofmt jq nixfmt prettier shfmt stylua taplo uv"
+doctor_ansible_commands := "ansible-galaxy ansible-lint ansible-playbook ansible-test yamllint"
+doctor_lint_commands := "actionlint chezmoi deadnix golangci-lint hadolint luacheck nix-instantiate shellcheck " + doctor_format_commands + " " + doctor_ansible_commands
+doctor_all_commands := doctor_lint_commands + " bash curl sudo watchexec"
+
+repo_file_inventory := '''
+repo_paths=() missing_paths=() symlink_files=() broken_symlinks=() special_files=()
+template_files=() python_template_files=() shell_template_files=() python_input_template_files=() xml_input_template_files=()
+unformatted_files=() enumerated_files=() hyper_files=() just_files=() docker_files=()
+go_files=() go_mod_files=() json_files=() json_auto_files=() jsonc_files=() yaml_files=() prettier_files=() prettier_parse_files=()
+python_files=() shell_files=() toml_files=() xml_files=() lua_files=() nix_files=()
+
+is_shell_file() {
+  case "$1" in
+    *.tmpl | *.txt | *.patch) return 1 ;;
+    *.sh | *.sh.in | *.bash) return 0 ;;
+  esac
+
+  head -n 2 < "$1" | grep -Eq '^#!.*[[:space:]/](sh|bash)([[:space:]]|$)|^# shellcheck shell=(sh|bash)'
+}
+
+classify_file() {
+  local file=$1 base=${1##*/}
+
+  if [[ $file == packages/hyper-window-tiling/* ]]; then
+    hyper_files+=("$file")
+    return
+  fi
+
+  case "$base" in
+    Justfile | justfile) just_files+=("$file"); enumerated_files+=("$file"); return ;;
+    Dockerfile | Containerfile) docker_files+=("$file"); unformatted_files+=("$file"); return ;;
+    go.mod) go_mod_files+=("$file"); return ;;
+    flake.lock) json_files+=("$file"); return ;;
+    package-lock.json | npm-shrinkwrap.json) json_auto_files+=("$file"); return ;;
+    uv.lock) unformatted_files+=("$file"); enumerated_files+=("$file"); return ;;
+  esac
+
+  case "$file" in
+    .yamllint | .ansible-lint) yaml_files+=("$file"); unformatted_files+=("$file") ;;
+    *.plist.in | *.xml.in) xml_input_template_files+=("$file"); unformatted_files+=("$file") ;;
+    *.py.in) python_input_template_files+=("$file"); unformatted_files+=("$file") ;;
+    *.bash.tmpl | *.sh.tmpl) template_files+=("$file"); shell_template_files+=("$file") ;;
+    *.py.tmpl) template_files+=("$file"); python_template_files+=("$file") ;;
+    *.tmpl) template_files+=("$file") ;;
+    *.jsonc) jsonc_files+=("$file") ;;
+    *.json) json_files+=("$file") ;;
+    *.yaml | *.yml) yaml_files+=("$file"); prettier_files+=("$file") ;;
+    *.md) prettier_files+=("$file"); prettier_parse_files+=("$file") ;;
+    *.js | *.cjs | *.mjs | *.jsx | *.ts | *.tsx | *.css | *.html | *.mdx) prettier_files+=("$file"); prettier_parse_files+=("$file") ;;
+    *.go) go_files+=("$file") ;;
+    *.py) python_files+=("$file") ;;
+    *.sh | *.sh.in | *.bash | .envrc) shell_files+=("$file") ;;
+    *.toml) toml_files+=("$file") ;;
+    *.plist | *.xml) xml_files+=("$file"); unformatted_files+=("$file") ;;
+    *.lua) lua_files+=("$file") ;;
+    *.nix) nix_files+=("$file") ;;
+    *)
+      if is_shell_file "$file"; then
+        shell_files+=("$file")
+      else
+        unformatted_files+=("$file")
+        enumerated_files+=("$file")
+      fi
+      ;;
+  esac
+}
+
+while IFS= read -r -d '' file; do
+  repo_paths+=("$file")
+  if [[ -L $file ]]; then
+    symlink_files+=("$file")
+    [[ -e $file ]] || broken_symlinks+=("$file")
+  elif [[ ! -e $file ]]; then
+    missing_paths+=("$file")
+  elif [[ -f $file ]]; then
+    classify_file "$file"
+  else
+    special_files+=("$file")
+    enumerated_files+=("$file")
+  fi
+done < <(git ls-files -z --cached --others --exclude-standard --)
+
+if ((${#missing_paths[@]} > 0)); then
+  printf 'tracked paths missing from worktree:\n' >&2
+  printf '  %s\n' "${missing_paths[@]}" >&2
+fi
+'''
+
+export PATH := homebrew_path + PATH_VAR_SEP + nix_bin_dir + PATH_VAR_SEP + nix_profile_bin_dir + PATH_VAR_SEP + nixos_profile_bin_dir + PATH_VAR_SEP + env("PATH", "")
 
 alias a := apply
 alias b := build
@@ -39,95 +144,45 @@ alias u := upgrade
 alias up := update
 alias w := watch
 
-[private]
-default:
-    @just --list --unsorted --list-heading $'Dotfiles recipes:\n'
-
 # Check commands required for a workflow profile.
 [arg('profile', pattern='status|reboot|install|build|setup|apply|shell|spectrum|fmt|lint|go|ansible|bun|smoke|nix|watch|check|all', help='status, reboot, install, build, setup, apply, shell, spectrum, fmt, lint, go, ansible, bun, smoke, nix, watch, check, or all')]
 [group('system')]
-[script]
 doctor profile="setup":
     profile={{ quote(profile) }}
-    host_os={{ quote(os()) }}
+    host_os={{ quote(host_os) }}
     commands=()
     podman_command={{ quote(podman) }}
     compose_command={{ quote(compose) }}
 
+    linux_commands() {
+      if [[ $host_os == linux ]]; then
+        commands=("$@")
+      else
+        printf 'Skipping Linux-only dependency check for workflow %q on %s.\n' "$profile" "$host_os"
+      fi
+    }
+
     case "$profile" in
-      status)
-        if [[ $host_os == linux ]]; then
-          commands=(bootc)
-        else
-          printf 'Skipping Linux-only dependency check for workflow %q on %s.\n' "$profile" "$host_os"
-        fi
-        ;;
-      reboot)
-        if [[ $host_os == linux ]]; then
-          commands=(systemctl)
-        else
-          printf 'Skipping Linux-only dependency check for workflow %q on %s.\n' "$profile" "$host_os"
-        fi
-        ;;
-      install)
-        if [[ $host_os == linux ]]; then
-          commands=(bootc sudo)
-        else
-          printf 'Skipping Linux-only dependency check for workflow %q on %s.\n' "$profile" "$host_os"
-        fi
-        ;;
-      build)
-        commands=("${podman_command%% *}" sudo)
-        ;;
-      setup)
-        commands=(bash curl git sudo)
-        ;;
-      apply)
-        commands=(chezmoi)
-        ;;
-      shell)
-        commands=(shellcheck shfmt)
-        ;;
-      spectrum)
-        commands=(uv)
-        ;;
-      fmt)
-        commands=(git gofmt go just jq nixfmt prettier shfmt taplo stylua uv)
-        if [[ -f packages/hyper-window-tiling/package.json ]]; then
-          commands+=(bun)
-        fi
-        ;;
-      lint | check)
-        commands=(chezmoi deadnix git gofmt go hadolint jq just nix-instantiate nixfmt prettier shellcheck shfmt taplo stylua uv golangci-lint ansible-galaxy ansible-playbook ansible-test ansible-lint actionlint luacheck yamllint)
-        if [[ -f packages/hyper-window-tiling/package.json ]]; then
-          commands+=(bun)
-        fi
-        ;;
-      go)
-        commands=(go golangci-lint)
-        ;;
-      ansible)
-        commands=(ansible-galaxy ansible-playbook ansible-test ansible-lint yamllint)
-        ;;
-      bun)
-        commands=(bun)
-        ;;
-      smoke)
-        commands=("${compose_command%% *}")
-        ;;
-      nix)
-        commands=(bash curl sudo)
-        ;;
-      watch)
-        commands=(watchexec)
-        ;;
+      status) linux_commands bootc ;;
+      reboot) linux_commands systemctl ;;
+      install) linux_commands bootc sudo ;;
+      build) commands=("${podman_command%% *}" sudo) ;;
+      setup) commands=({{ doctor_setup_commands }}) ;;
+      apply) commands=(chezmoi) ;;
+      shell) commands=(shellcheck shfmt) ;;
+      spectrum) commands=(uv) ;;
+      fmt) commands=({{ doctor_format_commands }}) ;;
+      lint | check) commands=({{ doctor_lint_commands }}) ;;
+      go) commands=(go golangci-lint) ;;
+      ansible) commands=({{ doctor_ansible_commands }}) ;;
+      bun) commands=(bun) ;;
+      smoke) commands=("${compose_command%% *}") ;;
+      nix) commands=(bash curl sudo) ;;
+      watch) commands=(watchexec) ;;
       all)
-        commands=(sudo "${podman_command%% *}" bash chezmoi curl deadnix git gofmt hadolint jq just nix-instantiate nixfmt prettier shellcheck shfmt taplo stylua uv go golangci-lint ansible-galaxy ansible-playbook ansible-test ansible-lint actionlint luacheck yamllint watchexec "${compose_command%% *}")
+        commands=({{ doctor_all_commands }} "${podman_command%% *}" "${compose_command%% *}")
         if [[ $host_os == linux ]]; then
           commands+=(bootc systemctl)
-        fi
-        if [[ -f packages/hyper-window-tiling/package.json ]]; then
-          commands+=(bun)
         fi
         ;;
     esac
@@ -143,12 +198,14 @@ doctor profile="setup":
 
 [macos]
 [private]
+[shell]
 _linux-only recipe:
     @printf 'Skipping `just %s`: this workflow is only supported on Linux.\n' {{ quote(recipe) }}
 
 # Show bootc and image metadata status.
 [group('system')]
 [linux]
+[shell]
 status: (doctor 'status')
     bootc status
     @if [ -r /usr/share/ublue-os/image-info.json ] && command -v jq >/dev/null 2>&1; then \
@@ -157,29 +214,81 @@ status: (doctor 'status')
 
 [group('system')]
 [macos]
-status: (_linux-only 'status')
+status: (_linux-only recipe_name())
 
 # Reclaim disposable Podman, Nix, tool, user, and journal data.
 [confirm('Remove unused Podman data, old Nix generations, caches, and archived journals?')]
 [group('system')]
 [linux]
-clean: _clean-podman _clean-podman-root _clean-nix _clean-tool-caches _clean-user-cache _clean-journal
+clean:
+    cache_dir={{ quote(cache_directory()) }}
+    home_dir={{ quote(home_directory()) }}
+    tracked_paths=(/var "$home_dir" /nix /run "$cache_dir")
 
-[private]
-_clean-podman:
-    {{ podman }} system prune --all --force
+    filesystem_usage_bytes() {
+      local path device used total=0
+      local -A seen_devices=()
+      for path in "${tracked_paths[@]}"; do
+        [[ -e $path ]] || continue
+        device=$(stat --format=%d -- "$path")
+        [[ -v seen_devices[$device] ]] && continue
+        seen_devices[$device]=1
+        used=$(df --block-size=1 --output=used -- "$path" | tail -n 1)
+        total=$((total + used))
+      done
+      printf '%s\n' "$total"
+    }
 
-[private]
-_clean-podman-root:
-    sudo {{ podman }} system prune --force
+    human_bytes() {
+      if command -v numfmt >/dev/null 2>&1; then
+        numfmt --to=iec-i --suffix=B "$1"
+      else
+        printf '%s bytes\n' "$1"
+      fi
+    }
 
-[private]
-_clean-nix:
-    nh clean all --keep 1
+    report_usage_delta() {
+      local delta=$1 context=$2
+      if ((delta >= 0)); then
+        printf 'Actual filesystem space reclaimed: %s (%s bytes)\n' "$(human_bytes "$delta")" "$delta"
+      else
+        delta=$((-delta))
+        printf 'Filesystem usage grew during %s: %s (%s bytes)\n' "$context" "$(human_bytes "$delta")" "$delta"
+      fi
+    }
 
-[private]
-[script]
-_clean-tool-caches:
+    measure_cleanup() {
+      local label=$1
+      shift
+      local before after reclaimed
+      sync
+      before=$(filesystem_usage_bytes)
+      printf '\n==> %s\n' "$label"
+      if ! "$@"; then
+        printf 'Cleanup stage failed: %s\n' "$label" >&2
+        return 1
+      fi
+      sync
+      after=$(filesystem_usage_bytes)
+      reclaimed=$((before - after))
+      report_usage_delta "$reclaimed" 'this stage'
+    }
+
+    clean_podman() {
+      {{ podman }} system prune --all --force |
+        sed 's/^Total reclaimed space:/Podman logical reclaimed total (not physical disk usage):/'
+    }
+
+    clean_podman_root() {
+      sudo {{ podman }} system prune --force |
+        sed 's/^Total reclaimed space:/Podman logical reclaimed total (not physical disk usage):/'
+    }
+
+    clean_nix() {
+      nh clean all --keep 1
+    }
+
+    clean_tool_caches() {
     if command -v uv >/dev/null 2>&1; then
       if ! uv cache prune; then
         printf 'uv cache prune failed; the full user-cache cleanup will retry it.\n' >&2
@@ -191,13 +300,11 @@ _clean-tool-caches:
     if command -v brew >/dev/null 2>&1; then
       brew cleanup --prune=all -s
     fi
+    }
 
-[private]
-[script]
-_clean-user-cache:
-    cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}
+    clean_user_cache() {
     case "$cache_dir" in
-      '' | / | "$HOME")
+      '' | / | "$home_dir")
         printf 'Refusing unsafe cache directory: %q\n' "$cache_dir" >&2
         exit 2
         ;;
@@ -208,10 +315,9 @@ _clean-user-cache:
         sudo find "$cache_dir" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
       fi
     fi
+    }
 
-[private]
-[script]
-_clean-journal:
+    clean_journal() {
     journal_size_kib=0
     for journal_dir in /var/log/journal /run/log/journal; do
       if [[ -d $journal_dir ]]; then
@@ -227,10 +333,25 @@ _clean-journal:
     else
       printf 'Journal uses at most 1 GiB; skipping cleanup.\n'
     fi
+    }
+
+    sync
+    total_before=$(filesystem_usage_bytes)
+    measure_cleanup 'Rootless Podman' clean_podman
+    measure_cleanup 'Rootful Podman' clean_podman_root
+    measure_cleanup 'Nix generations and store' clean_nix
+    measure_cleanup 'Tool caches' clean_tool_caches
+    measure_cleanup 'User cache' clean_user_cache
+    measure_cleanup 'Archived journals' clean_journal
+    sync
+    total_after=$(filesystem_usage_bytes)
+    total_reclaimed=$((total_before - total_after))
+    printf '\n==> Cleanup total\n'
+    report_usage_delta "$total_reclaimed" cleanup
 
 [group('system')]
 [macos]
-clean: (_linux-only 'clean')
+clean: (_linux-only recipe_name())
 
 # Reboot the host.
 [confirm('Reboot this host now?')]
@@ -241,7 +362,7 @@ reboot: (doctor 'reboot')
 
 [group('system')]
 [macos]
-reboot: (_linux-only 'reboot')
+reboot: (_linux-only recipe_name())
 
 # Build the local Spectrum bootc image, reusing cached layers.
 [arg('target', help='Image reference to tag locally')]
@@ -252,7 +373,7 @@ build target=local_ref: (_build target 'false')
 [arg('target', help='Image reference to tag locally')]
 [group('spectrum')]
 [macos]
-build target=local_ref: (_linux-only 'build')
+build target=local_ref: (_linux-only recipe_name())
 
 # Rebuild the local Spectrum bootc image without using cached layers.
 [arg('target', help='Image reference to tag locally')]
@@ -263,11 +384,11 @@ build-clean target=local_ref: (_build target 'true')
 [arg('target', help='Image reference to tag locally')]
 [group('spectrum')]
 [macos]
-build-clean target=local_ref: (_linux-only 'build-clean')
+build-clean target=local_ref: (_linux-only recipe_name())
 
+[arg('no_cache', pattern='true|false')]
 [linux]
 [private]
-[script]
 _build target no_cache: (doctor 'build')
     target={{ quote(target) }}
     no_cache={{ quote(no_cache) }}
@@ -277,15 +398,11 @@ _build target no_cache: (doctor 'build')
     image_name={{ quote(image_name) }}
     local_tag={{ quote(local_tag) }}
     read -r -a podman_command <<< {{ quote(podman) }}
-    image_created=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    image_created={{ quote(datetime_utc("%Y-%m-%dT%H:%M:%SZ")) }}
     image_revision=$(git rev-parse HEAD 2>/dev/null || printf '%s' unknown)
     image_version=$(git describe --tags --always --dirty 2>/dev/null || printf '%s' "$local_tag")
-    base_image_ref=${base_image%@*}
-    base_image_digest=${base_image##*@}
-    if [[ "$base_image_digest" == "$base_image" ]]; then
-      printf '%s\n' 'Spectrum base images must be pinned by digest' >&2
-      exit 2
-    fi
+    base_image_ref={{ quote(base_image_ref) }}
+    base_image_digest={{ quote(base_image_digest) }}
 
     build_args=(
       --layers=true \
@@ -302,33 +419,23 @@ _build target no_cache: (doctor 'build')
       --label "org.opencontainers.image.created=$image_created" \
       --label "org.opencontainers.image.base.name=$base_image_ref" \
       --label "org.opencontainers.image.base.digest=$base_image_digest" \
-      --file spectrum/Containerfile \
-      .
+      --file spectrum/Containerfile
     )
 
     if [[ "$image_revision" != unknown ]]; then
       repository_url=https://github.com/4evy/dotfiles
       raw_repository_url=https://raw.githubusercontent.com/4evy/dotfiles
-      build_args=(
+      build_args+=(
         --build-arg "IMAGE_SOURCE=$repository_url/blob/$image_revision/spectrum/Containerfile"
         --build-arg "IMAGE_URL=$repository_url/tree/$image_revision"
         --build-arg "IMAGE_DOCUMENTATION=$raw_repository_url/$image_revision/README.md"
         --build-arg "IMAGE_README=$raw_repository_url/$image_revision/README.md"
-        "${build_args[@]}"
       )
     fi
 
-    case "$no_cache" in
-      true | yes | 1 | on)
-        build_args=(--no-cache "${build_args[@]}")
-        ;;
-      false | no | 0 | off)
-        ;;
-      *)
-        printf 'no_cache must be true or false, got: %s\n' "$no_cache" >&2
-        exit 2
-        ;;
-    esac
+    if [[ $no_cache == true ]]; then
+      build_args+=(--no-cache)
+    fi
 
     github_token_file=
     sudo_keepalive_pid=
@@ -347,7 +454,7 @@ _build target no_cache: (doctor 'build')
       github_token_file=$(mktemp)
       printf '%s' "${GITHUB_TOKEN:-$GH_TOKEN}" >"$github_token_file"
       chmod 600 "$github_token_file"
-      build_args=(--secret "id=github_token,src=$github_token_file" "${build_args[@]}")
+      build_args+=(--secret "id=github_token,src=$github_token_file")
     fi
 
     # A Spectrum build can outlast sudo's credential timeout. Keep this
@@ -367,7 +474,7 @@ _build target no_cache: (doctor 'build')
       -u WAYLAND_DISPLAY \
       -u DISPLAY \
       -u SSH_AUTH_SOCK \
-      "${podman_command[@]}" build "${build_args[@]}"
+      "${podman_command[@]}" build "${build_args[@]}" .
 
     sudo -n -v || {
       printf '%s\n' 'sudo credential keepalive expired during the Spectrum build' >&2
@@ -383,7 +490,7 @@ spectrum-dev target=local_ref: (build target)
 [arg('target', help='Image reference to tag locally')]
 [group('spectrum')]
 [macos]
-spectrum-dev target=local_ref: (_linux-only 'spectrum-dev')
+spectrum-dev target=local_ref: (_linux-only recipe_name())
 
 # Validate Spectrum build scripts without building the image.
 [group('spectrum')]
@@ -393,14 +500,13 @@ spectrum-lint: _check-spectrum
 [arg('target', help='Built image reference to inspect')]
 [group('spectrum')]
 [linux]
-[script]
 spectrum-boot-report target=local_ref: (doctor 'build')
     target={{ quote(target) }}
     read -r -a podman_command <<< {{ quote(podman) }}
     sudo "${podman_command[@]}" run \
       --rm \
       --entrypoint bash \
-      --volume "$PWD:/workspace:ro" \
+      --volume {{ quote(repo_dir + ":/workspace:ro") }} \
       "$target" \
       -ceu '
         mkdir -p /tmp/spectrum-workspace/ansible/files/scripts
@@ -420,7 +526,6 @@ spectrum-boot-report target=local_ref: (doctor 'build')
 [arg('target', help='Built Spectrum image reference to inspect')]
 [group('spectrum')]
 [linux]
-[script]
 spectrum-diff target=local_ref base=base_image: (doctor 'build')
     target={{ quote(target) }}
     base={{ quote(base) }}
@@ -443,6 +548,7 @@ spectrum-diff target=local_ref base=base_image: (doctor 'build')
 [confirm('Switch this host to published Spectrum image ' + target + '?')]
 [group('spectrum')]
 [linux]
+[shell]
 install target=remote_ref: (doctor 'install')
     sudo bootc switch {{ quote(target) }}
     @printf '%s\n' 'Run `just reboot`, then `just setup` after reboot.'
@@ -450,14 +556,13 @@ install target=remote_ref: (doctor 'install')
 [arg('target', help='Published bootc image reference')]
 [group('spectrum')]
 [macos]
-install target=remote_ref: (_linux-only 'install')
+install target=remote_ref: (_linux-only recipe_name())
 
 # Rebuild and switch the host to the local Spectrum image on next boot.
 [arg('target', help='Local containers-storage image reference')]
 [confirm('Switch this host to local Spectrum image ' + target + '?')]
 [group('spectrum')]
 [linux]
-[script]
 switch target=local_ref: (doctor 'install') (build target)
     target={{ quote(target) }}
     switch_log=$(mktemp)
@@ -482,7 +587,7 @@ switch target=local_ref: (doctor 'install') (build target)
 [arg('target', help='Local containers-storage image reference')]
 [group('spectrum')]
 [macos]
-switch target=local_ref: (_linux-only 'switch')
+switch target=local_ref: (_linux-only recipe_name())
 
 # Rebuild the local Spectrum image and stage it as an upgrade.
 [arg('target', help='Local image reference to rebuild before upgrade')]
@@ -495,11 +600,10 @@ upgrade target=local_ref: (doctor 'install') (build target)
 [arg('target', help='Local image reference to rebuild before upgrade')]
 [group('spectrum')]
 [macos]
-upgrade target=local_ref: (_linux-only 'upgrade')
+upgrade target=local_ref: (_linux-only recipe_name())
 
 # Build the Fedora smoke-test image and run its default validation command.
 [group('containers')]
-[script]
 smoke: (doctor 'smoke')
     read -r -a compose_command <<< {{ quote(compose) }}
     "${compose_command[@]}" build
@@ -507,18 +611,15 @@ smoke: (doctor 'smoke')
 
 # Open an interactive shell in the Fedora smoke-test image.
 [group('containers')]
-[script]
 smoke-shell: (doctor 'smoke')
     read -r -a compose_command <<< {{ quote(compose) }}
     "${compose_command[@]}" run --rm fedora-shell
 
-# Install Nix on the live host and ensure Nix profile tools exist.
-[group('setup')]
-[script]
-nix: (doctor 'nix')
-    kernel_name=$(uname -s)
-
-    if [[ $kernel_name == Linux && ! -e /nix ]] &&
+# Install Nix on Linux, accounting for immutable composefs hosts.
+[linux]
+[private]
+_ensure-nix:
+    if [[ ! -e /nix ]] &&
       command -v rpm-ostree >/dev/null 2>&1 &&
       findmnt --noheadings --output SOURCE,FSTYPE,OPTIONS / | grep -Eq '(^|[[:space:]])composefs([[:space:]]|$)'; then
       printf '%s\n' 'This composefs ostree host needs /nix in the booted image before installing Nix.' >&2
@@ -526,30 +627,26 @@ nix: (doctor 'nix')
       exit 1
     fi
 
-    export PATH="{{ nix_bin_dir }}:$HOME/.nix-profile/bin:$PATH"
-
     if ! command -v nix >/dev/null 2>&1; then
-      case "$kernel_name" in
-        Darwin)
-          installer_url={{ quote(nixos_nix_installer_url) }}
-          install_args=(install macos --enable-flakes --no-confirm --no-modify-profile)
-          ;;
-        Linux)
-          installer_url={{ quote(determinate_nix_installer_url) }}
-          plan=linux
-          if command -v rpm-ostree >/dev/null 2>&1; then
-            plan=ostree
-          fi
-          install_args=(install "$plan" --no-confirm)
-          ;;
-        *)
-          printf 'unsupported operating system for Nix installation: %s\n' "$kernel_name" >&2
-          exit 2
-          ;;
-      esac
-      curl -fsSL "$installer_url" | sh -s -- "${install_args[@]}"
+      plan=linux
+      if command -v rpm-ostree >/dev/null 2>&1; then
+        plan=ostree
+      fi
+      curl -fsSL {{ quote(determinate_nix_installer_url) }} | sh -s -- install "$plan" --no-confirm
     fi
 
+# Install Nix on macOS without modifying the user's shell profile.
+[macos]
+[private]
+_ensure-nix:
+    command -v nix >/dev/null 2>&1 ||
+      curl -fsSL {{ quote(nixos_nix_installer_url) }} |
+        sh -s -- install macos --enable-flakes --no-confirm --no-modify-profile
+
+# Install Nix on the live host and ensure Nix profile tools exist.
+[group('setup')]
+nix: (doctor 'nix') _ensure-nix
+    nix_profile_bin_dir={{ quote(nix_profile_bin_dir) }}
     nix_bin={{ quote(nix_bin) }}
     if [[ ! -x $nix_bin ]]; then
       nix_bin=$(command -v nix)
@@ -560,7 +657,7 @@ nix: (doctor 'nix')
       bin=${spec%%:*}
       source=${spec#*:}
       if ! command -v "$bin" >/dev/null 2>&1 &&
-        [[ ! -e "$HOME/.nix-profile/bin/$bin" ]] &&
+        [[ ! -e "$nix_profile_bin_dir/$bin" ]] &&
         [[ ! -e "/run/current-system/sw/bin/$bin" ]]; then
         if [[ $source != *'#'* ]]; then
           source="nixpkgs#$source"
@@ -578,8 +675,8 @@ nix: (doctor 'nix')
 # Apply chezmoi-managed dotfiles.
 [group('setup')]
 apply: (doctor 'apply')
-    PATH="$PATH:{{ homebrew_path }}" chezmoi init --source "$PWD/dotfiles"
-    PATH="$PATH:{{ homebrew_path }}" chezmoi apply --refresh-externals=auto --force
+    chezmoi init --source {{ quote(dotfiles_dir) }}
+    chezmoi apply --refresh-externals=auto --force
 
 [doc('Bootstrap userland, apply dotfiles, then apply host roles.')]
 [group('setup')]
@@ -590,24 +687,24 @@ setup: (doctor 'setup') _userland apply _host
 update: _userland apply _host
 
 [private]
-[script]
 _deps:
     install_args=(collection install -r ansible/requirements.yml -p .ansible/collections)
     if [[ ! -f .ansible/collections/ansible_collections/community/general/MANIFEST.json ]]; then
       install_args+=(--force)
     fi
-    PATH="$PATH:{{ homebrew_path }}" ansible-galaxy "${install_args[@]}"
+    ansible-galaxy "${install_args[@]}"
 
 [private]
 _userland:
-    PATH="$PATH:{{ homebrew_path }}" ./ansible/bootstrap.sh ansible/playbooks/userland.yml
+    {{ quote(ansible_dir / "bootstrap.sh") }} ansible/playbooks/userland.yml
 
 [private]
 _host:
-    PATH="$PATH:{{ homebrew_path }}" ansible-playbook ansible/playbooks/host.yml
+    ansible-playbook ansible/playbooks/host.yml
 
 # Format files managed by this repo.
 [group('dev')]
+[parallel]
 fmt: (_format-files 'write') (_hyper-format 'write')
 
 # Rerun a recipe when files change.
@@ -615,153 +712,21 @@ fmt: (_format-files 'write') (_hyper-format 'write')
 [group('dev')]
 [positional-arguments]
 watch +args='check': (doctor 'watch')
-    watchexec --clear --restart -- just "$@"
+    watchexec --clear --restart -- {{ quote(just_executable()) }} --justfile {{ quote(justfile()) }} "$@"
 
 # Check repository formatting without rewriting files.
 [group('dev')]
+[parallel]
 check-format: (_format-files 'check') (_hyper-format 'check')
 
+[arg('mode', pattern='write|check')]
 [private]
-[script]
 _format-files mode: (doctor 'fmt')
     mode={{ quote(mode) }}
 
-    case "$mode" in
-      write | check)
-        ;;
-      *)
-        printf 'unknown format mode: %s\n' "$mode" >&2
-        exit 2
-        ;;
-    esac
+    {{ repo_file_inventory }}
 
-    repo_paths=()
-    missing_paths=()
-    symlink_files=()
-    special_files=()
-    template_files=()
-    unformatted_files=()
-    hyper_files=()
-    go_files=()
-    go_mod_files=()
-    json_files=()
-    jsonc_files=()
-    prettier_files=()
-    python_files=()
-    shell_files=()
-    toml_files=()
-    lua_files=()
-    nix_files=()
-    just_files=()
-
-    is_shell_file() {
-      case "$1" in
-        *.tmpl | *.txt | *.patch)
-          return 1
-          ;;
-        *.sh | *.sh.in | *.bash)
-          return 0
-          ;;
-      esac
-
-      head -n 2 -- "$1" | grep -Eq '^#!.*\b(sh|bash)\b|^# shellcheck shell=(sh|bash)'
-    }
-
-    classify_file() {
-      local file=$1
-      local base=${file##*/}
-
-      case "$file" in
-        packages/hyper-window-tiling/*)
-          hyper_files+=("$file")
-          return
-          ;;
-      esac
-
-      case "$base" in
-        Justfile | justfile)
-          just_files+=("$file")
-          return
-          ;;
-        go.mod)
-          go_mod_files+=("$file")
-          return
-          ;;
-        flake.lock)
-          json_files+=("$file")
-          return
-          ;;
-        uv.lock)
-          unformatted_files+=("$file")
-          return
-          ;;
-      esac
-
-      case "$file" in
-        *.tmpl)
-          template_files+=("$file")
-          ;;
-        *.jsonc)
-          jsonc_files+=("$file")
-          ;;
-        *.json)
-          json_files+=("$file")
-          ;;
-        *.yaml | *.yml | *.md)
-          prettier_files+=("$file")
-          ;;
-        *.js | *.cjs | *.mjs | *.jsx | *.ts | *.tsx | *.css | *.html | *.mdx)
-          prettier_files+=("$file")
-          ;;
-        *.go)
-          go_files+=("$file")
-          ;;
-        *.py)
-          python_files+=("$file")
-          ;;
-        *.sh | *.sh.in | *.bash)
-          shell_files+=("$file")
-          ;;
-        *.toml)
-          toml_files+=("$file")
-          ;;
-        *.lua)
-          lua_files+=("$file")
-          ;;
-        *.nix)
-          nix_files+=("$file")
-          ;;
-        .envrc | go.sum | *.lock | *.sum | *.txt | *.conf | *.cfg | *.ini | *.service | *.path | *.desktop | *.rules | *.repo | *.plist | *.xml | *.kbd | *.te | *.fc | *.if | *.patch | *.gitattributes | *.gitignore | *.dockerignore | *.shellcheckrc | *.yamllint | *.ansible-lint | *.chezmoiignore | *.chezmoiremove | Brewfile | Dockerfile | Containerfile)
-          if is_shell_file "$file"; then
-            shell_files+=("$file")
-          else
-            unformatted_files+=("$file")
-          fi
-          ;;
-        *)
-          if is_shell_file "$file"; then
-            shell_files+=("$file")
-          else
-            unformatted_files+=("$file")
-          fi
-          ;;
-      esac
-    }
-
-    while IFS= read -r -d '' file; do
-      repo_paths+=("$file")
-      if [[ -L "$file" ]]; then
-        symlink_files+=("$file")
-      elif [[ ! -e "$file" ]]; then
-        missing_paths+=("$file")
-      elif [[ -f "$file" ]]; then
-        classify_file "$file"
-      else
-        special_files+=("$file")
-      fi
-    done < <(git ls-files -z --cached --others --exclude-standard)
-
-    formatted_count=$((${#hyper_files[@]} + ${#go_files[@]} + ${#go_mod_files[@]} + ${#json_files[@]} + ${#jsonc_files[@]} + ${#prettier_files[@]} + ${#python_files[@]} + ${#shell_files[@]} + ${#toml_files[@]} + ${#lua_files[@]} + ${#nix_files[@]} + ${#just_files[@]}))
+    formatted_count=$((${#hyper_files[@]} + ${#go_files[@]} + ${#go_mod_files[@]} + ${#json_files[@]} + ${#json_auto_files[@]} + ${#jsonc_files[@]} + ${#prettier_files[@]} + ${#python_files[@]} + ${#shell_files[@]} + ${#toml_files[@]} + ${#lua_files[@]} + ${#nix_files[@]} + ${#just_files[@]}))
     accounted_count=$((formatted_count + ${#template_files[@]} + ${#unformatted_files[@]} + ${#symlink_files[@]} + ${#missing_paths[@]} + ${#special_files[@]}))
     if ((accounted_count != ${#repo_paths[@]})); then
       printf 'internal error: classified %d of %d repository paths\n' "$accounted_count" "${#repo_paths[@]}" >&2
@@ -777,51 +742,6 @@ _format-files mode: (doctor 'fmt')
       "${#special_files[@]}" \
       "${#missing_paths[@]}"
 
-    if ((${#missing_paths[@]} > 0)); then
-      printf 'tracked paths missing from worktree:\n' >&2
-      printf '  %s\n' "${missing_paths[@]}" >&2
-    fi
-
-    missing=()
-    require_command() {
-      if ! command -v "$1" >/dev/null 2>&1; then
-        missing+=("$1")
-      fi
-    }
-
-    require_command jq
-    require_command just
-    ((${#go_files[@]} == 0 && ${#go_mod_files[@]} == 0)) || require_command go
-    ((${#go_files[@]} == 0)) || require_command gofmt
-    ((${#python_files[@]} == 0)) || require_command uv
-    if ((${#json_files[@]} > 0 || ${#jsonc_files[@]} > 0 || ${#prettier_files[@]} > 0)); then
-      require_command prettier
-    fi
-    ((${#shell_files[@]} == 0)) || require_command shfmt
-    ((${#toml_files[@]} == 0)) || require_command taplo
-    ((${#lua_files[@]} == 0)) || require_command stylua
-    if [[ -f packages/hyper-window-tiling/package.json ]]; then
-      require_command bun
-    fi
-
-    nix_formatter=()
-    if ((${#nix_files[@]} > 0)); then
-      if command -v nixfmt >/dev/null 2>&1; then
-        if [[ "$mode" == write ]]; then
-          nix_formatter=(nixfmt)
-        else
-          nix_formatter=(nixfmt --check)
-        fi
-      else
-        missing+=("nixfmt")
-      fi
-    fi
-
-    if ((${#missing[@]} > 0)); then
-      printf 'missing formatter command: %s\n' "${missing[@]}" >&2
-      exit 1
-    fi
-
     check_gofmt() {
       local gofmt_output
       if ! gofmt_output=$(gofmt -l "$@"); then
@@ -836,223 +756,60 @@ _format-files mode: (doctor 'fmt')
     }
 
     check_go_mod_fmt() {
-      local file tmp
+      local file formatted
       for file in "$@"; do
-        tmp=$(mktemp)
-        cp -- "$file" "$tmp"
-        go mod edit -fmt "$tmp"
-        if ! cmp -s -- "$file" "$tmp"; then
+        formatted=$(go mod edit -fmt -print "$file")
+        if ! cmp -s "$file" <(printf '%s\n' "$formatted"); then
           printf '%s\n' "$file"
           printf '%s\n' 'go.mod files need go mod edit -fmt' >&2
-          rm -f -- "$tmp"
           exit 1
         fi
-        rm -f -- "$tmp"
       done
     }
 
-    ((${#json_files[@]} == 0)) || jq empty "${json_files[@]}"
+    ((${#json_files[@]} + ${#json_auto_files[@]} == 0)) || jq empty "${json_files[@]}" "${json_auto_files[@]}"
 
     if [[ "$mode" == write ]]; then
-      ((${#just_files[@]} == 0)) || just --fmt -f Justfile
+      ((${#just_files[@]} == 0)) || {{ quote(just_executable()) }} --fmt -f {{ quote(justfile()) }}
       ((${#go_files[@]} == 0)) || gofmt -w "${go_files[@]}"
       for file in "${go_mod_files[@]}"; do
         go mod edit -fmt "$file"
       done
       ((${#python_files[@]} == 0)) || uv run --locked ruff format --force-exclude "${python_files[@]}"
       ((${#json_files[@]} == 0)) || prettier --write --parser json "${json_files[@]}"
+      ((${#json_auto_files[@]} == 0)) || prettier --write "${json_auto_files[@]}"
       ((${#jsonc_files[@]} == 0)) || prettier --write --parser jsonc --trailing-comma none "${jsonc_files[@]}"
       ((${#prettier_files[@]} == 0)) || prettier --write "${prettier_files[@]}"
       ((${#shell_files[@]} == 0)) || shfmt -ci -w "${shell_files[@]}"
       ((${#toml_files[@]} == 0)) || taplo fmt "${toml_files[@]}"
       ((${#lua_files[@]} == 0)) || stylua "${lua_files[@]}"
-      ((${#nix_files[@]} == 0)) || "${nix_formatter[@]}" "${nix_files[@]}"
+      ((${#nix_files[@]} == 0)) || nixfmt "${nix_files[@]}"
     else
-      ((${#just_files[@]} == 0)) || just --fmt --check -f Justfile
+      ((${#just_files[@]} == 0)) || {{ quote(just_executable()) }} --fmt --check -f {{ quote(justfile()) }}
       ((${#go_files[@]} == 0)) || check_gofmt "${go_files[@]}"
       ((${#go_mod_files[@]} == 0)) || check_go_mod_fmt "${go_mod_files[@]}"
       ((${#python_files[@]} == 0)) || uv run --locked ruff format --check --force-exclude "${python_files[@]}"
       ((${#json_files[@]} == 0)) || prettier --check --parser json "${json_files[@]}"
+      ((${#json_auto_files[@]} == 0)) || prettier --check "${json_auto_files[@]}"
       ((${#jsonc_files[@]} == 0)) || prettier --check --parser jsonc --trailing-comma none "${jsonc_files[@]}"
       ((${#prettier_files[@]} == 0)) || prettier --check "${prettier_files[@]}"
       ((${#shell_files[@]} == 0)) || shfmt -ci -d "${shell_files[@]}"
       ((${#toml_files[@]} == 0)) || taplo fmt --check "${toml_files[@]}"
       ((${#lua_files[@]} == 0)) || stylua --check "${lua_files[@]}"
-      ((${#nix_files[@]} == 0)) || "${nix_formatter[@]}" "${nix_files[@]}"
+      ((${#nix_files[@]} == 0)) || nixfmt --check "${nix_files[@]}"
     fi
 
+[arg('mode', pattern='write|check')]
 [private]
-[script]
-[working-directory('packages/hyper-window-tiling')]
+[working-directory(hyper_dir)]
 _hyper-format mode: (doctor 'bun')
-    mode={{ quote(mode) }}
-    case "$mode" in
-      write)
-        bun run format
-        ;;
-      check)
-        bun run biome format .
-        ;;
-      *)
-        printf 'unknown hyper format mode: %s\n' "$mode" >&2
-        exit 2
-        ;;
-    esac
+    {{ if mode == "write" { "bun run format" } else { "bun run biome format ." } }}
 
 [private]
-[script]
 _lint-files: (doctor 'lint')
-    repo_paths=()
-    missing_paths=()
-    symlink_files=()
-    broken_symlinks=()
-    template_files=()
-    python_template_files=()
-    python_input_template_files=()
-    shell_template_files=()
-    xml_input_template_files=()
-    docker_files=()
-    json_files=()
-    jsonc_files=()
-    yaml_files=()
-    toml_files=()
-    xml_files=()
-    python_files=()
-    shell_files=()
-    nix_files=()
-    lua_files=()
-    go_files=()
-    go_mod_files=()
-    prettier_parse_files=()
-    hyper_files=()
-    enumerated_files=()
+    {{ repo_file_inventory }}
 
-    is_shell_file() {
-      case "$1" in
-        *.tmpl | *.txt | *.patch)
-          return 1
-          ;;
-        *.sh | *.sh.in | *.bash)
-          return 0
-          ;;
-      esac
-
-      head -n 2 -- "$1" | grep -Eq '^#!.*\b(sh|bash)\b|^# shellcheck shell=(sh|bash)'
-    }
-
-    classify_file() {
-      local file=$1
-      local base=${file##*/}
-
-      case "$file" in
-        packages/hyper-window-tiling/*)
-          hyper_files+=("$file")
-          return
-          ;;
-      esac
-
-      case "$base" in
-        Justfile | justfile)
-          enumerated_files+=("$file")
-          return
-          ;;
-        Dockerfile | Containerfile)
-          docker_files+=("$file")
-          return
-          ;;
-        go.mod)
-          go_mod_files+=("$file")
-          return
-          ;;
-        flake.lock)
-          json_files+=("$file")
-          return
-          ;;
-        uv.lock)
-          enumerated_files+=("$file")
-          return
-          ;;
-      esac
-
-      case "$file" in
-        *.plist.in | *.xml.in)
-          xml_input_template_files+=("$file")
-          ;;
-        *.py.in)
-          python_input_template_files+=("$file")
-          ;;
-        *.bash.tmpl | *.sh.tmpl)
-          template_files+=("$file")
-          shell_template_files+=("$file")
-          ;;
-        *.py.tmpl)
-          template_files+=("$file")
-          python_template_files+=("$file")
-          ;;
-        *.tmpl)
-          template_files+=("$file")
-          ;;
-        *.jsonc)
-          jsonc_files+=("$file")
-          ;;
-        *.json)
-          json_files+=("$file")
-          ;;
-        *.yaml | *.yml | .yamllint | .ansible-lint)
-          yaml_files+=("$file")
-          ;;
-        *.toml)
-          toml_files+=("$file")
-          ;;
-        *.plist | *.xml)
-          xml_files+=("$file")
-          ;;
-        *.py)
-          python_files+=("$file")
-          ;;
-        *.sh | *.sh.in | *.bash)
-          shell_files+=("$file")
-          ;;
-        *.nix)
-          nix_files+=("$file")
-          ;;
-        *.lua)
-          lua_files+=("$file")
-          ;;
-        *.go)
-          go_files+=("$file")
-          ;;
-        *.md | *.js | *.cjs | *.mjs | *.jsx | *.ts | *.tsx | *.css | *.html | *.mdx)
-          prettier_parse_files+=("$file")
-          ;;
-        .envrc)
-          shell_files+=("$file")
-          ;;
-        *)
-          if is_shell_file "$file"; then
-            shell_files+=("$file")
-          else
-            enumerated_files+=("$file")
-          fi
-          ;;
-      esac
-    }
-
-    while IFS= read -r -d '' file; do
-      repo_paths+=("$file")
-      if [[ -L "$file" ]]; then
-        symlink_files+=("$file")
-        [[ -e "$file" ]] || broken_symlinks+=("$file")
-      elif [[ ! -e "$file" ]]; then
-        missing_paths+=("$file")
-      elif [[ -f "$file" ]]; then
-        classify_file "$file"
-      else
-        enumerated_files+=("$file")
-      fi
-    done < <(git ls-files -z --cached --others --exclude-standard)
-
-    linted_count=$((${#hyper_files[@]} + ${#docker_files[@]} + ${#go_files[@]} + ${#go_mod_files[@]} + ${#json_files[@]} + ${#jsonc_files[@]} + ${#yaml_files[@]} + ${#toml_files[@]} + ${#xml_files[@]} + ${#python_files[@]} + ${#shell_files[@]} + ${#nix_files[@]} + ${#lua_files[@]} + ${#prettier_parse_files[@]}))
+    linted_count=$((${#hyper_files[@]} + ${#docker_files[@]} + ${#go_files[@]} + ${#go_mod_files[@]} + ${#json_files[@]} + ${#json_auto_files[@]} + ${#jsonc_files[@]} + ${#yaml_files[@]} + ${#toml_files[@]} + ${#xml_files[@]} + ${#python_files[@]} + ${#shell_files[@]} + ${#nix_files[@]} + ${#lua_files[@]} + ${#prettier_parse_files[@]}))
     accounted_count=$((linted_count + ${#template_files[@]} + ${#python_input_template_files[@]} + ${#xml_input_template_files[@]} + ${#enumerated_files[@]} + ${#symlink_files[@]} + ${#missing_paths[@]}))
     if ((accounted_count != ${#repo_paths[@]})); then
       printf 'internal error: classified %d of %d repository paths\n' "$accounted_count" "${#repo_paths[@]}" >&2
@@ -1071,11 +828,6 @@ _lint-files: (doctor 'lint')
       "${#symlink_files[@]}" \
       "${#missing_paths[@]}" \
       "${#broken_symlinks[@]}"
-
-    if ((${#missing_paths[@]} > 0)); then
-      printf 'tracked paths missing from worktree:\n' >&2
-      printf '  %s\n' "${missing_paths[@]}" >&2
-    fi
 
     if ((${#broken_symlinks[@]} > 0)); then
       printf 'broken symlinks:\n' >&2
@@ -1123,7 +875,7 @@ _lint-files: (doctor 'lint')
       if ((${#template_files[@]} > 0)); then
         chezmoi apply \
           --dry-run \
-          --source "$PWD/dotfiles" \
+          --source {{ quote(dotfiles_dir) }} \
           --destination "$tmp_destination" \
           --force \
           --no-tty \
@@ -1133,7 +885,7 @@ _lint-files: (doctor 'lint')
       for file in "${python_template_files[@]}" "${shell_template_files[@]}"; do
         rendered_file="$tmp_destination/rendered-templates/${file%.tmpl}"
         mkdir -p "${rendered_file%/*}"
-        chezmoi --source "$PWD/dotfiles" execute-template < "$file" > "$rendered_file"
+        chezmoi --source {{ quote(dotfiles_dir) }} execute-template < "$file" > "$rendered_file"
       done
       if ((${#python_template_files[@]} > 0)); then
         PYTHONPYCACHEPREFIX="$tmp_destination/pycache" \
@@ -1171,7 +923,6 @@ _check-spectrum-build: (doctor 'spectrum')
     uv run --locked spectrum-build check
 
 [private]
-[script]
 _check-spectrum: (doctor 'spectrum') _check-spectrum-build
     bytecode_dir=$(mktemp -d)
     trap 'rm -rf "$bytecode_dir"' EXIT
@@ -1179,7 +930,6 @@ _check-spectrum: (doctor 'spectrum') _check-spectrum-build
     PYTHONPYCACHEPREFIX="$bytecode_dir" uv run --locked python -m compileall -q spectrum/scripts
 
 [private]
-[script]
 _check-python: python-complexity python-dead-code
     uv lock --check
     uv sync --locked --check
@@ -1194,23 +944,20 @@ _check-python: python-complexity python-dead-code
 
 # Scan every tracked or untracked, non-ignored Python source file for dead code.
 [group('dev')]
-[script]
-python-dead-code:
-    python_files=()
-    while IFS= read -r -d '' file; do
-      [[ -f "$file" ]] && python_files+=("$file")
-    done < <(git ls-files -co --exclude-standard -z -- '*.py')
-    ((${#python_files[@]} == 0)) || uv run --locked vulture "${python_files[@]}"
+python-dead-code: (_python-analysis 'vulture')
 
 # Reject cognitively complex functions in every first-party Python source file.
 [group('dev')]
-[script]
-python-complexity:
+python-complexity: (_python-analysis 'complexipy')
+
+[arg('tool', pattern='vulture|complexipy')]
+[private]
+_python-analysis tool:
     python_files=()
     while IFS= read -r -d '' file; do
-      [[ -f "$file" ]] && python_files+=("$file")
-    done < <(git ls-files -co --exclude-standard -z -- '*.py')
-    ((${#python_files[@]} == 0)) || uv run --locked complexipy --failed --plain "${python_files[@]}"
+      [[ -f $file ]] && python_files+=("$file")
+    done < <(git ls-files -z --cached --others --exclude-standard -- '*.py')
+    ((${#python_files[@]} == 0)) || {{ if tool == "complexipy" { "uv run --locked complexipy --failed --plain" } else { "uv run --locked vulture" } }} "${python_files[@]}"
 
 [private]
 _check-go: (doctor 'go')
@@ -1218,7 +965,6 @@ _check-go: (doctor 'go')
     golangci-lint run ./...
 
 [private]
-[script]
 _check-ansible: (doctor 'ansible') _deps _check-ansible-collection
     for playbook in {{ ansible_playbooks }}; do
       ansible-playbook --syntax-check "$playbook"
@@ -1237,14 +983,17 @@ _check-github-actions:
     actionlint
 
 [private]
-[script]
 _check-bun: (doctor 'bun')
     bun install --frozen-lockfile --filter hyper-window-tiling
     bun run --filter hyper-window-tiling check
 
 # Lint repository source files and run project validation.
 [group('dev')]
-lint: (doctor 'lint') check-format _lint-files _check-python _check-spectrum-build _check-go _check-ansible _check-github-actions _check-bun
+lint: (doctor 'lint') check-format _lint-checks
+
+[parallel]
+[private]
+_lint-checks: _lint-files _check-python _check-spectrum-build _check-go _check-ansible _check-github-actions _check-bun
 
 # Run the repo validation suite.
 [group('dev')]
