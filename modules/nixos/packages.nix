@@ -175,8 +175,6 @@ in
       inherit (pkgs.unstable.luaPackages) luacheck;
 
       inherit (pkgs.eupkgs)
-        agent-statusline
-        agent-statusline-pi
         pi-ssh-tools
         web-search-pi
         yt-dlp-script

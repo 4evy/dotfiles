@@ -8,7 +8,7 @@
   (joinPath .chezmoi.homeDir ".nix-profile/bin")
   "/run/current-system/sw/bin"
 -}}
-{{- range $name := list "agent-statusline-pi" "pi-ssh-tools" "web-search-pi" -}}
+{{- range $name := list "pi-ssh-tools" "web-search-pi" -}}
 {{-   $extensionPath := lookPath $name -}}
 {{-   if not $extensionPath -}}
 {{-     range $dir := $extensionDirs -}}

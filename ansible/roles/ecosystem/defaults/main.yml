@@ -38,12 +38,6 @@ ecosystem_nix_profile_packages:
     bin: nixd
   - package: nixfmt
     bin: nixfmt
-  - package: agent-statusline
-    bin: agent-statusline
-    source: "{{ ecosystem_eupkgs_flake }}#agent-statusline"
-  - package: agent-statusline-pi
-    bin: agent-statusline-pi
-    source: "{{ ecosystem_eupkgs_flake }}#agent-statusline-pi"
   - package: pi-ssh-tools
     bin: pi-ssh-tools
     source: "{{ ecosystem_eupkgs_flake }}#pi-ssh-tools"
