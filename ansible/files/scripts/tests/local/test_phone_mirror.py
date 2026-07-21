@@ -308,7 +308,10 @@ def test_manual_port_can_retry_a_previously_failed_candidate(
     assert attempted == [38888]
 
 
-def test_scrcpy_uses_keep_active_and_forwards_arguments() -> None:
+def test_scrcpy_on_linux_uses_keep_active_and_forwards_arguments(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(phone_mirror_module.sys, "platform", "linux")
     runner = FakeRunner({
         ("scrcpy", "--help"): CommandResult(0, "options: --keep-active", "")
     })
