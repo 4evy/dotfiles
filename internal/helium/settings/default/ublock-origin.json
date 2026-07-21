@@ -29,7 +29,9 @@
           "easylist-newsletters",
           "easylist-notifications",
           "ublock-annoyances",
-          "BGR-0"
+          "BGR-0",
+          "RUS-0",
+          "RUS-1"
         ]
       }
     }
