@@ -14,6 +14,7 @@
 typeset -U path PATH fpath FPATH
 path=(
   {{- if not $isNixOS }}
+  "$HOME/.local/bin"
   "$HOME/.pi/agent/bin"
   "$HOME/.local/share/dotfiles/helix-tip/bin"
   {{- if eq .chezmoi.os "darwin" }}
@@ -45,7 +46,6 @@ path=(
   "/usr/local/sbin"
   {{- end }}
   {{- end }}
-  "$HOME/.local/bin"
   "$HOME/.bun/bin"
   "$HOME/.bun/install/global/node_modules/.bin"
   "$HOME/.cache/.bun/bin"

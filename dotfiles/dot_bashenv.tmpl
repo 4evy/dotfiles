@@ -47,6 +47,7 @@ _dotfiles_path_prepend_once() {
 
 _dotfiles_path_entries=(
 	{{- if not $isNixOS }}
+	"$HOME/.local/bin"
 	"$HOME/.pi/agent/bin"
 	"$HOME/.local/share/dotfiles/helix-tip/bin"
 	{{- if eq .chezmoi.os "darwin" }}
@@ -78,7 +79,6 @@ _dotfiles_path_entries=(
 	/usr/local/sbin
 	{{- end }}
 	{{- end }}
-	"$HOME/.local/bin"
 	"$HOME/.bun/bin"
 	"$HOME/.bun/install/global/node_modules/.bin"
 	"$HOME/.cache/.bun/bin"
