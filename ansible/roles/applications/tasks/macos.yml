@@ -333,14 +333,13 @@
       changed_when: false
       failed_when: false
 
-- name: Activate Shottr with the SOPS-managed license key
+- name: Ensure Shottr is activated with the SOPS-managed license key
   ansible.builtin.command:
     argv:
       - "{{ dotfiles_bin_dir }}/dotfiles-scripts"
       - chezmoi
       - shottr-license
       - install
-      - --force
   args:
     chdir: "{{ dotfiles_repo_root }}"
   environment:

@@ -1,13 +1,12 @@
-from typing import TYPE_CHECKING
+import subprocess
+
+import pytest
 
 from workstation.local import user_commands
 from workstation.local.user_commands import (
     _lspci_display_devices,
     _matching_lines,
 )
-
-if TYPE_CHECKING:
-    import pytest
 
 
 def test_matching_lines_supports_head_and_tail_limits() -> None:
@@ -57,3 +56,18 @@ def test_shottr_force_install_reactivates_existing_license(
     user_commands.shottr_license("install", force=True)
 
     assert activated == ["license-key"]
+
+
+def test_shottr_activation_explains_macos_accessibility_denial(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    result = subprocess.CompletedProcess(
+        args=("/usr/bin/osascript", "-"),
+        returncode=1,
+        stdout="",
+        stderr="osascript is not allowed assistive access. (-25211)",
+    )
+    monkeypatch.setattr(user_commands.subprocess, "run", lambda *_args, **_kwargs: result)
+
+    with pytest.raises(user_commands.DotfilesError, match="Privacy & Security"):
+        user_commands._activate_shottr_license("license-key")

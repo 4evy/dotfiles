@@ -204,6 +204,13 @@ end tell
     if result.returncode != 0:
         details = result.stderr.strip() or result.stdout.strip()
         message = "Shottr activation UI automation failed"
+        if "not allowed assistive access" in details or "-25211" in details:
+            message = (
+                f"{message}: macOS denied Accessibility access to osascript. "
+                "Grant Accessibility to the terminal running provisioning in "
+                "System Settings > Privacy & Security > Accessibility, then rerun "
+                "`dotfiles-scripts chezmoi shottr-license install --force`."
+            )
         if details:
             message = f"{message}\n{details}"
         raise DotfilesError(message)
