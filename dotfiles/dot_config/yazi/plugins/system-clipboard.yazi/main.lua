@@ -2,23 +2,25 @@
 --
 -- Linux file managers disagree on clipboard metadata. The standard baseline is
 -- text/uri-list; GNOME/Nautilus expects x-special/gnome-copied-files. macOS
--- gets newline-separated paths through pbcopy, since pbcopy only writes text.
+-- uses AppKit file URLs so Finder sees files rather than a blob of path text.
 
 local M = {}
 
 M.title = "System Clipboard"
 
 local state = ya.sync(function()
-	local files = {}
+	-- Values returned by ya.sync must not contain Yazi userdata. Both `File` and
+	-- `Url` are scoped userdata, so serialize them while the sync context is live.
+	local paths = {}
 	for _, file in pairs(cx.active.selected) do
-		files[#files + 1] = file
+		paths[#paths + 1] = tostring(file.url or file)
 	end
 
-	if #files == 0 and cx.active.current.hovered then
-		files[1] = cx.active.current.hovered
+	if #paths == 0 and cx.active.current.hovered then
+		paths[1] = tostring(cx.active.current.hovered.url)
 	end
 
-	return files
+	return paths
 end)
 
 function M.notify(level, content)
@@ -88,10 +90,6 @@ function M.wayland_backend(args)
 	end
 end
 
-function M.file_path(file)
-	return tostring(file.path or file.url or file)
-end
-
 function M.percent_encode(path)
 	if ya.percent_encode then
 		return ya.percent_encode(path)
@@ -102,8 +100,8 @@ function M.percent_encode(path)
 	end)
 end
 
-function M.file_uri(file)
-	return "file://" .. M.percent_encode(M.file_path(file))
+function M.file_uri(path)
+	return "file://" .. M.percent_encode(path)
 end
 
 function M.join(lines, separator)
@@ -143,105 +141,195 @@ function M.write_stdin(command, args, payload)
 	return child:wait()
 end
 
-function M.copy_wayland_gnome(files, operation)
+function M.copy_wayland_gnome(paths, operation)
 	local payload = { operation or "copy" }
-	for _, file in ipairs(files) do
-		payload[#payload + 1] = M.file_uri(file)
+	for _, path in ipairs(paths) do
+		payload[#payload + 1] = M.file_uri(path)
 	end
 
 	return M.write_stdin("wl-copy", { "--type", "x-special/gnome-copied-files" }, M.join(payload))
 end
 
-function M.copy_wayland_uri_list(files)
+function M.copy_wayland_uri_list(paths)
 	local payload = {}
-	for _, file in ipairs(files) do
-		payload[#payload + 1] = M.file_uri(file)
+	for _, path in ipairs(paths) do
+		payload[#payload + 1] = M.file_uri(path)
 	end
 
 	return M.write_stdin("wl-copy", { "--type", "text/uri-list" }, M.join(payload, "\r\n"))
 end
 
-function M.copy_wayland_paths(files)
-	local payload = {}
-	for _, file in ipairs(files) do
-		payload[#payload + 1] = M.file_path(file)
-	end
-
-	return M.write_stdin("wl-copy", { "--type", "text/plain;charset=utf-8" }, M.join(payload))
+function M.copy_wayland_paths(paths)
+	return M.write_stdin("wl-copy", { "--type", "text/plain;charset=utf-8" }, M.join(paths))
 end
 
-function M.copy_macos_text(files, uris)
+function M.copy_x11_gnome(paths, operation)
+	local payload = { operation or "copy" }
+	for _, path in ipairs(paths) do
+		payload[#payload + 1] = M.file_uri(path)
+	end
+
+	return M.write_stdin(
+		"xclip",
+		{ "-selection", "clipboard", "-type", "x-special/gnome-copied-files" },
+		M.join(payload)
+	)
+end
+
+function M.copy_x11_uri_list(paths)
 	local payload = {}
-	for _, file in ipairs(files) do
-		payload[#payload + 1] = uris and M.file_uri(file) or M.file_path(file)
+	for _, path in ipairs(paths) do
+		payload[#payload + 1] = M.file_uri(path)
+	end
+
+	return M.write_stdin("xclip", { "-selection", "clipboard", "-type", "text/uri-list" }, M.join(payload, "\r\n"))
+end
+
+function M.copy_x11_paths(paths)
+	return M.write_stdin("xclip", { "-selection", "clipboard", "-type", "UTF8_STRING" }, M.join(paths))
+end
+
+function M.copy_macos_files(paths)
+	-- pbcopy only publishes text. AppKit's NSPasteboardWriting implementation for
+	-- NSURL publishes one public.file-url item per path, which Finder can paste.
+	local script = [[
+ObjC.import("AppKit")
+function run(argv) {
+	if (argv.length === 0) {
+		throw new Error("No file paths were provided")
+	}
+	const pasteboard = $.NSPasteboard.generalPasteboard
+	const urls = $.NSMutableArray.alloc.init
+	argv.forEach(path => urls.addObject($.NSURL.fileURLWithPath($(path))))
+	pasteboard.clearContents
+	if (!pasteboard.writeObjects(urls)) {
+		throw new Error("Could not write file URLs to the pasteboard")
+	}
+}
+]]
+
+	return Command("osascript"):arg({ "-l", "JavaScript", "-e", script, "--" }):arg(paths):status()
+end
+
+function M.copy_macos_text(paths, uris)
+	local payload = {}
+	for _, path in ipairs(paths) do
+		payload[#payload + 1] = uris and M.file_uri(path) or path
 	end
 
 	return M.write_stdin("pbcopy", {}, M.join(payload))
 end
 
-function M.copy(files, args)
-	local uris = M.has_arg(args, "uris") or M.has_arg(args, "uri-list")
+function M.success(status)
+	return status and status.success
+end
 
-	if ya.target_os() == "macos" then
-		local status, err = M.copy_macos_text(files, uris)
-		if status and status.success then
-			return status, "pbcopy"
+function M.copy_macos(paths, args)
+	local text = M.has_arg(args, "paths") or M.has_arg(args, "text")
+	local uris = M.has_arg(args, "uris") or M.has_arg(args, "uri-list")
+	local status, err
+
+	if text or uris then
+		status, err = M.copy_macos_text(paths, uris)
+		if M.success(status) then
+			return status, uris and "pbcopy URI text" or "pbcopy path text"
 		end
 		return status, "pbcopy: " .. M.status_error(status, err)
 	end
 
+	status, err = M.copy_macos_files(paths)
+	if M.success(status) then
+		return status, "macOS file clipboard"
+	end
+	return status, "osascript: " .. M.status_error(status, err)
+end
+
+function M.copy_linux(paths, args)
 	local backend = M.wayland_backend(args)
-	if backend == "paths" then
-		local status, err = M.copy_wayland_paths(files)
-		if status and status.success then
-			return status, "wl-copy paths"
-		end
-		return status, "wl-copy paths: " .. M.status_error(status, err)
-	end
-
 	local operation = M.has_arg(args, "cut") and "cut" or "copy"
-	if backend == "gnome" then
-		local status, err = M.copy_wayland_gnome(files, operation)
-		if status and status.success then
-			return status, "wl-copy gnome-files"
+	local attempts = {}
+
+	local function attempt(label, fn)
+		local status, err = fn()
+		if M.success(status) then
+			return status, label
+		end
+		attempts[#attempts + 1] = label .. ": " .. M.status_error(status, err)
+	end
+
+	local wayland = M.env("WAYLAND_DISPLAY") ~= ""
+	local x11 = M.env("DISPLAY") ~= ""
+	-- Try the active display protocol first. Trying both also handles XWayland and
+	-- sparse environments where the session variables were not propagated.
+	local protocols = wayland and { "wayland", "x11" } or { "x11", "wayland" }
+	if not wayland and not x11 then
+		protocols = { "wayland", "x11" }
+	end
+
+	for _, protocol in ipairs(protocols) do
+		local status, label
+		if protocol == "wayland" then
+			if backend == "paths" then
+				status, label = attempt("wl-copy path text", function()
+					return M.copy_wayland_paths(paths)
+				end)
+			elseif backend == "gnome" then
+				status, label = attempt("wl-copy GNOME files", function()
+					return M.copy_wayland_gnome(paths, operation)
+				end)
+			else
+				status, label = attempt("wl-copy URI list", function()
+					return M.copy_wayland_uri_list(paths)
+				end)
+			end
+		else
+			if backend == "paths" then
+				status, label = attempt("xclip path text", function()
+					return M.copy_x11_paths(paths)
+				end)
+			elseif backend == "gnome" then
+				status, label = attempt("xclip GNOME files", function()
+					return M.copy_x11_gnome(paths, operation)
+				end)
+			else
+				status, label = attempt("xclip URI list", function()
+					return M.copy_x11_uri_list(paths)
+				end)
+			end
 		end
 
-		local uri_status, uri_err = M.copy_wayland_uri_list(files)
-		if uri_status and uri_status.success then
-			return uri_status, "wl-copy uri-list"
+		if status then
+			return status, label
 		end
-
-		return status, "wl-copy gnome-files: " .. M.status_error(status, err or uri_err)
 	end
 
-	local status, err = M.copy_wayland_uri_list(files)
-	if status and status.success then
-		return status, "wl-copy uri-list"
+	return nil, table.concat(attempts, "; ")
+end
+
+function M.copy(paths, args)
+	if ya.target_os() == "macos" then
+		return M.copy_macos(paths, args)
 	end
 
-	local gnome_status, gnome_err = M.copy_wayland_gnome(files, operation)
-	if gnome_status and gnome_status.success then
-		return gnome_status, "wl-copy gnome-files"
-	end
-
-	return status, "wl-copy uri-list: " .. M.status_error(status, err or gnome_err)
+	return M.copy_linux(paths, args)
 end
 
 function M.entry(_, job)
 	ya.emit("escape", { visual = true })
 
-	local files = state()
-	if #files == 0 then
+	local paths = state()
+	if #paths == 0 then
 		return M.notify("warn", "No file selected")
 	end
+	M.notify("info", "Clipboard source: <" .. paths[1] .. ">")
 
-	local status, backend = M.copy(files, job and job.args or {})
+	local status, backend = M.copy(paths, job and job.args or {})
 	if not status or not status.success then
 		return M.notify("error", "Could not copy files: " .. tostring(backend))
 	end
 
-	local noun = #files == 1 and "file" or "files"
-	M.notify("info", string.format("Copied %d %s with %s", #files, noun, backend))
+	local noun = #paths == 1 and "file" or "files"
+	M.notify("info", string.format("Copied %d %s with %s", #paths, noun, backend))
 end
 
 return M
