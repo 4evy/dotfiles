@@ -203,15 +203,17 @@
       - "{{ dotfiles_bin_dir }}"
       - "{{ dotfiles_cache_dir }}/helium-browser/installer-bin"
       - "{{ dotfiles_repo_root }}/secrets/secrets.yaml"
-      - >-
-        --no-first-run --no-default-browser-check --disable-search-engine-choice-screen
-        --extension-mime-request-handling=always-prompt-for-install
-        --omnibox-autocomplete-filtering=search --set-user-color=244,184,228
-        --set-color-scheme=dark --set-color-variant=tonal_spot
+      - "--flags={{ applications_helium_macos_flags }}"
     context: "{{ dotfiles_automation_context }}"
     chdir: "{{ dotfiles_repo_root }}"
     environment:
       PATH: "{{ prerequisites_homebrew_path | default(dotfiles_path) }}"
+  vars:
+    applications_helium_macos_flags: >-
+      --no-first-run --no-default-browser-check --disable-search-engine-choice-screen
+      --extension-mime-request-handling=always-prompt-for-install
+      --omnibox-autocomplete-filtering=search --set-user-color=244,184,228
+      --set-color-scheme=dark --set-color-variant=tonal_spot
   tags:
     - helium
 

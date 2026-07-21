@@ -74,6 +74,29 @@ def test_machine_protocol_rejects_unknown_context(tmp_path: Path) -> None:
     assert "Extra inputs are not permitted" in response.msg
 
 
+def test_machine_protocol_accepts_helium_flags_that_begin_with_options(
+    tmp_path: Path,
+) -> None:
+    response = run_machine_protocol(
+        _payload(
+            tmp_path,
+            [
+                "apps",
+                "install-helium-macos",
+                str(tmp_path / "cache"),
+                str(tmp_path / "bin"),
+                str(tmp_path / "installer-bin"),
+                str(tmp_path / "secrets.yaml"),
+                "--flags=--no-first-run --set-color-scheme=dark",
+            ],
+        )
+    )
+
+    assert not response.failed
+    assert response.changed
+    assert response.msg == "Would reconcile Helium on macOS"
+
+
 def test_ghostty_check_mode_does_not_create_directories(tmp_path: Path) -> None:
     payload = _payload(
         tmp_path,

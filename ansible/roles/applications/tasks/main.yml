@@ -100,7 +100,7 @@
       - "{{ dotfiles_bin_dir }}"
       - "{{ dotfiles_cache_dir }}/helium-browser/installer-bin"
       - "{{ dotfiles_repo_root }}/secrets/secrets.yaml"
-      - "{{ helium_linux_flags }}"
+      - "--flags={{ helium_linux_flags }}"
     context: "{{ dotfiles_automation_context }}"
     chdir: "{{ dotfiles_repo_root }}"
     environment:
