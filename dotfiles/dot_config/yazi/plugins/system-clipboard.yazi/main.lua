@@ -6,7 +6,11 @@
 
 local M = {}
 
+---@class FlushableChild: Child
+---@field flush fun(self: FlushableChild): boolean, Error?
+
 M.title = "System Clipboard"
+M.getenv = os.getenv
 
 local state = ya.sync(function()
 	-- Values returned by ya.sync must not contain Yazi userdata. Both `File` and
@@ -33,6 +37,9 @@ function M.notify(level, content)
 end
 
 function M.has_arg(args, name)
+	if args and (args[name] == true or args["--" .. name] == true) then
+		return true
+	end
 	for _, arg in ipairs(args or {}) do
 		if arg == name or arg == "--" .. name then
 			return true
@@ -42,7 +49,7 @@ function M.has_arg(args, name)
 end
 
 function M.env(name)
-	return os.getenv(name) or ""
+	return M.getenv(name) or ""
 end
 
 function M.desktop()
@@ -91,10 +98,6 @@ function M.wayland_backend(args)
 end
 
 function M.percent_encode(path)
-	if ya.percent_encode then
-		return ya.percent_encode(path)
-	end
-
 	return path:gsub("([^%w%-%._~%!%$%&%'%(%)%*%+%,%;%=%:%@/])", function(char)
 		return string.format("%%%02X", string.byte(char))
 	end)
@@ -124,6 +127,7 @@ function M.write_stdin(command, args, payload)
 	if not child then
 		return nil, err
 	end
+	---@cast child FlushableChild
 
 	local ok, write_err = child:write_all(payload)
 	if not ok then
@@ -171,7 +175,7 @@ function M.copy_x11_gnome(paths, operation)
 
 	return M.write_stdin(
 		"xclip",
-		{ "-selection", "clipboard", "-type", "x-special/gnome-copied-files" },
+		{ "-selection", "clipboard", "-target", "x-special/gnome-copied-files" },
 		M.join(payload)
 	)
 end
@@ -182,11 +186,11 @@ function M.copy_x11_uri_list(paths)
 		payload[#payload + 1] = M.file_uri(path)
 	end
 
-	return M.write_stdin("xclip", { "-selection", "clipboard", "-type", "text/uri-list" }, M.join(payload, "\r\n"))
+	return M.write_stdin("xclip", { "-selection", "clipboard", "-target", "text/uri-list" }, M.join(payload, "\r\n"))
 end
 
 function M.copy_x11_paths(paths)
-	return M.write_stdin("xclip", { "-selection", "clipboard", "-type", "UTF8_STRING" }, M.join(paths))
+	return M.write_stdin("xclip", { "-selection", "clipboard", "-target", "UTF8_STRING" }, M.join(paths))
 end
 
 function M.copy_macos_files(paths)
@@ -205,6 +209,10 @@ function run(argv) {
 	if (!pasteboard.writeObjects(urls)) {
 		throw new Error("Could not write file URLs to the pasteboard")
 	}
+	// NSURL provides its data lazily. Give the pasteboard server time to request
+	// that promised data before this short-lived osascript process exits.
+	$.NSThread.sleepForTimeInterval(0.1)
+	return argv.length
 }
 ]]
 
@@ -321,7 +329,6 @@ function M.entry(_, job)
 	if #paths == 0 then
 		return M.notify("warn", "No file selected")
 	end
-	M.notify("info", "Clipboard source: <" .. paths[1] .. ">")
 
 	local status, backend = M.copy(paths, job and job.args or {})
 	if not status or not status.success then

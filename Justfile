@@ -39,7 +39,7 @@ pi_extension_profile_tools := "pi-ssh-tools:github:euvlok/pkgs#pi-ssh-tools web-
 doctor_setup_commands := "bash curl git sudo"
 doctor_format_commands := "bun git go gofmt jq nixfmt prettier shfmt stylua taplo uv"
 doctor_ansible_commands := "ansible-galaxy ansible-lint ansible-playbook ansible-test yamllint"
-doctor_lint_commands := "actionlint chezmoi deadnix golangci-lint hadolint luacheck nix-instantiate shellcheck " + doctor_format_commands + " " + doctor_ansible_commands
+doctor_lint_commands := "actionlint chezmoi deadnix golangci-lint hadolint lua luacheck nix-instantiate shellcheck " + doctor_format_commands + " " + doctor_ansible_commands
 doctor_all_commands := doctor_lint_commands + " bash curl sudo watchexec"
 
 repo_file_inventory := '''
@@ -1001,13 +1001,24 @@ _check-bun: (doctor 'bun')
     bun install --frozen-lockfile --filter hyper-window-tiling
     bun run --filter hyper-window-tiling check
 
+[private]
+_check-lua:
+    while IFS= read -r -d '' test_file; do
+      main_file=${test_file%/test.lua}/main.lua
+      if [[ ! -f $main_file ]]; then
+        printf 'missing Lua plugin entry point for %s: %s\n' "$test_file" "$main_file" >&2
+        exit 1
+      fi
+      lua "$test_file" "$main_file"
+    done < <(git ls-files -z --cached --others --exclude-standard -- '*.yazi/test.lua')
+
 # Lint repository source files and run project validation.
 [group('dev')]
 lint: (doctor 'lint') check-format _lint-checks
 
 [parallel]
 [private]
-_lint-checks: _lint-files _check-python _check-spectrum-build _check-go _check-ansible _check-github-actions _check-bun
+_lint-checks: _lint-files _check-python _check-spectrum-build _check-go _check-ansible _check-github-actions _check-bun _check-lua
 
 # Run the repo validation suite.
 [group('dev')]

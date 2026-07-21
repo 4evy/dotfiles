@@ -108,6 +108,7 @@ in
         lld
         lldb
         lua
+        lua-language-server
         luarocks
         maven
         mediainfo
@@ -189,6 +190,7 @@ in
         podman-compose
         smartmontools
         wl-clipboard
+        xclip
         ;
       inherit (pkgs) dotool;
     };

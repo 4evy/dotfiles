@@ -68,6 +68,7 @@ brew "jj"
 brew "libtool"
 brew "lld"
 brew "lua"
+brew "lua-language-server"
 brew "luacheck"
 brew "luarocks"
 brew "make"
@@ -191,6 +192,7 @@ brew "yt-dlp"
 
 if OS.linux?
   brew "wl-clipboard"
+  brew "xclip"
 end
 
 # GUI applications

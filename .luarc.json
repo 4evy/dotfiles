@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
-  "diagnostics.globals": ["Command", "cx", "ya"],
-  "runtime.version": "Lua 5.4",
-  "workspace.checkThirdParty": false
+  "runtime.version": "Lua 5.5",
+  "workspace.checkThirdParty": false,
+  "workspace.library": ["~/.config/yazi/plugins/types.yazi/"]
 }
