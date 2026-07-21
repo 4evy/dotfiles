@@ -20,7 +20,6 @@ from workstation.lib.commands import output, run, which
 from workstation.lib.files import write_if_changed
 
 _REDATE_INTERACTIVE_REVSET = "mutable() & remote_bookmarks().."
-_REDATE_INTERACTIVE_LIMIT = 20
 _REDATE_INSTRUCTION = "(↑↓ move · space toggle · enter confirm)"
 _REDATE_STYLE = questionary.Style([
     ("qmark", "fg:ansimagenta bold"),
@@ -64,7 +63,7 @@ class JjSettings(BaseSettings):
     jj_git_fetch_shim_state: Path | None = None
     jj_redate_no_prompt: bool = False
     jj_redate_revset: str = _REDATE_INTERACTIVE_REVSET
-    jj_redate_limit: int = Field(20, ge=1)
+    jj_redate_limit: int | None = Field(None, ge=1)
 
 
 def _settings() -> JjSettings:
@@ -537,8 +536,8 @@ def _redate_selectable_revset() -> str:
     return _settings().jj_redate_revset
 
 
-def _redate_selectable_limit() -> str:
-    return str(_settings().jj_redate_limit)
+def _redate_selectable_limit() -> int | None:
+    return _settings().jj_redate_limit
 
 
 def _prompt(label: str, default: str) -> str:
@@ -618,7 +617,7 @@ def _log(revset: str, template: str, reverse: bool = False) -> str:
     return output((*args, "--no-graph", "--template", template))
 
 
-def _redate_selectable_items(revset: str, limit: str) -> list[_RedateItem]:
+def _redate_selectable_items(revset: str, limit: int | None) -> list[_RedateItem]:
     template = (
         'change_id ++ "\\t" ++ '
         'if(current_working_copy, "@", "") ++ "\\t" ++ '
@@ -629,7 +628,8 @@ def _redate_selectable_items(revset: str, limit: str) -> list[_RedateItem]:
         'description.first_line() ++ "\\n"'
     )
     items: list[_RedateItem] = []
-    for line in _log(f"latest(({revset}), {limit})", template).splitlines():
+    selectable_revset = f"latest(({revset}), {limit})" if limit else revset
+    for line in _log(selectable_revset, template).splitlines():
         fields = line.split("\t", 6)
         if len(fields) != 7:
             continue
@@ -752,18 +752,13 @@ def _timestamp_run(timestamp: str, *args: str) -> None:
     run((*_jj(), "--config", f'debug.commit-timestamp="{timestamp}"', *args))
 
 
-def _verify(ids: list[str], timestamp: str) -> bool:
-    template = (
-        'author.timestamp().format("%Y-%m-%dT%H:%M:%S%:z") ++ "\\t" ++ '
-        'committer.timestamp().format("%Y-%m-%dT%H:%M:%S%:z") ++ "\\n"'
-    )
-    return all(
-        all(
-            line.split("\t") == [timestamp, timestamp]
-            for line in _log(f"change_id({change})", template).splitlines()
-        )
-        for change in ids
-    )
+def _verify_author_timestamps(ids: list[str], timestamp: str) -> bool:
+    template = 'author.timestamp().format("%Y-%m-%dT%H:%M:%S%:z") ++ "\\n"'
+    for change in ids:
+        values = _log(f"change_id({change})", template).splitlines()
+        if not values or any(value != timestamp for value in values):
+            return False
+    return True
 
 
 def _verify_descendant_timestamps(descendants: list[tuple[str, str]]) -> bool:
@@ -801,7 +796,17 @@ def _sign_redated_changes(
     descendants: list[tuple[str, str]],
     timestamp: str,
 ) -> None:
-    changes = [*((change, timestamp) for change in change_ids), *descendants]
+    intended_timestamps = dict(descendants)
+    intended_timestamps.update(dict.fromkeys(change_ids, timestamp))
+    revset = " | ".join(f"change_id({change})" for change in intended_timestamps)
+    ordered_ids = _log(revset, 'change_id ++ "\\n"', True).splitlines()
+    changes = [
+        (change, intended_timestamps[change])
+        for change in dict.fromkeys(ordered_ids)
+        if change in intended_timestamps
+    ]
+    if len(changes) != len(intended_timestamps):
+        raise DotfilesError("jj-redate: could not order all revisions for signing")
     # Signing rewrites a commit and rebases its descendants. Work oldest-to-newest
     # so every later signature restores that commit's intended timestamp.
     for group_timestamp, group in groupby(changes, key=itemgetter(1)):
@@ -905,17 +910,26 @@ def jj_redate(
                 revset,
             )
             edited = True
-            if not _verify(ids, timestamp):
-                raise DotfilesError("jj-redate: timestamp verification failed")
+            # The Git backend can shift an unsigned committer timestamp to avoid
+            # recreating an existing Git object with different jj metadata. The
+            # signing pass writes the final Git objects, so only the author
+            # timestamps are final here.
+            if not _verify_author_timestamps(ids, timestamp):
+                raise DotfilesError("jj-redate: author timestamp verification failed")
         finally:
             if edited:
                 _restore_descendant_timestamps(descendants)
         signing_complete = False
         try:
             _sign_redated_changes(ids, descendants, timestamp)
-            if not _verify(ids, timestamp) or not _verify_descendant_timestamps(
-                descendants
-            ):
+            # A signed rewrite can also collide with an object left by an earlier
+            # attempt. jj then shifts only the committer timestamp backwards to
+            # keep the Git object ID unique; the requested author timestamp is
+            # still exact.
+            timestamps_valid = _verify_author_timestamps(
+                ids, timestamp
+            ) and _verify_descendant_timestamps(descendants)
+            if not timestamps_valid:
                 raise DotfilesError("jj-redate: signed timestamp verification failed")
             if not _verify_signatures([*ids, *(change for change, _ in descendants)]):
                 raise DotfilesError("jj-redate: signature verification failed")

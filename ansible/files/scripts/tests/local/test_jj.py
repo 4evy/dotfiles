@@ -543,6 +543,21 @@ def test_jj_redate_signs_oldest_first_and_batches_matching_timestamps(
     calls: list[tuple[str, ...]] = []
     monkeypatch.setattr(
         jj_module,
+        "_log",
+        lambda _revset, _template, reverse=False: (
+            (
+                "selected-one\n"
+                "descendant-one\n"
+                "descendant-two\n"
+                "selected-two\n"
+                "descendant-three\n"
+            )
+            if reverse
+            else pytest.fail("signing order must be oldest first")
+        ),
+    )
+    monkeypatch.setattr(
+        jj_module,
         "_timestamp_run",
         lambda timestamp, *args: calls.append((timestamp, *args)),
     )
@@ -563,7 +578,7 @@ def test_jj_redate_signs_oldest_first_and_batches_matching_timestamps(
             "--quiet",
             "sign",
             "-r",
-            "change_id(selected-one) | change_id(selected-two)",
+            "change_id(selected-one)",
         ),
         (
             "2026-01-02T02:00:00.000+02:00",
@@ -571,6 +586,13 @@ def test_jj_redate_signs_oldest_first_and_batches_matching_timestamps(
             "sign",
             "-r",
             "change_id(descendant-one) | change_id(descendant-two)",
+        ),
+        (
+            "2026-01-01T01:00:00+02:00",
+            "--quiet",
+            "sign",
+            "-r",
+            "change_id(selected-two)",
         ),
         (
             "2026-01-03T03:00:00.000+02:00",
@@ -596,12 +618,27 @@ def test_jj_redate_signature_verification_checks_divergent_commits(
     assert not jj_module._verify_signatures(["signed", "divergent"])
 
 
+def test_jj_redate_author_verification_allows_committer_collision_adjustment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_log(revset: str, template: str, reverse: bool = False) -> str:
+        assert revset == "change_id(redated)"
+        assert "author.timestamp" in template
+        assert "committer.timestamp" not in template
+        assert not reverse
+        return "2026-07-21T14:30:00+03:00\n"
+
+    monkeypatch.setattr(jj_module, "_log", fake_log)
+
+    assert jj_module._verify_author_timestamps(["redated"], "2026-07-21T14:30:00+03:00")
+
+
 def test_jj_redate_without_args_opens_interactive_revision_picker(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def fake_log(revset: str, template: str, reverse: bool = False) -> str:
         assert not reverse
-        assert "mutable() & remote_bookmarks().." in revset
+        assert revset == "mutable() & remote_bookmarks().."
         assert "change_id" in template
         return (
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\t@\taaaaaaaa\tuser@example.com\t"
@@ -627,6 +664,21 @@ def test_jj_redate_without_args_opens_interactive_revision_picker(
     assert jj_module._redate_revisions([]) == [
         "change_id(bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb)"
     ]
+
+
+def test_jj_redate_picker_applies_configured_limit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    revsets: list[str] = []
+    monkeypatch.setattr(
+        jj_module,
+        "_log",
+        lambda revset, _template: revsets.append(revset) or "",
+    )
+
+    jj_module._redate_selectable_items("mutable()", 12)
+
+    assert revsets == ["latest((mutable()), 12)"]
 
 
 def test_jj_redate_picker_rows_adapt_to_terminal_width() -> None:

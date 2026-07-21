@@ -67,7 +67,9 @@ def test_shottr_activation_explains_macos_accessibility_denial(
         stdout="",
         stderr="osascript is not allowed assistive access. (-25211)",
     )
-    monkeypatch.setattr(user_commands.subprocess, "run", lambda *_args, **_kwargs: result)
+    monkeypatch.setattr(
+        user_commands.subprocess, "run", lambda *_args, **_kwargs: result
+    )
 
     with pytest.raises(user_commands.DotfilesError, match="Privacy & Security"):
         user_commands._activate_shottr_license("license-key")
