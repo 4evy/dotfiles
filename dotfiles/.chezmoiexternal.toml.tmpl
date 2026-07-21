@@ -6,6 +6,14 @@
 {{-   $yaziConfigPath = ".config/yazi" -}}
 {{- end -}}
 
+{{- if eq .chezmoi.os "darwin" }}
+# Use the same bitmap emoji font as Linux so generated assets match exactly.
+[".local/share/fonts/NotoColorEmoji/NotoColorEmoji.ttf"]
+type = "file"
+url = "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/fonts/NotoColorEmoji.ttf"
+refreshPeriod = "168h"
+{{ end }}
+
 # ----- Oh-My-Zsh -----
 
 [".oh-my-zsh"]

@@ -244,15 +244,27 @@ if (magick.error !== undefined || magick.status !== 0) {
   process.exit(0);
 }
 
-function runMagick(args: readonly string[]): void {
-  const result = spawnSync("magick", args, { stdio: "inherit" });
-  if (result.error !== undefined || result.status !== 0) {
-    throw (
-      result.error ??
-      new Error(`ImageMagick exited with status ${result.status ?? "unknown"}`)
+const useNativeMacEmoji = process.platform === "darwin";
+if (useNativeMacEmoji) {
+  const pangoView = spawnSync("pango-view", ["--version"], { stdio: "ignore" });
+  if (pangoView.error !== undefined || pangoView.status !== 0) {
+    throw new Error(
+      "ghostty dreamy swirl: pango-view is required for color emoji on macOS",
     );
   }
 }
+
+function runCommand(command: string, args: readonly string[]): void {
+  const result = spawnSync(command, args, { stdio: "inherit" });
+  if (result.error !== undefined || result.status !== 0) {
+    throw (
+      result.error ??
+      new Error(`${command} exited with status ${result.status ?? "unknown"}`)
+    );
+  }
+}
+
+const runMagick = (args: readonly string[]): void => runCommand("magick", args);
 
 const signed = (value: number): string =>
   value >= 0 ? `+${value}` : `${value}`;
@@ -277,18 +289,41 @@ try {
     const offsetX = Math.round(point.x - CANVAS.width / 2);
     const offsetY = Math.round(point.y - CANVAS.height / 2);
 
-    runMagick([
-      "-background",
-      "none",
-      `pango:<span font_family="Noto Color Emoji" font_size="${point.pointSize}pt">${point.emoji}</span>`,
-      "-background",
-      "none",
-      "-rotate",
-      `${point.rotation}`,
-      "-trim",
-      "+repage",
-      `PNG32:${sprite}`,
-    ]);
+    if (useNativeMacEmoji) {
+      const unrotated = join(work, `unrotated-${index}.png`);
+      runCommand("pango-view", [
+        "--no-display",
+        `--text=${point.emoji}`,
+        `--font=Noto Color Emoji ${point.pointSize}`,
+        "--background=transparent",
+        // Prevent accents and rotated color glyphs from touching Pango's edge.
+        "--margin=8",
+        `--output=${unrotated}`,
+      ]);
+      runMagick([
+        unrotated,
+        "-background",
+        "none",
+        "-rotate",
+        `${point.rotation}`,
+        "-trim",
+        "+repage",
+        `PNG32:${sprite}`,
+      ]);
+    } else {
+      runMagick([
+        "-background",
+        "none",
+        `pango:<span font_family="Noto Color Emoji" font_size="${point.pointSize}pt">${point.emoji}</span>`,
+        "-background",
+        "none",
+        "-rotate",
+        `${point.rotation}`,
+        "-trim",
+        "+repage",
+        `PNG32:${sprite}`,
+      ]);
+    }
     runMagick([
       canvas,
       sprite,

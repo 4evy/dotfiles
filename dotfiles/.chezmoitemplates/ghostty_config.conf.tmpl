@@ -6,7 +6,11 @@ theme = light:catppuccin-latte-pink.conf,dark:catppuccin-frappe-pink.conf
 background-image = {{ .chezmoi.homeDir }}/.config/ghostty/backgrounds/catppuccin-emoji-corner.png
 background-image-opacity = 0.24
 background-image-position = bottom-right
+{{- if eq .chezmoi.os "darwin" }}
+background-image-fit = contain
+{{- else }}
 background-image-fit = cover
+{{- end }}
 background-image-repeat = false
 custom-shader = {{ .chezmoi.homeDir }}/.config/ghostty/shaders/catppuccin-bubbles.glsl
 custom-shader-animation = false

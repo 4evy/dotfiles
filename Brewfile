@@ -132,6 +132,10 @@ brew "zip"
 # Media and documents
 brew "ffmpeg"
 brew "imagemagick"
+if OS.mac?
+  # Used directly because Homebrew ImageMagick has no Pango text delegate.
+  brew "pango"
+end
 brew "media-info"
 brew "pandoc"
 brew "poppler"
