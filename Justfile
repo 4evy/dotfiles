@@ -689,7 +689,7 @@ nix: (doctor 'nix') _ensure-nix
 # Apply chezmoi-managed dotfiles.
 [group('setup')]
 apply: (doctor 'apply')
-    chezmoi init --source {{ quote(dotfiles_dir) }}
+    chezmoi init --source {{ quote(repo_dir) }}
     chezmoi apply --refresh-externals=auto --force
 
 [doc('Bootstrap userland, apply dotfiles, then apply host roles.')]
@@ -889,7 +889,7 @@ _lint-files: (doctor 'lint')
       if ((${#template_files[@]} > 0)); then
         chezmoi apply \
           --dry-run \
-          --source {{ quote(dotfiles_dir) }} \
+          --source {{ quote(repo_dir) }} \
           --destination "$tmp_destination" \
           --force \
           --no-tty \
