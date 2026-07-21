@@ -2,8 +2,41 @@
 from __future__ import annotations
 
 import os
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 command = Path.home() / ".local/bin/dotfiles-scripts"
 if command.is_file() and os.access(command, os.X_OK):
-    os.execv(command, (command, "chezmoi", "discord-equicord"))
+    subprocess.run((command, "chezmoi", "discord-equicord"), check=True)
+
+if sys.platform == "darwin":
+    nix = shutil.which("nix")
+    if nix is None:
+        raise SystemExit("Equicord settings install failed: nix is not available")
+
+    repository = Path({{ joinPath .chezmoi.sourceDir ".." | quote }})
+    result = subprocess.run(
+        (nix, "build", "--no-link", "--print-out-paths", ".#equicord-settings"),
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    outputs = result.stdout.splitlines()
+    if len(outputs) != 1:
+        raise SystemExit(
+            f"Equicord settings install failed: expected one Nix output, got {outputs!r}"
+        )
+
+    package = Path(outputs[0])
+    settings = Path.home() / "Library/Application Support/Equicord/settings"
+    settings.mkdir(parents=True, exist_ok=True)
+    for name in ("settings.json", "quickCss.css"):
+        source = package / name
+        destination = settings / name
+        content = source.read_bytes()
+        if not destination.is_file() or destination.read_bytes() != content:
+            destination.write_bytes(content)
+        destination.chmod(0o644)

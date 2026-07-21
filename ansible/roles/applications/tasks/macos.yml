@@ -110,39 +110,6 @@
     - discord
     - equicord
 
-- name: Install generated Equicord plugin settings on macOS
-  ansible.builtin.command:
-    argv:
-      - nix
-      - eval
-      - --json
-      - .#lib.equicordSettingsJson
-  args:
-    chdir: "{{ dotfiles_repo_root }}"
-  register: applications_equicord_settings_macos
-  changed_when: false
-  tags:
-    - discord
-    - equicord
-
-- name: Write generated Equicord plugin settings on macOS
-  ansible.builtin.copy:
-    content: "{{ applications_equicord_settings_macos.stdout | from_json | to_nice_json }}\n"
-    dest: "{{ dotfiles_home_dir }}/Library/Application Support/Equicord/settings/settings.json"
-    mode: "0644"
-  tags:
-    - discord
-    - equicord
-
-- name: Install Equicord QuickCSS on macOS
-  ansible.builtin.copy:
-    src: "{{ dotfiles_ansible_dir }}/files/apps/equicord/quickCss.css"
-    dest: "{{ dotfiles_home_dir }}/Library/Application Support/Equicord/settings/quickCss.css"
-    mode: "0644"
-  tags:
-    - discord
-    - equicord
-
 - name: Clear Equicord macOS ASAR file locks before patch
   ansible.builtin.command:
     argv:
@@ -178,6 +145,39 @@
       - /Applications/Discord.app/Contents/Resources/app.asar
       - /Applications/Discord.app/Contents/Resources/_app.asar
   changed_when: false
+  tags:
+    - discord
+    - equicord
+
+- name: Generate Equicord plugin settings on macOS
+  ansible.builtin.command:
+    argv:
+      - nix
+      - eval
+      - --json
+      - .#lib.equicordSettingsJson
+  args:
+    chdir: "{{ dotfiles_repo_root }}"
+  register: applications_equicord_settings_macos
+  changed_when: false
+  tags:
+    - discord
+    - equicord
+
+- name: Install generated Equicord plugin settings on macOS
+  ansible.builtin.copy:
+    content: "{{ applications_equicord_settings_macos.stdout | from_json | to_nice_json }}\n"
+    dest: "{{ dotfiles_home_dir }}/Library/Application Support/Equicord/settings/settings.json"
+    mode: "0644"
+  tags:
+    - discord
+    - equicord
+
+- name: Install Equicord QuickCSS on macOS
+  ansible.builtin.copy:
+    src: "{{ dotfiles_ansible_dir }}/files/apps/equicord/quickCss.css"
+    dest: "{{ dotfiles_home_dir }}/Library/Application Support/Equicord/settings/quickCss.css"
+    mode: "0644"
   tags:
     - discord
     - equicord
