@@ -1,5 +1,4 @@
 require "json"
-require "pathname"
 
 class GhosttyPatched < Formula
   tap_root = Pathname(__dir__).parent
@@ -16,6 +15,8 @@ class GhosttyPatched < Formula
   sha256 ghostty_pin.fetch("source_sha256")
   license "MIT"
 
+  depends_on "gettext" => :build
+  depends_on xcode: :build
   depends_on "zig@0.15" => :build
   depends_on :macos
 
@@ -28,21 +29,9 @@ class GhosttyPatched < Formula
     system "git", "apply", *patches
     system formula_opt_bin("zig@0.15")/"zig", "build",
            "-Doptimize=ReleaseFast",
-           "-Demit-macos-app=false",
            "-Dversion-string=#{version}"
 
-    cd "macos" do
-      system "/usr/bin/env", "-i",
-             "HOME=#{Dir.home}",
-             "PATH=/usr/bin:/bin:/usr/sbin:/sbin",
-             "/usr/bin/xcodebuild",
-             "-project", "Ghostty.xcodeproj",
-             "-target", "Ghostty",
-             "-configuration", "Release",
-             "SYMROOT=#{buildpath}/macos/build"
-    end
-
-    prefix.install "macos/build/Release/Ghostty.app"
+    prefix.install "zig-out/Ghostty.app"
   end
 
   def caveats
