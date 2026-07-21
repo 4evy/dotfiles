@@ -3,9 +3,11 @@
 {{- $onePasswordAgent = "%d/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock" -}}
 {{- end }}
 Host github github.com
-  Hostname ssh.github.com
-  Port 443
+  Hostname github.com
+  Port 22
   User git
+  IdentityFile ~/.ssh/github_key
+  IdentitiesOnly yes
   ForwardAgent no
   UserKnownHostsFile ~/.ssh/known_hosts ~/.ssh/known_hosts.d/github
 
