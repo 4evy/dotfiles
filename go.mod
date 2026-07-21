@@ -14,7 +14,6 @@ require (
 	github.com/google/go-github/v89 v89.0.0
 	github.com/google/renameio/v2 v2.0.2
 	github.com/hashicorp/go-retryablehttp v0.7.8
-	github.com/lucasb-eyer/go-colorful v1.4.0
 	github.com/mediabuyerbot/go-crx3 v1.7.0
 	github.com/otiai10/copy v1.14.1
 	github.com/pelletier/go-toml/v2 v2.4.3
@@ -42,6 +41,7 @@ require (
 	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/lucasb-eyer/go-colorful v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.15 // indirect
 	github.com/mattn/go-isatty v0.0.23 // indirect
 	github.com/mattn/go-runewidth v0.0.24 // indirect

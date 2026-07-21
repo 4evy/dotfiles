@@ -243,6 +243,8 @@ known_first_party = ["spectrum_build", "workstation"]
 [tool.deptry.per_rule_ignores]
 # Ansible injects its module runtime; Toshy injects xwaykeyz into its slices.
 DEP001 = ["ansible", "xwaykeyz"]
+# Cocoa is macOS-only and loaded dynamically through importlib.
+DEP002 = ["pyobjc-framework-Cocoa"]
 
 [tool.complexipy]
 max-complexity-allowed = 15
