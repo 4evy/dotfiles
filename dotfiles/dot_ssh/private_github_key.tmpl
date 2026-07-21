@@ -1,1 +1,1 @@
-{{ (secret (joinPath .chezmoi.sourceDir "../secrets/secrets.yaml") | fromYaml).github_ssh }}
+{{ index (secret (joinPath .chezmoi.sourceDir "../secrets/secrets.yaml") | fromYaml) "github-ssh-key" }}

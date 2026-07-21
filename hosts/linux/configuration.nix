@@ -113,7 +113,9 @@ in
   networking = {
     hostName = "nixos";
     networkmanager = {
-      ensureProfiles.environmentFiles = [ config.sops.secrets.wireless.path ];
+      ensureProfiles.environmentFiles = [
+        config.sops.secrets."networkmanager-environment".path
+      ];
       ensureProfiles.profiles = {
         "2ghz" = {
           connection = {
@@ -227,8 +229,8 @@ in
   };
 
   sops.secrets = {
-    "4evy-password".neededForUsers = true;
-    wireless.neededForUsers = true;
+    "networkmanager-environment".neededForUsers = true;
+    "user-password-hash".neededForUsers = true;
   };
 
   system.stateVersion = "25.11";
@@ -256,7 +258,7 @@ in
           "audio"
           "keys"
         ];
-        hashedPasswordFile = config.sops.secrets."4evy-password".path;
+        hashedPasswordFile = config.sops.secrets."user-password-hash".path;
         openssh.authorizedKeys.keys = [
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAc3DwiG6OJVICR7FQQE+I9R2447GFLrIRyF9+xP6aM5 4evy@nixos"
         ];

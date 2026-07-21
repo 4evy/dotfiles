@@ -24,7 +24,7 @@
             mode = "0440";
             group = "users";
           };
-          secrets.github_ssh = {
+          secrets."github-ssh-key" = {
             uid = 0;
             gid = 0;
           };
