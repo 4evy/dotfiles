@@ -74,7 +74,7 @@ only the Fedora and Nix packaging recipes remain platform-specific.
 git clone https://github.com/4evy/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 ./ansible/bootstrap.sh ansible/playbooks/userland.yml
-chezmoi init --source "$PWD/dotfiles"
+chezmoi init --source "$PWD"
 chezmoi apply --refresh-externals=auto --force
 ```
 
