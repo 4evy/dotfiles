@@ -21,7 +21,7 @@
         "@girs/gjs": "4.1.0",
         "@girs/gnome-shell": "50.0.4",
         "@types/bun": "1.3.14",
-        "fallow": "3.7.0",
+        "fallow": "3.7.1",
         "kwin-api": "6.0.9",
         "typescript": "7.0.2"
     }
