@@ -1,15 +1,10 @@
 {
-    "$schema": "https://docs.fallow.tools/schemas/config.json",
-    "ignorePatterns": [
-        "dist/**",
-        "extension.js",
-        "node_modules/**",
-        "src/**/*.test.ts"
-    ],
-    "duplicates": {
-        "ignore": ["dist/**", "extension.js"]
-    },
-    "health": {
-        "ignore": ["dist/**", "extension.js"]
-    }
+  "$schema": "https://docs.fallow.tools/schemas/config.json",
+  "ignorePatterns": ["dist/**", "extension.js", "node_modules/**", "src/**/*.test.ts"],
+  "duplicates": {
+    "ignore": ["dist/**", "extension.js"]
+  },
+  "health": {
+    "ignore": ["dist/**", "extension.js"]
+  }
 }

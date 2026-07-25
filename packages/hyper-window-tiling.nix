@@ -8,16 +8,20 @@
 let
   repositoryRoot = ../.;
   packageRoot = ./hyper-window-tiling;
-  pluginId = "hyper-window-tiling";
-  extensionUuid = "hyper-window-tiling@4evy.local";
-  pname = "hyper-window-tiling";
-  version = "1.0.0";
+  packageMetadata = builtins.fromJSON (builtins.readFile (packageRoot + /package.json));
+  gnomeMetadata = builtins.fromJSON (builtins.readFile (packageRoot + /gnome/metadata.json));
+  kdeMetadata = builtins.fromJSON (builtins.readFile (packageRoot + /kde/metadata.json));
+  inherit (packageMetadata) version;
+  pname = packageMetadata.name;
+  extensionUuid = gnomeMetadata.uuid;
+  pluginId = kdeMetadata.KPlugin.Id;
 
   src = lib.fileset.toSource {
     root = repositoryRoot;
     fileset = lib.fileset.unions [
       (repositoryRoot + /bun.lock)
       (repositoryRoot + /package.json)
+      (repositoryRoot + /dotfiles/package.json)
       (packageRoot + /gnome/metadata.json)
       (packageRoot + /gnome/schemas)
       (packageRoot + /kde/metadata.json)
@@ -42,6 +46,7 @@ let
   node_modules = stdenv.mkDerivation {
     pname = "${pname}-node_modules";
     inherit version src;
+    strictDeps = true;
 
     postUnpack = ''
       sourceRoot="$sourceRoot/packages/hyper-window-tiling"
@@ -83,6 +88,8 @@ let
         or (throw "${pname}: Bun node_modules hash is not packaged for ${stdenv.hostPlatform.system}");
     outputHashAlgo = "sha256";
     outputHashMode = "recursive";
+    doCheck = false;
+    doInstallCheck = false;
   };
 
   buildPhaseFor = script: ''
@@ -99,6 +106,7 @@ in
   gnome = stdenv.mkDerivation {
     pname = "gnome-shell-extension-hyper-window-tiling";
     inherit version src;
+    strictDeps = true;
 
     postUnpack = ''
       sourceRoot="$sourceRoot/packages/hyper-window-tiling"
@@ -124,12 +132,22 @@ in
       runHook postInstall
     '';
 
+    doCheck = false;
+    doInstallCheck = false;
+
     passthru.extensionUuid = extensionUuid;
+
+    meta = {
+      description = "Hyper-key window tiling extension for GNOME Shell";
+      license = lib.licenses.mit;
+      platforms = lib.platforms.linux;
+    };
   };
 
   kde = stdenv.mkDerivation {
     pname = "kwin-script-hyper-window-tiling";
     inherit version src;
+    strictDeps = true;
 
     postUnpack = ''
       sourceRoot="$sourceRoot/packages/hyper-window-tiling"
@@ -152,6 +170,15 @@ in
       runHook postInstall
     '';
 
+    doCheck = false;
+    doInstallCheck = false;
+
     passthru.pluginId = pluginId;
+
+    meta = {
+      description = "Hyper-key window tiling script for KDE Plasma";
+      license = lib.licenses.mit;
+      platforms = lib.platforms.linux;
+    };
   };
 }

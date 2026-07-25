@@ -1,18 +1,18 @@
 {
-    "compilerOptions": {
-        "lib": ["ES2023"],
-        "module": "NodeNext",
-        "moduleResolution": "NodeNext",
-        "outDir": "dist",
-        "rootDir": ".",
-        "skipLibCheck": true,
-        "strict": true,
-        "target": "ES2023"
-    },
-    "files": [
-        "src/gnome/ambient.d.ts",
-        "src/gnome/extension.ts",
-        "src/kde/ambient.d.ts",
-        "src/kde/main.ts"
-    ]
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist",
+    "rootDir": ".",
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2023"
+  },
+  "files": [
+    "src/gnome/ambient.d.ts",
+    "src/gnome/extension.ts",
+    "src/kde/ambient.d.ts",
+    "src/kde/main.ts"
+  ]
 }

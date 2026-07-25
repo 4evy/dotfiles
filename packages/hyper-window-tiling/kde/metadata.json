@@ -1,18 +1,18 @@
 {
-    "KPackageStructure": "KWin/Script",
-    "KPlugin": {
-        "Authors": [
-            {
-                "Name": "4evy"
-            }
-        ],
-        "Description": "Cycles focused KDE windows through the same Hyper-key layouts used by the macOS Kanata config.",
-        "EnabledByDefault": true,
-        "Icon": "preferences-system-windows",
-        "Id": "hyper-window-tiling",
-        "License": "MIT",
-        "Name": "Hyper Window Tiling",
-        "Version": "1.0.0"
-    },
-    "X-Plasma-API": "javascript"
+  "KPackageStructure": "KWin/Script",
+  "KPlugin": {
+    "Authors": [
+      {
+        "Name": "4evy"
+      }
+    ],
+    "Description": "Cycles focused KDE windows through the same Hyper-key layouts used by the macOS Kanata config.",
+    "EnabledByDefault": true,
+    "Icon": "preferences-system-windows",
+    "Id": "hyper-window-tiling",
+    "License": "MIT",
+    "Name": "Hyper Window Tiling",
+    "Version": "1.0.0"
+  },
+  "X-Plasma-API": "javascript"
 }
