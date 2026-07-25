@@ -3,8 +3,8 @@ import {
   DEFAULT_MAX_BYTES,
   DEFAULT_MAX_LINES,
   defineTool,
-  formatSize,
   type ExtensionAPI,
+  formatSize,
   type TruncationResult,
   truncateTail,
 } from "@earendil-works/pi-coding-agent";
@@ -45,10 +45,7 @@ type SystemRunDetails = {
   timed_out: boolean;
 };
 
-function formatOutput(
-  name: "stdout" | "stderr",
-  output: TruncationResult,
-): string[] {
+function formatOutput(name: "stdout" | "stderr", output: TruncationResult): string[] {
   if (!output.content && !output.truncated) return [];
 
   const truncationNotice = output.truncated
@@ -82,9 +79,7 @@ export default function (pi: ExtensionAPI) {
           timeoutSec <= 0 ||
           timeoutSec > MAX_TIMEOUT_SEC
         ) {
-          throw new Error(
-            `timeout_sec must be between 1 and ${MAX_TIMEOUT_SEC}`,
-          );
+          throw new Error(`timeout_sec must be between 1 and ${MAX_TIMEOUT_SEC}`);
         }
 
         const result = await pi.exec(
@@ -100,7 +95,7 @@ export default function (pi: ExtensionAPI) {
           ],
           {
             cwd: params.cwd?.trim() || ctx.cwd,
-            signal,
+            ...(signal ? { signal } : {}),
             timeout: timeoutSec * 1000,
           },
         );
@@ -118,10 +113,10 @@ export default function (pi: ExtensionAPI) {
               : String(result.code),
           stderr: stderr.content,
           stderr_truncated: stderr.truncated,
-          stderr_truncation: stderr.truncated ? stderr : undefined,
+          ...(stderr.truncated ? { stderr_truncation: stderr } : {}),
           stdout: stdout.content,
           stdout_truncated: stdout.truncated,
-          stdout_truncation: stdout.truncated ? stdout : undefined,
+          ...(stdout.truncated ? { stdout_truncation: stdout } : {}),
           success: !result.killed && result.code === 0,
           timed_out: result.killed && !signal?.aborted,
         } satisfies SystemRunDetails;
