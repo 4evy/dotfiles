@@ -1,9 +1,8 @@
 {{- if eq .chezmoi.os "darwin" -}}
-#!/usr/bin/env python3
-from __future__ import annotations
-
-import os
-
-command = {{ joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts" | quote }}
-os.execv(command, (command, "chezmoi", "raycast-beta-patch"))
-{{- end }}
+#!/usr/bin/env python3.14
+{{ template "dotfiles_command_body.py.tmpl" (dict
+  "mode" "always"
+  "path" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts")
+  "subcommand" "raycast-beta-patch"
+) -}}
+{{- end -}}

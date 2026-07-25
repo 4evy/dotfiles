@@ -105,9 +105,7 @@ async function run() {
 }
 
 run().catch((error) => {
-  const message = process.env.DEBUG
-    ? error.stack || error.message
-    : error.message;
+  const message = process.env.DEBUG ? error.stack || error.message : error.message;
   console.error(`disable-ai: ${message}`);
   process.exitCode = 1;
 });

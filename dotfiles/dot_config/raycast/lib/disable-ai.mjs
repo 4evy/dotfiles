@@ -1,10 +1,4 @@
-import {
-  clone,
-  countRecords,
-  pathExists,
-  readJson,
-  writeJson,
-} from "./common.mjs";
+import { clone, countRecords, pathExists, readJson, writeJson } from "./common.mjs";
 import {
   AI_DATA_STATUS_QUERIES,
   AI_FALLBACK_COMMAND_IDS,
@@ -126,10 +120,7 @@ function methodAtPath(source, path) {
 export async function buildSnapshot(db) {
   const internalExtensions = await objectFromAsync(
     INTERNAL_EXTENSION_RULES,
-    async ({ id }) => [
-      id,
-      clone(await db.settings.getInternalExtensionSettings(id)),
-    ],
+    async ({ id }) => [id, clone(await db.settings.getInternalExtensionSettings(id))],
   );
 
   const models = Object.fromEntries(
@@ -147,10 +138,10 @@ export async function buildSnapshot(db) {
   const frecencyRecords = (await db.frecency.getAll()).filter((record) =>
     isRaycastAiItemId(record.itemId),
   );
-  const macOSDefaults = await objectFromAsync(
-    MACOS_DEFAULT_RULES,
-    async (rule) => [rule.key, await readMacOSDefault(rule)],
-  );
+  const macOSDefaults = await objectFromAsync(MACOS_DEFAULT_RULES, async (rule) => [
+    rule.key,
+    await readMacOSDefault(rule),
+  ]);
 
   return {
     version: BACKUP_VERSION,
@@ -169,8 +160,7 @@ export async function buildSnapshot(db) {
  * @returns {Record<string, unknown>}
  */
 function disabledInternalExtension(previous, rule) {
-  if (!previous?.id)
-    throw new Error("internal extension settings are missing an id");
+  if (!previous?.id) throw new Error("internal extension settings are missing an id");
 
   const next = {
     ...clone(previous),
@@ -215,17 +205,13 @@ async function runOperations(operations, dryRun) {
 export async function applyDisabled(db, before, dryRun) {
   const now = new Date().toISOString();
   const internalExtensionOperations = INTERNAL_EXTENSION_RULES.map((rule) => {
-    const next = disabledInternalExtension(
-      before.internalExtensions[rule.id],
-      rule,
-    );
+    const next = disabledInternalExtension(before.internalExtensions[rule.id], rule);
     return operation(
       "internal-extension",
       {
         id: rule.id,
         enabled: next.enabled,
-        clearedFallbackCommands:
-          rule.id === "e:r:ai" ? AI_FALLBACK_COMMAND_IDS : [],
+        clearedFallbackCommands: rule.id === "e:r:ai" ? AI_FALLBACK_COMMAND_IDS : [],
       },
       () => db.settings.updateInternalExtensionSettings(rule.id, next),
     );
@@ -238,9 +224,7 @@ export async function applyDisabled(db, before, dryRun) {
   );
 
   const userDefaultOperations = Object.keys(before.userDefaults).map((key) =>
-    operation("user-default", { key, value: null }, () =>
-      db.userDefaults.delete(key),
-    ),
+    operation("user-default", { key, value: null }, () => db.userDefaults.delete(key)),
   );
 
   const frecencyOperations = (before.frecencyRecords || []).map((record) =>
@@ -248,11 +232,10 @@ export async function applyDisabled(db, before, dryRun) {
       db.frecency.reset(record.itemId),
     ),
   );
-  const macOSDefaultOperations = Object.keys(before.macOSDefaults || {}).map(
-    (key) =>
-      operation("macos-default", { key, action: "delete" }, () =>
-        deleteMacOSDefault({ key }),
-      ),
+  const macOSDefaultOperations = Object.keys(before.macOSDefaults || {}).map((key) =>
+    operation("macos-default", { key, action: "delete" }, () =>
+      deleteMacOSDefault({ key }),
+    ),
   );
 
   return runOperations(
@@ -327,30 +310,24 @@ export async function restore(db, appSupport, backupPath, dryRun) {
     ),
   );
 
-  const modelOperations = Object.entries(backup.models || {}).map(
-    ([id, previous]) => {
-      const disabledAt = previous.disabledAt ?? null;
-      return operation("model", { id, disabledAt }, () =>
-        db.ai.modelSetDisabledAt(id, disabledAt),
-      );
-    },
-  );
+  const modelOperations = Object.entries(backup.models || {}).map(([id, previous]) => {
+    const disabledAt = previous.disabledAt ?? null;
+    return operation("model", { id, disabledAt }, () =>
+      db.ai.modelSetDisabledAt(id, disabledAt),
+    );
+  });
 
   const userDefaultOperations = Object.entries(backup.userDefaults || {}).map(
     ([key, value]) =>
       operation("user-default", { key, value }, () =>
-        value == null
-          ? db.userDefaults.delete(key)
-          : db.userDefaults.set(key, value),
+        value == null ? db.userDefaults.delete(key) : db.userDefaults.set(key, value),
       ),
   );
 
   const frecencyOperations = backup.frecencyRecords?.length
     ? [
-        operation(
-          "frecency",
-          { restoredRecords: backup.frecencyRecords.length },
-          () => db.frecency.insertMany(backup.frecencyRecords),
+        operation("frecency", { restoredRecords: backup.frecencyRecords.length }, () =>
+          db.frecency.insertMany(backup.frecencyRecords),
         ),
       ]
     : [];
@@ -443,8 +420,7 @@ export async function status(db) {
   return {
     internalExtensions,
     modelCount: models.length,
-    disabledModelCount: models.filter((model) => model.disabledAt != null)
-      .length,
+    disabledModelCount: models.filter((model) => model.disabledAt != null).length,
     aiFrecencyCount: frecencyRecords.length,
     aiData,
     macOSDefaults,

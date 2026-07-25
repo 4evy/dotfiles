@@ -43,8 +43,7 @@ const require = createRequire(import.meta.url);
  * @property {string | undefined} keyFile
  */
 
-export const DEFAULT_APP_SUPPORT =
-  "~/Library/Application Support/com.raycast-x.macos";
+export const DEFAULT_APP_SUPPORT = "~/Library/Application Support/com.raycast-x.macos";
 export const DEFAULT_APP_BUNDLE = "/Applications/Raycast Beta.app";
 export const DEFAULT_DATA_ADDON =
   "Contents/Resources/macos-app_RaycastDesktopApp.bundle/Contents/Resources/backend/data.darwin-arm64.node";
@@ -66,9 +65,7 @@ export async function latestRaycastNodeBin(appSupport) {
     if (await pathExists(path.join(bin, "node"))) bins.push(bin);
   }
 
-  return bins.toSorted((a, b) =>
-    b.localeCompare(a, undefined, { numeric: true }),
-  )[0];
+  return bins.toSorted((a, b) => b.localeCompare(a, undefined, { numeric: true }))[0];
 }
 
 /**
@@ -130,12 +127,8 @@ export function openDatabaseWithKey({ appSupport, key, nativeAddon }) {
  * @returns {Promise<RaycastDatabaseContext>}
  */
 export async function loadDatabase() {
-  const appSupport = expandHome(
-    process.env.RAYCAST_APP_SUPPORT || DEFAULT_APP_SUPPORT,
-  );
-  const appBundle = expandHome(
-    process.env.RAYCAST_APP_BUNDLE || DEFAULT_APP_BUNDLE,
-  );
+  const appSupport = expandHome(process.env.RAYCAST_APP_SUPPORT || DEFAULT_APP_SUPPORT);
+  const appBundle = expandHome(process.env.RAYCAST_APP_BUNDLE || DEFAULT_APP_BUNDLE);
   const addon = expandHome(
     process.env.RAYCAST_DATA_ADDON || path.join(appBundle, DEFAULT_DATA_ADDON),
   );
@@ -155,9 +148,7 @@ export async function loadDatabase() {
  * @returns {string}
  */
 export function dataAddonPath() {
-  const appBundle = expandHome(
-    process.env.RAYCAST_APP_BUNDLE || DEFAULT_APP_BUNDLE,
-  );
+  const appBundle = expandHome(process.env.RAYCAST_APP_BUNDLE || DEFAULT_APP_BUNDLE);
   return expandHome(
     process.env.RAYCAST_DATA_ADDON || path.join(appBundle, DEFAULT_DATA_ADDON),
   );

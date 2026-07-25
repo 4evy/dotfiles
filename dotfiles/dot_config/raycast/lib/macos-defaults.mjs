@@ -46,9 +46,7 @@ export async function readMacOSDefault({ key, restoreType }) {
  * @returns {Promise<void>}
  */
 export async function deleteMacOSDefault({ key }) {
-  await execFile("defaults", ["delete", RAYCAST_DEFAULTS_DOMAIN, key]).catch(
-    () => {},
-  );
+  await execFile("defaults", ["delete", RAYCAST_DEFAULTS_DOMAIN, key]).catch(() => {});
 }
 
 /**

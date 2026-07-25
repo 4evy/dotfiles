@@ -301,8 +301,7 @@ async function runUserDefault(argv) {
       throw new Error(`usage: user-default ${action} <key> <value>`);
     }
 
-    const storedValue =
-      action === "set-json" ? parseJsonArgument(value) : value;
+    const storedValue = action === "set-json" ? parseJsonArgument(value) : value;
     if (action !== "set" && action !== "set-json") {
       throw new Error(`unknown user-default action: ${action}`);
     }
@@ -314,9 +313,7 @@ async function runUserDefault(argv) {
       key,
       action,
       before,
-      ...(dryRun
-        ? { plannedAfter }
-        : { after: await userDefaultValue(db, key) }),
+      ...(dryRun ? { plannedAfter } : { after: await userDefaultValue(db, key) }),
     });
   });
 }
@@ -416,9 +413,7 @@ async function run() {
 }
 
 run().catch((error) => {
-  const message = process.env.DEBUG
-    ? error.stack || error.message
-    : error.message;
+  const message = process.env.DEBUG ? error.stack || error.message : error.message;
   console.error(`raycast-db: ${message}`);
   process.exitCode = 1;
 });

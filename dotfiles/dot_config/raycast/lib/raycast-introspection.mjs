@@ -54,8 +54,7 @@ export function addonSurface() {
             name,
             {
               type,
-              methods:
-                type === "function" ? prototypeMethods(value) : undefined,
+              methods: type === "function" ? prototypeMethods(value) : undefined,
             },
           ];
         }),
@@ -69,9 +68,7 @@ export function addonSurface() {
  */
 function callableMethods(value) {
   return Object.getOwnPropertyNames(Object.getPrototypeOf(value) || {})
-    .filter(
-      (name) => name !== "constructor" && typeof value[name] === "function",
-    )
+    .filter((name) => name !== "constructor" && typeof value[name] === "function")
     .sort();
 }
 
@@ -201,10 +198,7 @@ export async function databaseSummary(db) {
     optionalCount("quicklinks", () => db.quicklinks.count()),
     optionalCount("snippets", () => db.snippets.count()),
     optionalCount("notes", () => db.notes.count()),
-    optionalCount(
-      "clipboard",
-      async () => (await db.clipboard.all({})).entries,
-    ),
+    optionalCount("clipboard", async () => (await db.clipboard.all({})).entries),
     optionalCount("frecency", () => db.frecency.getAll()),
     optionalCount("userActivity", () => db.userActivity.getAllActivities()),
     optionalCount("aiChats", () => db.ai.chatGetAllIds()),
@@ -212,9 +206,7 @@ export async function databaseSummary(db) {
     optionalCount("aiCommands", () => db.ai.commandGetAll()),
     optionalCount("aiModes", () => db.ai.modeGetAll()),
     optionalCount("aiTranscriptions", () => db.ai.transcriptionGetAll()),
-    optionalCount("aiTranscriptionStyles", () =>
-      db.ai.transcriptionStyleGetAll(),
-    ),
+    optionalCount("aiTranscriptionStyles", () => db.ai.transcriptionStyleGetAll()),
   ]);
 
   return {
@@ -231,8 +223,7 @@ export async function databaseSummary(db) {
     },
     internalExtensions: {
       total: internalExtensions.length,
-      enabled: internalExtensions.filter((extension) => extension.enabled)
-        .length,
+      enabled: internalExtensions.filter((extension) => extension.enabled).length,
       disabled: internalExtensions
         .filter((extension) => !extension.enabled)
         .map((extension) => extension.id)
@@ -266,9 +257,7 @@ export async function databaseSummary(db) {
  */
 export async function profileDefaults(db) {
   const currentUser = parseStoredJson(await db.userDefaults.get("CurrentUser"));
-  const oauthToken = parseStoredJson(
-    await db.userDefaults.get("OAuthTokenResponse"),
-  );
+  const oauthToken = parseStoredJson(await db.userDefaults.get("OAuthTokenResponse"));
 
   return {
     currentUser,

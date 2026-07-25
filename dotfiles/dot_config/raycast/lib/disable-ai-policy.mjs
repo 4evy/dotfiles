@@ -31,11 +31,7 @@ export const AI_MODEL_USER_DEFAULT_KEYS = [
   "SelectedAIModel",
 ];
 
-export const AI_FRECENCY_PREFIXES = [
-  "c:r:ai:",
-  "c:r:dictation:",
-  "c:r:translator:",
-];
+export const AI_FRECENCY_PREFIXES = ["c:r:ai:", "c:r:dictation:", "c:r:translator:"];
 
 /** @type {InternalExtensionRule[]} */
 export const INTERNAL_EXTENSION_RULES = [
@@ -130,8 +126,7 @@ export const AI_DATA_STATUS_QUERIES = [
     key: "quickAiChatCount",
     methodPath: ["ai", "chatGetAllInvalidationSnapshots"],
     count: (snapshots) =>
-      (snapshots || []).filter((snapshot) => snapshot.source === "quick_ai")
-        .length,
+      (snapshots || []).filter((snapshot) => snapshot.source === "quick_ai").length,
   },
   {
     key: "commandCount",
