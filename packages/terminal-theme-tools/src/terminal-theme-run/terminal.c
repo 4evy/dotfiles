@@ -192,6 +192,23 @@ static bool make_raw(int descriptor, struct termios *saved) {
   return tcsetattr(descriptor, TCSAFLUSH, &raw) == 0;
 }
 
+static bool write_all(int descriptor, const void *buffer, size_t length) {
+  const unsigned char *cursor = buffer;
+  while (length > 0) {
+    const ssize_t count = write(descriptor, cursor, length);
+    if (count > 0) {
+      cursor += (size_t)count;
+      length -= (size_t)count;
+      continue;
+    }
+    if (count < 0 && errno == EINTR) {
+      continue;
+    }
+    return false;
+  }
+  return true;
+}
+
 static bool detect_terminal_theme(const TtrRuntimeConfig *runtime, TtrThemeMode *mode) {
   g_autofd int descriptor = g_open("/dev/tty", O_RDWR | O_CLOEXEC, 0);
   if (descriptor < 0) {
@@ -203,8 +220,7 @@ static bool detect_terminal_theme(const TtrRuntimeConfig *runtime, TtrThemeMode 
   }
 
   const char *query = terminal_theme_query(runtime);
-  const bool wrote_query =
-      write(descriptor, query, strlen(query)) == (ssize_t)strlen(query);
+  const bool wrote_query = write_all(descriptor, query, strlen(query));
   unsigned char buffer[128];
   size_t length = 0;
   bool detected = false;
