@@ -1,0 +1,18 @@
+option(
+    'strict',
+    type: 'boolean',
+    value: true,
+    description: 'Enable every supported high-signal compiler warning for first-party C code',
+)
+option(
+    'hardening',
+    type: 'boolean',
+    value: true,
+    description: 'Enable supported compiler and linker hardening',
+)
+option(
+    'gcc_analyzer',
+    type: 'boolean',
+    value: false,
+    description: 'Run GCC static analysis while compiling first-party C code',
+)

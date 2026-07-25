@@ -1,0 +1,11 @@
+/*
+ * enum suffix, default initializer, TOML loader, destructor
+ *
+ * Keep field-kind behavior centralized so schema loading and cleanup cannot
+ * acquire mismatched branches when a field type is added.
+ */
+TTR_TOML_FIELD_TYPE(STRING, string, string, pointer)
+TTR_TOML_FIELD_TYPE(STRING_ARRAY, string_array, string_array, string_array)
+TTR_TOML_FIELD_TYPE(STRING_MAP, string_map, string_map, hash_table)
+TTR_TOML_FIELD_TYPE(ENVIRONMENT, string_map, environment, hash_table)
+TTR_TOML_FIELD_TYPE(INT64, int64, int64, int64)

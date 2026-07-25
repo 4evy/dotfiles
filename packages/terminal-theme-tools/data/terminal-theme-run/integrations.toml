@@ -1,0 +1,40 @@
+[[integration]]
+name = "codex"
+strategy = "arguments"
+dark_theme = "catppuccin-frappe-pink"
+light_theme = "catppuccin-latte-pink"
+arguments = ["-c", 'tui.theme="{theme}"', "-c", "{trust}"]
+trust_table = "projects"
+trust_field = "trust_level"
+trust_value = "trusted"
+trust_cwd_flags = ["-C", "--cd"]
+trust_cwd_prefixes = ["-C", "--cd="]
+
+[[integration]]
+name = "btop"
+strategy = "config"
+dark_theme = "catppuccin_frappe_pink"
+light_theme = "catppuccin_latte_pink"
+default_config = ".config/btop/btop.conf"
+assignment = "color_theme"
+config_flags = ["--config", "-c"]
+config_output_flag = "--config"
+temporary_prefix = "terminal-theme-run-btop-XXXXXX"
+temporary_location = "cache"
+cache_subdirectory = "terminal-theme-run/btop"
+quote = '"'
+
+[[integration]]
+name = "helix"
+strategy = "config"
+display_name = "Helix"
+dark_theme = "catppuccin_frappe_pink"
+light_theme = "catppuccin_latte_pink"
+default_config = ".config/helix/config.toml"
+assignment = "theme"
+config_flags = ["--config", "-c"]
+config_output_flag = "--config"
+temporary_prefix = "terminal-theme-run-helix-XXXXXX"
+temporary_location = "system"
+quote = "'"
+validation = "toml"
