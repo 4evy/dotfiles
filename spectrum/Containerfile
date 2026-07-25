@@ -130,10 +130,14 @@ FROM ${BLUEFIN_BASE_IMAGE} AS spectrum-python
 # final-image package layers. The venv is bind-mounted into later RUN steps and
 # is never committed to the shipped image. `--no-install-project` is what makes
 # this layer depend only on pyproject.toml/uv.lock; project modules arrive later
-# through the read-only source mounts and PYTHONPATH.
+# through the read-only source mounts and PYTHONPATH. Bluefin links /opt to
+# mutable /var/opt, so replace the link with an image-backed directory before
+# creating the stage artifact that later bind mounts consume.
 COPY --from=uv /uv /usr/bin/uv
 RUN --mount=type=bind,from=python-project,source=/,target=/project \
     --mount=type=cache,id=spectrum-uv,sharing=locked,target=/var/cache/uv \
+    rm -rf /opt && \
+    mkdir /opt && \
     /usr/bin/python3 -c \
     'import sys; assert sys.version_info[:2] == (3, 14), sys.version' && \
     export UV_CACHE_DIR=/var/cache/uv && \

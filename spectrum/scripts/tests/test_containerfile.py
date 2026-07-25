@@ -127,6 +127,11 @@ def test_python_build_environment_and_sources_have_separate_cache_inputs() -> No
         "    'import sys; assert sys.version_info[:2] == (3, 14), sys.version'"
         in containerfile
     )
+    assert (
+        "rm -rf /opt && \\\n"
+        "    mkdir /opt && \\\n"
+        "    /usr/bin/python3 -c" in containerfile[runtime_stage:package_step]
+    )
     assert "--python /usr/bin/python3" in containerfile
     assert "--no-python-downloads" in containerfile
     assert f"export UV_PROJECT_ENVIRONMENT={build_environment}" in containerfile
