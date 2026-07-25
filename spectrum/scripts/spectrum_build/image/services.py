@@ -1,35 +1,20 @@
-import shutil
+from functools import cache
 
 from spectrum_build.core.common import CommandRunner, fail
-
-REQUIRED_UNITS = (
-    "pcscd.socket",
-    "podman.socket",
-    "systemd-oomd.service",
-    "systemd-oomd.socket",
-    "tailscaled.service",
-    "uresourced.service",
-)
+from workstation.errors import DotfilesError
+from workstation.lib.manifests import line_manifest, manifest_path
 
 
-def disable_authselect_feature(feature: str, runner: CommandRunner) -> None:
-    if (
-        shutil.which("authselect")
-        and runner.run(
-            ["authselect", "is-feature-enabled", feature], check=False
-        ).returncode
-        == 0
-    ):
-        runner.run(["authselect", "disable-feature", feature])
-
-
-def enable_required_units(runner: CommandRunner) -> None:
-    runner.require("systemctl")
-    runner.run(["systemctl", "enable", *REQUIRED_UNITS])
+@cache
+def required_units() -> tuple[str, ...]:
+    try:
+        return line_manifest(manifest_path("spectrum-systemd-units.txt"))
+    except DotfilesError as error:
+        fail(str(error))
 
 
 def validate_required_units(runner: CommandRunner) -> None:
-    for unit in REQUIRED_UNITS:
+    for unit in required_units():
         status = runner.run(
             ["systemctl", "is-enabled", unit],
             check=False,

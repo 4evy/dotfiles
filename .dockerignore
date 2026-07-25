@@ -30,6 +30,9 @@
 !dotfiles/
 !dotfiles/**
 
+!manifests/
+!manifests/**
+
 !spectrum/
 !spectrum/**
 

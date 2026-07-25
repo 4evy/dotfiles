@@ -1,10 +1,11 @@
 import grp
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 from typing import Protocol
 
-from spectrum_build.core.common import fail
+from spectrum_build.core.common import fail, require_readable_file
 from spectrum_build.core.context import BuildContext
 from spectrum_build.integrations.repositories import (
     RepositoryFile,
@@ -26,6 +27,43 @@ type PackageSource = tuple[str, ...] | PackageResolver
 class SystemGroup:
     name: str
     gid: int
+
+
+class FileOperationKind(StrEnum):
+    ENSURE_DIRECTORY = "ensure-directory"
+    REQUIRE_FILE = "require-file"
+    UNLINK = "unlink"
+    REMOVE_EMPTY_DIRECTORY = "remove-empty-directory"
+    SYMLINK = "symlink"
+
+
+@dataclass(frozen=True, slots=True)
+class FileOperation:
+    """One generic filesystem mutation surrounding a package installation."""
+
+    kind: FileOperationKind
+    path: Path
+    target: Path | None = None
+
+    def execute(self) -> None:
+        match self.kind:
+            case FileOperationKind.ENSURE_DIRECTORY:
+                self.path.mkdir(parents=True, exist_ok=True)
+            case FileOperationKind.REQUIRE_FILE:
+                require_readable_file(self.path)
+            case FileOperationKind.UNLINK:
+                self.path.unlink(missing_ok=True)
+            case FileOperationKind.REMOVE_EMPTY_DIRECTORY:
+                self.path.rmdir()
+            case FileOperationKind.SYMLINK:
+                if self.target is None:
+                    fail(f"symlink operation has no target: {self.path}")
+                self.path.symlink_to(self.target)
+
+
+def execute_file_operations(operations: Iterable[FileOperation]) -> None:
+    for operation in operations:
+        operation.execute()
 
 
 class Program(Protocol):
@@ -87,6 +125,8 @@ class DnfProgram:
     generated_repository_files: tuple[Path, ...] = ()
     enabled_repositories: tuple[str, ...] = ()
     system_groups: tuple[SystemGroup, ...] = ()
+    before_install: tuple[FileOperation, ...] = ()
+    after_install: tuple[FileOperation, ...] = ()
     validation_packages: tuple[str, ...] = ()
     nogpgcheck: bool = False
 
@@ -104,6 +144,7 @@ class DnfProgram:
         disable_repository_files(generated_files)
 
     def install(self, context: BuildContext) -> None:
+        execute_file_operations(self.before_install)
         install_repositories(context, self.repositories)
         ensure_system_groups(self.system_groups, context)
 
@@ -119,13 +160,14 @@ class DnfProgram:
         except BaseException as install_error:
             try:
                 self.disable_repositories(missing_ok=True)
-            except Exception as cleanup_error:  # noqa: BLE001
+            except Exception as cleanup_error:  # ruff: ignore[blind-except]
                 install_error.add_note(
                     f"repository cleanup also failed: {cleanup_error}"
                 )
             raise
         else:
             self.disable_repositories()
+            execute_file_operations(self.after_install)
 
 
 @dataclass(frozen=True, slots=True)

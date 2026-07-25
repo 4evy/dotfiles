@@ -15,12 +15,6 @@ def read_os_release() -> dict[str, str]:
         fail(f"failed to read {OS_RELEASE}: {error}")
 
 
-def fedora_arch() -> str | None:
-    return {"x86_64": "x86_64", "aarch64": "aarch64", "arm64": "aarch64"}.get(
-        platform.machine()
-    )
-
-
 def set_os_release_value(key: str, value: str) -> None:
     if not re.fullmatch(r"[A-Z][A-Z0-9_]*", key):
         fail(f"invalid os-release key: {key}")

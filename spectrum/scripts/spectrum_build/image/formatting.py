@@ -11,5 +11,5 @@ def tree_size(path: Path) -> int:
     return sum(
         item.stat().st_size
         for item in path.rglob("*")
-        if item.is_file() and not item.is_symlink()
+        if item.is_file(follow_symlinks=False)
     )

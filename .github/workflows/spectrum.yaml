@@ -31,7 +31,7 @@ permissions:
   contents: read # needed to checkout repository contents
 
 env:
-  BLUEFIN_BASE_IMAGE: ghcr.io/ublue-os/bluefin-nvidia-open:stable@sha256:1e7a59c83f104652bd06308f0a6439669cb3ea327d4e968695af85c67abea352
+  BLUEFIN_BASE_IMAGE: ghcr.io/ublue-os/bluefin-nvidia-open:stable@sha256:167d18ed51092b17687fbfcf5405e9efbc13414ddcfc5e5c5217b87beb0f074b
   BLUEFIN_BASE_IMAGE_NAME: bluefin-nvidia-open
   BLUEFIN_BASE_IMAGE_TAG: stable
   IMAGE_NAME: spectrum

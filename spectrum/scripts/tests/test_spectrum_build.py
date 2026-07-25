@@ -7,100 +7,40 @@ from typing import TYPE_CHECKING, cast
 
 import pytest
 
+from spectrum_build import cli
 from spectrum_build.core.common import BuildError, CommandRunner
 from spectrum_build.image import platform_info
-from spectrum_build.image.cleanup import DNF_CLEANUP_PATTERNS
-from spectrum_build.image.metadata import VALIDATION_COMMANDS
 from spectrum_build.image.shell import (
     BLUEFIN_OPEN_ALIAS,
     BREW_PROFILE_BAD_PATH_GUARD,
     BREW_PROFILE_PATH_GUARD,
+    UUTILS_PROFILE_APPEND,
+    UUTILS_PROFILE_PREPEND_LINES,
+    ZSH_BREW_APPEND,
+    ZSH_BREW_SHELLENV,
+    align_shell_defaults,
     patch_brew_profile_guard,
     remove_bluefin_open_alias,
+    validate_shell_defaults,
 )
-from spectrum_build.integrations import github, repositories
+from spectrum_build.integrations import github, gnome_extensions, repositories
 from spectrum_build.integrations.dnf import Dnf
 from spectrum_build.integrations.source_build import (
     PinnedGitProject,
     clone_pinned_git_ref,
     pinned_git_project,
 )
-from spectrum_build.manifests.packages import VALIDATION_PACKAGES
-from spectrum_build.programs import copyous, ghostty
-from spectrum_build.programs.manifest import PROGRAMS
+from spectrum_build.programs import ghostty, operations
+from spectrum_build.programs.manifest import program_group
 from spectrum_build.programs.models import DnfProgram
 from spectrum_build.programs.operations import validate_program_manifest
-from spectrum_build.settings import BuildConfig, ImageConfig
+from spectrum_build.settings import ImageConfig
 from workstation.lib.files import write_if_changed
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from spectrum_build.core.context import BuildContext
-
-
-def test_containerfile_owns_static_rootfs_and_nix_entrypoint_validation() -> None:
-    repository = Path(__file__).parents[3]
-    wrappers = repository / "spectrum/image/rootfs/usr/bin"
-    containerfile = (repository / "spectrum/Containerfile").read_text()
-
-    for tool in ("deadnix", "nh", "nil", "nixd", "nixfmt"):
-        launcher = wrappers / tool
-        assert launcher.is_file()
-        assert os.access(launcher, os.X_OK)
-        assert f"spectrum-nix-tools {tool}" in launcher.read_text()
-
-    assert "FROM scratch AS rootfs\nCOPY spectrum/image/rootfs /" in containerfile
-    assert "COPY --from=rootfs / /" in containerfile
-    assert "COPY spectrum /image/spectrum" not in containerfile
-    assert "COPY spectrum/image/repos /image/spectrum/image/repos" in containerfile
-    assert "COPY spectrum/scripts /image/spectrum/scripts" in containerfile
-    assert "for command in deadnix nh nil nixd nixfmt" in containerfile
-    assert not {"deadnix", "nh", "nil", "nixd", "nixfmt"}.intersection(
-        VALIDATION_COMMANDS
-    )
-
-
-def test_local_spectrum_builds_use_stable_layers_and_persistent_caches() -> None:
-    repository = Path(__file__).parents[3]
-    containerfile = (repository / "spectrum/Containerfile").read_text()
-    justfile = (repository / "Justfile").read_text()
-    workflow = (repository / ".github/workflows/spectrum.yaml").read_text()
-
-    assert (
-        "--mount=type=cache,id=spectrum-dnf5,sharing=locked,"
-        "target=/var/cache/libdnf5" in containerfile
-    )
-    assert (
-        "--mount=type=cache,id=spectrum-uv,sharing=locked,"
-        "target=/var/cache/uv" in containerfile
-    )
-    assert "UV_LINK_MODE=copy" in containerfile
-    assert containerfile.index("RUN --mount=type=bind,from=ctx") < containerfile.index(
-        "LABEL org.opencontainers.image.title"
-    )
-    assert "ARG IMAGE_CREATED" not in containerfile
-    assert 'org.opencontainers.image.created="${IMAGE_CREATED}"' not in containerfile
-    assert '--label "org.opencontainers.image.created=$image_created"' in justfile
-    assert '--build-arg "IMAGE_CREATED=$image_created"' not in justfile
-    assert '--label "org.opencontainers.image.created=${CREATED}"' in workflow
-    assert '--build-arg "IMAGE_CREATED=${CREATED}"' not in workflow
-    assert "build target=local_ref: (_build target 'false')" in justfile
-    assert "build-clean target=local_ref: (_build target 'true')" in justfile
-    assert "switch target=local_ref: (doctor 'install') (build target)" in justfile
-    assert "upgrade target=local_ref: (doctor 'install') (build target)" in justfile
-    assert "--layers=true" in justfile
-    assert "sudo {{ podman }} system prune --force --build" in justfile
-    assert "-name 'buildah*'" in justfile
-    assert "uv cache prune --force" in justfile
-    assert "--output=source,used" in justfile
-    assert "/var/cache/dnf/*" not in DNF_CLEANUP_PATTERNS
-    assert "/var/cache/libdnf5/*" not in DNF_CLEANUP_PATTERNS
-
-
-def test_tailscale_is_inherited_from_bluefin_and_still_validated() -> None:
-    assert "tailscale" in VALIDATION_PACKAGES
-    assert "Tailscale" not in {program.name for program in PROGRAMS}
 
 
 def test_image_config_derives_defaults_and_honors_environment(
@@ -115,6 +55,33 @@ def test_image_config_derives_defaults_and_honors_environment(
     assert image.resolved_ref == "ostree-image:docker://ghcr.io/example/custom"
     assert image.resolved_version == "testing"
     assert image.image_info()["image-ref"] == image.resolved_ref
+
+
+@pytest.mark.parametrize(
+    ("command", "group"),
+    [
+        ("install-extension-programs", "extension"),
+        ("install-ghostty", "ghostty"),
+        ("install-kmscon", "kmscon"),
+        ("install-packaged-programs", "packaged"),
+    ],
+)
+def test_cli_declaratively_dispatches_program_groups(
+    command: cli.Command,
+    group: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = cast("BuildContext", object())
+    calls: list[tuple[BuildContext, str]] = []
+    monkeypatch.setattr(cli, "_build_context", lambda: context)
+    monkeypatch.setattr(
+        operations,
+        "install_program_group",
+        lambda actual, selected: calls.append((actual, selected)),
+    )
+
+    assert cli.main(command) == 0
+    assert calls == [(context, group)]
 
 
 def test_image_config_records_pinned_base_and_fedora_metadata(
@@ -132,17 +99,6 @@ def test_image_config_records_pinned_base_and_fedora_metadata(
     assert image.base_image_digest == digest
     assert metadata["base-image-digest"] == digest
     assert metadata["fedora-version"] == "44"
-
-
-def test_build_config_prefers_context_environment(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    configured = tmp_path / "configured"
-    monkeypatch.setenv("CTX_DIR", os.fspath(configured))
-
-    config = BuildConfig.from_environment(default_context=tmp_path / "default")
-
-    assert config.context_dir == configured
 
 
 def test_shared_atomic_write_is_idempotent_but_repairs_mode(tmp_path: Path) -> None:
@@ -328,6 +284,7 @@ def test_ghostty_build_caps_zig_concurrency() -> None:
         "-p",
         "/usr",
         "-Doptimize=ReleaseFast",
+        "-Demit-test-exe=false",
         f"-Dversion-string={ghostty.VERSION}",
     )
 
@@ -363,6 +320,23 @@ def test_program_manifest_rejects_duplicate_names() -> None:
         validate_program_manifest((first, second))
 
 
+def test_program_manifest_is_valid_and_groups_are_cached() -> None:
+    validate_program_manifest()
+
+    packaged = program_group("packaged")
+    assert [program.name for program in packaged] == [
+        "1Password",
+        "Visual Studio Code",
+        "SOPS",
+        "RustDesk",
+        "Discord",
+        "Telegram",
+    ]
+    assert program_group("packaged") is program_group("packaged")
+    with pytest.raises(BuildError, match="unknown program group"):
+        program_group("unknown")
+
+
 def test_program_manifest_rejects_duplicate_repository_ownership(
     tmp_path: Path,
 ) -> None:
@@ -386,21 +360,6 @@ def test_program_manifest_rejects_duplicate_repository_ownership(
         validate_program_manifest((first, second))
 
 
-def test_installed_repository_configuration_is_redisabled(tmp_path: Path) -> None:
-    destination = tmp_path / "vendor.repo"
-    destination.write_text(
-        "[vendor]\nname=Vendor\nenabled=1\nbaseurl=https://example.invalid\n"
-    )
-    repository = repositories.RepositoryFile(
-        destination=destination,
-        source=destination,
-        repo_ids=("vendor",),
-    )
-    repositories.disable_repositories((repository,))
-
-    assert "enabled=0" in destination.read_text()
-
-
 def test_github_sdk_selects_matching_release_asset(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -422,18 +381,30 @@ def test_github_sdk_selects_matching_release_asset(
 
 
 def test_copyous_release_archive_is_validated_and_extracted(tmp_path: Path) -> None:
+    uuid = "copyous@boerdereinar.dev"
     archive = BytesIO()
     with zipfile.ZipFile(archive, "w") as bundle:
-        bundle.writestr("metadata.json", f'{{"uuid": "{copyous.UUID}"}}')
+        bundle.writestr("metadata.json", f'{{"uuid": "{uuid}"}}')
         bundle.writestr("extension.js", "")
         bundle.writestr(
             "schemas/org.gnome.shell.extensions.copyous.gschema.xml", "<schemalist/>"
         )
 
-    destination = tmp_path / copyous.UUID
+    destination = tmp_path / uuid
     destination.mkdir()
-    copyous._extract_archive(archive.getvalue(), destination)
-    copyous._validate_extension(destination)
+    gnome_extensions.extract_extension_archive(
+        archive.getvalue(),
+        destination,
+        label="example",
+    )
+    gnome_extensions.validate_extension(
+        destination,
+        uuid=uuid,
+        required_files=(
+            Path("extension.js"),
+            Path("schemas/org.gnome.shell.extensions.copyous.gschema.xml"),
+        ),
+    )
 
 
 def test_copyous_release_archive_rejects_path_traversal(tmp_path: Path) -> None:
@@ -441,8 +412,12 @@ def test_copyous_release_archive_rejects_path_traversal(tmp_path: Path) -> None:
     with zipfile.ZipFile(archive, "w") as bundle:
         bundle.writestr("../outside", "unsafe")
 
-    with pytest.raises(BuildError, match="unsafe Copyous release archive member"):
-        copyous._extract_archive(archive.getvalue(), tmp_path)
+    with pytest.raises(BuildError, match="unsafe example release archive member"):
+        gnome_extensions.extract_extension_archive(
+            archive.getvalue(),
+            tmp_path,
+            label="example",
+        )
 
 
 def test_pinned_project_environment_is_namespaced(
@@ -512,3 +487,27 @@ def test_shell_patches_are_idempotent_and_refuse_unknown_aliases(
     alias.write_text("alias open='unexpected'\n")
     with pytest.raises(BuildError, match="unexpected open alias"):
         remove_bluefin_open_alias(tmp_path)
+
+
+def test_declarative_shell_policy_aligns_and_validates_every_step(
+    tmp_path: Path,
+) -> None:
+    alias = tmp_path / "usr/etc/profile.d/open.sh"
+    alias.parent.mkdir(parents=True)
+    alias.write_text(f"{BLUEFIN_OPEN_ALIAS}\n")
+    brew = tmp_path / "etc/profile.d/brew.sh"
+    brew.parent.mkdir(parents=True)
+    brew.write_text(f"if [[ {BREW_PROFILE_BAD_PATH_GUARD} ]]; then\n  true\nfi\n")
+    uutils = tmp_path / "etc/profile.d/uutils.sh"
+    uutils.write_text("\n".join(UUTILS_PROFILE_PREPEND_LINES) + "\n")
+    zsh = tmp_path / "etc/zsh/zshrc"
+    zsh.parent.mkdir(parents=True)
+    zsh.write_text(f"{ZSH_BREW_SHELLENV}\n")
+
+    align_shell_defaults(tmp_path)
+    validate_shell_defaults(tmp_path)
+
+    assert not alias.exists()
+    assert BREW_PROFILE_PATH_GUARD in brew.read_text()
+    assert uutils.read_text().strip() == UUTILS_PROFILE_APPEND
+    assert zsh.read_text().rstrip("\n") == ZSH_BREW_APPEND

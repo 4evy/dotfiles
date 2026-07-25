@@ -20,7 +20,7 @@ from spectrum_build.integrations.repositories import (
     validate_repositories_disabled,
     validate_repository_files_disabled,
 )
-from spectrum_build.manifests.packages import VALIDATION_PACKAGES
+from spectrum_build.manifests.packages import required_packages
 from spectrum_build.programs.operations import (
     program_generated_repository_files,
     program_repositories,
@@ -35,6 +35,7 @@ VALIDATION_COMMANDS = (
     "git",
     "just",
     "podman",
+    "python3",
     "rpm",
     "systemctl",
 )
@@ -74,6 +75,14 @@ def validate_image(image_name: str, runner: CommandRunner) -> None:
     runner.require(*VALIDATION_COMMANDS)
     require_readable_file(IMAGE_INFO)
 
+    python_version = runner.output([
+        "/usr/bin/python3",
+        "-c",
+        "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')",
+    ])
+    if python_version != "3.14":
+        fail(f"Spectrum system Python must be 3.14, found {python_version}")
+
     try:
         image_info = ImageInfo.model_validate_json(IMAGE_INFO.read_bytes())
     except OSError, ValidationError:
@@ -86,7 +95,7 @@ def validate_image(image_name: str, runner: CommandRunner) -> None:
         if key not in os_release:
             fail(f"missing {key} in {OS_RELEASE}")
 
-    for package in (*VALIDATION_PACKAGES, *program_validation_packages()):
+    for package in (*required_packages(), *program_validation_packages()):
         runner.run(["rpm", "-q", package], discard_output=True)
 
     validate_repositories_disabled(program_repositories())

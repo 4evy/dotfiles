@@ -1,123 +1,25 @@
-from collections.abc import Mapping, Sequence
+from pathlib import Path
 
 from spectrum_build.core.common import fail
 
-type PackageGroups = Mapping[str, Sequence[str]]
+PACKAGE_MANIFEST = Path(__file__).parents[3] / "image" / "packages" / "required.txt"
 
 
-REQUIRED_PACKAGES: PackageGroups = {
-    "bootstrap": (
-        "bootc",
-        "bubblewrap",
-        "curl",
-        "file",
-        "findutils",
-        "git",
-        "just",
-        "procps-ng",
-        "python3",
-    ),
-    "toolchain": (
-        "binutils",
-        "blueprint-compiler",
-        "clang",
-        "cmake",
-        "dbus-devel",
-        "fontconfig-devel",
-        "freetype-devel",
-        "gcc",
-        "gcc-c++",
-        "gettext",
-        "glibc-devel",
-        "gtk4-devel",
-        "gtk4-layer-shell-devel",
-        "libadwaita-devel",
-        "libxml2-devel",
-        "libdrm-devel",
-        "libglvnd-devel",
-        "libxkbcommon-devel",
-        "lld",
-        "lldb",
-        "make",
-        "mesa-libgbm-devel",
-        "meson",
-        "ninja-build",
-        "openssl-devel",
-        "pango-devel",
-        "patch",
-        "perl",
-        "pkgconf-pkg-config",
-        "rpm-build",
-        "systemd-devel",
-        "tar",
-        "zlib-devel",
-        "xz",
-    ),
-    "editors": ("vim-enhanced",),
-    "fonts": (
-        "google-noto-color-emoji-fonts",
-        "google-noto-emoji-fonts",
-        "google-noto-sans-cjk-fonts",
-        "google-noto-sans-mono-cjk-vf-fonts",
-        "google-noto-sans-mono-vf-fonts",
-        "google-noto-sans-symbols-2-fonts",
-        "google-noto-sans-symbols-vf-fonts",
-        "google-noto-sans-vf-fonts",
-        "liberation-mono-fonts",
-        "liberation-sans-fonts",
-        "liberation-serif-fonts",
-    ),
-    "system": (
-        "fuse3",
-        "opensc",
-        "openssh-clients",
-        "openssl",
-        "ncurses",
-        "pcsc-lite",
-        "pinentry",
-        "pinentry-gnome3",
-        "gtk4-layer-shell",
-        "libxdo",
-        "podman",
-        "podman-compose",
-        "pipewire-gstreamer",
-        "selinux-policy-devel",
-        "solaar",
-        "systemd-oomd-defaults",
-        "uresourced",
-        "vulkan-tools",
-        "xdg-desktop-portal",
-        "xdg-desktop-portal-gnome",
-        "xdg-desktop-portal-gtk",
-    ),
-}
+def required_packages(path: Path = PACKAGE_MANIFEST) -> tuple[str, ...]:
+    """Return the validated package manifest in deterministic install order."""
+    try:
+        packages = path.read_text(encoding="utf-8").splitlines()
+    except OSError as error:
+        fail(f"cannot read Fedora package manifest: {path}: {error}")
 
-OPTIONAL_PACKAGES: PackageGroups = {}
-
-VALIDATION_PACKAGES: Sequence[str] = (
-    "bootc",
-    "fuse3",
-    "git",
-    "just",
-    "podman",
-    "systemd-oomd-defaults",
-    "tailscale",
-    "uresourced",
-)
+    if not packages:
+        fail(f"Fedora package manifest is empty: {path}")
+    if packages != sorted(set(packages)):
+        fail(f"Fedora package manifest must be sorted and unique: {path}")
+    if any(not package or package != package.strip() for package in packages):
+        fail(f"Fedora package manifest contains an invalid line: {path}")
+    return tuple(packages)
 
 
-def validate_package_groups() -> None:
-    for label, groups in {
-        "required": REQUIRED_PACKAGES,
-        "optional": OPTIONAL_PACKAGES,
-    }.items():
-        if not isinstance(groups, dict):
-            fail(f"{label} packages must be grouped in a dict")
-
-        for group_name, packages in groups.items():
-            if not isinstance(group_name, str) or not group_name:
-                fail(f"{label} package group names must be non-empty strings")
-            if not isinstance(packages, tuple) or not all(
-                isinstance(package, str) for package in packages
-            ):
-                fail(f"{label}.{group_name} packages must be a tuple of strings")
+def validate_package_manifest(path: Path = PACKAGE_MANIFEST) -> None:
+    required_packages(path)

@@ -10,7 +10,7 @@ from spectrum_build.integrations.source_build import (
     pinned_git_project,
 )
 from spectrum_build.programs.models import CustomProgram
-from spectrum_build.programs.sources import SOURCE_PINS
+from workstation.lib.sources import SOURCES
 
 # Keep this independent of the system Python minor version so image upgrades do
 # not invalidate the KMSCON theme helper's import path.
@@ -49,24 +49,26 @@ KMSCON = MesonProject(
 
 def install(context: BuildContext) -> None:
     runner = context.runner
-    kmscon_pin = SOURCE_PINS["kmscon"]
+    kmscon_pin = SOURCES.require("kmscon")
+    astral_pin = SOURCES.require("python_astral")
+    libtsm_pin = SOURCES.require("libtsm")
     astral = pinned_git_project(
         "astral",
-        repo="https://github.com/sffjunkie/astral.git",
-        tag="3.2",
-        revision="0be1187d09aadfdadc1b7331b918082213764b5d",
+        repo=astral_pin.repository.clone_url,
+        tag=astral_pin.require_version(),
+        revision=astral_pin.require_revision(),
     )
     libtsm = pinned_git_project(
         "libtsm",
-        repo="https://github.com/kmscon/libtsm.git",
-        tag="v4.6.0",
-        revision="e1e4d296f0963d1641456f1f778f0ac090429a3e",
+        repo=libtsm_pin.repository.clone_url,
+        tag=f"v{libtsm_pin.require_version()}",
+        revision=libtsm_pin.require_revision(),
     )
     kmscon = pinned_git_project(
         "kmscon",
-        repo="https://github.com/kmscon/kmscon.git",
-        tag=f"v{kmscon_pin['version']}",
-        revision=kmscon_pin["revision"],
+        repo=kmscon_pin.repository.clone_url,
+        tag=f"v{kmscon_pin.require_version()}",
+        revision=kmscon_pin.require_revision(),
     )
     runner.require(*BUILD_COMMANDS)
 
@@ -93,7 +95,7 @@ def install(context: BuildContext) -> None:
         runner.run(["ldconfig"])
 
         libtsm_version = runner.output(["pkg-config", "--modversion", "libtsm"])
-        if libtsm_version != "4.6.0":
+        if libtsm_version != libtsm_pin.require_version():
             fail(f"unexpected libtsm version: {libtsm_version}")
 
         clone_pinned_git_ref(kmscon, kmscon_source, runner)
@@ -105,7 +107,7 @@ def install(context: BuildContext) -> None:
         runner.run(["ldconfig"])
 
     astral_version = runner.output([
-        "/usr/bin/python3",
+        "/usr/bin/python3.14",
         "-c",
         (
             "import sys; "

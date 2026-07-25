@@ -8,7 +8,7 @@ image_name := env("SPECTRUM_IMAGE_NAME", "spectrum")
 local_tag := env("SPECTRUM_LOCAL_TAG", "local")
 local_ref := "localhost/" + image_name + ":" + local_tag
 remote_ref := env("SPECTRUM_REMOTE_REF", "ghcr.io/4evy/" + image_name + ":latest")
-base_image := env("SPECTRUM_BLUEFIN_BASE_IMAGE", "ghcr.io/ublue-os/bluefin-nvidia-open:stable@sha256:1e7a59c83f104652bd06308f0a6439669cb3ea327d4e968695af85c67abea352")
+base_image := env("SPECTRUM_BLUEFIN_BASE_IMAGE", "ghcr.io/ublue-os/bluefin-nvidia-open:stable@sha256:167d18ed51092b17687fbfcf5405e9efbc13414ddcfc5e5c5217b87beb0f074b")
 base_image_digest := if base_image =~ '@sha256:[0-9a-f]{64}$' { replace_regex(base_image, '^.*@', '') } else { error('Spectrum base images must end in a sha256 digest') }
 base_image_ref := replace_regex(base_image, '@sha256:[0-9a-f]{64}$', '')
 base_image_name := env("SPECTRUM_BLUEFIN_BASE_IMAGE_NAME", "bluefin-nvidia-open")

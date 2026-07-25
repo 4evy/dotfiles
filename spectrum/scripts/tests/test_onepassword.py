@@ -1,12 +1,13 @@
 from pathlib import Path
 
-from spectrum_build.programs.onepassword import (
-    _prepare_mcp_command,
-    _relocate_mcp_command,
+from spectrum_build.programs.models import (
+    FileOperation,
+    FileOperationKind,
+    execute_file_operations,
 )
 
 
-def test_onepassword_mcp_command_is_relocated_out_of_mutable_usr_local(
+def test_declarative_file_operations_relocate_a_package_symlink(
     tmp_path: Path,
 ) -> None:
     local_prefix = tmp_path / "var/usrlocal"
@@ -16,9 +17,24 @@ def test_onepassword_mcp_command_is_relocated_out_of_mutable_usr_local(
     binary.write_text("binary")
     command.parent.mkdir(parents=True)
 
-    _prepare_mcp_command(local_prefix)
+    execute_file_operations((
+        FileOperation(
+            FileOperationKind.ENSURE_DIRECTORY,
+            local_prefix / "bin",
+        ),
+    ))
     (local_prefix / "bin/1password-mcp").symlink_to(binary)
-    _relocate_mcp_command(local_prefix, binary, command)
+    execute_file_operations((
+        FileOperation(FileOperationKind.REQUIRE_FILE, binary),
+        FileOperation(FileOperationKind.UNLINK, local_prefix / "bin/1password-mcp"),
+        FileOperation(
+            FileOperationKind.REMOVE_EMPTY_DIRECTORY,
+            local_prefix / "bin",
+        ),
+        FileOperation(FileOperationKind.REMOVE_EMPTY_DIRECTORY, local_prefix),
+        FileOperation(FileOperationKind.UNLINK, command),
+        FileOperation(FileOperationKind.SYMLINK, command, binary),
+    ))
 
     assert not local_prefix.exists()
     assert command.is_symlink()

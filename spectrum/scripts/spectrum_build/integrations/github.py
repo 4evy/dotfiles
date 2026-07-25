@@ -1,11 +1,17 @@
 import os
+import platform
 import re
+import sys
 from dataclasses import dataclass
 
 from githubkit import GitHub
 from githubkit.exception import GitHubException
 
 from spectrum_build.core.common import fail
+from spectrum_build.core.context import BuildContext
+from spectrum_build.programs.models import PackageResolver
+from workstation.errors import DotfilesError
+from workstation.lib.platform import machine_architecture
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,6 +24,24 @@ class ReleaseRpm:
         return latest_github_asset_url(
             self.repo, self.asset_pattern.format(arch=re.escape(arch))
         )
+
+
+def github_release_rpm(release: ReleaseRpm) -> PackageResolver:
+    """Resolve one latest-release RPM for the current Fedora architecture."""
+
+    def resolve(_: BuildContext) -> tuple[str, ...]:
+        try:
+            architecture = machine_architecture()
+        except DotfilesError:
+            print(
+                f"Skipping {release.name} for unsupported architecture: "
+                f"{platform.machine()}",
+                file=sys.stderr,
+            )
+            return ()
+        return (release.asset_url(architecture.fedora),)
+
+    return PackageResolver(resolve)
 
 
 def latest_github_asset_url(repo: str, asset_pattern: str) -> str:

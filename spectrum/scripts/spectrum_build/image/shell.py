@@ -1,6 +1,14 @@
+from collections.abc import Callable
 from pathlib import Path
 
 from spectrum_build.core.common import fail
+
+_SNIPPETS = Path(__file__).parent
+
+
+def _snippet(name: str) -> str:
+    return (_SNIPPETS / name).read_text(encoding="utf-8").rstrip("\n")
+
 
 # Spectrum shell policy
 #
@@ -67,53 +75,43 @@ UUTILS_PROFILE_PREPEND_LINES = (
     'PATH="/home/linuxbrew/.linuxbrew/opt/uutils-diffutils/libexec/uubin:$PATH"',
     'PATH="/home/linuxbrew/.linuxbrew/opt/uutils-findutils/libexec/uubin:$PATH"',
 )
-UUTILS_PROFILE_APPEND = """#!/usr/bin/env bash
-_ublue_uutils_prefix="${HOMEBREW_PREFIX:-/home/linuxbrew/.linuxbrew}"
-if [[ -d "${_ublue_uutils_prefix}/opt/uutils-coreutils/libexec/uubin" && $- == *i* ]] ; then
-  for _ublue_uutils_path in \\
-    "${_ublue_uutils_prefix}/opt/uutils-coreutils/libexec/uubin" \\
-    "${_ublue_uutils_prefix}/opt/uutils-diffutils/libexec/uubin" \\
-    "${_ublue_uutils_prefix}/opt/uutils-findutils/libexec/uubin"; do
-    case ":$PATH:" in
-      *":${_ublue_uutils_path}:"*) ;;
-      *) PATH="${PATH}:${_ublue_uutils_path}" ;;
-    esac
-  done
-  unset _ublue_uutils_path
-  export PATH
-  # Use GNU stty for atuin state restore; uutils stty does not round-trip it.
-  alias stty='/usr/bin/stty'
-fi
-unset _ublue_uutils_prefix"""
+UUTILS_PROFILE_APPEND = _snippet("ublue-uutils-profile.sh")
 
 ZSH_BREW_SHELLENV = '  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"'
-ZSH_BREW_APPEND = """  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv | grep -Ev '\\bPATH=')"
-  HOMEBREW_PREFIX="${HOMEBREW_PREFIX:-/home/linuxbrew/.linuxbrew}"
-  case ":$PATH:" in
-    *":${HOMEBREW_PREFIX}/bin:"*) ;;
-    *) PATH="${PATH}:${HOMEBREW_PREFIX}/bin" ;;
-  esac
-  case ":$PATH:" in
-    *":${HOMEBREW_PREFIX}/sbin:"*) ;;
-    *) PATH="${PATH}:${HOMEBREW_PREFIX}/sbin" ;;
-  esac
-  export PATH"""
+ZSH_BREW_APPEND = _snippet("zsh-brew-append.zsh")
+
+_OPEN_ALIAS_PATHS = (
+    "/usr/etc/profile.d/open.sh",
+    "/etc/profile.d/open.sh",
+)
+_BREW_PROFILE_PATHS = (
+    "/usr/etc/profile.d/brew.sh",
+    "/etc/profile.d/brew.sh",
+)
+_UUTILS_PROFILE_PATHS = (
+    "/usr/etc/profile.d/uutils.sh",
+    "/etc/profile.d/uutils.sh",
+)
+_ZSH_PROFILE_PATHS = (
+    "/usr/etc/zsh/zshrc",
+    "/etc/zsh/zshrc",
+)
+_FISH_PROFILE_PATHS = (
+    "/usr/share/fish/vendor_conf.d/ublue-brew.fish",
+    "/etc/fish/conf.d/ublue-brew.fish",
+)
 
 
 def _root_path(root: Path, path: str) -> Path:
     return root / path.removeprefix("/")
 
 
-def _root_paths(root: Path, *paths: str) -> tuple[Path, ...]:
+def _root_paths(root: Path, paths: tuple[str, ...]) -> tuple[Path, ...]:
     return tuple(_root_path(root, path) for path in paths)
 
 
 def remove_bluefin_open_alias(root: Path = Path("/")) -> None:
-    for path in _root_paths(
-        root,
-        "/usr/etc/profile.d/open.sh",
-        "/etc/profile.d/open.sh",
-    ):
+    for path in _root_paths(root, _OPEN_ALIAS_PATHS):
         if not path.exists():
             continue
 
@@ -124,11 +122,7 @@ def remove_bluefin_open_alias(root: Path = Path("/")) -> None:
 
 
 def patch_brew_profile_guard(root: Path = Path("/")) -> None:
-    for path in _root_paths(
-        root,
-        "/usr/etc/profile.d/brew.sh",
-        "/etc/profile.d/brew.sh",
-    ):
+    for path in _root_paths(root, _BREW_PROFILE_PATHS):
         if not path.exists():
             continue
 
@@ -143,11 +137,7 @@ def patch_brew_profile_guard(root: Path = Path("/")) -> None:
 
 
 def patch_uutils_profile_path(root: Path = Path("/")) -> None:
-    for path in _root_paths(
-        root,
-        "/usr/etc/profile.d/uutils.sh",
-        "/etc/profile.d/uutils.sh",
-    ):
+    for path in _root_paths(root, _UUTILS_PROFILE_PATHS):
         if not path.exists():
             continue
 
@@ -161,11 +151,7 @@ def patch_uutils_profile_path(root: Path = Path("/")) -> None:
 
 
 def patch_bluefin_zsh_brew_path(root: Path = Path("/")) -> None:
-    for path in _root_paths(
-        root,
-        "/usr/etc/zsh/zshrc",
-        "/etc/zsh/zshrc",
-    ):
+    for path in _root_paths(root, _ZSH_PROFILE_PATHS):
         if not path.exists():
             continue
 
@@ -183,29 +169,14 @@ def patch_bluefin_zsh_brew_path(root: Path = Path("/")) -> None:
         )
 
 
-def align_shell_defaults(root: Path = Path("/")) -> None:
-    remove_bluefin_open_alias(root)
-    patch_brew_profile_guard(root)
-    patch_uutils_profile_path(root)
-    patch_bluefin_zsh_brew_path(root)
-
-
 def _validate_open_alias_absent(root: Path) -> None:
-    for path in _root_paths(
-        root,
-        "/usr/etc/profile.d/open.sh",
-        "/etc/profile.d/open.sh",
-    ):
+    for path in _root_paths(root, _OPEN_ALIAS_PATHS):
         if path.exists():
             fail(f"global open alias is still installed: {path}")
 
 
 def _validate_brew_profile(root: Path) -> None:
-    for path in _root_paths(
-        root,
-        "/usr/etc/profile.d/brew.sh",
-        "/etc/profile.d/brew.sh",
-    ):
+    for path in _root_paths(root, _BREW_PROFILE_PATHS):
         if not path.exists():
             continue
 
@@ -215,11 +186,7 @@ def _validate_brew_profile(root: Path) -> None:
 
 
 def _validate_uutils_profile(root: Path) -> None:
-    for path in _root_paths(
-        root,
-        "/usr/etc/profile.d/uutils.sh",
-        "/etc/profile.d/uutils.sh",
-    ):
+    for path in _root_paths(root, _UUTILS_PROFILE_PATHS):
         if not path.exists():
             continue
 
@@ -229,11 +196,7 @@ def _validate_uutils_profile(root: Path) -> None:
 
 
 def _validate_fish_profile(root: Path) -> None:
-    for path in _root_paths(
-        root,
-        "/usr/share/fish/vendor_conf.d/ublue-brew.fish",
-        "/etc/fish/conf.d/ublue-brew.fish",
-    ):
+    for path in _root_paths(root, _FISH_PROFILE_PATHS):
         if not path.exists():
             continue
 
@@ -243,11 +206,7 @@ def _validate_fish_profile(root: Path) -> None:
 
 
 def _validate_zsh_profile(root: Path) -> None:
-    for path in _root_paths(
-        root,
-        "/usr/etc/zsh/zshrc",
-        "/etc/zsh/zshrc",
-    ):
+    for path in _root_paths(root, _ZSH_PROFILE_PATHS):
         if not path.exists():
             continue
 
@@ -261,9 +220,26 @@ def _validate_zsh_profile(root: Path) -> None:
             fail(f"zsh Homebrew setup is not append-only: {path}")
 
 
+_ALIGNMENT_STEPS: tuple[Callable[[Path], None], ...] = (
+    remove_bluefin_open_alias,
+    patch_brew_profile_guard,
+    patch_uutils_profile_path,
+    patch_bluefin_zsh_brew_path,
+)
+_VALIDATION_STEPS: tuple[Callable[[Path], None], ...] = (
+    _validate_open_alias_absent,
+    _validate_brew_profile,
+    _validate_uutils_profile,
+    _validate_fish_profile,
+    _validate_zsh_profile,
+)
+
+
+def align_shell_defaults(root: Path = Path("/")) -> None:
+    for align in _ALIGNMENT_STEPS:
+        align(root)
+
+
 def validate_shell_defaults(root: Path = Path("/")) -> None:
-    _validate_open_alias_absent(root)
-    _validate_brew_profile(root)
-    _validate_uutils_profile(root)
-    _validate_fish_profile(root)
-    _validate_zsh_profile(root)
+    for validate in _VALIDATION_STEPS:
+        validate(root)

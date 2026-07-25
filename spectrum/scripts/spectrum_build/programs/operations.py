@@ -5,7 +5,7 @@ from pathlib import Path
 from spectrum_build.core.common import fail
 from spectrum_build.core.context import BuildContext
 from spectrum_build.integrations.repositories import RepositoryFile
-from spectrum_build.programs.manifest import PROGRAMS
+from spectrum_build.programs.manifest import program_group, programs
 from spectrum_build.programs.models import DnfProgram, Program
 
 
@@ -27,18 +27,21 @@ def _register_validation_packages(program: Program, packages: set[str]) -> None:
         packages.add(package)
 
 
-def validate_program_manifest(programs: Iterable[Program] = PROGRAMS) -> None:
+def validate_program_manifest(
+    selected_programs: Iterable[Program] | None = None,
+) -> None:
     names: set[str] = set()
     repository_paths: set[Path] = set()
     validation_packages: set[str] = set()
-    for program in programs:
+    for program in programs() if selected_programs is None else selected_programs:
         _register_program_name(program, names)
-        if isinstance(program, DnfProgram) and not program.validation_packages:
-            fail(f"DNF program has no validation packages: {program.name}")
-        for repository in getattr(program, "repositories", ()):
-            _register_repository_path(repository.destination, repository_paths)
-        for path in getattr(program, "generated_repository_files", ()):
-            _register_repository_path(path, repository_paths)
+        if isinstance(program, DnfProgram):
+            if not program.validation_packages:
+                fail(f"DNF program has no validation packages: {program.name}")
+            for repository in program.repositories:
+                _register_repository_path(repository.destination, repository_paths)
+            for path in program.generated_repository_files:
+                _register_repository_path(path, repository_paths)
         _register_validation_packages(program, validation_packages)
 
 
@@ -50,9 +53,12 @@ def _register_repository_path(path: Path, paths: set[Path]) -> None:
     paths.add(path)
 
 
-def install_programs(context: BuildContext) -> None:
-    validate_program_manifest()
-    for program in PROGRAMS:
+def install_program_group(context: BuildContext, group: str) -> None:
+    """Install one Containerfile cache group from the program manifest."""
+    selected_programs = program_group(group)
+    validate_program_manifest(selected_programs)
+
+    for program in selected_programs:
         print(f"Installing program: {program.name}", file=sys.stderr)
         program.install(context)
 
@@ -60,7 +66,7 @@ def install_programs(context: BuildContext) -> None:
 def program_repositories() -> tuple[RepositoryFile, ...]:
     return tuple(
         repository
-        for program in PROGRAMS
+        for program in programs()
         if isinstance(program, DnfProgram)
         for repository in program.repositories
     )
@@ -69,7 +75,7 @@ def program_repositories() -> tuple[RepositoryFile, ...]:
 def program_generated_repository_files() -> tuple[Path, ...]:
     return tuple(
         path
-        for program in PROGRAMS
+        for program in programs()
         if isinstance(program, DnfProgram)
         for path in program.generated_repository_files
     )
@@ -77,5 +83,5 @@ def program_generated_repository_files() -> tuple[Path, ...]:
 
 def program_validation_packages() -> tuple[str, ...]:
     return tuple(
-        package for program in PROGRAMS for package in program.validation_packages
+        package for program in programs() for package in program.validation_packages
     )

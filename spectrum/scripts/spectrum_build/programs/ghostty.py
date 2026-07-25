@@ -1,6 +1,5 @@
 import hashlib
 import os
-import platform
 import tarfile
 import tempfile
 from pathlib import Path
@@ -9,17 +8,18 @@ from spectrum_build.core.common import fail, require_readable_file
 from spectrum_build.core.context import BuildContext
 from spectrum_build.integrations.http import download
 from spectrum_build.programs.models import CustomProgram
-from spectrum_build.programs.sources import SOURCE_PINS
+from workstation.errors import DotfilesError
 from workstation.lib.files import extract_tar_archive, write_if_changed
+from workstation.lib.manifests import listed_files
+from workstation.lib.platform import machine_architecture
+from workstation.lib.sources import SOURCES
 
-GHOSTTY_PIN = SOURCE_PINS["ghostty"]
-REVISION = GHOSTTY_PIN["revision"]
-VERSION = GHOSTTY_PIN["version"]
-SOURCE_URL = f"https://github.com/ghostty-org/ghostty/archive/{REVISION}.tar.gz"
-SOURCE_SHA256 = GHOSTTY_PIN["source_sha256"]
-ZIG_VERSION = GHOSTTY_PIN["zig_version"]
+GHOSTTY_PIN = SOURCES.require("ghostty")
+REVISION = GHOSTTY_PIN.require_revision()
+VERSION = GHOSTTY_PIN.require_version()
+SOURCE = GHOSTTY_PIN.require_artifact("source")
+ZIG = GHOSTTY_PIN.require_component("zig")
 ZIG_BUILD_JOBS = 2
-ZIG_SHA256 = GHOSTTY_PIN["zig_sha256"]
 
 
 def _verified_download(url: str, expected_sha256: str) -> bytes:
@@ -30,12 +30,10 @@ def _verified_download(url: str, expected_sha256: str) -> bytes:
 
 
 def _zig_architecture() -> str:
-    architecture = platform.machine().lower()
-    if architecture == "x86_64":
-        return "x86_64-linux"
-    if architecture in {"aarch64", "arm64"}:
-        return "aarch64-linux"
-    fail(f"unsupported Ghostty build architecture: {architecture}")
+    try:
+        return machine_architecture().zig_linux
+    except DotfilesError as error:
+        fail(str(error))
 
 
 def _zig_build_command(zig: Path) -> tuple[str | Path, ...]:
@@ -46,6 +44,7 @@ def _zig_build_command(zig: Path) -> tuple[str | Path, ...]:
         "-p",
         "/usr",
         "-Doptimize=ReleaseFast",
+        "-Demit-test-exe=false",
         f"-Dversion-string={VERSION}",
     )
 
@@ -61,14 +60,15 @@ def install(context: BuildContext) -> None:
     runner = context.runner
     runner.require("git", "tar", "xz")
     patch_dir = context.config.context_dir.parent / "patches/ghostty"
-    patches = tuple(sorted(patch_dir.glob("*.patch")))
-    if not patches:
-        fail(f"Ghostty patch series is empty: {patch_dir}")
+    try:
+        patches = listed_files(patch_dir, "series", suffix=".patch")
+    except DotfilesError as error:
+        fail(str(error))
 
     with tempfile.TemporaryDirectory(prefix="spectrum-ghostty-") as work_name:
         work = Path(work_name)
         source_archive = work / "ghostty.tar.gz"
-        write_if_changed(source_archive, _verified_download(SOURCE_URL, SOURCE_SHA256))
+        write_if_changed(source_archive, _verified_download(SOURCE.url, SOURCE.sha256))
         with tarfile.open(source_archive) as archive:
             extract_tar_archive(archive, work / "source")
         source = next(
@@ -81,14 +81,13 @@ def install(context: BuildContext) -> None:
         runner.run(["git", "apply", *patches], cwd=source)
 
         zig_arch = _zig_architecture()
-        zig_name = f"zig-{zig_arch}-{ZIG_VERSION}"
+        zig_version = ZIG.require_version()
+        zig_name = f"zig-{zig_arch}-{zig_version}"
+        zig_source = ZIG.require_artifact(zig_arch)
         zig_archive = work / f"{zig_name}.tar.xz"
         write_if_changed(
             zig_archive,
-            _verified_download(
-                f"https://ziglang.org/download/{ZIG_VERSION}/{zig_name}.tar.xz",
-                ZIG_SHA256[zig_arch],
-            ),
+            _verified_download(zig_source.url, zig_source.sha256),
         )
         with tarfile.open(zig_archive) as archive:
             extract_tar_archive(archive, work / "zig")
