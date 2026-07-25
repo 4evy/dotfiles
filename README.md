@@ -1,6 +1,7 @@
 # dotfiles 🌸
 
-Personal Spectrum/Bluefin, macOS, Homebrew, Ansible, and chezmoi setup.
+Personal Spectrum/Bluefin, NixOS, and macOS workstation configuration, built
+with Homebrew, Nix, Ansible, and chezmoi.
 
 <p>
   <a href="https://github.com/4evy/dotfiles/pkgs/container/spectrum"><img alt="GHCR Spectrum image" src="https://img.shields.io/badge/GHCR-spectrum-f4b8e4?style=flat-square&logo=github&logoColor=f4b8e4&labelColor=232634"></a>
@@ -44,10 +45,9 @@ just setup
 
 ### NixOS
 
-The NixOS host keeps the same chezmoi and Ansible orchestration, but NixOS owns
-all system, desktop, development, and repository-tool packages. The Ansible
-roles deliberately skip Homebrew, Rustup, Bun-global, Nix-profile, downloaded
-script, and source/archive installers when the detected distribution is NixOS.
+The NixOS flake owns the declarative host, desktop, development, and package state.
+Ansible still performs platform detection, but skips the userland and host stages that
+NixOS owns
 
 From an installed NixOS system:
 
@@ -58,86 +58,96 @@ sudo nixos-rebuild switch --flake .#nixos
 just setup
 ```
 
-`just setup` still applies the shared Ansible playbooks and chezmoi source. On
-NixOS, host and package state changes belong in `hosts/linux` or
-`modules/nixos`, followed by another `nixos-rebuild`.
+`just setup` runs the shared bootstrap orchestration and applies the chezmoi source. On
+NixOS, host and package changes belong in `hosts/linux` or `modules/nixos`, followed by
+another `nixos-rebuild`
 
-Spectrum's checked-in Bluetooth and systemd policy files are also the NixOS
-source of truth: the NixOS module links them into the system configuration
-without translating their contents into Nix. Cross-platform source builds use
-the shared pins in `spectrum/scripts/spectrum_build/programs/source-pins.json`;
-only the Fedora and Nix packaging recipes remain platform-specific.
+Spectrum's checked-in Bluetooth and systemd policy files are also the NixOS source of
+truth: the NixOS module links them into the system configuration without translating
+their contents into Nix. Shared source pins and Spectrum program definitions live in
+`manifests/sources.json` and `manifests/spectrum-programs.toml`
 
 ### macOS
 
 ```bash
 git clone https://github.com/4evy/dotfiles.git ~/dotfiles
 cd ~/dotfiles
-./ansible/bootstrap.sh ansible/playbooks/userland.yml
-chezmoi init --source "$PWD"
-chezmoi apply --refresh-externals=auto --force
+./ansible/bootstrap.sh --tags userland
+just setup
 ```
 
 ## Commands
 
-Run `just` to see every recipe and alias.
+Run `just` or `just --list` to see the public recipes available on the current platform.
+Optional arguments are shown in brackets below
 
-### Machine setup
+### Setup and system
 
 ```bash
-just setup          # first full setup: userland, dotfiles, and host roles
-just update         # refresh an already configured machine
-just apply          # apply only chezmoi dotfiles
-just nix            # install Nix and the repo's Nix profile tools
-just doctor setup   # check dependencies needed for setup
-just doctor all     # check every known workflow dependency
+just setup             # Bootstrap userland, apply dotfiles, then apply host stages (alias: s)
+just update            # Refresh userland, dotfiles, and host stages (alias: up)
+just apply             # Apply only the chezmoi-managed dotfiles (alias: a)
+just nix               # Install Nix and add the repository's Nix profile tools (alias: nx)
+just doctor [profile]  # Check workflow dependencies; defaults to setup
+just status            # Show bootc status and image metadata on Linux
+just clean             # Reclaim disposable data on Linux after confirmation
+just reboot            # Reboot through systemd on Linux after confirmation (alias: r)
 ```
+
+Doctor profiles are `status`, `reboot`, `install`, `build`, `setup`, `apply`,
+`shell`, `spectrum`, `fmt`, `lint`, `c`, `ansible`, `bun`, `smoke`, `nix`,
+`watch`, `check`, and `all`.
 
 ### Spectrum image
 
+These image lifecycle commands are Linux-only except for `spectrum-lint`.
+`target` defaults to `localhost/spectrum:local` for local operations and
+`ghcr.io/4evy/spectrum:latest` for `install`
+
 ```bash
-just status          # show bootc and image metadata
-just install         # switch to the published Spectrum image
-just build           # build localhost/spectrum:local using cached layers
-just build-clean     # explicitly rebuild every image layer
-just spectrum-dev    # compatibility name for the cached local build
-just switch          # rebuild and switch/stage the local image
-just upgrade         # rebuild the local image and stage a bootc upgrade
-just reboot          # reboot through systemd
-just spectrum-lint   # validate the image build scripts
-just spectrum-diff   # compare RPMs in Bluefin and Spectrum
+just install [target]               # Switch to the published image on next boot (alias: i)
+just build [target]                 # Build the local image with cached layers (alias: b)
+just build-clean [target]           # Rebuild the local image without cached layers
+just spectrum-dev [target]          # Compatibility name for the cached local build
+just switch [target]                # Build and switch to or stage the local image (alias: sw)
+just upgrade [target]               # Rebuild the image and stage a bootc upgrade (alias: u)
+just spectrum-lint                  # Validate build scripts without building an image
+just spectrum-boot-report [target]  # Report boot and kernel artifact sizes
+just spectrum-diff [target] [base]  # Compare Spectrum RPMs with its Bluefin base
 ```
 
+Image defaults can be overridden with `SPECTRUM_IMAGE_NAME`,
+`SPECTRUM_LOCAL_TAG`, `SPECTRUM_REMOTE_REF`, and the
+`SPECTRUM_BLUEFIN_BASE_IMAGE*` variables. The base image reference must end in
+a SHA-256 digest. `PODMAN` and `COMPOSE` select alternative container commands.
+
 `just install`, `just switch`, and `just upgrade` handle bootc image updates;
-`just update` only refreshes userland, dotfiles, and host roles.
+`just update` only refreshes userland, dotfiles, and host stages.
 
 ### Development
 
 ```bash
-just check           # run the full validation suite
-just fmt             # format repository files
-just check-format    # check formatting without changing files
-just watch check     # rerun checks when files change
-just smoke           # build and validate the Fedora smoke-test container
-just smoke-shell     # open a shell in the smoke-test container
+just check                            # Run the complete validation suite (aliases: c, ck)
+just lint                             # Check formatting, lint, and validate (alias: l)
+just fmt                              # Format repository files (alias: f)
+just check-format                     # Check formatting without changes (alias: cf)
+just watch [recipe and arguments]     # Rerun a recipe on changes; defaults to check (alias: w)
+just manifest-check                   # Validate manifests and generated schemas
+just manifest-update-schemas          # Regenerate JSON Schemas from runtime models
+just python-dependencies              # Check dependencies against first-party imports
+just python-test [pytest arguments]   # Run tests with optional pytest arguments
+just python-typecheck [ty arguments]  # Type-check roots with optional ty arguments
+just python-dead-code                 # Scan configured Python roots for dead code
+just python-complexity                # Enforce the cognitive-complexity limit
+just smoke                            # Build and validate the Fedora smoke-test container
+just smoke-shell                      # Open a shell in the Fedora smoke-test container
 ```
 
-Focused checks:
-
-```bash
-go test ./...
-just python-complexity
-just python-dead-code
-uv run --locked pytest
-uv run spectrum-build check
-bun run --filter hyper-window-tiling check
-```
-
-Python command surfaces use Cyclopts as their single CLI framework. Function
-signatures and docstrings declare commands and help; `Parameter`, `Group`, and
-environment configuration declare validation, aliases, and settings. Small
-bootstrap scripts that must run before project dependencies are installed stay
-on the standard library's `argparse`.
+Python command surfaces use Cyclopts as their single CLI framework. Function signatures
+and docstrings declare commands and help; `Parameter`, `Group`, and environment
+configuration declare validation, aliases, and settings. Small bootstrap scripts that
+must run before project dependencies are installed stay on the standard library's
+`argparse`
 
 ### Nix and Ansible
 
@@ -146,8 +156,9 @@ nix flake check
 nix run .#ghidra-mcp
 sudo nixos-rebuild switch --flake .#nixos
 
-ansible-playbook ansible/playbooks/host.yml
-ansible-playbook ansible/playbooks/site.yml
+./ansible/bootstrap.sh --tags userland
+ansible-playbook ansible/site.yml --tags host
+ansible-playbook ansible/site.yml
 ```
 
 ## License
