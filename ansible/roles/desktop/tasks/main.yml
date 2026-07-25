@@ -1,0 +1,51 @@
+---
+- name: Configure Flatpak prerequisites
+  ansible.builtin.import_tasks: flatpak.yml
+  when: platform_is_linux
+  tags:
+    - desktop
+    - flatpak
+    - host
+    - sushi-preview
+
+- name: Configure NVIDIA Flatpak runtimes
+  ansible.builtin.import_tasks: flatpak-nvidia.yml
+  when: platform_is_linux
+  tags:
+    - desktop
+    - flatpak
+    - flatpak-nvidia
+    - host
+
+- name: Configure desktop settings
+  ansible.builtin.import_tasks: settings.yml
+  when: platform_is_linux
+  tags:
+    - desktop
+    - emoji-shortcut
+    - host
+
+- name: Configure window tiling
+  ansible.builtin.import_tasks: window-tiling.yml
+  when: platform_is_linux
+  tags:
+    - desktop
+    - host
+    - hyper-window-tiling
+
+- name: Configure file previews
+  ansible.builtin.import_tasks: file-preview.yml
+  when: platform_is_linux
+  tags:
+    - desktop
+    - flatpak
+    - host
+    - sushi-preview
+
+- name: Configure fonts
+  ansible.builtin.import_tasks: fonts.yml
+  when: platform_is_linux
+  tags:
+    - desktop
+    - fonts
+    - host

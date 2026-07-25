@@ -1,0 +1,179 @@
+---
+- name: Detect the native RustDesk installation
+  ansible.builtin.command:
+    argv:
+      - sh
+      - -c
+      - command -v rustdesk
+  changed_when: false
+  failed_when: false
+  register: system_rustdesk_command
+
+- name: Detect host tools used by the RustDesk integration
+  ansible.builtin.command:
+    argv:
+      - sh
+      - -c
+      - "command -v {{ item }}"
+  changed_when: false
+  failed_when: false
+  loop:
+    - apparmor_parser
+    - flatpak
+    - update-desktop-database
+  register: system_rustdesk_tools
+  when: system_rustdesk_command.rc == 0
+
+- name: Inspect the AppArmor host state
+  ansible.builtin.slurp:
+    src: /sys/module/apparmor/parameters/enabled
+  failed_when: false
+  register: system_rustdesk_apparmor
+  when: system_rustdesk_command.rc == 0
+
+- name: Install the RustDesk AppArmor profile
+  ansible.builtin.copy:
+    src: dotfiles-rustdesk.apparmor
+    dest: /etc/apparmor.d/dotfiles-rustdesk
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Reload RustDesk AppArmor profile
+  when:
+    - system_rustdesk_command.rc == 0
+    - system_rustdesk_apparmor_enabled
+    - system_rustdesk_apparmor.content | default('') | b64decode | upper
+      is match('^Y')
+    - system_rustdesk_tools.results[0].rc == 0
+
+- name: Apply pending host handlers before RustDesk service reconciliation
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure RustDesk configuration directories exist
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default(omit) }}"
+    group: "{{ item.group | default(omit) }}"
+    mode: "0755"
+  become: "{{ item.become }}"
+  loop:
+    - path: "{{ dotfiles_config_home }}/rustdesk"
+      become: false
+    - path: /root/.config/rustdesk
+      owner: root
+      group: root
+      become: true
+  loop_control:
+    label: "{{ item.path }}"
+  when: system_rustdesk_command.rc == 0
+
+- name: Configure RustDesk direct Tailscale access
+  community.general.ini_file:
+    path: "{{ item.0.path }}"
+    section: options
+    option: "{{ item.1.option }}"
+    value: "{{ item.1.value }}"
+    state: present
+    no_extra_spaces: false
+    owner: "{{ item.0.owner | default(omit) }}"
+    group: "{{ item.0.group | default(omit) }}"
+    mode: "0644"
+  become: "{{ item.0.become }}"
+  loop: "{{ rustdesk_config_paths | product(rustdesk_options) | list }}"
+  loop_control:
+    label: "{{ item.0.path }}:{{ item.1.option }}"
+  when: system_rustdesk_command.rc == 0
+  vars:
+    rustdesk_config_paths:
+      - path: "{{ dotfiles_config_home }}/rustdesk/RustDesk2.toml"
+        become: false
+      - path: /root/.config/rustdesk/RustDesk2.toml
+        owner: root
+        group: root
+        become: true
+    rustdesk_options:
+      - option: direct-server
+        value: '"Y"'
+      - option: direct-access-port
+        value: '"21118"'
+
+- name: Remove the user RustDesk Flatpak
+  community.general.flatpak:
+    name: com.rustdesk.RustDesk
+    state: absent
+    method: user
+  when:
+    - system_rustdesk_command.rc == 0
+    - system_rustdesk_tools.results[1].rc == 0
+
+- name: Remove the system RustDesk Flatpak
+  community.general.flatpak:
+    name: com.rustdesk.RustDesk
+    state: absent
+    method: system
+  become: true
+  when:
+    - system_rustdesk_command.rc == 0
+    - system_rustdesk_tools.results[1].rc == 0
+
+- name: Ensure the user application directory exists
+  ansible.builtin.file:
+    path: "{{ dotfiles_data_home }}/applications"
+    state: directory
+    mode: "0755"
+  when: system_rustdesk_command.rc == 0
+
+- name: Install the RustDesk desktop entry
+  ansible.builtin.copy:
+    src: "{{ dotfiles_repo_root }}/packages/dotfiles-python/assets/host/apps/rustdesk.desktop"
+    dest: "{{ dotfiles_data_home }}/applications/rustdesk.desktop"
+    mode: "0644"
+  register: system_rustdesk_desktop
+  when: system_rustdesk_command.rc == 0
+
+- name: Inspect the existing RustDesk autostart entry
+  ansible.builtin.stat:
+    path: "{{ dotfiles_config_home }}/autostart/rustdesk.desktop"
+  register: system_rustdesk_autostart
+  when: system_rustdesk_command.rc == 0
+
+- name: Keep the existing RustDesk autostart entry enabled
+  ansible.builtin.copy:
+    content: >-
+      {{
+        (
+          lookup(
+            'ansible.builtin.file',
+            dotfiles_repo_root
+            ~ '/packages/dotfiles-python/assets/host/apps/rustdesk.desktop'
+          ) | trim
+        )
+        ~ '\nX-GNOME-Autostart-enabled=true\n'
+      }}
+    dest: "{{ dotfiles_config_home }}/autostart/rustdesk.desktop"
+    mode: "0644"
+  when: system_rustdesk_autostart.stat.exists | default(false)
+
+- name: Refresh the user desktop database
+  ansible.builtin.command:
+    argv:
+      - update-desktop-database
+      - "{{ dotfiles_data_home }}/applications"
+  changed_when: true
+  when:
+    - system_rustdesk_desktop is changed
+    - system_rustdesk_tools.results[2].rc == 0
+
+- name: Reconcile RustDesk host policy
+  dotfiles_operation:
+    executable: "{{ dotfiles_bin_dir }}/dotfiles-scripts"
+    command:
+      - host
+      - apps
+      - rustdesk-tailscale
+    context: "{{ dotfiles_automation_context }}"
+    chdir: "{{ dotfiles_repo_root }}"
+    environment:
+      PATH: "{{ dotfiles_bin_dir }}:{{ dotfiles_path }}"

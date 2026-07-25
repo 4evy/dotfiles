@@ -1,0 +1,273 @@
+---
+- name: Ensure Equicord settings directory exists on macOS
+  ansible.builtin.file:
+    path: "{{ dotfiles_home_dir }}/Library/Application Support/Equicord/settings"
+    state: directory
+    mode: "0755"
+  tags:
+    - discord
+    - equicord
+
+- name: Require ARM64 macOS for Equilotl CLI
+  ansible.builtin.assert:
+    that:
+      - platform_architecture == 'arm64'
+    fail_msg: "This dotfiles Equicord macOS install path only supports ARM64 Macs."
+  tags:
+    - discord
+    - equicord
+
+- name: Fetch latest Equilotl release metadata on macOS
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/Equicord/Equilotl/releases/latest
+    headers:
+      Accept: application/vnd.github+json
+      User-Agent: dotfiles-ansible
+    return_content: true
+    status_code: 200
+    timeout: 30
+  register: applications_equilotl_release_macos
+  tags:
+    - discord
+    - equicord
+
+- name: Select Equilotl macOS ARM64 CLI asset
+  ansible.builtin.set_fact:
+    applications_equilotl_macos_arm64_url: >-
+      {{
+        applications_equilotl_release_macos.json.assets
+        | selectattr('name', 'equalto', 'EquilotlCli-darwin-arm64')
+        | map(attribute='browser_download_url')
+        | first
+      }}
+  tags:
+    - discord
+    - equicord
+
+- name: Require Equilotl macOS ARM64 CLI asset
+  ansible.builtin.assert:
+    that:
+      - applications_equilotl_macos_arm64_url is defined
+      - applications_equilotl_macos_arm64_url | default('') | length > 0
+    fail_msg: >-
+      Latest Equilotl release does not include the expected
+      EquilotlCli-darwin-arm64 asset.
+  tags:
+    - discord
+    - equicord
+
+- name: Install Equilotl macOS ARM64 CLI
+  ansible.builtin.get_url:
+    url: "{{ applications_equilotl_macos_arm64_url }}"
+    dest: "{{ dotfiles_bin_dir }}/EquilotlCli-darwin-arm64"
+    mode: "0755"
+  tags:
+    - discord
+    - equicord
+
+- name: Fetch latest Equicord release metadata on macOS
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/Equicord/Equicord/releases/latest
+    headers:
+      Accept: application/vnd.github+json
+      User-Agent: dotfiles-ansible
+    return_content: true
+    status_code: 200
+    timeout: 30
+  register: applications_equicord_release_macos
+  tags:
+    - discord
+    - equicord
+
+- name: Select latest Equicord desktop ASAR asset
+  ansible.builtin.set_fact:
+    applications_equicord_desktop_asset_macos: >-
+      {{
+        applications_equicord_release_macos.json.assets
+        | selectattr('name', 'equalto', 'desktop.asar')
+        | first
+      }}
+  tags:
+    - discord
+    - equicord
+
+- name: Require latest Equicord desktop ASAR asset
+  ansible.builtin.assert:
+    that:
+      - applications_equicord_desktop_asset_macos.browser_download_url | length > 0
+      - applications_equicord_desktop_asset_macos.digest
+        is match('^sha256:[0-9a-f]{64}$')
+    fail_msg: >-
+      Latest Equicord release does not include a checksummed desktop.asar
+      asset.
+  tags:
+    - discord
+    - equicord
+
+- name: Install latest Equicord desktop ASAR
+  ansible.builtin.get_url:
+    url: "{{ applications_equicord_desktop_asset_macos.browser_download_url }}"
+    dest: >-
+      {{ dotfiles_home_dir }}/Library/Application Support/Equicord/equicord.asar
+    checksum: "{{ applications_equicord_desktop_asset_macos.digest }}"
+    mode: "0644"
+  tags:
+    - discord
+    - equicord
+
+- name: Inspect Discord ASAR files on macOS
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - /Applications/Discord.app/Contents/Resources/app.asar
+    - /Applications/Discord.app/Contents/Resources/_app.asar
+  register: applications_equicord_asar_files_macos
+  tags:
+    - discord
+    - equicord
+
+- name: Read the current Discord ASAR loader on macOS
+  ansible.builtin.slurp:
+    src: /Applications/Discord.app/Contents/Resources/app.asar
+  register: applications_equicord_loader_macos
+  when: applications_equicord_asar_files_macos.results[0].stat.exists
+  tags:
+    - discord
+    - equicord
+
+- name: Detect an existing Equicord ASAR loader on macOS
+  ansible.builtin.set_fact:
+    applications_equicord_is_patched_macos: >-
+      {{
+        applications_equicord_asar_files_macos.results[0].stat.exists
+        and applications_equicord_asar_files_macos.results[1].stat.exists
+        and (
+          'require("' ~ dotfiles_home_dir
+          ~ '/Library/Application Support/Equicord/equicord.asar")'
+        ) in (
+          applications_equicord_loader_macos.content
+          | default('')
+          | b64decode
+        )
+      }}
+  tags:
+    - discord
+    - equicord
+
+- name: Patch an unmodified Discord installation with Equicord on macOS
+  when: not applications_equicord_is_patched_macos
+  tags:
+    - discord
+    - equicord
+  block:
+    - name: Clear Discord ASAR immutable flags before first Equicord patch
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/chflags
+          - nouchg
+          - "{{ item.item }}"
+      loop: "{{ applications_equicord_asar_files_macos.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: item.stat.exists
+      become: true
+      changed_when: false
+
+    - name: Install Equicord into Discord on macOS
+      ansible.builtin.command:
+        argv:
+          - "{{ dotfiles_bin_dir }}/EquilotlCli-darwin-arm64"
+          - --install
+          - --branch
+          - stable
+      environment:
+        HOME: "{{ dotfiles_home_dir }}"
+      changed_when: true
+  always:
+    - name: Inspect Discord ASAR files after Equicord patch
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - /Applications/Discord.app/Contents/Resources/app.asar
+        - /Applications/Discord.app/Contents/Resources/_app.asar
+      register: applications_equicord_asar_files_after_patch_macos
+
+    - name: Lock Equicord macOS ASAR files against Discord updater overwrite
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/chflags
+          - uchg
+          - "{{ item.item }}"
+      loop: "{{ applications_equicord_asar_files_after_patch_macos.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: item.stat.exists
+      become: true
+      changed_when: false
+
+- name: Inspect the final Equicord backup ASAR on macOS
+  ansible.builtin.stat:
+    path: /Applications/Discord.app/Contents/Resources/_app.asar
+  register: applications_equicord_final_backup_asar_macos
+  tags:
+    - discord
+    - equicord
+
+- name: Read the final Equicord ASAR loader on macOS
+  ansible.builtin.slurp:
+    src: /Applications/Discord.app/Contents/Resources/app.asar
+  register: applications_equicord_final_loader_macos
+  tags:
+    - discord
+    - equicord
+
+- name: Verify the final Equicord ASAR loader on macOS
+  ansible.builtin.assert:
+    that:
+      - applications_equicord_final_backup_asar_macos.stat.exists
+      - >-
+        (
+          'require("' ~ dotfiles_home_dir
+          ~ '/Library/Application Support/Equicord/equicord.asar")'
+        ) in (
+          applications_equicord_final_loader_macos.content
+          | b64decode
+        )
+    fail_msg: >-
+      Discord is not patched with the expected Equicord ASAR loader.
+  tags:
+    - discord
+    - equicord
+
+- name: Generate Equicord plugin settings on macOS
+  ansible.builtin.command:
+    argv:
+      - nix
+      - eval
+      - --json
+      - .#lib.equicordSettingsJson
+  args:
+    chdir: "{{ dotfiles_repo_root }}"
+  register: applications_equicord_settings_macos
+  changed_when: false
+  tags:
+    - discord
+    - equicord
+
+- name: Install generated Equicord plugin settings on macOS
+  ansible.builtin.copy:
+    content: "{{ applications_equicord_settings_macos.stdout | from_json | to_nice_json }}\n"
+    dest: "{{ dotfiles_home_dir }}/Library/Application Support/Equicord/settings/settings.json"
+    mode: "0644"
+  tags:
+    - discord
+    - equicord
+
+- name: Install Equicord QuickCSS on macOS
+  ansible.builtin.copy:
+    src: "{{ dotfiles_repo_root }}/packages/equicord/quickCss.css"
+    dest: "{{ dotfiles_home_dir }}/Library/Application Support/Equicord/settings/quickCss.css"
+    mode: "0644"
+  tags:
+    - discord
+    - equicord

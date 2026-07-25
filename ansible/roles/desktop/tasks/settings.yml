@@ -1,0 +1,203 @@
+---
+- name: Detect GNOME settings support
+  ansible.builtin.command:
+    argv:
+      - gsettings
+      - --version
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  register: desktop_gsettings_command
+  tags:
+    - host
+    - desktop
+    - emoji-shortcut
+    - workspace-shortcuts
+
+- name: Configure GNOME window switching shortcuts
+  community.general.dconf:
+    key: "/org/gnome/desktop/wm/keybindings/{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+  loop:
+    - key: switch-applications
+      value: "@as []"
+    - key: switch-applications-backward
+      value: "@as []"
+    - key: switch-windows
+      value: "['<Alt>Tab', '<Super>Tab']"
+    - key: switch-windows-backward
+      value: "['<Shift><Alt>Tab', '<Shift><Super>Tab']"
+  loop_control:
+    label: "{{ item.key }}"
+  when: desktop_gsettings_command.rc == 0
+  tags:
+    - host
+    - desktop
+    - workspace-shortcuts
+
+- name: Free GNOME numbered application shortcuts
+  community.general.dconf:
+    key: >-
+      /org/gnome/shell/keybindings/switch-to-application-{{ item }}
+    value: "@as []"
+    state: present
+  loop: "{{ desktop_gnome_workspace_numbers }}"
+  loop_control:
+    label: "Super+{{ item }}"
+  when: desktop_gsettings_command.rc == 0
+  tags:
+    - host
+    - desktop
+    - workspace-shortcuts
+
+- name: Configure GNOME numbered workspace switching shortcuts
+  community.general.dconf:
+    key: >-
+      /org/gnome/desktop/wm/keybindings/switch-to-workspace-{{ item }}
+    value: "['<Super>{{ item }}']"
+    state: present
+  loop: "{{ desktop_gnome_workspace_numbers }}"
+  loop_control:
+    label: "Super+{{ item }}"
+  when: desktop_gsettings_command.rc == 0
+  tags:
+    - host
+    - desktop
+    - workspace-shortcuts
+
+- name: Configure GNOME numbered workspace move shortcuts
+  community.general.dconf:
+    key: >-
+      /org/gnome/desktop/wm/keybindings/move-to-workspace-{{ item }}
+    value: "['<Super><Shift>{{ item }}']"
+    state: present
+  loop: "{{ desktop_gnome_workspace_numbers }}"
+  loop_control:
+    label: "Super+Shift+{{ item }}"
+  when: desktop_gsettings_command.rc == 0
+  tags:
+    - host
+    - desktop
+    - workspace-shortcuts
+
+- name: Check emoji picker command
+  ansible.builtin.stat:
+    path: "{{ desktop_emoji_command }}"
+  register: desktop_emoji_command_file
+  when: desktop_gsettings_command.rc == 0
+  tags:
+    - host
+    - desktop
+    - emoji-shortcut
+
+- name: Check writable emoji shortcut settings
+  ansible.builtin.command:
+    argv:
+      - gsettings
+      - writable
+      - "{{ item.schema }}"
+      - "{{ item.key }}"
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  loop:
+    - schema: org.gnome.settings-daemon.plugins.media-keys
+      key: custom-keybindings
+    - schema: org.freedesktop.ibus.panel.emoji
+      key: hotkey
+  loop_control:
+    label: "{{ item.schema }}:{{ item.key }}"
+  register: desktop_emoji_writable_settings
+  when:
+    - desktop_gsettings_command.rc == 0
+    - desktop_emoji_command_file.stat.executable | default(false)
+  tags:
+    - host
+    - desktop
+    - emoji-shortcut
+
+- name: Read existing GNOME custom keybindings
+  community.general.dconf:
+    key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings
+    state: read
+  register: desktop_custom_keybindings
+  when:
+    - desktop_emoji_writable_settings.results | default([]) | length == 2
+    - desktop_emoji_writable_settings.results[0].stdout | trim == 'true'
+    - desktop_emoji_writable_settings.results[1].stdout | trim == 'true'
+  tags:
+    - host
+    - desktop
+    - emoji-shortcut
+
+- name: Register the emoji picker custom keybinding
+  community.general.dconf:
+    key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings
+    value: >-
+      {{
+        desktop_custom_keybindings.value
+        | default('@as []', true)
+        | merge_gvariant_string_list(desktop_emoji_binding_path)
+      }}
+    state: present
+  when: desktop_custom_keybindings is not skipped
+  tags:
+    - host
+    - desktop
+    - emoji-shortcut
+
+- name: Configure the emoji picker custom keybinding
+  community.general.dconf:
+    key: "{{ desktop_emoji_binding_path }}{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+  loop:
+    - key: name
+      value: "'Emoji Picker'"
+    - key: command
+      value: "'{{ desktop_emoji_command }}'"
+    - key: binding
+      value: "'<Control>period'"
+  loop_control:
+    label: "{{ item.key }}"
+  when: desktop_custom_keybindings is not skipped
+  tags:
+    - host
+    - desktop
+    - emoji-shortcut
+
+- name: Move the IBus emoji shortcuts to Super
+  community.general.dconf:
+    key: /desktop/ibus/panel/emoji/hotkey
+    value: "['<Super>period', '<Super>semicolon']"
+    state: present
+  when: desktop_custom_keybindings is not skipped
+  tags:
+    - host
+    - desktop
+    - emoji-shortcut
+
+- name: Check Carmenta prewarm user service
+  ansible.builtin.stat:
+    path: "{{ dotfiles_home_dir }}/.config/systemd/user/carmenta-prewarm.service"
+  register: desktop_carmenta_prewarm_service
+  when: desktop_custom_keybindings is not skipped
+  tags:
+    - host
+    - desktop
+    - emoji-shortcut
+
+- name: Enable Carmenta prewarm user service
+  ansible.builtin.systemd_service:
+    name: carmenta-prewarm.service
+    enabled: true
+    scope: user
+    daemon_reload: true
+  when:
+    - ansible_facts.service_mgr == 'systemd'
+    - desktop_carmenta_prewarm_service.stat.exists | default(false)
+  tags:
+    - host
+    - desktop
+    - emoji-shortcut

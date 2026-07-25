@@ -6,10 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "dotfiles-python"
 version = "0.1.0"
 description = "Python tooling for dotfiles."
-requires-python = ">=3.14"
+requires-python = ">=3.14,<3.15"
 dependencies = [
   "astral>=3.2,<4",
-  "boltons>=25,<27",
   "cyclopts>=4.20,<5",
   "defusedxml>=0.7,<1",
   "filelock>=3.18,<4",
@@ -18,6 +17,7 @@ dependencies = [
   "httpx>=0.28,<1",
   "httpx-retries>=0.6,<1",
   "jinja2>=3.1,<4",
+  "jsonschema>=4.26,<5",
   "packaging>=24,<27",
   "pillow>=11,<13",
   "platformdirs>=4.3,<5",
@@ -29,18 +29,17 @@ dependencies = [
   "questionary>=2.1,<3",
   "rich>=15,<16",
   "tenacity>=9.1,<10",
-  "tomlkit>=0.13,<1",
 ]
 
 [project.scripts]
-alt-tab-license = "workstation.local.user_commands:alt_tab_license_entrypoint"
-codex = "workstation.local.user_commands:codex_entrypoint"
-desktop-perf-audit = "workstation.local.user_commands:desktop_perf_audit_entrypoint"
+alt-tab-license = "workstation.local.licenses:alt_tab_license_entrypoint"
+codex = "workstation.local.shims:codex_entrypoint"
+desktop-perf-audit = "workstation.local.desktop_audit:desktop_perf_audit_entrypoint"
 discord-equicord = "workstation.apps.discord:entrypoint"
-dotfiles-python = "workstation.local.user_commands:python_entrypoint"
-dotfiles-python3 = "workstation.local.user_commands:python3_entrypoint"
+dotfiles-python = "workstation.local.shims:python_entrypoint"
+dotfiles-python3 = "workstation.local.shims:python3_entrypoint"
 dotfiles-scripts = "workstation.cli:entrypoint"
-gnome-catppuccin-accent = "workstation.local.user_commands:gnome_catppuccin_accent_entrypoint"
+gnome-catppuccin-accent = "workstation.local.gnome:gnome_catppuccin_accent_entrypoint"
 hyper-window-tiling-build = "workstation.local.hyper_window_tiling_build:entrypoint"
 install-ghidra-mcp = "workstation.apps.ghidra_mcp:entrypoint"
 install-yaml-language-server = "workstation.host.devtools:install_entrypoint"
@@ -51,8 +50,8 @@ phone-mirror = "workstation.local.phone_mirror:entrypoint"
 raycast-beta-patch = "workstation.local.raycast:entrypoint"
 spectrum-build = "spectrum_build.cli:entrypoint"
 system-runner = "workstation.local.system_runner:entrypoint"
-vscode-nixd = "workstation.local.user_commands:vscode_nixd_entrypoint"
-vscode-nixfmt = "workstation.local.user_commands:vscode_nixfmt_entrypoint"
+vscode-nixd = "workstation.local.shims:vscode_nixd_entrypoint"
+vscode-nixfmt = "workstation.local.shims:vscode_nixfmt_entrypoint"
 yaml-language-server = "workstation.host.devtools:yaml_language_server_entrypoint"
 
 [dependency-groups]
@@ -76,13 +75,14 @@ required-environments = [
 strict = true
 
 [tool.setuptools]
-package-dir = { workstation = "ansible/files/scripts/workstation", spectrum_build = "spectrum/scripts/spectrum_build" }
+package-dir = { workstation = "packages/dotfiles-python/src/workstation", spectrum_build = "spectrum/scripts/spectrum_build" }
 packages = [
   "workstation",
   "workstation.apps",
   "workstation.host",
   "workstation.lib",
   "workstation.local",
+  "workstation.local.jj",
   "workstation.macos",
   "spectrum_build",
   "spectrum_build.core",
@@ -93,20 +93,68 @@ packages = [
 ]
 
 [tool.setuptools.package-data]
-"spectrum_build.programs" = ["source-pins.json"]
+"spectrum_build.image" = ["*.sh", "*.zsh"]
+
+[tool.setuptools.data-files]
+"share/dotfiles-python/manifests" = [
+  "manifests/*.json",
+  "manifests/*.toml",
+  "manifests/*.txt",
+]
+"share/dotfiles-python/apps" = [
+  "packages/dotfiles-python/assets/apps/install-ghostty-tip-linux.container.py",
+]
+"share/dotfiles-python/apps/ghidra-mcp" = [
+  "packages/dotfiles-python/assets/apps/ghidra-mcp/bridge-auth-token.patch",
+  "packages/dotfiles-python/assets/apps/ghidra-mcp/required-ghidra-jars.txt",
+  "packages/dotfiles-python/assets/apps/ghidra-mcp/rewrite-pom.py",
+]
+"share/dotfiles-python/apps/ghidra-mcp/wrappers" = [
+  "packages/dotfiles-python/assets/apps/ghidra-mcp/wrappers/*.py.in",
+]
+"share/dotfiles-python/apps/ghostty/patches" = [
+  "patches/ghostty/*.patch",
+  "patches/ghostty/series",
+]
+"share/dotfiles-python/apps/helium" = [
+  "browser/helium.toml",
+  "browser/helium-profile-avatar.png",
+]
+"share/dotfiles-python/apps/helium/settings" = ["browser/settings/*.json"]
+"share/dotfiles-python/host/apps" = [
+  "packages/dotfiles-python/assets/host/apps/rustdesk.desktop",
+]
+"share/dotfiles-python/host/apps/rustdesk-selinux" = [
+  "packages/dotfiles-python/assets/host/apps/rustdesk-selinux/*",
+]
+"share/dotfiles-python/host/apps/tailscale-selinux" = [
+  "packages/dotfiles-python/assets/host/apps/tailscale-selinux/*",
+]
+"share/dotfiles-python/desktop" = [
+  "packages/dotfiles-python/assets/desktop/*.json",
+  "packages/dotfiles-python/assets/desktop/*.in",
+]
+"share/dotfiles-python/macos" = [
+  "packages/dotfiles-python/assets/macos/*.applescript",
+  "packages/dotfiles-python/assets/macos/logitech-platform.py",
+]
+"share/dotfiles-python/macos/templates" = [
+  "packages/dotfiles-python/assets/macos/templates/*.in",
+]
 
 [tool.pytest.ini_options]
 filterwarnings = ["error"]
 minversion = "9.0"
 strict = true
 testpaths = [
-  "ansible/files/scripts/tests",
+  "packages/dotfiles-python/tests",
   "ansible/tests",
   "spectrum/scripts/tests",
 ]
 
 [tool.ruff]
 extend-exclude = ["packages/toshy/slices"]
+force-exclude = true
 line-length = 88
 preview = true
 show-fixes = true
@@ -116,62 +164,62 @@ unsafe-fixes = false
 [tool.ruff.lint]
 ignore = [
   # Ruff formatter conflicts: https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
-  "COM812",
-  "COM819",
-  "D203",
-  "D206",
-  "D213",
-  "D300",
-  "E111",
-  "E114",
-  "E117",
-  "ISC002",
-  "Q000",
-  "Q001",
-  "Q002",
-  "Q003",
-  "Q004",
-  "W191",
+  "missing-trailing-comma",
+  "prohibited-trailing-comma",
+  "incorrect-blank-line-before-class",
+  "docstring-tab-indentation",
+  "multi-line-summary-second-line",
+  "triple-single-quotes",
+  "indentation-with-invalid-multiple",
+  "indentation-with-invalid-multiple-comment",
+  "over-indented",
+  "multi-line-implicit-string-concatenation",
+  "bad-quotes-inline-string",
+  "bad-quotes-multiline-string",
+  "bad-quotes-docstring",
+  "avoidable-escaped-quote",
+  "unnecessary-escaped-quote",
+  "tab-indentation",
   # The formatter intentionally leaves some long URLs and command strings intact.
-  "E501",
+  "line-too-long",
   # Copyright headers and exhaustive API prose do not make automation safer.
-  "CPY001",
-  "D100",
-  "D101",
-  "D102",
-  "D103",
-  "D104",
-  "D105",
-  "D106",
-  "D107",
+  "missing-copyright-notice",
+  "undocumented-public-module",
+  "undocumented-public-class",
+  "undocumented-public-method",
+  "undocumented-public-function",
+  "undocumented-public-package",
+  "undocumented-magic-method",
+  "undocumented-public-nested-class",
+  "undocumented-public-init",
   "DOC",
   # Factoring every exception string into a variable obscures local error handling.
-  "EM101",
-  "EM102",
-  "TRY003",
+  "raw-string-in-exception",
+  "f-string-in-exception",
+  "raise-vanilla-args",
   # Boolean state and predicate helpers remain clearest at their call sites.
   "FBT",
   # These rewrites tend to reduce readability without improving correctness.
-  "FLY002",
-  "PLR2004",
-  "PLR6301",
-  "RSE102",
-  "TRY300",
+  "static-join-to-f-string",
+  "magic-value-comparison",
+  "no-self-use",
+  "unnecessary-paren-on-raise-exception",
+  "try-consider-else",
   # These are command-line programs; stdout is part of their interface.
-  "T201",
+  "print",
   # Importing subprocess and using argv without a shell are intentional here.
-  "S404",
-  "S603",
-  "S606",
+  "suspicious-subprocess-import",
+  "subprocess-without-shell-equals-true",
+  "start-process-with-no-shell",
   # Standalone automation scripts and tests are not importable packages.
-  "INP001",
+  "implicit-namespace-package",
   # Package initializers intentionally register Cyclopts command trees.
-  "RUF067",
+  "non-empty-init-module",
   # Runtime import placement is deliberate; ty checks the annotations themselves.
-  "TC001",
-  "TC003",
+  "typing-only-first-party-import",
+  "typing-only-standard-library-import",
   # Ruff cannot infer the shared fail() helper's NoReturn contract here; ty can.
-  "RET503",
+  "implicit-return",
 ]
 select = ["ALL"]
 
@@ -186,21 +234,40 @@ known-first-party = ["workstation", "spectrum_build"]
 max-complexity = 10
 
 [tool.ruff.lint.per-file-ignores]
-"ansible/collections/ansible_collections/evy/dotfiles/plugins/modules/operation.py" = [
-  "E402",
-  "EXE001",
+"ansible/library/dotfiles_operation.py" = [
+  "module-import-not-at-top-of-file",
+  "shebang-not-executable",
 ]
-"**/test_*.py" = ["PLC2701", "PLR2004", "S101", "SLF001"]
-"spectrum/scripts/spectrum_build/integrations/dnf.py" = ["ANN401"]
-"ansible/files/scripts/apps/ghidra-mcp/rewrite-pom.py" = ["S405"]
-"ansible/files/scripts/apps/install-ghostty-tip-linux.container.py" = ["S607"]
-"ansible/files/scripts/workstation/automation.py" = ["PLC0415"]
-"ansible/files/scripts/workstation/chezmoi.py" = ["B009"]
-"ansible/files/scripts/workstation/apps/installers.py" = ["S108"]
-"ansible/files/scripts/workstation/lib/files.py" = ["S202"]
-"ansible/files/scripts/workstation/lib/templates.py" = ["S701"]
-"spectrum/scripts/build.py" = ["S607"]
-"spectrum/scripts/spectrum_build/image/cleanup.py" = ["S108"]
+"**/test_*.py" = [
+  "import-private-name",
+  "magic-value-comparison",
+  "assert",
+  "private-member-access",
+]
+"spectrum/scripts/spectrum_build/integrations/dnf.py" = ["any-type"]
+"packages/dotfiles-python/assets/apps/ghidra-mcp/rewrite-pom.py" = [
+  "suspicious-xml-etree-import",
+]
+"packages/dotfiles-python/assets/apps/install-ghostty-tip-linux.container.py" = [
+  "start-process-with-partial-path",
+]
+"packages/dotfiles-python/src/workstation/automation.py" = [
+  "import-outside-top-level",
+]
+"packages/dotfiles-python/src/workstation/macos/terminal.py" = [
+  "get-attr-with-constant",
+]
+"packages/dotfiles-python/src/workstation/apps/ghostty.py" = [
+  "hardcoded-temp-file",
+]
+"packages/dotfiles-python/src/workstation/lib/files.py" = [
+  "tarfile-unsafe-members",
+]
+"packages/dotfiles-python/src/workstation/lib/templates.py" = [
+  "jinja2-autoescape-false",
+]
+"spectrum/scripts/build.py" = ["start-process-with-partial-path"]
+"spectrum/scripts/spectrum_build/image/cleanup.py" = ["hardcoded-temp-file"]
 
 [tool.ruff.lint.pylint]
 max-args = 8
@@ -218,13 +285,13 @@ preview = true
 [tool.ty.environment]
 extra-paths = [
   "./spectrum/scripts",
+  "./packages/dotfiles-python/src",
   "./packages/toshy",
-  "./ansible/files/scripts",
 ]
 
 [tool.ty.src]
 exclude = ["packages/toshy/slices"]
-include = ["**/*.py"]
+include = ["ansible", "dotfiles", "packages", "spectrum"]
 
 [tool.ty.rules]
 all = "error"
@@ -234,6 +301,7 @@ error-on-warning = true
 
 [tool.vulture]
 min_confidence = 100
+paths = ["ansible", "dotfiles", "packages", "spectrum"]
 sort_by_size = true
 
 [tool.deptry]
@@ -247,4 +315,6 @@ DEP001 = ["ansible", "xwaykeyz"]
 DEP002 = ["pyobjc-framework-Cocoa"]
 
 [tool.complexipy]
+failed = true
 max-complexity-allowed = 15
+paths = ["ansible", "dotfiles", "packages", "spectrum"]

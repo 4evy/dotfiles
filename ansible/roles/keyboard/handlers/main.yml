@@ -1,0 +1,29 @@
+---
+- name: Restart Toshy services
+  ansible.builtin.command:
+    argv:
+      - sh
+      - -c
+      - command -v toshy-services-restart >/dev/null && exec toshy-services-restart
+  changed_when: true
+  failed_when: false
+
+- name: Reload Kanata udev rules
+  ansible.builtin.command:
+    argv:
+      - udevadm
+      - control
+      - --reload-rules
+  become: true
+  changed_when: true
+  notify: Trigger Kanata uinput rules
+
+- name: Trigger Kanata uinput rules
+  ansible.builtin.command:
+    argv:
+      - udevadm
+      - trigger
+      - --subsystem-match=misc
+      - --attr-match=name=uinput
+  become: true
+  changed_when: true

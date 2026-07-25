@@ -1,0 +1,354 @@
+{
+  "$comment": "The instance's format_version is a dotfiles-local data contract revision. The schema's $schema URI independently selects the JSON Schema dialect.",
+  "$defs": {
+    "Artifact": {
+      "additionalProperties": false,
+      "description": "One immutable downloadable artifact.",
+      "properties": {
+        "sha256": {
+          "description": "A hexadecimal or SRI SHA-256 digest.",
+          "pattern": "^(?:[0-9a-f]{64}|sha256-[A-Za-z0-9+/]{43}=)$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "url": {
+          "description": "The complete pinned HTTPS artifact URL.",
+          "format": "uri",
+          "pattern": "^https://",
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "sha256"
+      ],
+      "title": "Artifact",
+      "type": "object"
+    },
+    "ComponentPin": {
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "version"
+          ]
+        },
+        {
+          "properties": {
+            "artifacts": {
+              "minProperties": 1
+            }
+          },
+          "required": [
+            "artifacts"
+          ]
+        }
+      ],
+      "description": "A named tool/component version and its platform artifacts.",
+      "properties": {
+        "artifacts": {
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9_-]*$": {
+              "$ref": "#/$defs/Artifact"
+            }
+          },
+          "propertyNames": {
+            "description": "A stable machine-readable manifest key.",
+            "minLength": 1
+          },
+          "title": "Artifacts",
+          "type": "object"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "description": "An upstream, tool, or package version.",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "title": "ComponentPin",
+      "type": "object"
+    },
+    "GitHubRepository": {
+      "additionalProperties": false,
+      "properties": {
+        "forge": {
+          "const": "github",
+          "title": "Forge",
+          "type": "string"
+        },
+        "name": {
+          "description": "A forge owner or repository path component.",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.-]+$",
+          "title": "Name",
+          "type": "string"
+        },
+        "owner": {
+          "description": "A forge owner or repository path component.",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.-]+$",
+          "title": "Owner",
+          "type": "string"
+        }
+      },
+      "required": [
+        "forge",
+        "owner",
+        "name"
+      ],
+      "title": "GitHubRepository",
+      "type": "object"
+    },
+    "GitLabRepository": {
+      "additionalProperties": false,
+      "properties": {
+        "forge": {
+          "const": "gitlab",
+          "title": "Forge",
+          "type": "string"
+        },
+        "host": {
+          "description": "The GitLab host name.",
+          "format": "hostname",
+          "pattern": "^(?:[A-Za-z0-9-]+\\.)+[A-Za-z]{2,}$",
+          "title": "Host",
+          "type": "string"
+        },
+        "name": {
+          "description": "A forge owner or repository path component.",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.-]+$",
+          "title": "Name",
+          "type": "string"
+        },
+        "owner": {
+          "description": "A forge owner or repository path component.",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.-]+$",
+          "title": "Owner",
+          "type": "string"
+        }
+      },
+      "required": [
+        "forge",
+        "host",
+        "owner",
+        "name"
+      ],
+      "title": "GitLabRepository",
+      "type": "object"
+    },
+    "Repository": {
+      "discriminator": {
+        "mapping": {
+          "github": "#/$defs/GitHubRepository",
+          "gitlab": "#/$defs/GitLabRepository"
+        },
+        "propertyName": "forge"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/GitHubRepository"
+        },
+        {
+          "$ref": "#/$defs/GitLabRepository"
+        }
+      ]
+    },
+    "SourceRecord": {
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "revision"
+          ]
+        },
+        {
+          "required": [
+            "version"
+          ]
+        },
+        {
+          "required": [
+            "tracking"
+          ]
+        },
+        {
+          "properties": {
+            "variants": {
+              "minProperties": 1
+            }
+          },
+          "required": [
+            "variants"
+          ]
+        }
+      ],
+      "description": "A pinned or explicitly tracked upstream source.",
+      "properties": {
+        "artifacts": {
+          "description": "Named immutable downloads.",
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9_-]*$": {
+              "$ref": "#/$defs/Artifact"
+            }
+          },
+          "propertyNames": {
+            "description": "A stable machine-readable manifest key.",
+            "minLength": 1
+          },
+          "title": "Artifacts",
+          "type": "object"
+        },
+        "components": {
+          "description": "Named tool or package components used by this source.",
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9_-]*$": {
+              "$ref": "#/$defs/ComponentPin"
+            }
+          },
+          "propertyNames": {
+            "description": "A stable machine-readable manifest key.",
+            "minLength": 1
+          },
+          "title": "Components",
+          "type": "object"
+        },
+        "hashes": {
+          "description": "Named content digests for consumer-specific fetchers.",
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9_-]*$": {
+              "description": "A hexadecimal or SRI SHA-256 digest.",
+              "pattern": "^(?:[0-9a-f]{64}|sha256-[A-Za-z0-9+/]{43}=)$",
+              "type": "string"
+            }
+          },
+          "propertyNames": {
+            "description": "A stable machine-readable manifest key.",
+            "minLength": 1
+          },
+          "title": "Hashes",
+          "type": "object"
+        },
+        "repository": {
+          "$ref": "#/$defs/Repository"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "description": "An immutable commit, tag, or release revision.",
+              "minLength": 1,
+              "pattern": "^\\S+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        },
+        "tracking": {
+          "anyOf": [
+            {
+              "enum": [
+                "default-branch",
+                "latest-release"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "An intentional rolling update policy for consumers that resolve upstream state at runtime.",
+          "title": "Tracking"
+        },
+        "variants": {
+          "description": "Named source variants with their own complete records.",
+          "patternProperties": {
+            "^[a-z0-9][a-z0-9_-]*$": {
+              "$ref": "#/$defs/SourceRecord"
+            }
+          },
+          "propertyNames": {
+            "description": "A stable machine-readable manifest key.",
+            "minLength": 1
+          },
+          "title": "Variants",
+          "type": "object"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "description": "An upstream, tool, or package version.",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "repository"
+      ],
+      "title": "SourceRecord",
+      "type": "object"
+    }
+  },
+  "$id": "https://raw.githubusercontent.com/4evy/dotfiles/main/manifests/sources.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Catalog of generic upstream records governed by a local format contract.",
+  "properties": {
+    "$schema": {
+      "const": "./sources.schema.json",
+      "description": "The editor and validation schema for this manifest.",
+      "title": "$Schema",
+      "type": "string"
+    },
+    "format_version": {
+      "const": 2,
+      "description": "Revision of this repository's source-catalog contract; this is not the JSON Schema dialect version.",
+      "title": "Format Version",
+      "type": "integer"
+    },
+    "sources": {
+      "description": "Source records keyed by their stable consumer-facing name.",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[a-z0-9][a-z0-9_-]*$": {
+          "$ref": "#/$defs/SourceRecord"
+        }
+      },
+      "propertyNames": {
+        "description": "A stable machine-readable manifest key.",
+        "minLength": 1
+      },
+      "title": "Sources",
+      "type": "object"
+    }
+  },
+  "required": [
+    "$schema",
+    "format_version",
+    "sources"
+  ],
+  "title": "SourceCatalog",
+  "type": "object"
+}

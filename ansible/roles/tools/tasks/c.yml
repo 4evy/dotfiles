@@ -1,0 +1,59 @@
+---
+- name: Configure repo-local C23 commands
+  ansible.builtin.command:
+    argv:
+      - meson
+      - setup
+      - "{{ item.build_dir }}"
+      - --wipe
+      - "--prefix={{ dotfiles_home_dir }}/.local"
+    chdir: "{{ dotfiles_repo_root }}/{{ item.source_dir }}"
+  environment:
+    PATH: "{{ bootstrap_homebrew_path | default(dotfiles_path) }}"
+  changed_when: true
+  loop: "{{ tools_c_tools }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: platform_system in item.platforms
+  tags:
+    - repo-tools
+    - c
+
+- name: Build repo-local C23 commands
+  ansible.builtin.command:
+    argv:
+      - meson
+      - compile
+      - -C
+      - "{{ item.build_dir }}"
+    chdir: "{{ dotfiles_repo_root }}/{{ item.source_dir }}"
+  environment:
+    PATH: "{{ bootstrap_homebrew_path | default(dotfiles_path) }}"
+  changed_when: true
+  loop: "{{ tools_c_tools }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: platform_system in item.platforms
+  tags:
+    - repo-tools
+    - c
+
+- name: Install repo-local C23 commands
+  ansible.builtin.command:
+    argv:
+      - meson
+      - install
+      - -C
+      - "{{ item.build_dir }}"
+      - --no-rebuild
+    chdir: "{{ dotfiles_repo_root }}/{{ item.source_dir }}"
+  environment:
+    PATH: "{{ bootstrap_homebrew_path | default(dotfiles_path) }}"
+  changed_when: true
+  loop: "{{ tools_c_tools }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: platform_system in item.platforms
+  tags:
+    - repo-tools
+    - c

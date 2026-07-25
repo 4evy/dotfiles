@@ -1,0 +1,187 @@
+---
+- name: Configure macOS defaults
+  community.general.osx_defaults:
+    domain: "{{ item.domain }}"
+    key: "{{ item.key }}"
+    type: "{{ item.type }}"
+    value: "{{ item.value }}"
+    state: present
+  loop: "{{ system_macos_defaults }}"
+  loop_control:
+    label: "{{ item.domain }}:{{ item.key }}"
+  notify: Restart applications affected by macOS defaults
+  tags:
+    - host
+    - macos
+
+- name: Register Homebrew Zsh as a macOS login shell
+  ansible.builtin.lineinfile:
+    path: /etc/shells
+    line: /opt/homebrew/bin/zsh
+    state: present
+  become: true
+  tags:
+    - host
+    - macos
+
+- name: Configure the macOS account login shell
+  ansible.builtin.user:
+    name: >-
+      {{ ansible_facts.get('user_id',
+         ansible_facts.get('ansible_user_id', lookup('env', 'USER'))) }}
+    shell: /opt/homebrew/bin/zsh
+  become: true
+  tags:
+    - host
+    - macos
+
+- name: Ensure macOS dotfiles application support directory exists
+  ansible.builtin.file:
+    path: /Library/Application Support/dotfiles
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+  become: true
+  tags:
+    - host
+    - macos
+    - tailscale
+
+- name: Detect system Tailscale service definition
+  ansible.builtin.stat:
+    path: /Library/LaunchDaemons/homebrew.mxcl.tailscale.plist
+  register: system_tailscale_system_service
+  tags:
+    - host
+    - macos
+    - tailscale
+
+- name: Install Tailscale as a system launch daemon
+  ansible.builtin.command:
+    argv:
+      - /opt/homebrew/bin/brew
+      - services
+      - start
+      - tailscale
+  environment:
+    PATH: /opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin
+  become: true
+  register: system_tailscale_system_service_install
+  changed_when: >-
+    'Successfully started' in system_tailscale_system_service_install.stdout
+  when: not system_tailscale_system_service.stat.exists
+  tags:
+    - host
+    - macos
+    - tailscale
+
+- name: Ensure the Tailscale system launch daemon is running
+  community.general.launchd:
+    name: homebrew.mxcl.tailscale
+    enabled: true
+    state: started
+  become: true
+  tags:
+    - host
+    - macos
+    - tailscale
+
+- name: Wait for the Tailscale daemon socket
+  ansible.builtin.wait_for:
+    path: /var/run/tailscaled.socket
+    state: present
+    timeout: 15
+  tags:
+    - host
+    - macos
+    - tailscale
+
+- name: Install Tailscale SSH launch daemon helper
+  ansible.builtin.template:
+    src: macos/tailscale-ssh-helper.py.in
+    dest: /Library/Application Support/dotfiles/tailscale-ssh.py
+    owner: root
+    group: wheel
+    mode: "0755"
+    variable_start_string: "@"
+    variable_end_string: "@"
+  vars:
+    system_python_bin: "{{ dotfiles_bin_dir }}/python3.14"
+    system_tailscale_bin: /opt/homebrew/bin/tailscale
+  become: true
+  register: system_tailscale_ssh_helper_result
+  tags:
+    - host
+    - macos
+    - tailscale
+
+- name: Install Tailscale SSH launch daemon definition
+  ansible.builtin.template:
+    src: macos/tailscale-ssh.plist.in
+    dest: /Library/LaunchDaemons/dev.4evy.tailscale-ssh.plist
+    owner: root
+    group: wheel
+    mode: "0644"
+    variable_start_string: "@"
+    variable_end_string: "@"
+  vars:
+    system_tailscale_ssh_label: dev.4evy.tailscale-ssh
+    system_tailscale_ssh_helper: /Library/Application Support/dotfiles/tailscale-ssh.py
+    system_python_bin: "{{ dotfiles_bin_dir }}/python3.14"
+  register: system_tailscale_ssh_plist
+  become: true
+  tags:
+    - host
+    - macos
+    - tailscale
+
+- name: Configure Tailscale SSH launch daemon on macOS
+  community.general.launchd:
+    name: dev.4evy.tailscale-ssh
+    enabled: true
+    state: >-
+      {{
+        'restarted'
+        if system_tailscale_ssh_helper_result is changed
+        or system_tailscale_ssh_plist is changed
+        else 'started'
+      }}
+  become: true
+  tags:
+    - host
+    - macos
+    - tailscale
+
+- name: Configure Karabiner VirtualHID driver on macOS
+  dotfiles_operation:
+    executable: "{{ dotfiles_bin_dir }}/dotfiles-scripts"
+    command:
+      - macos
+      - karabiner-vhid
+    context: "{{ dotfiles_automation_context }}"
+    chdir: "{{ dotfiles_repo_root }}"
+    environment:
+      PATH: "{{ bootstrap_homebrew_path }}"
+  become: true
+  tags:
+    - host
+    - kanata
+    - macos
+
+- name: Configure Kanata launch daemons on macOS
+  dotfiles_operation:
+    executable: "{{ dotfiles_bin_dir }}/dotfiles-scripts"
+    command:
+      - macos
+      - kanata
+      - "{{ dotfiles_repo_root }}/dotfiles/dot_config/kanata/kanata-macos.kbd"
+    context: "{{ dotfiles_automation_context }}"
+    chdir: "{{ dotfiles_repo_root }}"
+    environment:
+      PATH: "{{ bootstrap_homebrew_path }}"
+  become: true
+  tags:
+    - host
+    - kanata
+    - macos

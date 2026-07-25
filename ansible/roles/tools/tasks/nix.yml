@@ -1,0 +1,207 @@
+---
+- name: Detect Nix
+  ansible.builtin.command:
+    argv:
+      - /bin/sh
+      - -c
+      - command -v "$1"
+      - dotfiles-nix-command
+      - nix
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  environment:
+    PATH: "{{ tools_nix_path }}"
+  register: tools_nix_command
+  tags:
+    - nix
+
+- name: Check Nix root mountpoint
+  ansible.builtin.stat:
+    path: /nix
+  register: tools_nix_root
+  when: platform_has_rpm_ostree
+  tags:
+    - nix
+
+- name: Gather root filesystem mount facts
+  ansible.builtin.mount_facts:
+    sources:
+      - dynamic
+    timeout: 10
+  when:
+    - platform_has_rpm_ostree
+    - tools_nix_command.rc != 0
+  tags:
+    - nix
+
+- name: Require Nix mountpoint on composefs ostree hosts
+  ansible.builtin.fail:
+    msg: >-
+      This ostree host uses composefs, so /nix must exist in the booted image
+      before Determinate Nix can bind-mount it. Rebuild and boot the Spectrum
+      image that includes the /nix mountpoint, then rerun this playbook without
+      sudo after pre-authenticating with sudo -v.
+  when:
+    - platform_has_rpm_ostree
+    - tools_nix_command.rc != 0
+    - ansible_facts.mount_points.get('/', {}).get('fstype', '') == 'composefs'
+    - not tools_nix_root.stat.exists | default(false)
+  tags:
+    - nix
+
+- name: Detect system-runner sudo access for Nix install
+  ansible.builtin.command:
+    argv:
+      - sudo
+      - -n
+      - "{{ dotfiles_bin_dir }}/system-runner"
+      - id
+      - -u
+  changed_when: false
+  failed_when: false
+  register: tools_nix_system_runner_sudo
+  when:
+    - platform_is_linux
+    - tools_nix_command.rc != 0
+  tags:
+    - nix
+
+- name: Require system-runner sudo access for Nix install
+  ansible.builtin.fail:
+    msg: >-
+      Installing Determinate Nix requires passwordless sudo access to
+      {{ dotfiles_bin_dir }}/system-runner. Run the bootstrap/setup path that
+      installs the system-runner sudoers entry, then rerun this playbook as your
+      normal user.
+  when:
+    - platform_is_linux
+    - tools_nix_command.rc != 0
+    - tools_nix_system_runner_sudo.rc | default(1) != 0
+  tags:
+    - nix
+
+- name: Ensure Nix installer cache directory exists
+  ansible.builtin.file:
+    path: "{{ dotfiles_cache_dir }}/installers"
+    state: directory
+    mode: "0755"
+  when: tools_nix_command.rc != 0
+  tags:
+    - nix
+
+- name: Download Nix installer
+  ansible.builtin.get_url:
+    url: "{{ tools_nix_installer_url }}"
+    dest: "{{ dotfiles_cache_dir }}/installers/nix-installer.sh"
+    checksum: "{{ tools_nix_installer_checksum | default(omit) }}"
+    mode: "0755"
+  when: tools_nix_command.rc != 0
+  tags:
+    - nix
+
+- name: Install Determinate Nix on Linux
+  ansible.builtin.command:
+    argv:
+      - sudo
+      - -n
+      - "{{ dotfiles_bin_dir }}/system-runner"
+      - --env
+      - NIX_INSTALLER_NO_CONFIRM=true
+      - --
+      - /bin/sh
+      - "{{ dotfiles_cache_dir }}/installers/nix-installer.sh"
+      - install
+      - "{{ 'ostree' if platform_has_rpm_ostree else 'linux' }}"
+      - --no-confirm
+      - --no-modify-profile
+  args:
+    creates: "{{ tools_nix_bin }}"
+  when:
+    - platform_is_linux
+    - tools_nix_command.rc != 0
+  tags:
+    - nix
+
+- name: Install upstream Nix with the NixOS installer on macOS
+  ansible.builtin.command:
+    argv:
+      - /bin/sh
+      - "{{ dotfiles_cache_dir }}/installers/nix-installer.sh"
+      - install
+      - macos
+      - --enable-flakes
+      - --no-confirm
+      - --no-modify-profile
+  args:
+    creates: "{{ tools_nix_bin }}"
+  become: true
+  when:
+    - platform_is_macos
+    - tools_nix_command.rc != 0
+  tags:
+    - nix
+
+- name: Check default Nix binary
+  ansible.builtin.stat:
+    path: "{{ tools_nix_bin }}"
+  register: tools_nix_default_bin
+  tags:
+    - nix
+
+- name: Select Nix binary
+  ansible.builtin.set_fact:
+    tools_nix_command_bin: >-
+      {{
+        tools_nix_bin
+        if tools_nix_default_bin.stat.executable | default(false)
+        else 'nix'
+      }}
+  tags:
+    - nix
+
+- name: Detect Nix profile tools
+  ansible.builtin.command:
+    argv:
+      - /bin/sh
+      - -c
+      - |
+        command -v "$1" >/dev/null 2>&1 \
+          || test -e "$2" \
+          || test -e "$3"
+      - dotfiles-nix-profile-tool
+      - "{{ item.bin }}"
+      - "{{ dotfiles_home_dir }}/.nix-profile/bin/{{ item.bin }}"
+      - "/run/current-system/sw/bin/{{ item.bin }}"
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  environment:
+    PATH: "{{ tools_nix_path }}"
+  register: tools_nix_profile_tool_commands
+  loop: "{{ tools_nix_profile_packages }}"
+  loop_control:
+    label: "{{ item.bin }}"
+  tags:
+    - nix
+
+- name: Install Nix profile tools
+  ansible.builtin.command:
+    argv:
+      - "{{ tools_nix_command_bin }}"
+      - profile
+      - install
+      - "{{ item.item.source | default('nixpkgs#' ~ item.item.package) }}"
+  environment:
+    PATH: "{{ tools_nix_path }}"
+  changed_when: true
+  loop: >-
+    {{
+      tools_nix_profile_tool_commands.results
+      | selectattr('rc', 'ne', 0)
+      | list
+    }}
+  loop_control:
+    label: "{{ item.item.package }}"
+  tags:
+    - nix

@@ -1,0 +1,16 @@
+---
+- name: Download upstream script commands
+  ansible.builtin.get_url:
+    url: "{{ item.url }}"
+    dest: "{{ item.dest }}"
+    checksum: "{{ item.checksum | default(omit) }}"
+    mode: "0755"
+    force: true
+  loop: "{{ tools_upstream_script_tools | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: platform_system in item.platforms
+  tags:
+    - repo-tools
+    - scripts
+    - upstream

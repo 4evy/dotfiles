@@ -1,0 +1,44 @@
+---
+- name: Ensure local bin and cache directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ dotfiles_bin_dir }}"
+    - "{{ dotfiles_cache_dir }}"
+    - "{{ dotfiles_data_dir }}"
+  tags:
+    - platform
+
+- name: Set operating system facts
+  ansible.builtin.set_fact:
+    platform_system: "{{ ansible_facts.system }}"
+    platform_architecture: "{{ ansible_facts.architecture }}"
+    platform_is_macos: "{{ ansible_facts.system == 'Darwin' }}"
+    platform_is_linux: "{{ ansible_facts.system == 'Linux' }}"
+    platform_is_nixos: >-
+      {{
+        ansible_facts.system == 'Linux'
+        and ansible_facts.distribution == 'NixOS'
+      }}
+  tags:
+    - platform
+
+- name: Detect rpm-ostree
+  ansible.builtin.stat:
+    path: /usr/bin/rpm-ostree
+  register: platform_rpm_ostree_binary
+  when: platform_is_linux
+  tags:
+    - platform
+
+- name: Detect package managers
+  ansible.builtin.set_fact:
+    platform_has_rpm_ostree: >-
+      {{
+        platform_is_linux
+        and platform_rpm_ostree_binary.stat.executable | default(false)
+      }}
+  tags:
+    - platform

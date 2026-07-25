@@ -1,7 +1,0 @@
----
-ancestor: null
-releases:
-  0.1.0:
-    changes:
-      release_summary: Initial internal operation adapter for 4evy's dotfiles.
-    release_date: "2026-07-09"

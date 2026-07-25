@@ -7,11 +7,13 @@
 # external command it relies on.
 set -eu
 
-bootstrap_playbook=ansible/playbooks/bootstrap.yml
+site_playbook=ansible/site.yml
 ansible_requirements=ansible/requirements.yml
 ansible_collections_path=.ansible/collections
 homebrew_installer_url=https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
 homebrew_installer_checksum=${HOMEBREW_INSTALLER_CHECKSUM-}
+ansible_tool_spec='ansible>=14,<15'
+ansible_lint_tool_spec='ansible-lint>=26,<27'
 
 die() {
 	printf 'error: %s\n' "$*" >&2
@@ -283,11 +285,57 @@ export PATH
 export HOMEBREW_NO_ASK
 
 unset HOMEBREW_NO_INSTALL_UPGRADE
-"$homebrew_bin" install ansible
-ansible_galaxy_bin=$homebrew_prefix/bin/ansible-galaxy
-ansible_playbook_bin=$homebrew_prefix/bin/ansible-playbook
+"$homebrew_bin" install uv
+uv_bin=$homebrew_prefix/bin/uv
+if [ ! -x "$uv_bin" ]; then
+	die "Homebrew did not create uv at $uv_bin"
+fi
+
+# Leave the OS-owned bootstrap interpreter behind immediately. In particular,
+# never use Apple's /usr/bin/python3 (currently 3.9) for repository code.
+user_bin_dir=$HOME/.local/bin
+mkdir -p "$user_bin_dir"
+UV_PYTHON_BIN_DIR=$user_bin_dir
+UV_PYTHON_PREFERENCE=only-managed
+export UV_PYTHON_BIN_DIR
+export UV_PYTHON_PREFERENCE
+"$uv_bin" python install 3.14
+python314_bin=$user_bin_dir/python3.14
+if ! "$python314_bin" -c 'import sys; raise SystemExit(sys.version_info[:2] != (3, 14))'; then
+	die "uv did not provide Python 3.14"
+fi
+
+for python_alias in python python3; do
+	if [ ! -e "$user_bin_dir/$python_alias" ] &&
+		[ ! -L "$user_bin_dir/$python_alias" ]; then
+		ln -s python3.14 "$user_bin_dir/$python_alias"
+	fi
+done
+
+UV_TOOL_BIN_DIR=$user_bin_dir
+export UV_TOOL_BIN_DIR
+"$uv_bin" tool install \
+	--python 3.14 \
+	--force \
+	--compile-bytecode \
+	--with-executables-from ansible-core \
+	"$ansible_tool_spec"
+"$uv_bin" tool install \
+	--python 3.14 \
+	--force \
+	--compile-bytecode \
+	"$ansible_lint_tool_spec"
+
+PATH=$user_bin_dir:$homebrew_path
+export PATH
+ansible_galaxy_bin=$user_bin_dir/ansible-galaxy
+ansible_playbook_bin=$user_bin_dir/ansible-playbook
 if [ ! -x "$ansible_galaxy_bin" ] || [ ! -x "$ansible_playbook_bin" ]; then
-	die "Homebrew did not create Ansible commands under $homebrew_prefix/bin"
+	die "uv did not create Ansible commands under $user_bin_dir"
+fi
+if ! "$ansible_playbook_bin" --version |
+	grep 'python version = 3\.14\.' >/dev/null; then
+	die "uv Ansible is not running on Python 3.14"
 fi
 
 if [ "$kernel_name" = Darwin ] &&
@@ -299,9 +347,7 @@ fi
 cd "$repo_dir"
 install_ansible_collections "$ansible_galaxy_bin"
 
-set -- \
-	"$bootstrap_playbook" \
-	"$@"
+set -- "$site_playbook" "$@"
 if needs_ansible_become_prompt "$@"; then
 	set -- --ask-become-pass "$@"
 elif ! has_ansible_become_prompt_arg "$@" &&

@@ -24,3 +24,10 @@ def test_merge_gvariant_string_list_handles_prefix_and_duplicates() -> None:
 
 def test_merge_gvariant_string_list_recovers_from_invalid_value() -> None:
     assert _merge_filter()("not valid", "/custom/emoji/") == repr(["/custom/emoji/"])
+
+
+def test_merge_gvariant_string_list_discards_non_string_items() -> None:
+    merge = _merge_filter()
+
+    assert merge("['keep', 1, None, True]", "new") == repr(["keep", "new"])
+    assert merge("@as ('tuple',)", "new") == repr(["new"])

@@ -1,0 +1,69 @@
+---
+desktop_hyper_window_tiling_package: >-
+  {{ dotfiles_repo_root }}/packages/hyper-window-tiling
+desktop_hyper_window_tiling_metadata: >-
+  {{
+    lookup(
+      'file',
+      desktop_hyper_window_tiling_package ~ '/gnome/metadata.json'
+    )
+    | from_json
+  }}
+desktop_hyper_window_tiling_uuid: >-
+  {{ desktop_hyper_window_tiling_metadata.uuid }}
+desktop_hyper_window_tiling_gnome_dir: >-
+  {{
+    dotfiles_data_home ~ '/gnome-shell/extensions/'
+    ~ desktop_hyper_window_tiling_uuid
+  }}
+desktop_hyper_window_tiling_gnome_keys:
+  - key: move-up
+    value: "['<Super><Control><Alt><Shift>w']"
+  - key: move-left
+    value: "['<Super><Control><Alt><Shift>a']"
+  - key: move-down
+    value: "['<Super><Control><Alt><Shift>s']"
+  - key: move-right
+    value: "['<Super><Control><Alt><Shift>d']"
+  - key: move-max-almost
+    value: "['<Super><Control><Alt><Shift>Return']"
+  - key: move-max
+    value: "['<Super><Control><Alt><Shift>backslash']"
+desktop_hyper_window_tiling_kwin_dirs:
+  - "{{ dotfiles_data_home }}/kwin/scripts/hyper-window-tiling"
+  - "{{ dotfiles_data_home }}/kwin-wayland/scripts/hyper-window-tiling"
+
+desktop_sushi_app_id: >-
+  {{
+    lookup('env', 'SUSHI_PREVIEW_APP_ID')
+    | default('org.gnome.NautilusPreviewer', true)
+  }}
+desktop_sushi_profile: >-
+  {{ lookup('env', 'SUSHI_PREVIEW_PROFILE') | default('default', true) }}
+desktop_sushi_revision: >-
+  {{
+    lookup('env', 'SUSHI_PREVIEW_REV')
+    | default(dotfiles_sources.sushi.revision, true)
+  }}
+desktop_sushi_repository: >-
+  {{
+    lookup('env', 'SUSHI_PREVIEW_REPO')
+    | default(
+        'https://github.com/'
+        ~ dotfiles_sources.sushi.repository.owner
+        ~ '/'
+        ~ dotfiles_sources.sushi.repository.name
+        ~ '.git',
+        true
+      )
+  }}
+desktop_sushi_cache_root: >-
+  {{ dotfiles_cache_home }}/dotfiles/sushi-preview-flatpak
+desktop_sushi_source_dir: "{{ desktop_sushi_cache_root }}/source"
+desktop_sushi_build_dir: "{{ desktop_sushi_cache_root }}/build"
+desktop_sushi_builder_state_dir: >-
+  {{ desktop_sushi_cache_root }}/flatpak-builder-state
+desktop_sushi_upstream_manifest: >-
+  {{ desktop_sushi_source_dir }}/flatpak/org.gnome.NautilusPreviewer.json
+desktop_sushi_manifest: >-
+  {{ desktop_sushi_source_dir }}/flatpak/org.gnome.NautilusPreviewer.dotfiles.json

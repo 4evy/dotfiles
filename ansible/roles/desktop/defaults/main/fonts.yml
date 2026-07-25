@@ -1,0 +1,24 @@
+---
+desktop_nerd_font_archive_url: >-
+  https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
+desktop_nerd_font_archive: "{{ dotfiles_cache_dir }}/JetBrainsMono.zip"
+desktop_nerd_font_dir: >-
+  {{ dotfiles_data_home }}/fonts/JetBrainsMonoNerdFont
+
+desktop_color_emoji_font_url: >-
+  https://raw.githubusercontent.com/googlefonts/noto-emoji/main/fonts/NotoColorEmoji.ttf
+desktop_color_emoji_font_dir: >-
+  {{ dotfiles_data_home }}/fonts/NotoColorEmoji
+desktop_color_emoji_font_file: >-
+  {{ desktop_color_emoji_font_dir }}/NotoColorEmoji.ttf
+
+desktop_font_settings:
+  - key: font-name
+    path: /org/gnome/desktop/interface/font-name
+    value: "'Noto Sans 11'"
+  - key: document-font-name
+    path: /org/gnome/desktop/interface/document-font-name
+    value: "'Noto Sans 12'"
+  - key: monospace-font-name
+    path: /org/gnome/desktop/interface/monospace-font-name
+    value: "'JetBrainsMono Nerd Font Mono 11'"

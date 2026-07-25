@@ -1,0 +1,48 @@
+#!@PYTHON@
+from __future__ import annotations
+
+import contextlib
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+INSTALL_ROOT = Path(@INSTALL_ROOT@)
+
+
+def main() -> int:
+    state = Path(
+        os.environ.setdefault(
+            "GHIDRA_MCP_STATE",
+            os.fspath(Path.home() / ".local/state/ghidra-mcp-headless"),
+        )
+    )
+    state.mkdir(parents=True, exist_ok=True)
+    processes: list[subprocess.Popen[bytes]] = []
+    try:
+        help_requested = any(argument in {"-h", "--help"} for argument in sys.argv[1:])
+        if os.environ.get("GHIDRA_MCP_START_HTTPD", "1") != "0" and not help_requested:
+            log_path = Path(os.environ.get("GHIDRA_MCP_HTTPD_LOG", state / "httpd.log"))
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            log = log_path.open("ab")
+            processes.append(
+                subprocess.Popen(
+                    (INSTALL_ROOT / "bin/ghidra-mcp-httpd",), stdout=log, stderr=log
+                )
+            )
+        bridge = subprocess.Popen(
+            (INSTALL_ROOT / "bin/ghidra-mcp-bridge", *sys.argv[1:])
+        )
+        processes.append(bridge)
+        return bridge.wait()
+    finally:
+        for process in reversed(processes):
+            if process.poll() is None:
+                process.terminate()
+        for process in reversed(processes):
+            with contextlib.suppress(subprocess.TimeoutExpired):
+                process.wait(timeout=5)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

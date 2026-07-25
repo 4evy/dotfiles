@@ -1,0 +1,41 @@
+abi <abi/4.0>,
+include <tunables/global>
+
+profile dotfiles-rustdesk /usr/bin/rustdesk flags=(default_allow) {
+  capability,
+  network,
+  dbus,
+  unix,
+  signal,
+  ptrace,
+  /dev/uinput rw,
+  /dev/input/** rw,
+  /run/user/*/bus rw,
+  /run/user/*/pipewire-0 rw,
+  /run/user/*/wayland-* rw,
+  /tmp/.X11-unix/* rw,
+  /usr/share/rustdesk/** rix,
+  owner @{HOME}/.config/rustdesk/** rwk,
+  owner @{HOME}/.local/share/rustdesk/** rwk,
+  include if exists <local/dotfiles-rustdesk>
+}
+
+profile dotfiles-rustdesk-share /usr/share/rustdesk/rustdesk flags=(default_allow) {
+  capability,
+  network,
+  dbus,
+  unix,
+  signal,
+  ptrace,
+  /dev/uinput rw,
+  /dev/input/** rw,
+  /run/user/*/bus rw,
+  /run/user/*/pipewire-0 rw,
+  /run/user/*/wayland-* rw,
+  /tmp/.X11-unix/* rw,
+  /usr/bin/rustdesk rix,
+  /usr/share/rustdesk/** rix,
+  owner @{HOME}/.config/rustdesk/** rwk,
+  owner @{HOME}/.local/share/rustdesk/** rwk,
+  include if exists <local/dotfiles-rustdesk-share>
+}

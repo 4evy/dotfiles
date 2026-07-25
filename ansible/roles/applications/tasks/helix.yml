@@ -9,18 +9,18 @@
     - "{{ applications_helix_install_prefix }}"
     - "{{ applications_helix_install_prefix }}/libexec"
   tags:
-    - apps
+    - applications
     - helix
 
 - name: Check out pinned Helix source
   ansible.builtin.git:
-    repo: https://github.com/helix-editor/helix.git
+    repo: "{{ applications_helix_repository }}"
     dest: "{{ applications_helix_source_dir }}"
     version: "{{ applications_helix_revision }}"
     force: true
   register: applications_helix_source
   tags:
-    - apps
+    - applications
     - helix
 
 - name: Check installed Helix executable
@@ -28,7 +28,7 @@
     path: "{{ applications_helix_executable }}"
   register: applications_helix_installed
   tags:
-    - apps
+    - applications
     - helix
 
 - name: Check installed Helix runtime
@@ -36,7 +36,7 @@
     path: "{{ applications_helix_runtime_dir }}"
   register: applications_helix_runtime
   tags:
-    - apps
+    - applications
     - helix
 
 - name: Remove stale Helix runtime before rebuild
@@ -50,7 +50,7 @@
       or not applications_helix_installed.stat.executable | default(false)
       or not applications_helix_runtime.stat.isdir | default(false)
   tags:
-    - apps
+    - applications
     - helix
 
 - name: Build pinned Helix executable
@@ -78,7 +78,7 @@
       or not applications_helix_installed.stat.executable | default(false)
       or not applications_helix_runtime.stat.isdir | default(false)
   tags:
-    - apps
+    - applications
     - helix
 
 - name: Install pinned Helix runtime
@@ -94,7 +94,7 @@
       or not applications_helix_installed.stat.executable | default(false)
       or not applications_helix_runtime.stat.isdir | default(false)
   tags:
-    - apps
+    - applications
     - helix
 
 - name: Remove Helix grammar source checkouts from installed runtime
@@ -108,7 +108,7 @@
       or not applications_helix_installed.stat.executable | default(false)
       or not applications_helix_runtime.stat.isdir | default(false)
   tags:
-    - apps
+    - applications
     - helix
 
 - name: Check staged Helix executable
@@ -116,7 +116,7 @@
     path: "{{ applications_helix_executable }}"
   register: applications_helix_staged
   tags:
-    - apps
+    - applications
     - helix
 
 - name: Require staged Helix executable
@@ -128,5 +128,5 @@
       {{ applications_helix_executable }}.
   when: not ansible_check_mode
   tags:
-    - apps
+    - applications
     - helix

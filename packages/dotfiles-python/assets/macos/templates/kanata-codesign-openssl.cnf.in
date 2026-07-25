@@ -1,0 +1,12 @@
+[ req ]
+distinguished_name = dn
+x509_extensions = v3_req
+prompt = no
+
+[ dn ]
+CN = @identity@
+
+[ v3_req ]
+keyUsage = critical, digitalSignature
+extendedKeyUsage = codeSigning
+basicConstraints = critical, CA:false

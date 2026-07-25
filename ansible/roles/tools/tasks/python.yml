@@ -1,0 +1,14 @@
+---
+- name: Link conventional Python command names to uv wrappers
+  ansible.builtin.file:
+    src: "{{ dotfiles_bin_dir }}/dotfiles-{{ item }}"
+    dest: "{{ dotfiles_bin_dir }}/{{ item }}"
+    state: link
+    force: true
+  loop:
+    - python
+    - python3
+  tags:
+    - repo-tools
+    - python
+    - scripts

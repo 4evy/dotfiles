@@ -1,0 +1,12 @@
+---
+- name: Load SOPS-managed private application settings
+  community.sops.load_vars:
+    file: "{{ dotfiles_repo_root }}/secrets/secrets.yaml"
+    name: applications_private_settings
+    expressions: ignore
+  no_log: true
+  when: platform_is_linux or platform_is_macos
+  tags:
+    - applications
+    - helium
+    - shottr

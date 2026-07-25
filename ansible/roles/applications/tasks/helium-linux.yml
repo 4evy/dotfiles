@@ -1,0 +1,96 @@
+---
+- name: Install Helium on Linux
+  dotfiles_operation:
+    executable: "{{ dotfiles_bin_dir }}/dotfiles-scripts"
+    command:
+      - apps
+      - install-helium-linux
+      - "{{ dotfiles_cache_dir }}/helium-browser"
+      - "{{ dotfiles_data_dir }}/helium-browser"
+      - "{{ dotfiles_bin_dir }}"
+      - "{{ dotfiles_cache_dir }}/helium-browser/installer-bin"
+      - "--flags={{ helium_linux_flags }}"
+    context: "{{ dotfiles_automation_context }}"
+    chdir: "{{ dotfiles_repo_root }}"
+    environment:
+      PATH: "{{ dotfiles_bin_dir }}:{{ dotfiles_path }}"
+      DOTFILES_HELIUM_COOKIE_ALLOWLIST: >-
+        {{
+          applications_private_settings['chromium-cookie-allowed-for-urls']
+          | default([])
+          | to_json
+        }}
+  no_log: true
+  vars:
+    helium_enabled_features:
+      - TouchpadOverscrollHistoryNavigation
+    helium_disabled_features:
+      - ExtensionManifestV2Unsupported
+      - ExtensionManifestV2Disabled
+      - BrowsingTopics
+      - InterestGroupStorage
+      - WaylandWpColorManagerV1
+    helium_platform_flags: >-
+      --no-first-run --no-default-browser-check --disable-search-engine-choice-screen
+      --extension-mime-request-handling=always-prompt-for-install
+      --omnibox-autocomplete-filtering=search --set-user-color=244,184,228
+      --set-color-scheme=dark --set-color-variant=tonal_spot
+    helium_linux_flags: >-
+      --ozone-platform=x11 --disable-gpu-process-crash-limit
+      --enable-gpu-rasterization
+      --enable-features={{ helium_enabled_features | join(',') }}
+      --disable-features={{ helium_disabled_features | join(',') }}
+      {{ helium_platform_flags }}
+  tags:
+    - applications
+    - helium
+
+- name: Detect AppArmor support for Helium on Linux
+  ansible.builtin.command:
+    argv:
+      - sh
+      - -c
+      - >-
+        test -r /sys/module/apparmor/parameters/enabled &&
+        grep -qi '^Y' /sys/module/apparmor/parameters/enabled &&
+        command -v apparmor_parser >/dev/null
+  changed_when: false
+  failed_when: false
+  register: applications_helium_apparmor
+  tags:
+    - applications
+    - helium
+
+- name: Install AppArmor profile for Helium archive install
+  ansible.builtin.copy:
+    dest: /etc/apparmor.d/dotfiles-helium-browser
+    mode: "0644"
+    content: |
+      abi <abi/4.0>,
+      include <tunables/global>
+
+      profile dotfiles-helium-browser "{{ dotfiles_data_dir }}/helium-browser/app/helium" flags=(default_allow) {
+        userns,
+        include if exists <local/dotfiles-helium-browser>
+      }
+  become: true
+  register: applications_helium_apparmor_profile
+  when: applications_helium_apparmor.rc | default(1) == 0
+  tags:
+    - applications
+    - helium
+
+- name: Reload AppArmor profile for Helium archive install
+  ansible.builtin.command:
+    argv:
+      - apparmor_parser
+      - -r
+      - /etc/apparmor.d/dotfiles-helium-browser
+  become: true
+  changed_when: applications_helium_apparmor_profile.changed
+  when:
+    - applications_helium_apparmor.rc | default(1) == 0
+    - applications_helium_apparmor_profile.changed | default(false)
+  tags:
+    - applications
+    - helium

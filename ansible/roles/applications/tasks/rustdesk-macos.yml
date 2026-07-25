@@ -1,0 +1,45 @@
+---
+- name: Link the RustDesk application command on macOS
+  ansible.builtin.file:
+    src: /Applications/RustDesk.app/Contents/MacOS/RustDesk
+    dest: "{{ dotfiles_bin_dir }}/rustdesk"
+    state: link
+    force: true
+  tags:
+    - rustdesk
+
+- name: Ensure RustDesk configuration directories exist on macOS
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ dotfiles_home_dir }}/Library/Preferences/com.carriez.RustDesk"
+    - "{{ dotfiles_home_dir }}/Library/LaunchAgents"
+  tags:
+    - rustdesk
+
+- name: Install RustDesk direct-access settings on macOS
+  ansible.builtin.copy:
+    src: rustdesk/RustDesk2.toml
+    dest: "{{ dotfiles_home_dir }}/Library/Preferences/com.carriez.RustDesk/RustDesk2.toml"
+    mode: "0644"
+  tags:
+    - rustdesk
+
+- name: Install RustDesk launch agent on macOS
+  ansible.builtin.copy:
+    src: rustdesk/com.carriez.RustDesk.plist
+    dest: "{{ dotfiles_home_dir }}/Library/LaunchAgents/com.carriez.RustDesk.plist"
+    mode: "0644"
+  register: applications_rustdesk_launch_agent
+  tags:
+    - rustdesk
+
+- name: Start the RustDesk launch agent on macOS
+  community.general.launchd:
+    name: com.carriez.RustDesk
+    enabled: true
+    state: "{{ 'restarted' if applications_rustdesk_launch_agent is changed else 'started' }}"
+  tags:
+    - rustdesk

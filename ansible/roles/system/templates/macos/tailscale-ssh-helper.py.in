@@ -1,0 +1,26 @@
+#!@system_python_bin@
+"""Enable Tailscale SSH after its macOS system extension becomes ready."""
+
+import subprocess
+import time
+
+ATTEMPTS = 30
+RETRY_DELAY_SECONDS = 2
+
+
+def main() -> int:
+    """Retry the idempotent Tailscale setting until the daemon is ready."""
+    for attempt in range(ATTEMPTS):
+        result = subprocess.run(
+            ("@system_tailscale_bin@", "set", "--ssh=true"),
+            check=False,
+        )
+        if result.returncode == 0:
+            return 0
+        if attempt < ATTEMPTS - 1:
+            time.sleep(RETRY_DELAY_SECONDS)
+    return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

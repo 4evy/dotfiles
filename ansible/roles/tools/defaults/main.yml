@@ -1,0 +1,74 @@
+---
+tools_c_tools:
+  - name: terminal-theme-tools
+    source_dir: packages/terminal-theme-tools
+    build_dir: build/terminal-theme-tools
+    bins:
+      - terminal-theme-run
+    platforms:
+      - Linux
+
+tools_homebrew_commands:
+  - terminal-theme-run
+
+tools_python_tools:
+  - dotfiles-scripts
+  - hyper-window-tiling-build
+  - install-ghidra-mcp
+  - system-runner
+
+tools_upstream_script_tools:
+  - name: yt-dlp-script
+    url: https://raw.githubusercontent.com/euvlok/pkgs/HEAD/pkgs/by-name/yt/yt-dlp-script/yt-dlp-script.sh
+    dest: "{{ dotfiles_bin_dir }}/yt-dlp-script"
+    platforms:
+      - Darwin
+      - Linux
+
+tools_bun_global_packages:
+  - package: "@openai/codex"
+    bin: codex
+  - package: "@earendil-works/pi-coding-agent"
+    bin: pi
+  - package: opencode-ai
+    bin: opencode
+
+tools_determinate_nix_installer_url: https://install.determinate.systems/nix
+tools_nixos_nix_installer_url: https://artifacts.nixos.org/nix-installer
+tools_nix_installer_url: >-
+  {{
+    tools_nixos_nix_installer_url
+    if platform_is_macos
+    else tools_determinate_nix_installer_url
+  }}
+tools_nix_bin: /nix/var/nix/profiles/default/bin/nix
+tools_nix_paths:
+  - "{{ tools_nix_bin | dirname }}"
+  - /run/current-system/sw/bin
+  - "{{ dotfiles_home_dir }}/.nix-profile/bin"
+  - "{{ bootstrap_homebrew_path | default(dotfiles_path) }}"
+tools_nix_path: "{{ tools_nix_paths | join(':') }}"
+tools_eupkgs_flake: github:euvlok/pkgs
+tools_nix_profile_packages:
+  - package: deadnix
+    bin: deadnix
+  - package: nh
+    bin: nh
+  - package: nil
+    bin: nil
+  - package: nix
+    bin: nix-instantiate
+  - package: nix-output-monitor
+    bin: nom
+  - package: nix-tree
+    bin: nix-tree
+  - package: nixd
+    bin: nixd
+  - package: nixfmt
+    bin: nixfmt
+  - package: pi-ssh-tools
+    bin: pi-ssh-tools
+    source: "{{ tools_eupkgs_flake }}#pi-ssh-tools"
+  - package: web-search-pi
+    bin: web-search-pi
+    source: "{{ tools_eupkgs_flake }}#web-search-pi"

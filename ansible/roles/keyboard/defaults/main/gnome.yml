@@ -1,0 +1,29 @@
+---
+keyboard_kanata_staged_binary: >-
+  {{ dotfiles_data_dir }}/host/bin-staging/kanata/root/bin/kanata
+keyboard_kanata_source_dir: "{{ dotfiles_cache_dir }}/sources/kanata"
+keyboard_kanata_repository: >-
+  https://github.com/{{ dotfiles_sources.kanata.repository.owner }}/{{
+    dotfiles_sources.kanata.repository.name
+  }}.git
+keyboard_kanata_install_root: >-
+  {{ dotfiles_data_dir }}/host/bin-staging/kanata/root
+keyboard_keep_input_remapper: >-
+  {{ lookup('env', 'DOTFILES_KEEP_INPUT_REMAPPER') == '1' }}
+
+keyboard_toshy_gnome_extension_origin: https://extensions.gnome.org
+keyboard_toshy_gnome_extension_cache: >-
+  {{ dotfiles_cache_home }}/dotfiles/gnome-extensions
+keyboard_toshy_gnome_extensions:
+  - uuid: focused-window-dbus@flexagoon.com
+    label: Focused Window D-Bus
+    window_context: true
+  - uuid: window-calls-extended@hseliger.eu
+    label: Window Calls Extended
+    window_context: true
+  - uuid: xremap@k0kubun.com
+    label: Xremap
+    window_context: true
+  - uuid: appindicatorsupport@rgcjonas.gmail.com
+    label: AppIndicator and KStatusNotifierItem Support
+    window_context: false

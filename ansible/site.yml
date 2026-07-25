@@ -1,0 +1,66 @@
+---
+- name: Configure the dotfiles workstation
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: 00 | Detect the platform and define shared paths
+      ansible.builtin.import_role:
+        name: platform
+      tags:
+        - always
+        - platform
+        - stage-00
+
+    - name: 10 | Bootstrap package managers and base tools
+      ansible.builtin.import_role:
+        name: bootstrap
+      when: not (platform_is_nixos | default(false) | bool)
+      tags:
+        - bootstrap
+        - stage-10
+        - userland
+
+    - name: 20 | Install command-line tools
+      ansible.builtin.import_role:
+        name: tools
+      when: not (platform_is_nixos | default(false) | bool)
+      tags:
+        - stage-20
+        - tools
+        - userland
+
+    - name: 30 | Install user applications
+      ansible.builtin.import_role:
+        name: applications
+      when: not (platform_is_nixos | default(false) | bool)
+      tags:
+        - applications
+        - stage-30
+        - userland
+
+    - name: 40 | Configure operating system services
+      ansible.builtin.import_role:
+        name: system
+      when: not (platform_is_nixos | default(false) | bool)
+      tags:
+        - host
+        - stage-40
+        - system
+
+    - name: 50 | Configure the desktop
+      ansible.builtin.import_role:
+        name: desktop
+      when: not (platform_is_nixos | default(false) | bool)
+      tags:
+        - desktop
+        - host
+        - stage-50
+
+    - name: 60 | Configure keyboard input
+      ansible.builtin.import_role:
+        name: keyboard
+      when: not (platform_is_nixos | default(false) | bool)
+      tags:
+        - host
+        - keyboard
+        - stage-60

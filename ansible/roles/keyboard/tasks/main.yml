@@ -1,0 +1,34 @@
+---
+- name: Configure Kanata
+  ansible.builtin.import_tasks: kanata.yml
+  when: platform_is_linux
+  tags:
+    - host
+    - keyboard
+    - kanata
+
+- name: Configure Toshy GNOME context
+  ansible.builtin.import_tasks: gnome-context.yml
+  when: platform_is_linux
+  tags:
+    - host
+    - keyboard
+    - toshy
+    - toshy-gnome-context
+
+- name: Configure the Toshy and Kanata device chain
+  ansible.builtin.import_tasks: toshy.yml
+  when: platform_is_linux
+  tags:
+    - host
+    - keyboard
+    - toshy
+
+- name: Verify the Toshy and Kanata device chain
+  ansible.builtin.import_tasks: verify.yml
+  when: platform_is_linux
+  tags:
+    - host
+    - keyboard
+    - kanata
+    - toshy

@@ -11,7 +11,6 @@
     signed_by: https://packages.microsoft.com/keys/microsoft.asc
     install_python_debian: true
   become: true
-  register: applications_vscode_apt_repository
   notify: Refresh apt cache
 
 - name: Apply pending apt repository cache refresh

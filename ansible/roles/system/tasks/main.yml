@@ -1,0 +1,33 @@
+---
+- name: Configure macOS system policy
+  ansible.builtin.import_tasks: macos.yml
+  when: platform_is_macos
+  tags:
+    - host
+    - macos
+    - system
+
+- name: Configure KMSCON virtual terminals
+  ansible.builtin.import_tasks: kmscon.yml
+  when: platform_is_linux
+  tags:
+    - host
+    - kmscon
+    - system
+
+- name: Configure system application integrations
+  ansible.builtin.import_tasks: integrations.yml
+  when: platform_is_linux
+  tags:
+    - host
+    - scripts
+    - system
+
+- name: Configure system services
+  ansible.builtin.import_tasks: services.yml
+  when: platform_is_linux
+  tags:
+    - host
+    - services
+    - slow-boot-services
+    - system

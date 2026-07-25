@@ -1,0 +1,119 @@
+---
+- name: Test the repository-local dotfiles operation module
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Create operation integration-test directory
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: dotfiles-operation-
+      register: operation_test_directory
+
+    - name: Exercise operation module
+      block:
+        - name: Install fake dotfiles protocol executable
+          ansible.builtin.template:
+            src: "{{ playbook_dir }}/../fixtures/fake-dotfiles-scripts.j2"
+            dest: "{{ operation_test_directory.path }}/dotfiles-scripts"
+            mode: "0755"
+
+        - name: Run fake operation in check mode
+          dotfiles_operation:
+            executable: "{{ operation_test_directory.path }}/dotfiles-scripts"
+            command: [host, test]
+            context:
+              repo_root: "{{ operation_test_directory.path }}"
+              home: "{{ operation_test_directory.path }}/home"
+            chdir: "{{ operation_test_directory.path }}"
+          check_mode: true
+          diff: true
+          register: operation_check
+
+        - name: Verify native check-mode result
+          ansible.builtin.assert:
+            that:
+              - operation_check is changed
+              - operation_check.msg == 'fake check'
+              - operation_check.data.command == ['host', 'test']
+              - operation_check.diff.before == 'old'
+              - operation_check.diff.after == 'new'
+
+        - name: Run fake operation normally
+          dotfiles_operation:
+            executable: "{{ operation_test_directory.path }}/dotfiles-scripts"
+            command: [host, test]
+            context:
+              repo_root: "{{ operation_test_directory.path }}"
+              home: "{{ operation_test_directory.path }}/home"
+            chdir: "{{ operation_test_directory.path }}"
+          register: operation_apply
+
+        - name: Verify native idempotent result
+          ansible.builtin.assert:
+            that:
+              - operation_apply is not changed
+              - operation_apply.msg == 'fake apply'
+              - operation_apply.data.home == operation_test_directory.path + '/home'
+
+        - name: Run operation with an invalid environment value
+          dotfiles_operation:
+            executable: "{{ operation_test_directory.path }}/dotfiles-scripts"
+            command: [host, test]
+            context:
+              repo_root: "{{ operation_test_directory.path }}"
+              home: "{{ operation_test_directory.path }}/home"
+            environment:
+              INVALID_VALUE: 1
+          register: operation_invalid_environment
+          ignore_errors: true
+
+        - name: Verify environment validation failure
+          ansible.builtin.assert:
+            that:
+              - operation_invalid_environment is failed
+              - >-
+                operation_invalid_environment.msg
+                == 'environment keys and values must be strings'
+
+        - name: Run operation with an empty command
+          dotfiles_operation:
+            executable: "{{ operation_test_directory.path }}/dotfiles-scripts"
+            command: []
+            context:
+              repo_root: "{{ operation_test_directory.path }}"
+              home: "{{ operation_test_directory.path }}/home"
+          register: operation_empty_command
+          ignore_errors: true
+
+        - name: Verify command validation failure
+          ansible.builtin.assert:
+            that:
+              - operation_empty_command is failed
+              - >-
+                operation_empty_command.msg
+                == 'command must contain at least one argument'
+
+        - name: Run operation that emits malformed JSON
+          dotfiles_operation:
+            executable: "{{ operation_test_directory.path }}/dotfiles-scripts"
+            command: [invalid-json]
+            context:
+              repo_root: "{{ operation_test_directory.path }}"
+              home: "{{ operation_test_directory.path }}/home"
+          register: operation_invalid_json
+          ignore_errors: true
+
+        - name: Verify malformed protocol response diagnostics
+          ansible.builtin.assert:
+            that:
+              - operation_invalid_json is failed
+              - operation_invalid_json.rc == 23
+              - operation_invalid_json.stdout == 'not JSON\n'
+              - >-
+                operation_invalid_json.msg
+                == 'dotfiles operation did not return valid JSON'
+      always:
+        - name: Remove operation integration-test directory
+          ansible.builtin.file:
+            path: "{{ operation_test_directory.path }}"
+            state: absent

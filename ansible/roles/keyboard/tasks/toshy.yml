@@ -1,0 +1,159 @@
+---
+- name: Create Toshy render and user unit directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "{{ item.mode }}"
+  loop:
+    - path: "{{ keyboard_toshy_render_dir }}"
+      mode: "0700"
+    - path: "{{ dotfiles_config_home }}/systemd/user/toshy-config.service.d"
+      mode: "0755"
+  tags:
+    - host
+    - toshy
+
+- name: Check Toshy configuration
+  ansible.builtin.stat:
+    path: "{{ keyboard_toshy_config }}"
+  register: keyboard_toshy_config_file
+  tags:
+    - host
+    - toshy
+
+- name: Require Toshy configuration
+  ansible.builtin.assert:
+    that:
+      - keyboard_toshy_config_file.stat.exists | default(false)
+    fail_msg: >-
+      Toshy must be installed before this role can manage
+      {{ keyboard_toshy_config }}.
+  when: not ansible_check_mode
+  tags:
+    - host
+    - toshy
+
+- name: Merge dotfiles slices into Toshy configuration
+  ansible.builtin.command:
+    argv:
+      - "{{ ansible_playbook_python }}"
+      - "{{ dotfiles_repo_root }}/packages/toshy/merge-slices.py"
+      - "{{ keyboard_toshy_config }}"
+      - "{{ keyboard_toshy_slices }}"
+      - "{{ keyboard_toshy_merged_config }}"
+  changed_when: false
+  when:
+    - not ansible_check_mode
+    - keyboard_toshy_config_file.stat.exists | default(false)
+  tags:
+    - host
+    - toshy
+
+- name: Install merged Toshy configuration
+  ansible.builtin.copy:
+    src: "{{ keyboard_toshy_merged_config }}"
+    dest: "{{ keyboard_toshy_config }}"
+    remote_src: true
+    mode: "0644"
+  notify: Restart Toshy services
+  when:
+    - not ansible_check_mode
+    - keyboard_toshy_config_file.stat.exists | default(false)
+  tags:
+    - host
+    - toshy
+
+- name: Validate merged Toshy configuration syntax
+  ansible.builtin.command:
+    argv:
+      - "{{ ansible_playbook_python }}"
+      - -m
+      - py_compile
+      - "{{ keyboard_toshy_config }}"
+  changed_when: false
+  when:
+    - not ansible_check_mode
+    - keyboard_toshy_config_file.stat.exists | default(false)
+  tags:
+    - host
+    - toshy
+
+- name: Install Toshy Kanata user units
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "0644"
+  loop:
+    - src: toshy-kanata.conf
+      dest: >-
+        {{ dotfiles_config_home }}/systemd/user/toshy-config.service.d/10-dotfiles.conf
+    - src: >-
+        toshy-kanata-device.path
+      dest: "{{ dotfiles_config_home }}/systemd/user/toshy-kanata-device.path"
+    - src: >-
+        toshy-kanata-device.service
+      dest: "{{ dotfiles_config_home }}/systemd/user/toshy-kanata-device.service"
+  notify: Restart Toshy services
+  tags:
+    - host
+    - toshy
+
+- name: Enable Toshy Kanata device watcher
+  ansible.builtin.systemd_service:
+    name: toshy-kanata-device.path
+    enabled: true
+    state: started
+    scope: user
+    daemon_reload: true
+  tags:
+    - host
+    - toshy
+
+- name: Refresh Toshy for the current Kanata device
+  ansible.builtin.systemd_service:
+    name: toshy-kanata-device.service
+    state: started
+    scope: user
+  changed_when: false
+  failed_when: false
+  tags:
+    - host
+    - toshy
+
+- name: Check Toshy desktop surfaces
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - "{{ dotfiles_data_home }}/applications/Toshy_Tray.desktop"
+    - "{{ dotfiles_data_home }}/applications/app.toshy.preferences.desktop"
+    - "{{ dotfiles_config_home }}/autostart/Toshy_Tray.desktop"
+    - "{{ dotfiles_config_home }}/autostart/app.toshy.preferences.desktop"
+  register: keyboard_toshy_desktop_surfaces
+  tags:
+    - host
+    - toshy
+
+- name: Hide Toshy desktop surfaces
+  ansible.builtin.lineinfile:
+    path: "{{ item.item }}"
+    regexp: "^[ \\t]*NoDisplay="
+    line: NoDisplay=true
+    insertafter: EOF
+  loop: "{{ keyboard_toshy_desktop_surfaces.results }}"
+  loop_control:
+    label: "{{ item.item | basename }}"
+  when: item.stat.exists
+  tags:
+    - host
+    - toshy
+
+- name: Disable Toshy tray user service
+  ansible.builtin.systemd_service:
+    name: toshy-tray.service
+    enabled: false
+    state: stopped
+    scope: user
+  failed_when: false
+  tags:
+    - host
+    - toshy

@@ -1,0 +1,21 @@
+---
+- name: Restart applications affected by macOS defaults
+  ansible.builtin.command:
+    argv:
+      - killall
+      - "{{ item }}"
+  loop:
+    - Dock
+    - Finder
+    - SystemUIServer
+  changed_when: false
+  failed_when: false
+
+- name: Reload RustDesk AppArmor profile
+  ansible.builtin.command:
+    argv:
+      - apparmor_parser
+      - -r
+      - /etc/apparmor.d/dotfiles-rustdesk
+  become: true
+  changed_when: true

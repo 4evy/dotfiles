@@ -1,0 +1,104 @@
+---
+- name: Detect Flatpak
+  ansible.builtin.command:
+    argv:
+      - flatpak
+      - --version
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  register: desktop_flatpak_command
+  tags:
+    - host
+    - flatpak
+    - flatpak-nvidia
+    - sushi-preview
+
+- name: Check system Flatpak installation
+  ansible.builtin.stat:
+    path: /var/lib/flatpak
+  register: desktop_system_flatpak
+  when: desktop_flatpak_command.rc == 0
+  tags:
+    - host
+    - flatpak
+    - flatpak-nvidia
+
+- name: Detect native Flatpak architecture
+  ansible.builtin.command:
+    argv:
+      - flatpak
+      - --default-arch
+  changed_when: false
+  check_mode: false
+  register: desktop_flatpak_architecture
+  when: desktop_flatpak_command.rc == 0
+  tags:
+    - host
+    - flatpak
+    - flatpak-nvidia
+    - sushi-preview
+
+- name: Configure user Flatpak remotes
+  community.general.flatpak_remote:
+    name: "{{ item.name }}"
+    flatpakrepo_url: "{{ item.url }}"
+    method: user
+    state: present
+  loop: "{{ desktop_flatpak_remotes }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: desktop_flatpak_command.rc == 0
+  tags:
+    - host
+    - flatpak
+    - sushi-preview
+
+- name: Install user Flatpak build prerequisites
+  community.general.flatpak:
+    name: "{{ item.name }}"
+    remote: "{{ item.remote }}"
+    method: user
+    state: present
+  loop: >-
+    {{
+      desktop_flatpak_packages
+      | rejectattr('branch', 'defined')
+      | list
+    }}
+  loop_control:
+    label: "{{ item.name }}"
+  when: desktop_flatpak_command.rc == 0
+  tags:
+    - host
+    - flatpak
+    - sushi-preview
+
+- name: Install exact user Flatpak runtime prerequisites
+  ansible.builtin.command:
+    argv:
+      - flatpak
+      - install
+      - --user
+      - --noninteractive
+      - "{{ item.remote }}"
+      - "{{ item.name }}//{{ item.branch }}"
+    creates: >-
+      {{
+        dotfiles_data_home ~ '/flatpak/runtime/' ~ item.name ~ '/'
+        ~ (desktop_flatpak_architecture.stdout | trim) ~ '/'
+        ~ item.branch ~ '/active'
+      }}
+  loop: >-
+    {{
+      desktop_flatpak_packages
+      | selectattr('branch', 'defined')
+      | list
+    }}
+  loop_control:
+    label: "{{ item.name }}//{{ item.branch }}"
+  when: desktop_flatpak_command.rc == 0
+  tags:
+    - host
+    - flatpak
+    - sushi-preview

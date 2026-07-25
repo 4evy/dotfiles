@@ -84,15 +84,6 @@
 
 - name: Install Equicord QuickCSS
   ansible.builtin.copy:
-    src: "{{ dotfiles_ansible_dir }}/files/apps/equicord/quickCss.css"
+    src: "{{ dotfiles_repo_root }}/packages/equicord/quickCss.css"
     dest: "{{ dotfiles_home_dir }}/.config/Equicord/settings/quickCss.css"
     mode: "0644"
-
-- name: Repair Discord with Equicord launcher
-  ansible.builtin.command:
-    argv:
-      - "{{ dotfiles_bin_dir }}/discord-equicord"
-      - --repair-only
-  environment:
-    HOME: "{{ dotfiles_home_dir }}"
-  changed_when: false

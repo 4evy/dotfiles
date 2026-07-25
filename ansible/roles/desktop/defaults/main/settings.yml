@@ -1,0 +1,33 @@
+---
+desktop_flatpak_remotes:
+  - name: flathub
+    url: https://dl.flathub.org/repo/flathub.flatpakrepo
+  - name: gnome-nightly
+    url: https://nightly.gnome.org/gnome-nightly.flatpakrepo
+
+desktop_flatpak_packages:
+  - name: org.flatpak.Builder
+    remote: flathub
+  - name: org.gnome.Platform
+    branch: master
+    remote: gnome-nightly
+  - name: org.gnome.Sdk
+    branch: master
+    remote: gnome-nightly
+  - name: org.freedesktop.Sdk.Extension.rust-stable
+    branch: "25.08"
+    remote: flathub
+
+desktop_emoji_binding_path: >-
+  /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/emoji-picker/
+desktop_emoji_command: "{{ dotfiles_bin_dir }}/carmenta-activate"
+desktop_gnome_workspace_numbers:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9

@@ -1,0 +1,15 @@
+---
+- name: Ensure Shottr is activated with the SOPS-managed license key
+  ansible.builtin.command:
+    argv:
+      - "{{ dotfiles_bin_dir }}/dotfiles-scripts"
+      - chezmoi
+      - shottr-license
+      - install
+  args:
+    chdir: "{{ dotfiles_repo_root }}"
+  environment:
+    PATH: "{{ bootstrap_homebrew_path | default(dotfiles_path) }}"
+  changed_when: false
+  tags:
+    - shottr

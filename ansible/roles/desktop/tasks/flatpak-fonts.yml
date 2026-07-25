@@ -1,0 +1,40 @@
+---
+- name: Create Flatpak fontconfig directory for {{ desktop_flatpak_app.path | basename }}
+  ansible.builtin.file:
+    path: "{{ desktop_flatpak_app.path }}/config/fontconfig/conf.d"
+    state: directory
+    mode: "0755"
+  when: desktop_user_fontconfig_files.files | default([]) | length > 0
+
+- name: Sync fontconfig fragments for {{ desktop_flatpak_app.path | basename }}
+  ansible.builtin.copy:
+    src: "{{ item.path }}"
+    dest: >-
+      {{ desktop_flatpak_app.path }}/config/fontconfig/conf.d/{{ item.path | basename }}
+    remote_src: true
+    mode: preserve
+  loop: "{{ desktop_user_fontconfig_files.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
+- name: Check Flatpak font cache for {{ desktop_flatpak_app.path | basename }}
+  ansible.builtin.stat:
+    path: "{{ desktop_flatpak_app.path }}/cache/fontconfig"
+  register: desktop_flatpak_font_cache_directory
+
+- name: Find stale Flatpak font caches for {{ desktop_flatpak_app.path | basename }}
+  ansible.builtin.find:
+    paths: "{{ desktop_flatpak_app.path }}/cache/fontconfig"
+    patterns: "*cache-*"
+    file_type: file
+    recurse: false
+  register: desktop_stale_flatpak_font_caches
+  when: desktop_flatpak_font_cache_directory.stat.isdir | default(false)
+
+- name: Remove stale Flatpak font caches for {{ desktop_flatpak_app.path | basename }}
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ desktop_stale_flatpak_font_caches.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path }}"

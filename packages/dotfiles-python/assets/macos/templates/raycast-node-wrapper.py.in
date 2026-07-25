@@ -1,0 +1,10 @@
+#!@python@
+import os
+import sys
+
+real = @real@
+hook = @hook@
+key_file = @key_file@
+environment = os.environ.copy()
+environment["RAYCAST_KEYDUMP_FILE"] = key_file
+os.execve(real, (real, "--require", hook, *sys.argv[1:]), environment)

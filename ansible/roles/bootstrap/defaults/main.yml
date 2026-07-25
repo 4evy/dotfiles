@@ -1,0 +1,107 @@
+---
+bootstrap_homebrew_installer_url: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
+bootstrap_rustup_installer_url: https://sh.rustup.rs
+
+bootstrap_homebrew_required_commands:
+  - btop
+
+bootstrap_bootstrap_packages:
+  apt:
+    - bubblewrap
+    - curl
+    - file
+    - git
+    - podman
+    - podman-compose
+    - procps
+  apk:
+    - bubblewrap
+    - curl
+    - file
+    - git
+    - podman
+    - podman-compose
+    - procps-ng
+  dnf:
+    - bubblewrap
+    - curl
+    - file
+    - git
+    - podman
+    - podman-compose
+    - procps-ng
+  pacman:
+    - bubblewrap
+    - curl
+    - file
+    - git
+    - podman
+    - podman-compose
+    - procps-ng
+
+bootstrap_build_toolchain_packages:
+  apt:
+    - binutils
+    - build-essential
+    - clang
+    - cmake
+    - libclang-dev
+    - libgit2-dev
+    - libglib2.0-dev
+    - libssl-dev
+    - libvterm-dev
+    - lld
+    - lldb
+    - patch
+    - perl
+    - pkg-config
+    - zlib1g-dev
+  apk:
+    - binutils
+    - build-base
+    - clang
+    - cmake
+    - glib-dev
+    - libgit2-dev
+    - libvterm-dev
+    - linux-headers
+    - lld
+    - lldb
+    - openssl-dev
+    - patch
+    - perl
+    - pkgconf
+    - zlib-dev
+  dnf:
+    - binutils
+    - clang
+    - cmake
+    - gcc
+    - gcc-c++
+    - glibc-devel
+    - glib2-devel
+    - pkgconfig(libgit2)
+    - libvterm-devel
+    - lld
+    - lldb
+    - make
+    - openssl-devel
+    - patch
+    - perl
+    - pkgconf-pkg-config
+    - zlib-devel
+  pacman:
+    - base-devel
+    - binutils
+    - clang
+    - cmake
+    - glib2
+    - libgit2
+    - libvterm
+    - lld
+    - lldb
+    - openssl
+    - patch
+    - perl
+    - pkgconf
+    - zlib

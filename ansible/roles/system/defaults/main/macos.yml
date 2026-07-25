@@ -1,0 +1,126 @@
+---
+system_macos_defaults:
+  - domain: com.apple.LaunchServices
+    key: LSQuarantine
+    type: bool
+    value: false
+  - domain: com.apple.SoftwareUpdate
+    key: AutomaticallyInstallMacOSUpdates
+    type: bool
+    value: false
+  - domain: NSGlobalDomain
+    key: KeyRepeat
+    type: int
+    value: 2
+  - domain: NSGlobalDomain
+    key: AppleMetricUnits
+    type: bool
+    value: true
+  - domain: NSGlobalDomain
+    key: AppleInterfaceStyleSwitchesAutomatically
+    type: bool
+    value: true
+  - domain: NSGlobalDomain
+    key: NSAutomaticWindowAnimationsEnabled
+    type: bool
+    value: false
+  - domain: NSGlobalDomain
+    key: NSDocumentSaveNewDocumentsToCloud
+    type: bool
+    value: false
+  - domain: NSGlobalDomain
+    key: NSAutomaticCapitalizationEnabled
+    type: bool
+    value: false
+  - domain: NSGlobalDomain
+    key: NSAutomaticSpellingCorrectionEnabled
+    type: bool
+    value: false
+  - domain: NSGlobalDomain
+    key: NSAutomaticPeriodSubstitutionEnabled
+    type: bool
+    value: false
+  - domain: NSGlobalDomain
+    key: NSAutomaticDashSubstitutionEnabled
+    type: bool
+    value: false
+  - domain: NSGlobalDomain
+    key: NSAutomaticQuoteSubstitutionEnabled
+    type: bool
+    value: false
+  - domain: com.apple.menuextra.clock
+    key: Show24Hour
+    type: bool
+    value: true
+  - domain: com.apple.menuextra.clock
+    key: ShowSeconds
+    type: bool
+    value: true
+  - domain: com.apple.menuextra.clock
+    key: ShowDate
+    type: int
+    value: 2
+  - domain: com.apple.finder
+    key: AppleShowAllFiles
+    type: bool
+    value: false
+  - domain: com.apple.finder
+    key: AppleShowAllExtensions
+    type: bool
+    value: true
+  - domain: com.apple.finder
+    key: FXEnableExtensionChangeWarning
+    type: bool
+    value: false
+  - domain: com.apple.finder
+    key: FXPreferredViewStyle
+    type: string
+    value: icnv
+  - domain: com.apple.finder
+    key: QuitMenuItem
+    type: bool
+    value: true
+  - domain: com.apple.finder
+    key: ShowPathbar
+    type: bool
+    value: true
+  - domain: com.apple.dock
+    key: autohide
+    type: bool
+    value: true
+  - domain: com.apple.dock
+    key: magnification
+    type: bool
+    value: false
+  - domain: com.apple.dock
+    key: orientation
+    type: string
+    value: bottom
+  - domain: com.apple.dock
+    key: show-recents
+    type: bool
+    value: false
+  - domain: com.apple.dock
+    key: showhidden
+    type: bool
+    value: true
+  - domain: com.apple.dock
+    key: tilesize
+    type: float
+    value: 65.0
+  - domain: com.apple.dock
+    key: wvous-tl-corner
+    type: int
+    value: 1
+  - domain: com.apple.dock
+    key: wvous-tr-corner
+    type: int
+    value: 1
+  - domain: com.apple.dock
+    key: wvous-bl-corner
+    type: int
+    value: 1
+  - domain: com.apple.dock
+    key: wvous-br-corner
+    type: int
+    value: 1

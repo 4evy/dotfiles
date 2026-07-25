@@ -1,0 +1,220 @@
+---
+- name: Check Kanata and Toshy service activity
+  ansible.builtin.command:
+    argv: "{{ item.argv }}"
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  loop:
+    - label: kanata-main.service
+      argv: [systemctl, is-active, --quiet, kanata-main.service]
+    - label: toshy-config.service
+      argv: [systemctl, --user, is-active, --quiet, toshy-config.service]
+  loop_control:
+    label: "{{ item.label }}"
+  register: keyboard_toshy_active_services
+  tags:
+    - host
+    - toshy
+    - kanata
+
+- name: Require active Kanata and Toshy services
+  ansible.builtin.assert:
+    that:
+      - item.rc == 0
+    fail_msg: "{{ item.item.label }} is not active."
+    success_msg: "{{ item.item.label }} is active."
+  loop: "{{ keyboard_toshy_active_services.results }}"
+  loop_control:
+    label: "{{ item.item.label }}"
+  tags:
+    - host
+    - toshy
+    - kanata
+
+- name: Read installed Kanata service
+  ansible.builtin.command:
+    argv: [systemctl, cat, kanata-main.service]
+  changed_when: false
+  check_mode: false
+  register: keyboard_toshy_kanata_unit
+  tags:
+    - host
+    - toshy
+    - kanata
+
+- name: Require Kanata host device group visibility
+  ansible.builtin.assert:
+    that:
+      - "'PrivateUsers=true' not in keyboard_toshy_kanata_unit.stdout"
+    fail_msg: >-
+      kanata-main.service uses PrivateUsers=true, which can hide input/uinput groups.
+  tags:
+    - host
+    - toshy
+    - kanata
+
+- name: Check repository and installed Kanata configuration
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    checksum_algorithm: sha256
+  loop:
+    - "{{ dotfiles_repo_root }}/dotfiles/dot_config/kanata/kanata.kbd"
+    - /etc/kanata/kanata.kbd
+  register: keyboard_toshy_kanata_configs
+  tags:
+    - host
+    - toshy
+    - kanata
+
+- name: Require current installed Kanata configuration
+  ansible.builtin.assert:
+    that:
+      - keyboard_toshy_kanata_configs.results[0].stat.exists
+      - keyboard_toshy_kanata_configs.results[1].stat.exists
+      - >-
+        keyboard_toshy_kanata_configs.results[0].stat.checksum
+        == keyboard_toshy_kanata_configs.results[1].stat.checksum
+    fail_msg: Installed Kanata configuration does not match the repository.
+  tags:
+    - host
+    - toshy
+    - kanata
+
+- name: Check Kanata virtual input device
+  ansible.builtin.stat:
+    path: /run/kanata-main/main
+    follow: false
+  register: keyboard_toshy_kanata_device
+  tags:
+    - host
+    - toshy
+    - kanata
+
+- name: Require Kanata virtual input device
+  ansible.builtin.assert:
+    that:
+      - keyboard_toshy_kanata_device.stat.islnk | default(false)
+      - >-
+        keyboard_toshy_kanata_device.stat.lnk_source
+        | default('')
+        is match('^/dev/input/event')
+    fail_msg: /run/kanata-main/main is missing or targets an unexpected device.
+  tags:
+    - host
+    - toshy
+    - kanata
+
+- name: Read merged Toshy configuration
+  ansible.builtin.slurp:
+    src: "{{ keyboard_toshy_config }}"
+  register: keyboard_toshy_merged_config_file
+  tags:
+    - host
+    - toshy
+    - kanata
+
+- name: Require Kanata integration in Toshy configuration
+  ansible.builtin.assert:
+    that:
+      - >-
+        item in (keyboard_toshy_merged_config_file.content | b64decode)
+    fail_msg: "Toshy configuration is missing required fragment: {{ item }}"
+  loop:
+    - "SLICE_MARK_START: keymapper_api"
+    - "SLICE_MARK_START: kbtype_override"
+    - DOTFILES_TOSHY_ONLY_DEVICES
+    - /run/kanata-main/main
+    - dotfiles-kanata-main
+  tags:
+    - host
+    - toshy
+    - kanata
+
+- name: Read Toshy Kanata user units
+  ansible.builtin.command:
+    argv: [systemctl, --user, cat, "{{ item }}"]
+  changed_when: false
+  check_mode: false
+  loop:
+    - toshy-config.service
+    - toshy-kanata-device.path
+    - toshy-kanata-device.service
+  register: keyboard_toshy_user_units
+  tags:
+    - host
+    - toshy
+    - kanata
+
+- name: Require Toshy service Kanata restrictions
+  ansible.builtin.assert:
+    that:
+      - >-
+        'Environment=DOTFILES_TOSHY_ONLY_DEVICES=/run/kanata-main/main'
+        in keyboard_toshy_user_units.results[0].stdout
+      - >-
+        'waiting for /run/kanata-main/main timed out'
+        in keyboard_toshy_user_units.results[0].stdout
+      - >-
+        'PathChanged=/run/kanata-main/main'
+        in keyboard_toshy_user_units.results[1].stdout
+      - >-
+        'reset-failed toshy-config.service'
+        in keyboard_toshy_user_units.results[2].stdout
+      - >-
+        '[ -e /run/kanata-main/main ]'
+        in keyboard_toshy_user_units.results[2].stdout
+      - >-
+        'restart toshy-config.service'
+        in keyboard_toshy_user_units.results[2].stdout
+    fail_msg: Toshy Kanata user units are incomplete.
+  tags:
+    - host
+    - toshy
+    - kanata
+
+- name: Check Toshy Kanata device watcher enablement
+  ansible.builtin.command:
+    argv: [systemctl, --user, is-enabled, --quiet, toshy-kanata-device.path]
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  register: keyboard_toshy_device_watcher
+  tags:
+    - host
+    - toshy
+    - kanata
+
+- name: Require enabled Toshy Kanata device watcher
+  ansible.builtin.assert:
+    that:
+      - keyboard_toshy_device_watcher.rc == 0
+    fail_msg: toshy-kanata-device.path is not enabled.
+  tags:
+    - host
+    - toshy
+    - kanata
+
+- name: Check conflicting input-remapper activity
+  ansible.builtin.command:
+    argv: [systemctl, is-active, --quiet, input-remapper.service]
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  register: keyboard_toshy_input_remapper
+  when: not keyboard_keep_input_remapper | bool
+  tags:
+    - host
+    - toshy
+    - kanata
+
+- name: Require inactive input-remapper service
+  ansible.builtin.assert:
+    that:
+      - keyboard_toshy_input_remapper.rc != 0
+    fail_msg: input-remapper.service is active and can compete with Kanata/Toshy.
+  when: not keyboard_keep_input_remapper | bool
+  tags:
+    - host
+    - toshy
+    - kanata

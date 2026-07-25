@@ -1,0 +1,5 @@
+---
+keyboard_toshy_render_dir: "{{ dotfiles_cache_dir }}/toshy"
+keyboard_toshy_config: "{{ dotfiles_config_home }}/toshy/toshy_config.py"
+keyboard_toshy_slices: "{{ dotfiles_repo_root }}/packages/toshy/slices"
+keyboard_toshy_merged_config: "{{ keyboard_toshy_render_dir }}/toshy_config.py"

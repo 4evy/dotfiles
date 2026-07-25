@@ -1,0 +1,60 @@
+---
+- name: Install native Ghostty tip build on Linux
+  dotfiles_operation:
+    executable: "{{ dotfiles_bin_dir }}/dotfiles-scripts"
+    command:
+      - apps
+      - install-ghostty-tip-linux
+      - "{{ dotfiles_cache_dir }}/ghostty"
+      - "{{ dotfiles_home_dir }}/.local"
+    context: "{{ dotfiles_automation_context }}"
+    chdir: "{{ dotfiles_repo_root }}"
+    environment:
+      PATH: "{{ dotfiles_bin_dir }}:{{ dotfiles_path }}"
+  when: platform_is_linux
+  tags:
+    - applications
+    - ghostty
+
+- name: Install Ghostty's JetBrains Mono Nerd Font on macOS
+  community.general.homebrew_cask:
+    name: font-jetbrains-mono-nerd-font
+    state: present
+    path: "{{ bootstrap_homebrew_prefix }}/bin"
+  environment:
+    HOMEBREW_NO_ASK: "1"
+    PATH: "{{ bootstrap_homebrew_path }}"
+  when: platform_is_macos
+  tags:
+    - applications
+    - fonts
+    - ghostty
+
+- name: Install patched native Ghostty tip build on macOS
+  dotfiles_operation:
+    executable: "{{ dotfiles_bin_dir }}/dotfiles-scripts"
+    command:
+      - apps
+      - install-ghostty-tip-macos
+      - "{{ dotfiles_cache_dir }}/ghostty-macos"
+      - "{{ dotfiles_data_home }}/ghostty-patched"
+      - "{{ bootstrap_homebrew_prefix }}/opt/zig/bin/zig"
+    context: "{{ dotfiles_automation_context }}"
+    chdir: "{{ dotfiles_repo_root }}"
+    environment:
+      PATH: "{{ dotfiles_bin_dir }}:{{ dotfiles_path }}"
+  when: platform_is_macos
+  tags:
+    - applications
+    - ghostty
+
+- name: Link patched Ghostty application bundle on macOS
+  ansible.builtin.file:
+    src: "{{ dotfiles_data_home }}/ghostty-patched/Ghostty.app"
+    dest: /Applications/Ghostty.app
+    state: link
+    force: true
+  when: platform_is_macos
+  tags:
+    - applications
+    - ghostty

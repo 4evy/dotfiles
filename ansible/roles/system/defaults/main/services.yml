@@ -1,0 +1,10 @@
+---
+system_slow_boot_units:
+  - zfs.target
+  - zfs-import-cache.service
+  - zfs-mount.service
+  - zfs-share.service
+  - zfs-zed.service
+  - zfs-volume-wait.service
+  - flatpak-preinstall.service
+  - NetworkManager-wait-online.service

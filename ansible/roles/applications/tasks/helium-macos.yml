@@ -1,0 +1,65 @@
+---
+- name: Install Helium Homebrew cask on macOS
+  community.general.homebrew_cask:
+    name: helium-browser
+    state: present
+    path: "{{ bootstrap_homebrew_prefix | default('/opt/homebrew') }}/bin"
+  environment:
+    HOMEBREW_NO_ASK: "1"
+    PATH: "{{ bootstrap_homebrew_path | default(dotfiles_path) }}"
+  tags:
+    - helium
+
+- name: Detect a running Helium application on macOS
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/pgrep
+      - -f
+      - ^/Applications/Helium[.]app/
+  register: applications_helium_running
+  changed_when: false
+  failed_when: applications_helium_running.rc not in [0, 1]
+  check_mode: false
+  tags:
+    - helium
+
+- name: Require Helium to be closed before changing its profile
+  ansible.builtin.assert:
+    that:
+      - ansible_check_mode or applications_helium_running.rc == 1
+    fail_msg: >-
+      Helium or one of its helper processes is running. Close it before
+      applying the Helium role so its profile databases and preferences
+      cannot be modified concurrently.
+  tags:
+    - helium
+
+- name: Configure Helium on macOS
+  dotfiles_operation:
+    executable: "{{ dotfiles_bin_dir }}/dotfiles-scripts"
+    command:
+      - apps
+      - install-helium-macos
+      - "{{ dotfiles_cache_dir }}/helium-browser"
+      - "{{ dotfiles_bin_dir }}"
+      - "{{ dotfiles_cache_dir }}/helium-browser/installer-bin"
+      - "--flags={{ applications_helium_macos_flags }}"
+    context: "{{ dotfiles_automation_context }}"
+    chdir: "{{ dotfiles_repo_root }}"
+    environment:
+      PATH: "{{ bootstrap_homebrew_path | default(dotfiles_path) }}"
+      DOTFILES_HELIUM_COOKIE_ALLOWLIST: >-
+        {{
+          applications_private_settings['chromium-cookie-allowed-for-urls']
+          | default([])
+          | to_json
+        }}
+  no_log: true
+  vars:
+    applications_helium_macos_flags: >-
+      --no-first-run --no-default-browser-check --disable-search-engine-choice-screen
+      --extension-mime-request-handling=always-prompt-for-install
+      --omnibox-autocomplete-filtering=search --set-user-color=244,184,228
+      --set-color-scheme=dark --set-color-variant=tonal_spot
+  tags:
+    - helium

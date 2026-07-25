@@ -1,0 +1,14 @@
+---
+- name: Configure Tailscale host integration
+  ansible.builtin.import_tasks: tailscale.yml
+  tags:
+    - host
+    - scripts
+    - tailscale
+
+- name: Configure RustDesk host integration
+  ansible.builtin.import_tasks: rustdesk.yml
+  tags:
+    - host
+    - scripts
+    - rustdesk

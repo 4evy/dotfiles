@@ -1,12 +1,17 @@
 ---
 dotfiles_repo_root: "{{ inventory_dir | dirname | dirname }}"
-dotfiles_ansible_dir: "{{ dotfiles_repo_root }}/ansible"
+dotfiles_sources: >-
+  {{
+    (
+      lookup('file', dotfiles_repo_root ~ '/manifests/sources.json')
+      | from_json
+    ).sources
+  }}
 dotfiles_home_dir: "{{ ansible_facts.get('env', {}).get('HOME', lookup('env', 'HOME')) }}"
 dotfiles_path: "{{ ansible_facts.get('env', {}).get('PATH', lookup('env', 'PATH')) }}"
 dotfiles_cache_home: "{{ ansible_facts.get('env', {}).get('XDG_CACHE_HOME', dotfiles_home_dir + '/.cache') }}"
 dotfiles_config_home: "{{ ansible_facts.get('env', {}).get('XDG_CONFIG_HOME', dotfiles_home_dir + '/.config') }}"
 dotfiles_data_home: "{{ ansible_facts.get('env', {}).get('XDG_DATA_HOME', dotfiles_home_dir + '/.local/share') }}"
-dotfiles_state_home: "{{ ansible_facts.get('env', {}).get('XDG_STATE_HOME', dotfiles_home_dir + '/.local/state') }}"
 dotfiles_cache_dir: "{{ dotfiles_cache_home }}/dotfiles/ansible"
 dotfiles_bin_dir: "{{ dotfiles_home_dir }}/.local/bin"
 dotfiles_data_dir: "{{ dotfiles_data_home }}/dotfiles"
@@ -16,5 +21,5 @@ dotfiles_automation_context:
   cache_dir: "{{ dotfiles_cache_dir }}"
   data_dir: "{{ dotfiles_data_dir }}"
   bin_dir: "{{ dotfiles_bin_dir }}"
-  system: "{{ common_system }}"
-  architecture: "{{ common_architecture }}"
+  system: "{{ platform_system }}"
+  architecture: "{{ platform_architecture }}"

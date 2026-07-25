@@ -1,0 +1,30 @@
+---
+- name: Detect the native Tailscale installation
+  ansible.builtin.command:
+    argv:
+      - sh
+      - -c
+      - command -v tailscale && command -v tailscaled
+  changed_when: false
+  failed_when: false
+  register: system_tailscale_command
+
+- name: Enable and start the native Tailscale service
+  ansible.builtin.systemd_service:
+    name: tailscaled
+    enabled: true
+    state: started
+  become: true
+  when: system_tailscale_command.rc == 0
+
+- name: Reconcile Tailscale host policy
+  dotfiles_operation:
+    executable: "{{ dotfiles_bin_dir }}/dotfiles-scripts"
+    command:
+      - host
+      - apps
+      - tailscale-bluefin
+    context: "{{ dotfiles_automation_context }}"
+    chdir: "{{ dotfiles_repo_root }}"
+    environment:
+      PATH: "{{ dotfiles_bin_dir }}:{{ dotfiles_path }}"

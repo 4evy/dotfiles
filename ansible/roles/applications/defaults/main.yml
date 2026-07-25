@@ -2,8 +2,12 @@
 applications_helix_revision: >-
   {{
     lookup('env', 'HELIX_TIP_REVISION')
-    | default('f6f3eb1fe4a73933466f30175843059a4381a985', true)
+    | default(dotfiles_sources.helix.revision, true)
   }}
+applications_helix_repository: >-
+  https://github.com/{{ dotfiles_sources.helix.repository.owner }}/{{
+    dotfiles_sources.helix.repository.name
+  }}.git
 applications_helix_cache_dir: "{{ dotfiles_cache_dir }}/helix"
 applications_helix_source_dir: "{{ applications_helix_cache_dir }}/source"
 applications_helix_install_prefix: "{{ dotfiles_data_dir }}/helix-tip"

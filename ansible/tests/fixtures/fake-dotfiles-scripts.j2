@@ -1,0 +1,27 @@
+#!{{ ansible_playbook_python }}
+
+import json
+import sys
+
+if sys.argv[1:] != ["_ansible-v1"]:
+    raise SystemExit(2)
+
+request = json.load(sys.stdin)
+if request["command"] == ["invalid-json"]:
+    print("not JSON")
+    raise SystemExit(23)
+
+response = {
+    "protocol": 1,
+    "failed": False,
+    "changed": request["check"],
+    "msg": "fake check" if request["check"] else "fake apply",
+    "data": {
+        "command": request["command"],
+        "home": request["context"]["home"],
+    },
+}
+if request["diff"]:
+    response["diff"] = {"before": "old", "after": "new"}
+json.dump(response, sys.stdout)
+sys.stdout.write("\n")
