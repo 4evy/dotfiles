@@ -1,0 +1,10 @@
+/*
+ * Equicord QuickCSS.
+ * Catppuccin Discord publishes accent-specific custom CSS builds at:
+ * https://github.com/catppuccin/discord
+ */
+
+@import url("https://catppuccin.github.io/discord/dist/catppuccin-frappe-pink.theme.css")
+  (prefers-color-scheme: dark);
+@import url("https://catppuccin.github.io/discord/dist/catppuccin-latte-pink.theme.css")
+  (prefers-color-scheme: light);
