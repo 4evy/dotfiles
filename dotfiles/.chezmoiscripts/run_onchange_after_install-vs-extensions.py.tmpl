@@ -1,17 +1,11 @@
 {{- $repo := joinPath .chezmoi.sourceDir ".." -}}
-#!/usr/bin/env python3
+#!/usr/bin/env python3.14
 # vscode-extensions.txt hash: {{ include "dot_config/Code/User/vscode-extensions.txt" | sha256sum }}
 # dotfiles-scripts fingerprint: {{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts") }}
-# helper source hash: {{ output "cat" (joinPath $repo "ansible/files/scripts/workstation/chezmoi.py") | sha256sum }}
+# helper source hash: {{ output "cat" (joinPath $repo "packages/dotfiles-python/src/workstation/chezmoi.py") | sha256sum }}
 # code fingerprint: {{ template "executable_fingerprint" (lookPath "code") }}
-from __future__ import annotations
-
-import os
-import shutil
-from pathlib import Path
-
-command = Path.home() / ".local/bin/dotfiles-scripts"
-if not command.is_file():
-    command = Path(shutil.which("dotfiles-scripts") or command)
-if command.is_file() and os.access(command, os.X_OK):
-    os.execv(command, (command, "chezmoi", "vscode-extensions"))
+{{ template "dotfiles_command_body.py.tmpl" (dict
+  "mode" "path"
+  "path" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts")
+  "subcommand" "vscode-extensions"
+) -}}

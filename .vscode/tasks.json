@@ -71,6 +71,66 @@
         "panel": "dedicated",
         "clear": true
       }
+    },
+    {
+      "label": "python: test",
+      "detail": "Run the configured pytest suite through the uv environment.",
+      "type": "process",
+      "command": "uv",
+      "args": ["run", "pytest"],
+      "group": "test",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "meson: configure",
+      "detail": "Configure the terminal-theme-tools C build and compilation database.",
+      "type": "process",
+      "command": "meson",
+      "args": ["setup", "${workspaceFolder}/build/meson", "${workspaceFolder}"],
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "meson: compile",
+      "detail": "Compile terminal-theme-tools with Meson.",
+      "type": "process",
+      "command": "meson",
+      "args": ["compile", "-C", "${workspaceFolder}/build/meson"],
+      "dependsOn": ["meson: configure"],
+      "dependsOrder": "sequence",
+      "group": "build",
+      "problemMatcher": ["$gcc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "meson: test",
+      "detail": "Build and run the terminal-theme-tools test suite.",
+      "type": "process",
+      "command": "meson",
+      "args": ["test", "-C", "${workspaceFolder}/build/meson", "--print-errorlogs"],
+      "dependsOn": ["meson: compile"],
+      "dependsOrder": "sequence",
+      "group": "test",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
     }
   ]
 }

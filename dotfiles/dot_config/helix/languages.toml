@@ -46,10 +46,10 @@ language-servers = ["vscode-html-language-server"]
 [[language]]
 name = "markdown"
 auto-format = true
-formatter = { command = "prettier", args = [
-  "--parser",
-  "markdown",
-  "--stdin-filepath",
+formatter = { command = "rumdl", args = [
+  "fmt",
+  "--stdin",
+  "--stdin-filename",
   "%{buffer_name}",
 ] }
 language-servers = ["rumdl"]
@@ -68,13 +68,6 @@ language-servers = ["vscode-json-language-server"]
 [[language]]
 name = "yaml"
 file-types = ["yaml", "yml", { glob = "*.yaml.tmpl" }, { glob = "*.yml.tmpl" }]
-auto-format = true
-formatter = { command = "prettier", args = [
-  "--parser",
-  "yaml",
-  "--stdin-filepath",
-  "%{buffer_name}",
-] }
 language-servers = ["yaml-language-server"]
 
 [[language]]

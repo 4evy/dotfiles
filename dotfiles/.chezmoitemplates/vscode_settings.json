@@ -8,6 +8,8 @@
   "editor.fontFamily": "'JetBrainsMono Nerd Font Mono', 'Noto Sans Mono', monospace",
   "editor.wordWrap": "on",
   "editor.mouseWheelZoom": true,
+  "editor.renderWhitespace": "selection",
+  "editor.linkedEditing": true,
   "editor.guides.bracketPairs": "active",
   "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
   "editor.accessibilitySupport": "off",
@@ -28,25 +30,48 @@
   "files.trimFinalNewlines": true,
   "files.insertFinalNewline": true,
   "diffEditor.ignoreTrimWhitespace": false,
-  "security.workspace.trust.enabled": false,
+  "security.workspace.trust.enabled": true,
+  "telemetry.telemetryLevel": "off",
   "git.enableCommitSigning": true,
   "git.mergeEditor": true,
   "git.branchProtection": ["main", "master"],
   "git.branchProtectionPrompt": "alwaysCommitToNewBranch",
   "git.branchRandomName.enable": true,
   "js/ts.experimental.useTsgo": true,
+  "js/ts.inlayHints.parameterNames.enabled": "literals",
+  "js/ts.inlayHints.parameterTypes.enabled": true,
+  "js/ts.inlayHints.functionLikeReturnTypes.enabled": true,
+  "js/ts.preferences.preferTypeOnlyAutoImports": true,
+  "js/ts.suggest.completeFunctionCalls": true,
   "js/ts.updateImportsOnFileMove.enabled": "always",
   "python.languageServer": "None",
+  "python.useEnvironmentsExtension": true,
   "python.defaultInterpreterPath": "{{- if lookPath `python` -}}{{ lookPath `python` }}{{- else if lookPath `python3` -}}{{ lookPath `python3` }}{{- else -}}python{{- end -}}",
+  "python.experiments.enabled": false,
+  "python-envs.terminal.autoActivationType": "command",
   "ty.importStrategy": "fromEnvironment",
-  "ty.path": [
-    "{{- if lookPath `ty` -}}{{ lookPath `ty` }}{{- else -}}ty{{- end -}}"
-  ],
+  "ty.path": ["{{- if lookPath `ty` -}}{{ lookPath `ty` }}{{- else -}}ty{{- end -}}"],
   "ruff.importStrategy": "fromEnvironment",
   "ruff.path": [
     "{{- if lookPath `ruff` -}}{{ lookPath `ruff` }}{{- else -}}ruff{{- end -}}"
   ],
   "ruff.nativeServer": "on",
+  "C_Cpp.codeAnalysis.clangTidy.path": "{{- if lookPath `clang-tidy` -}}{{ lookPath `clang-tidy` }}{{- else if stat `/opt/homebrew/opt/llvm/bin/clang-tidy` -}}/opt/homebrew/opt/llvm/bin/clang-tidy{{- else if stat `/usr/local/opt/llvm/bin/clang-tidy` -}}/usr/local/opt/llvm/bin/clang-tidy{{- else -}}clang-tidy{{- end -}}",
+  "path-intellisense.autoSlashAfterDirectory": true,
+  "path-intellisense.autoTriggerNextSuggestion": true,
+  "markdownlint.run": "onSave",
+  "vscode-just.runInTerminal": true,
+  "stylua.searchBinaryInPATH": true,
+  "stylua.disableVersionCheck": true,
+  "systemd.version": "latest",
+  "containers.containerClient": "com.microsoft.visualstudio.containers.{{- if lookPath `podman` -}}podman{{- else -}}docker{{- end -}}",
+  "containers.orchestratorClient": "com.microsoft.visualstudio.orchestrators.{{- if lookPath `podman` -}}podmancompose{{- else -}}dockercompose{{- end -}}",
+  "ansible.lightspeed.enabled": false,
+  "ansible.lightspeed.suggestions.enabled": false,
+  "ansible.mcpServer.enabled": false,
+  "errorLens.delay": 250,
+  "errorLens.enabledDiagnosticLevels": ["error", "warning"],
+  "errorLens.messageMaxChars": 160,
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.formatOnSave": true,
@@ -62,6 +87,17 @@
       "source.organizeImports": "explicit"
     }
   },
+  "[shellscript]": {
+    "editor.defaultFormatter": "mkhl.shfmt"
+  },
+  "[dockerfile]": {
+    "editor.defaultFormatter": "ms-azuretools.vscode-containers",
+    "editor.formatOnSave": true
+  },
+  "[meson]": {
+    "editor.defaultFormatter": "mesonbuild.mesonbuild",
+    "editor.formatOnSave": true
+  },
   "[nix]": {
     "editor.defaultFormatter": "jnoortheen.nix-ide",
     "editor.formatOnPaste": true,
@@ -72,25 +108,49 @@
     "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,
-    "editor.formatOnType": true
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
   },
   "[typescript]": {
     "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,
-    "editor.formatOnType": true
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
   },
   "[javascriptreact]": {
     "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,
-    "editor.formatOnType": true
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,
-    "editor.formatOnType": true
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
+  },
+  "[html][css][scss][less][postcss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[svelte]": {
+    "editor.defaultFormatter": "svelte.svelte-vscode",
+    "editor.formatOnSave": true
   },
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features",
@@ -109,7 +169,19 @@
     "editor.formatOnSave": true
   },
   "[lua]": {
-    "editor.defaultFormatter": "sumneko.lua",
+    "editor.defaultFormatter": "johnnymorganz.stylua",
+    "editor.formatOnSave": true
+  },
+  "[xml]": {
+    "editor.defaultFormatter": "redhat.vscode-xml",
+    "editor.formatOnSave": true
+  },
+  "[kdl]": {
+    "editor.defaultFormatter": "kdl-org.kdl",
+    "editor.formatOnSave": true
+  },
+  "[typst]": {
+    "editor.defaultFormatter": "myriad-dreamin.tinymist",
     "editor.formatOnSave": true
   },
   "[markdown]": {
@@ -135,8 +207,15 @@
       }
     }
   },
-  "bashIde.explainshellEndpoint": "http://localhost:5134",
   "redhat.telemetry.enabled": false,
+  "yaml.disableSchemaDetection": [
+    "**/.github/workflows/*.yml",
+    "**/.github/workflows/*.yaml",
+    "**/.gitea/workflows/*.yml",
+    "**/.gitea/workflows/*.yaml",
+    "**/.forgejo/workflows/*.yml",
+    "**/.forgejo/workflows/*.yaml"
+  ],
   "json.schemaDownload.trustedDomains": {
     "https://schemastore.azurewebsites.net/": true,
     "https://raw.githubusercontent.com/": true,

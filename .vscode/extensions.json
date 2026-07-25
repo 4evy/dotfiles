@@ -1,21 +1,25 @@
 {
   "recommendations": [
+    "astral-sh.ty",
     "biomejs.biome",
     "charliermarsh.ruff",
     "christian-kohler.path-intellisense",
     "davidanson.vscode-markdownlint",
-    "dbaeumer.vscode-eslint",
     "editorconfig.editorconfig",
-    "esbenp.prettier-vscode",
-    "golang.go",
+    "github.vscode-github-actions",
+    "hangxingliu.vscode-systemd-support",
     "jnoortheen.nix-ide",
+    "johnnymorganz.stylua",
     "kdl-org.kdl",
     "mads-hartmann.bash-ide-vscode",
+    "mesonbuild.mesonbuild",
     "mikestead.dotenv",
+    "mkhl.shfmt",
     "ms-azuretools.vscode-containers",
     "ms-azuretools.vscode-docker",
     "ms-python.debugpy",
     "ms-python.python",
+    "ms-vscode.cpptools",
     "ms-vscode.vscode-typescript-next",
     "nefrob.vscode-just-syntax",
     "oven.bun-vscode",
@@ -25,5 +29,6 @@
     "sumneko.lua",
     "tamasfe.even-better-toml",
     "timonwong.shellcheck"
-  ]
+  ],
+  "unwantedRecommendations": ["llvm-vs-code-extensions.vscode-clangd"]
 }

@@ -8,12 +8,14 @@
     "*.json.tmpl": "jsonc",
     "*.kdl.tmpl": "kdl",
     "*.lua.tmpl": "lua",
+    "*.plist.in": "xml",
     "*.ron.tmpl": "rust",
     "*.sh.tmpl": "shellscript",
     ".*.toml.tmpl": "toml",
     "**/.chezmoiexternal.toml.tmpl": "toml",
     "*.toml.tmpl": "toml",
     "*.tmTheme.tmpl": "xml",
+    "*.xml.in": "xml",
     "*.yaml.tmpl": "yaml",
     "*.yml.tmpl": "yaml",
     "*.zsh.tmpl": "shellscript",
@@ -30,11 +32,38 @@
   "files.trimTrailingWhitespace": true,
   "files.trimFinalNewlines": true,
   "files.insertFinalNewline": true,
+  "explorer.excludeGitIgnore": true,
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/meson/compile_commands.json",
+  "C_Cpp.default.configurationProvider": "mesonbuild.mesonbuild",
+  "C_Cpp.default.cStandard": "c23",
+  // cpptools still misparses C23 constexpr declarations. Rely on clang-tidy
+  // and Meson diagnostics until its C23 parser support catches up:
+  // https://github.com/microsoft/vscode-cpptools/issues?q=is%3Aissue%20C23%20constexpr
+  "C_Cpp.errorSquiggles": "disabled",
+  "C_Cpp.codeAnalysis.clangTidy.enabled": true,
+  "C_Cpp.codeAnalysis.clangTidy.args": [
+    "--extra-arg=-isysroot",
+    "--extra-arg=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+  ],
+  "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true,
+  "C_Cpp.formatting": "clangFormat",
+  "mesonbuild.buildFolder": "build/meson",
+  "mesonbuild.configureOnOpen": false,
+  "mesonbuild.debuggerExtension": "cpptools",
+  "mesonbuild.formatting.enabled": true,
+  "mesonbuild.formatting.provider": "meson",
+  "mesonbuild.mesonlsp.others.ignoreDiagnosticsFromSubprojects": true,
+  "mesonbuild.modifySettings": false,
   "search.exclude": {
     "**/.ansible": true,
     "**/.cache": true,
     "**/.devenv": true,
     "**/.jj": true,
+    "**/.pytest_cache": true,
+    "**/.ruff_cache": true,
+    "**/.venv": true,
+    "**/__pycache__": true,
+    "**/build": true,
     "**/dist": true,
     "**/node_modules": true,
     "result": true,
@@ -45,6 +74,11 @@
     "**/.cache/**": true,
     "**/.devenv/**": true,
     "**/.jj/**": true,
+    "**/.pytest_cache/**": true,
+    "**/.ruff_cache/**": true,
+    "**/.venv/**": true,
+    "**/__pycache__/**": true,
+    "**/build/**": true,
     "**/dist/**": true,
     "**/node_modules/**": true,
     "result/**": true,
@@ -79,20 +113,42 @@
     "**/dot_zshrc.tmpl": true
   },
   "shellcheck.customArgs": ["--source-path=SCRIPTDIR"],
+  "shellcheck.useWorkspaceRootAsCwd": true,
+  "shfmt.executableArgs": ["-i", "2", "-bn"],
   "bashIde.shellcheckPath": "",
+  "bashIde.shfmt.binaryNextLine": true,
+  "bashIde.shfmt.path": "shfmt",
   "git.mergeEditor": true,
   "git.branchProtection": ["main", "master"],
   "git.branchProtectionPrompt": "alwaysCommitToNewBranch",
   "git.branchRandomName.enable": true,
   "js/ts.experimental.useTsgo": true,
+  "js/ts.preferences.preferTypeOnlyAutoImports": true,
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
   "js/ts.updateImportsOnFileMove.enabled": "always",
   "python.languageServer": "None",
   "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.useEnvironmentsExtension": true,
+  "python-envs.workspaceSearchPaths": [".venv"],
+  "ty.diagnosticMode": "workspace",
   "ty.importStrategy": "fromEnvironment",
   "ty.path": ["ty"],
   "ruff.importStrategy": "fromEnvironment",
   "ruff.path": ["ruff"],
   "ruff.nativeServer": "on",
+  "ansible.ansible.useFullyQualifiedCollectionNames": true,
+  "ansible.lightspeed.enabled": false,
+  "ansible.lightspeed.suggestions.enabled": false,
+  "ansible.mcpServer.enabled": false,
+  "ansible.validation.lint.enabled": true,
+  "markdownlint.run": "onSave",
+  "redhat.telemetry.enabled": false,
+  "stylua.disableVersionCheck": true,
+  "stylua.searchBinaryInPATH": true,
+  "systemd.version": "latest",
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.formatOnSave": true,
@@ -101,12 +157,17 @@
       "source.organizeImports.ruff": "explicit"
     }
   },
-  "[go]": {
-    "editor.defaultFormatter": "golang.go",
+  "[shellscript]": {
+    "editor.defaultFormatter": "mkhl.shfmt"
+  },
+  "[c]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools",
     "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit"
-    }
+    "editor.formatOnType": true
+  },
+  "[meson]": {
+    "editor.defaultFormatter": "mesonbuild.mesonbuild",
+    "editor.formatOnSave": true
   },
   "[nix]": {
     "editor.defaultFormatter": "jnoortheen.nix-ide",
@@ -118,25 +179,41 @@
     "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,
-    "editor.formatOnType": true
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
   },
   "[typescript]": {
     "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,
-    "editor.formatOnType": true
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
   },
   "[javascriptreact]": {
     "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,
-    "editor.formatOnType": true
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,
-    "editor.formatOnType": true
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
   },
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features",
@@ -155,11 +232,19 @@
     "editor.formatOnSave": true
   },
   "[lua]": {
-    "editor.defaultFormatter": "sumneko.lua",
+    "editor.defaultFormatter": "johnnymorganz.stylua",
+    "editor.formatOnSave": true
+  },
+  "[xml]": {
+    "editor.defaultFormatter": "redhat.vscode-xml",
+    "editor.formatOnSave": true
+  },
+  "[kdl]": {
+    "editor.defaultFormatter": "kdl-org.kdl",
     "editor.formatOnSave": true
   },
   "[markdown]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.defaultFormatter": "DavidAnson.vscode-markdownlint",
     "editor.formatOnSave": true
   }
 }

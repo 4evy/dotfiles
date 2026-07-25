@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.14
 
 """Run rumdl while hiding diagnostics for files in the OS temp directory."""
 
