@@ -1,13 +1,13 @@
 {{- if eq .chezmoi.os "darwin" -}}
 {{- $repo := joinPath .chezmoi.sourceDir ".." -}}
-#!/usr/bin/env python3
+#!/usr/bin/env python3.14
 from __future__ import annotations
 
 import os
 import subprocess
 from pathlib import Path
 
-fingerprint = "{{ include "dot_config/kanata/kanata-macos.kbd" | sha256sum }}:{{ output "shasum" "-a" "256" (joinPath $repo "ansible/files/scripts/workstation/macos/system.py") (joinPath $repo "ansible/files/scripts/macos/logitech-platform.py") (joinPath $repo "ansible/files/scripts/macos/templates/kanata-app-info.plist.in") (joinPath $repo "ansible/files/scripts/macos/templates/kanata-daemon.plist.in") (joinPath $repo "Formula/kanata-with-cmd.rb") | sha256sum }}"
+fingerprint = "{{ include "dot_config/kanata/kanata-macos.kbd" | sha256sum }}:{{ output "shasum" "-a" "256" (joinPath $repo "packages/dotfiles-python/src/workstation/macos/system.py") (joinPath $repo "packages/dotfiles-python/assets/macos/logitech-platform.py") (joinPath $repo "packages/dotfiles-python/assets/macos/templates/kanata-app-info.plist.in") (joinPath $repo "packages/dotfiles-python/assets/macos/templates/kanata-daemon.plist.in") (joinPath $repo "Formula/kanata-with-cmd.rb") | sha256sum }}"
 marker = Path.home() / ".cache/dotfiles/kanata-reconcile.sha256"
 state = subprocess.run(
     ("/bin/launchctl", "print", "system/dev.4evy.kanata"),
