@@ -53,6 +53,30 @@ value = true
 path = "helium.browser.default_browser_infobar_rejected"
 value = true
 
+[[browser.preferences.local_state_values]]
+path = "profile.info_cache.Default.name"
+value = "Evy"
+
+[[browser.preferences.local_state_values]]
+path = "profile.info_cache.Default.is_using_default_name"
+value = false
+
+[[browser.preferences.local_state_values]]
+path = "profile.info_cache.Default.is_using_default_avatar"
+value = false
+
+[[browser.preferences.local_state_values]]
+path = "profile.info_cache.Default.use_gaia_picture"
+value = false
+
+[[browser.preferences.local_state_values]]
+path = "profile.info_cache.Default.is_using_custom_avatar"
+value = true
+
+[[browser.preferences.local_state_values]]
+path = "profile.info_cache.Default.custom_avatar_picture_file_name"
+value = "Custom Avatar Picture.png"
+
 [[browser.preferences.variation_values]]
 path = "user_experience_metrics.stability.exited_cleanly"
 value = true
@@ -64,6 +88,38 @@ value = 0
 [[browser.preferences.values]]
 path = "helium.services.schema_version"
 value = 1
+
+[[browser.preferences.values]]
+path = "helium.browser.layout"
+value = 2
+
+[[browser.preferences.values]]
+path = "helium.browser.centered_location_bar"
+value = true
+
+[[browser.preferences.values]]
+path = "helium.browser.rounded_frame"
+value = false
+
+[[browser.preferences.values]]
+path = "profile.name"
+value = "Evy"
+
+[[browser.preferences.values]]
+path = "profile.using_default_name"
+value = false
+
+[[browser.preferences.values]]
+path = "profile.using_default_avatar"
+value = false
+
+[[browser.preferences.values]]
+path = "profile.using_gaia_avatar"
+value = false
+
+[[browser.preferences.values]]
+path = "profile.using_custom_avatar"
+value = true
 
 [browser.helium]
 completed_onboarding = true
