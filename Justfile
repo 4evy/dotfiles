@@ -20,10 +20,6 @@ nixos_nix_installer_url := "https://artifacts.nixos.org/nix-installer"
 
 host_os := os()
 repo_dir := justfile_directory()
-ansible_dir := repo_dir / "ansible"
-dotfiles_dir := repo_dir / "dotfiles"
-hyper_dir := repo_dir / "packages/hyper-window-tiling"
-ansible_playbooks := prepend("ansible/playbooks/", "bootstrap.yml userland.yml host.yml site.yml")
 
 homebrew_prefix := env("HOMEBREW_PREFIX", if host_os == "macos" { "/opt/homebrew" } else { "/home/linuxbrew/.linuxbrew" })
 homebrew_gnu_formulae := "coreutils findutils gnu-sed grep gawk gnu-tar gnu-which diffutils make"
@@ -37,96 +33,15 @@ nix_profile_tools := "deadnix:deadnix nh:nh nil:nil nix-instantiate:nix nom:nix-
 pi_extension_profile_tools := "pi-ssh-tools:github:euvlok/pkgs#pi-ssh-tools web-search-pi:github:euvlok/pkgs#web-search-pi"
 
 doctor_setup_commands := "bash curl git sudo"
-doctor_format_commands := "bun git go gofmt jq nixfmt prettier shfmt stylua taplo uv"
-doctor_ansible_commands := "ansible-galaxy ansible-lint ansible-playbook ansible-test yamllint"
-doctor_lint_commands := "actionlint chezmoi deadnix golangci-lint hadolint lua luacheck nix-instantiate shellcheck " + doctor_format_commands + " " + doctor_ansible_commands
+doctor_format_commands := "bun clang-format git jq nixfmt rumdl shfmt stylua taplo uv"
+doctor_ansible_commands := "ansible-doc ansible-galaxy ansible-lint ansible-playbook yamllint"
+doctor_lint_commands := "actionlint chezmoi deadnix hadolint lua luacheck meson ninja nix-instantiate pkg-config shellcheck zizmor " + doctor_format_commands + " " + doctor_ansible_commands
 doctor_all_commands := doctor_lint_commands + " bash curl sudo watchexec"
 
-repo_file_inventory := '''
-repo_paths=() missing_paths=() symlink_files=() broken_symlinks=() special_files=()
-template_files=() python_template_files=() shell_template_files=() python_input_template_files=() xml_input_template_files=()
-unformatted_files=() enumerated_files=() hyper_files=() just_files=() docker_files=()
-go_files=() go_mod_files=() json_files=() json_auto_files=() jsonc_files=() yaml_files=() prettier_files=() prettier_parse_files=()
-python_files=() shell_files=() toml_files=() xml_files=() lua_files=() nix_files=()
-
-is_shell_file() {
-  case "$1" in
-    *.tmpl | *.txt | *.patch) return 1 ;;
-    *.sh | *.sh.in | *.bash) return 0 ;;
-  esac
-
-  head -n 2 < "$1" | grep -Eq '^#!.*[[:space:]/](sh|bash)([[:space:]]|$)|^# shellcheck shell=(sh|bash)'
-}
-
-classify_file() {
-  local file=$1 base=${1##*/}
-
-  if [[ $file == packages/hyper-window-tiling/* ]]; then
-    hyper_files+=("$file")
-    return
-  fi
-
-  case "$base" in
-    Justfile | justfile) just_files+=("$file"); enumerated_files+=("$file"); return ;;
-    Dockerfile | Containerfile) docker_files+=("$file"); unformatted_files+=("$file"); return ;;
-    go.mod) go_mod_files+=("$file"); return ;;
-    flake.lock) json_files+=("$file"); return ;;
-    package-lock.json | npm-shrinkwrap.json) json_auto_files+=("$file"); return ;;
-    uv.lock) unformatted_files+=("$file"); enumerated_files+=("$file"); return ;;
-  esac
-
-  case "$file" in
-    .yamllint | .ansible-lint) yaml_files+=("$file"); unformatted_files+=("$file") ;;
-    *.plist.in | *.xml.in) xml_input_template_files+=("$file"); unformatted_files+=("$file") ;;
-    *.py.in) python_input_template_files+=("$file"); unformatted_files+=("$file") ;;
-    *.bash.tmpl | *.sh.tmpl) template_files+=("$file"); shell_template_files+=("$file") ;;
-    *.py.tmpl) template_files+=("$file"); python_template_files+=("$file") ;;
-    *.tmpl) template_files+=("$file") ;;
-    *.jsonc) jsonc_files+=("$file") ;;
-    *.json) json_files+=("$file") ;;
-    *.yaml | *.yml) yaml_files+=("$file"); prettier_files+=("$file") ;;
-    *.md) prettier_files+=("$file"); prettier_parse_files+=("$file") ;;
-    *.js | *.cjs | *.mjs | *.jsx | *.ts | *.tsx | *.css | *.html | *.mdx) prettier_files+=("$file"); prettier_parse_files+=("$file") ;;
-    *.go) go_files+=("$file") ;;
-    *.py) python_files+=("$file") ;;
-    *.sh | *.sh.in | *.bash) shell_files+=("$file") ;;
-    *.toml) toml_files+=("$file") ;;
-    *.plist | *.xml) xml_files+=("$file"); unformatted_files+=("$file") ;;
-    *.lua) lua_files+=("$file") ;;
-    *.nix) nix_files+=("$file") ;;
-    *)
-      if is_shell_file "$file"; then
-        shell_files+=("$file")
-      else
-        unformatted_files+=("$file")
-        enumerated_files+=("$file")
-      fi
-      ;;
-  esac
-}
-
-while IFS= read -r -d '' file; do
-  repo_paths+=("$file")
-  if [[ -L $file ]]; then
-    symlink_files+=("$file")
-    [[ -e $file ]] || broken_symlinks+=("$file")
-  elif [[ ! -e $file ]]; then
-    missing_paths+=("$file")
-  elif [[ -f $file ]]; then
-    classify_file "$file"
-  else
-    special_files+=("$file")
-    enumerated_files+=("$file")
-  fi
-done < <(git ls-files -z --cached --others --exclude-standard --)
-
-if ((${#missing_paths[@]} > 0)); then
-  printf 'tracked paths missing from worktree:\n' >&2
-  printf '  %s\n' "${missing_paths[@]}" >&2
-fi
-'''
-
 export PATH := homebrew_path + PATH_VAR_SEP + nix_bin_dir + PATH_VAR_SEP + nix_profile_bin_dir + PATH_VAR_SEP + nixos_profile_bin_dir + PATH_VAR_SEP + env("PATH", "")
+# Development recipes are reproducible by default; dependency changes must be
+# made explicitly with uv outside the task runner.
+export UV_LOCKED := "1"
 
 alias a := apply
 alias b := build
@@ -145,7 +60,7 @@ alias up := update
 alias w := watch
 
 # Check commands required for a workflow profile.
-[arg('profile', pattern='status|reboot|install|build|setup|apply|shell|spectrum|fmt|lint|go|ansible|bun|smoke|nix|watch|check|all', help='status, reboot, install, build, setup, apply, shell, spectrum, fmt, lint, go, ansible, bun, smoke, nix, watch, check, or all')]
+[arg('profile', pattern='status|reboot|install|build|setup|apply|shell|spectrum|fmt|lint|c|ansible|bun|smoke|nix|watch|check|all', help='status, reboot, install, build, setup, apply, shell, spectrum, fmt, lint, c, ansible, bun, smoke, nix, watch, check, or all')]
 [group('system')]
 doctor profile="setup":
     profile={{ quote(profile) }}
@@ -173,7 +88,7 @@ doctor profile="setup":
       spectrum) commands=(uv) ;;
       fmt) commands=({{ doctor_format_commands }}) ;;
       lint | check) commands=({{ doctor_lint_commands }}) ;;
-      go) commands=(go golangci-lint) ;;
+      c) commands=(meson ninja pkg-config) ;;
       ansible) commands=({{ doctor_ansible_commands }}) ;;
       bun) commands=(bun) ;;
       smoke) commands=("${compose_command%% *}") ;;
@@ -520,14 +435,15 @@ spectrum-boot-report target=local_ref: (doctor 'build')
     sudo "${podman_command[@]}" run \
       --rm \
       --entrypoint bash \
+      --security-opt label=disable \
       --volume {{ quote(repo_dir + ":/workspace:ro") }} \
       "$target" \
       -ceu '
-        mkdir -p /tmp/spectrum-workspace/ansible/files/scripts
+        mkdir -p /tmp/spectrum-workspace/packages/dotfiles-python/src
         mkdir -p /tmp/spectrum-workspace/spectrum
         cp /workspace/pyproject.toml /workspace/uv.lock /tmp/spectrum-workspace/
-        cp -a /workspace/ansible/files/scripts/workstation \
-          /tmp/spectrum-workspace/ansible/files/scripts/
+        cp -a /workspace/packages/dotfiles-python/src/workstation \
+          /tmp/spectrum-workspace/packages/dotfiles-python/src/
         cp -a /workspace/spectrum/scripts /tmp/spectrum-workspace/spectrum/
         UV_PROJECT_ENVIRONMENT=/tmp/spectrum-boot-report-venv \
           uv --cache-dir /tmp/spectrum-uv-cache \
@@ -692,11 +608,11 @@ apply: (doctor 'apply')
     chezmoi init --source {{ quote(repo_dir) }}
     chezmoi apply --refresh-externals=auto --force
 
-[doc('Bootstrap userland, apply dotfiles, then apply host roles.')]
+[doc('Bootstrap userland, apply dotfiles, then apply host stages.')]
 [group('setup')]
 setup: (doctor 'setup') _userland apply _host
 
-# Refresh userland, dotfiles, and host roles on an already-bootstrapped machine.
+# Refresh userland, dotfiles, and host stages on an already-bootstrapped machine.
 [group('setup')]
 update: _userland apply _host
 
@@ -710,16 +626,15 @@ _deps:
 
 [private]
 _userland:
-    {{ quote(ansible_dir / "bootstrap.sh") }} ansible/playbooks/userland.yml
+    ansible/bootstrap.sh --tags userland
 
 [private]
 _host:
-    ansible-playbook ansible/playbooks/host.yml
+    ansible-playbook ansible/site.yml --tags host
 
 # Format files managed by this repo.
 [group('dev')]
-[parallel]
-fmt: (_format-files 'write') (_hyper-format 'write')
+fmt: (doctor 'fmt') (_format 'write')
 
 # Rerun a recipe when files change.
 [arg('args', help='Recipe and arguments to rerun on file changes')]
@@ -730,276 +645,246 @@ watch +args='check': (doctor 'watch')
 
 # Check repository formatting without rewriting files.
 [group('dev')]
+check-format: (doctor 'fmt') (_format 'check')
+
 [parallel]
-check-format: (_format-files 'check') (_hyper-format 'check')
-
-[arg('mode', pattern='write|check')]
 [private]
-_format-files mode: (doctor 'fmt')
-    mode={{ quote(mode) }}
-
-    {{ repo_file_inventory }}
-
-    formatted_count=$((${#hyper_files[@]} + ${#go_files[@]} + ${#go_mod_files[@]} + ${#json_files[@]} + ${#json_auto_files[@]} + ${#jsonc_files[@]} + ${#prettier_files[@]} + ${#python_files[@]} + ${#shell_files[@]} + ${#toml_files[@]} + ${#lua_files[@]} + ${#nix_files[@]} + ${#just_files[@]}))
-    accounted_count=$((formatted_count + ${#template_files[@]} + ${#unformatted_files[@]} + ${#symlink_files[@]} + ${#missing_paths[@]} + ${#special_files[@]}))
-    if ((accounted_count != ${#repo_paths[@]})); then
-      printf 'internal error: classified %d of %d repository paths\n' "$accounted_count" "${#repo_paths[@]}" >&2
-      exit 1
-    fi
-
-    printf 'repo paths: %d; formatting check/write covers %d content files; templates enumerated: %d; no structured formatter: %d; symlinks: %d; special: %d; missing/deleted: %d\n' \
-      "${#repo_paths[@]}" \
-      "$formatted_count" \
-      "${#template_files[@]}" \
-      "${#unformatted_files[@]}" \
-      "${#symlink_files[@]}" \
-      "${#special_files[@]}" \
-      "${#missing_paths[@]}"
-
-    check_gofmt() {
-      local gofmt_output
-      if ! gofmt_output=$(gofmt -l "$@"); then
-        printf '%s\n' 'gofmt failed' >&2
-        exit 1
-      fi
-      if [[ -n "$gofmt_output" ]]; then
-        printf '%s\n' "$gofmt_output"
-        printf '%s\n' 'Go files need gofmt' >&2
-        exit 1
-      fi
-    }
-
-    check_go_mod_fmt() {
-      local file formatted
-      for file in "$@"; do
-        formatted=$(go mod edit -fmt -print "$file")
-        if ! cmp -s "$file" <(printf '%s\n' "$formatted"); then
-          printf '%s\n' "$file"
-          printf '%s\n' 'go.mod files need go mod edit -fmt' >&2
-          exit 1
-        fi
-      done
-    }
-
-    ((${#json_files[@]} + ${#json_auto_files[@]} == 0)) || jq empty "${json_files[@]}" "${json_auto_files[@]}"
-
-    if [[ "$mode" == write ]]; then
-      ((${#just_files[@]} == 0)) || {{ quote(just_executable()) }} --fmt -f {{ quote(justfile()) }}
-      ((${#go_files[@]} == 0)) || gofmt -w "${go_files[@]}"
-      for file in "${go_mod_files[@]}"; do
-        go mod edit -fmt "$file"
-      done
-      ((${#python_files[@]} == 0)) || uv run --locked ruff format --force-exclude "${python_files[@]}"
-      ((${#json_files[@]} == 0)) || prettier --write --parser json "${json_files[@]}"
-      ((${#json_auto_files[@]} == 0)) || prettier --write "${json_auto_files[@]}"
-      ((${#jsonc_files[@]} == 0)) || prettier --write --parser jsonc --trailing-comma none "${jsonc_files[@]}"
-      ((${#prettier_files[@]} == 0)) || prettier --write "${prettier_files[@]}"
-      ((${#shell_files[@]} == 0)) || shfmt -ci -w "${shell_files[@]}"
-      ((${#toml_files[@]} == 0)) || taplo fmt "${toml_files[@]}"
-      ((${#lua_files[@]} == 0)) || stylua "${lua_files[@]}"
-      ((${#nix_files[@]} == 0)) || nixfmt "${nix_files[@]}"
-    else
-      ((${#just_files[@]} == 0)) || {{ quote(just_executable()) }} --fmt --check -f {{ quote(justfile()) }}
-      ((${#go_files[@]} == 0)) || check_gofmt "${go_files[@]}"
-      ((${#go_mod_files[@]} == 0)) || check_go_mod_fmt "${go_mod_files[@]}"
-      ((${#python_files[@]} == 0)) || uv run --locked ruff format --check --force-exclude "${python_files[@]}"
-      ((${#json_files[@]} == 0)) || prettier --check --parser json "${json_files[@]}"
-      ((${#json_auto_files[@]} == 0)) || prettier --check "${json_auto_files[@]}"
-      ((${#jsonc_files[@]} == 0)) || prettier --check --parser jsonc --trailing-comma none "${jsonc_files[@]}"
-      ((${#prettier_files[@]} == 0)) || prettier --check "${prettier_files[@]}"
-      ((${#shell_files[@]} == 0)) || shfmt -ci -d "${shell_files[@]}"
-      ((${#toml_files[@]} == 0)) || taplo fmt --check "${toml_files[@]}"
-      ((${#lua_files[@]} == 0)) || stylua --check "${lua_files[@]}"
-      ((${#nix_files[@]} == 0)) || nixfmt --check "${nix_files[@]}"
-    fi
-
-[arg('mode', pattern='write|check')]
-[private]
-[working-directory(hyper_dir)]
-_hyper-format mode: (doctor 'bun')
-    {{ if mode == "write" { "bun run format" } else { "bun run biome format ." } }}
+_format mode: (_run-files 'bun' ('run biome format ' + if mode == 'write' { '--write .' } else { '.' }) '') (_run-files 'clang-format' (if mode == 'write' { '-i' } else { '--dry-run --Werror' }) '*.c *.h') (_run-files 'jq' 'empty' '*.json flake.lock :(exclude).vscode/settings.json') (_format-just mode) (_run-files 'stylua' (if mode == 'check' { '--check' } else { '' }) '*.lua') (_run-files 'rumdl' ('fmt --respect-gitignore ' + if mode == 'check' { '--check .' } else { '.' }) '') (_run-files 'nixfmt' (if mode == 'check' { '--check' } else { '' }) '*.nix') (_run-files 'uv' ('run ruff format ' + if mode == 'check' { '--check .' } else { '.' }) '') (_shell-files (if mode == 'write' { 'format' } else { 'check-format' })) (_run-files 'taplo' (if mode == 'write' { 'fmt' } else { 'fmt --check' }) '*.toml')
 
 [private]
-_lint-files: (doctor 'lint')
-    {{ repo_file_inventory }}
+_format-just mode:
+    {{ quote(just_executable()) }} --fmt {{ if mode == 'check' { '--check' } else { '' } }} --justfile {{ quote(justfile()) }}
 
-    linted_count=$((${#hyper_files[@]} + ${#docker_files[@]} + ${#go_files[@]} + ${#go_mod_files[@]} + ${#json_files[@]} + ${#json_auto_files[@]} + ${#jsonc_files[@]} + ${#yaml_files[@]} + ${#toml_files[@]} + ${#xml_files[@]} + ${#python_files[@]} + ${#shell_files[@]} + ${#nix_files[@]} + ${#lua_files[@]} + ${#prettier_parse_files[@]}))
-    accounted_count=$((linted_count + ${#template_files[@]} + ${#python_input_template_files[@]} + ${#xml_input_template_files[@]} + ${#enumerated_files[@]} + ${#symlink_files[@]} + ${#missing_paths[@]}))
-    if ((accounted_count != ${#repo_paths[@]})); then
-      printf 'internal error: classified %d of %d repository paths\n' "$accounted_count" "${#repo_paths[@]}" >&2
-      exit 1
-    fi
+[parallel]
+[private]
+_lint-files: _check-worktree-paths (_run-files 'jq' 'empty' '*.json flake.lock :(exclude).vscode/settings.json') (_run-files 'hadolint' '' 'Dockerfile Containerfile') (_run-files 'luacheck' '--globals Command cx ya --' '*.lua') (_run-files 'rumdl' 'check --respect-gitignore .' '') _lint-nix (_run-files 'uv' 'run ruff check .' '') (_shell-files 'lint') _lint-templates (_run-files 'taplo' 'lint' '*.toml') _lint-xml
 
-    printf 'repo paths: %d; linted/parsed content files: %d; chezmoi templates: %d (python syntax: %d; shell syntax: %d); generated syntax: %d python, %d XML; enumerated-only files: %d; symlinks: %d; missing/deleted: %d; broken symlinks: %d\n' \
-      "${#repo_paths[@]}" \
-      "$linted_count" \
-      "${#template_files[@]}" \
-      "${#python_template_files[@]}" \
-      "${#shell_template_files[@]}" \
-      "${#python_input_template_files[@]}" \
-      "${#xml_input_template_files[@]}" \
-      "${#enumerated_files[@]}" \
-      "${#symlink_files[@]}" \
-      "${#missing_paths[@]}" \
-      "${#broken_symlinks[@]}"
-
-    if ((${#broken_symlinks[@]} > 0)); then
-      printf 'broken symlinks:\n' >&2
-      printf '  %s\n' "${broken_symlinks[@]}" >&2
-      exit 1
-    fi
-
-    check_xml() {
-      uv run --locked python - "$@" <<'PY'
-    from __future__ import annotations
-
-    import sys
-
-    from defusedxml.ElementTree import parse
-
-    for path in sys.argv[1:]:
-        try:
-            parse(path)
-        except Exception as error:
-            raise SystemExit(f"{path}: {error}") from error
-    PY
-    }
-
-    ((${#yaml_files[@]} == 0)) || yamllint "${yaml_files[@]}"
-    ((${#docker_files[@]} == 0)) || hadolint "${docker_files[@]}"
-    ((${#toml_files[@]} == 0)) || taplo lint "${toml_files[@]}"
-    ((${#xml_files[@]} == 0)) || check_xml "${xml_files[@]}"
-    ((${#python_files[@]} == 0)) || uv run --locked ruff check --force-exclude "${python_files[@]}"
-    ((${#shell_files[@]} == 0)) || shellcheck -x "${shell_files[@]}"
-    if ((${#nix_files[@]} > 0)); then
-      for file in "${nix_files[@]}"; do
-        nix-instantiate --parse "$file" >/dev/null
-      done
-      deadnix_files=()
-      for file in "${nix_files[@]}"; do
-        [[ "$file" == hosts/linux/hardware-configuration.nix ]] || deadnix_files+=("$file")
-      done
-      ((${#deadnix_files[@]} == 0)) || deadnix --fail "${deadnix_files[@]}"
-    fi
-    ((${#lua_files[@]} == 0)) || luacheck --globals Command cx ya -- "${lua_files[@]}"
-
-    if ((${#template_files[@]} > 0 || ${#python_input_template_files[@]} > 0 || ${#xml_input_template_files[@]} > 0)); then
-      tmp_destination=$(mktemp -d)
-      trap 'rm -rf "$tmp_destination"' EXIT
-      if ((${#template_files[@]} > 0)); then
-        chezmoi apply \
-          --dry-run \
-          --source {{ quote(repo_dir) }} \
-          --destination "$tmp_destination" \
-          --force \
-          --no-tty \
-          --refresh-externals=never >/dev/null
+[private]
+_check-worktree-paths:
+    broken=0
+    while IFS= read -r -d '' file; do
+      if [[ -L $file && ! -e $file ]]; then
+        printf 'broken symlink: %s\n' "$file" >&2
+        broken=1
+      elif [[ ! -e $file ]]; then
+        printf 'tracked path missing from worktree: %s\n' "$file" >&2
       fi
+    done < <(git ls-files -z --cached --others --exclude-standard --)
+    exit "$broken"
 
-      for file in "${python_template_files[@]}" "${shell_template_files[@]}"; do
+[private]
+_lint-nix:
+    nix_files=()
+    while IFS= read -r -d '' file; do
+      [[ -f $file && ! -L $file ]] && nix_files+=("$file")
+    done < <(git ls-files -z --cached --others --exclude-standard -- '*.nix')
+    deadnix_files=()
+    for file in "${nix_files[@]}"; do
+      nix-instantiate --parse "$file" >/dev/null
+      [[ $file == hosts/linux/hardware-configuration.nix ]] || deadnix_files+=("$file")
+    done
+    ((${#deadnix_files[@]} == 0)) || deadnix --fail "${deadnix_files[@]}"
+
+[private]
+_lint-xml:
+    xml_files=()
+    while IFS= read -r -d '' file; do
+      [[ -f $file && ! -L $file ]] && xml_files+=("$file")
+    done < <(git ls-files -z --cached --others --exclude-standard -- '*.plist' '*.xml')
+    ((${#xml_files[@]} == 0)) || uv run python -c \
+      'import sys; from defusedxml.ElementTree import parse; [parse(path) for path in sys.argv[1:]]' \
+      "${xml_files[@]}"
+
+[private]
+_lint-templates:
+    python_template_files=()
+    shell_template_files=()
+    python_input_template_files=()
+    xml_input_template_files=()
+    while IFS= read -r -d '' file; do
+      [[ -f $file && ! -L $file ]] || continue
+      case "$file" in
+        dotfiles/.chezmoitemplates/*.py.tmpl) ;;
+        *.bash.tmpl | *.sh.tmpl) shell_template_files+=("$file") ;;
+        *.py.tmpl) python_template_files+=("$file") ;;
+        *.py.in) python_input_template_files+=("$file") ;;
+        *.plist.in | *.xml.in) xml_input_template_files+=("$file") ;;
+      esac
+    done < <(git ls-files -z --cached --others --exclude-standard -- '*.tmpl' '*.py.in' '*.plist.in' '*.xml.in')
+
+    tmp_destination=$(mktemp -d)
+    trap 'rm -rf "$tmp_destination"' EXIT
+    chezmoi apply \
+      --dry-run \
+      --source {{ quote(repo_dir) }} \
+      --destination "$tmp_destination" \
+      --force \
+      --no-tty \
+      --refresh-externals=never >/dev/null
+
+    for file in "${python_template_files[@]}" "${shell_template_files[@]}"; do
+      rendered_file="$tmp_destination/rendered-templates/${file%.tmpl}"
+      mkdir -p "${rendered_file%/*}"
+      chezmoi --source {{ quote(repo_dir) }} execute-template < "$file" > "$rendered_file"
+    done
+    if ((${#python_template_files[@]} > 0)); then
+      PYTHONPYCACHEPREFIX="$tmp_destination/pycache" \
+        uv run python -m compileall -q "$tmp_destination/rendered-templates"
+      for file in "${python_template_files[@]}"; do
         rendered_file="$tmp_destination/rendered-templates/${file%.tmpl}"
-        mkdir -p "${rendered_file%/*}"
-        chezmoi --source {{ quote(dotfiles_dir) }} execute-template < "$file" > "$rendered_file"
+        uv run ruff check --stdin-filename "${file%.tmpl}" - < "$rendered_file"
       done
-      if ((${#python_template_files[@]} > 0)); then
-        PYTHONPYCACHEPREFIX="$tmp_destination/pycache" \
-          uv run --locked python -m compileall -q "$tmp_destination/rendered-templates"
-        for file in "${python_template_files[@]}"; do
-          rendered_file="$tmp_destination/rendered-templates/${file%.tmpl}"
-          uv run --locked ruff check --stdin-filename "${file%.tmpl}" - < "$rendered_file"
-        done
-      fi
-      for file in "${shell_template_files[@]}"; do
-        rendered_file="$tmp_destination/rendered-templates/${file%.tmpl}"
-        bash -n "$rendered_file"
-      done
-      for file in "${python_input_template_files[@]}"; do
-        rendered_file="$tmp_destination/rendered-input-templates/${file%.in}"
-        mkdir -p "${rendered_file%/*}"
-        sed -E 's/@[A-Za-z_][A-Za-z0-9_]*@/template_value/g' "$file" > "$rendered_file"
-      done
-      if ((${#python_input_template_files[@]} > 0)); then
-        PYTHONPYCACHEPREFIX="$tmp_destination/pycache" \
-          uv run --locked python -m compileall -q "$tmp_destination/rendered-input-templates"
-      fi
-      rendered_xml_files=()
-      for file in "${xml_input_template_files[@]}"; do
-        rendered_file="$tmp_destination/rendered-input-templates/${file%.in}"
-        mkdir -p "${rendered_file%/*}"
-        sed -E 's/@[A-Za-z_][A-Za-z0-9_]*@/template_value/g' "$file" > "$rendered_file"
-        rendered_xml_files+=("$rendered_file")
-      done
-      ((${#rendered_xml_files[@]} == 0)) || check_xml "${rendered_xml_files[@]}"
     fi
+    for file in "${shell_template_files[@]}"; do
+      bash -n "$tmp_destination/rendered-templates/${file%.tmpl}"
+    done
+    for file in "${python_input_template_files[@]}"; do
+      rendered_file="$tmp_destination/rendered-input-templates/${file%.in}"
+      mkdir -p "${rendered_file%/*}"
+      sed -E 's/@[A-Za-z_][A-Za-z0-9_]*@/template_value/g' "$file" > "$rendered_file"
+    done
+    if ((${#python_input_template_files[@]} > 0)); then
+      PYTHONPYCACHEPREFIX="$tmp_destination/pycache" \
+        uv run python -m compileall -q "$tmp_destination/rendered-input-templates"
+    fi
+    rendered_xml_files=()
+    for file in "${xml_input_template_files[@]}"; do
+      rendered_file="$tmp_destination/rendered-input-templates/${file%.in}"
+      mkdir -p "${rendered_file%/*}"
+      sed -E 's/@[A-Za-z_][A-Za-z0-9_]*@/template_value/g' "$file" > "$rendered_file"
+      rendered_xml_files+=("$rendered_file")
+    done
+    ((${#rendered_xml_files[@]} == 0)) || uv run python -c \
+      'import sys; from defusedxml.ElementTree import parse; [parse(path) for path in sys.argv[1:]]' \
+      "${rendered_xml_files[@]}"
+
+[private]
+_shell-files action:
+    shell_files=()
+    while IFS= read -r -d '' file; do
+      [[ -f $file && ! -L $file ]] || continue
+      case "$file" in
+        *.tmpl | *.txt | *.patch) continue ;;
+        *.sh | *.sh.in | *.bash) shell_files+=("$file"); continue ;;
+      esac
+      if head -n 2 < "$file" | grep -Eq '^#!.*[[:space:]/](sh|bash)([[:space:]]|$)|^# shellcheck shell=(sh|bash)'; then
+        shell_files+=("$file")
+      fi
+    done < <(git ls-files -z --cached --others --exclude-standard --)
+    ((${#shell_files[@]} == 0)) && exit
+    case {{ quote(action) }} in
+      format) shfmt -ci -w "${shell_files[@]}" ;;
+      check-format) shfmt -ci -d "${shell_files[@]}" ;;
+      lint) shellcheck -x "${shell_files[@]}" ;;
+    esac
+
+[private]
+_run-files executable arguments patterns:
+    printf '==> %s %s\n' {{ quote(executable) }} {{ quote(arguments) }}
+    argument_array=()
+    [[ -z {{ quote(arguments) }} ]] || read -r -a argument_array <<< {{ quote(arguments) }}
+    if [[ -z {{ quote(patterns) }} ]]; then
+      {{ quote(executable) }} "${argument_array[@]}"
+      exit
+    fi
+    pattern_array=()
+    read -r -a pattern_array <<< {{ quote(patterns) }}
+    files=()
+    while IFS= read -r -d '' file; do
+      [[ -f $file && ! -L $file ]] && files+=("$file")
+    done < <(git ls-files -z --cached --others --exclude-standard -- "${pattern_array[@]}")
+    ((${#files[@]} == 0)) || {{ quote(executable) }} "${argument_array[@]}" "${files[@]}"
 
 [private]
 _check-spectrum-build: (doctor 'spectrum')
-    uv run --locked spectrum-build check
+    uv run spectrum-build check
 
 [private]
 _check-spectrum: (doctor 'spectrum') _check-spectrum-build
     bytecode_dir=$(mktemp -d)
     trap 'rm -rf "$bytecode_dir"' EXIT
-    uv run --locked ty check spectrum/scripts/build.py spectrum/scripts/boot_artifacts.py spectrum/scripts/spectrum_build
-    PYTHONPYCACHEPREFIX="$bytecode_dir" uv run --locked python -m compileall -q spectrum/scripts
+    uv run ty check spectrum/scripts/boot_artifacts.py spectrum/scripts/spectrum_build
+    PYTHONPYCACHEPREFIX="$bytecode_dir" uv run python -m compileall -q spectrum/scripts
 
 [private]
-_check-python: python-complexity python-dead-code
+_check-python: manifest-check python-complexity python-dead-code python-dependencies python-typecheck python-test
     uv lock --check
-    uv sync --locked --check
-    uv run --locked deptry .
-    uv run --locked ty check
+    uv sync --check
     bytecode_dir=$(mktemp -d)
     build_dir=$(mktemp -d)
     trap 'rm -rf "$bytecode_dir" "$build_dir"' EXIT
-    PYTHONPYCACHEPREFIX="$bytecode_dir" uv run --locked python -m compileall -q ansible/files/scripts dotfiles/.chezmoiscripts packages/toshy spectrum/scripts
-    uv run --locked pytest
+    PYTHONPYCACHEPREFIX="$bytecode_dir" uv run python -m compileall -q ansible dotfiles packages spectrum
     uv build --out-dir "$build_dir" --no-build-logs
 
-# Scan every tracked or untracked, non-ignored Python source file for dead code.
+# Validate shared manifest data and ensure generated schemas are current.
 [group('dev')]
-python-dead-code: (_python-analysis 'vulture')
+manifest-check:
+    uv run dotfiles-scripts manifests check
 
-# Reject cognitively complex functions in every first-party Python source file.
+# Regenerate JSON Schemas from the strict runtime manifest models.
 [group('dev')]
-python-complexity: (_python-analysis 'complexipy')
+manifest-update-schemas:
+    uv run dotfiles-scripts manifests update-schemas
 
-[arg('tool', pattern='vulture|complexipy')]
-[private]
-_python-analysis tool:
-    python_files=()
-    while IFS= read -r -d '' file; do
-      [[ -f $file ]] && python_files+=("$file")
-    done < <(git ls-files -z --cached --others --exclude-standard -- '*.py')
-    ((${#python_files[@]} == 0)) || {{ if tool == "complexipy" { "uv run --locked complexipy --failed --plain" } else { "uv run --locked vulture" } }} "${python_files[@]}"
+# Check declared dependencies against first-party imports.
+[group('dev')]
+python-dependencies:
+    uv run deptry .
+
+# Run the Python test suite.
+[group('dev')]
+[positional-arguments]
+python-test +args='':
+    uv run pytest "$@"
+
+# Type-check the Python source roots configured in pyproject.toml.
+[group('dev')]
+[positional-arguments]
+python-typecheck +args='':
+    uv run ty check "$@"
+
+# Scan the first-party Python source roots configured in pyproject.toml.
+[group('dev')]
+python-dead-code:
+    uv run vulture
+
+# Reject cognitively complex functions in the configured Python source roots.
+[group('dev')]
+python-complexity:
+    uv run complexipy --plain
 
 [private]
-_check-go: (doctor 'go')
-    go test ./...
-    golangci-lint run ./...
+_check-c: (doctor 'c')
+    meson setup build/meson . --wipe
+    meson compile -C build/meson
+    meson test -C build/meson --print-errorlogs
+    meson setup build/meson-sanitize . --wipe -Db_lundef=false -Db_sanitize=address,undefined
+    meson compile -C build/meson-sanitize
+    meson test -C build/meson-sanitize --print-errorlogs
+    meson setup build/meson-release . --wipe --buildtype=release -Db_lto=true
+    meson compile -C build/meson-release
+    meson test -C build/meson-release --print-errorlogs
 
 [private]
-_check-ansible: (doctor 'ansible') _deps _check-ansible-collection
-    for playbook in {{ ansible_playbooks }}; do
-      ansible-playbook --syntax-check "$playbook"
-    done
+_check-ansible: (doctor 'ansible') _deps _check-ansible-operation
+    ansible-playbook --syntax-check ansible/site.yml
     ansible-lint ansible
     yamllint .
 
 [private]
-[working-directory('ansible/collections/ansible_collections/evy/dotfiles')]
-_check-ansible-collection:
-    ansible-test sanity --local --skip-test validate-modules
-    ansible-test integration --local operation
+_check-ansible-operation:
+    ansible-doc -t module dotfiles_operation > /dev/null
+    ANSIBLE_BECOME_ASK_PASS=false ansible-playbook ansible/tests/integration/operation.yml
 
 [private]
 _check-github-actions:
     actionlint
+    zizmor --persona=pedantic .
 
 [private]
 _check-bun: (doctor 'bun')
-    bun install --frozen-lockfile --filter hyper-window-tiling
-    bun run --filter hyper-window-tiling check
+    bun install --frozen-lockfile
+    bun run check
 
 [private]
 _check-lua:
@@ -1018,7 +903,7 @@ lint: (doctor 'lint') check-format _lint-checks
 
 [parallel]
 [private]
-_lint-checks: _lint-files _check-python _check-spectrum-build _check-go _check-ansible _check-github-actions _check-bun _check-lua
+_lint-checks: _lint-files _check-python _check-spectrum-build _check-c _check-ansible _check-github-actions _check-bun _check-lua
 
 # Run the repo validation suite.
 [group('dev')]
