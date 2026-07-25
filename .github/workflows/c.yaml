@@ -41,7 +41,9 @@ jobs:
           persist-credentials: false
 
       - name: Check Formatting
-        run: git ls-files -z -- "*.c" "*.h" | xargs -0 clang-format --dry-run --Werror
+        run: >-
+          git -c safe.directory="$GITHUB_WORKSPACE" ls-files -z -- "*.c" "*.h"
+          | xargs -0 clang-format --dry-run --Werror
 
   check:
     name: ${{ matrix.name }}

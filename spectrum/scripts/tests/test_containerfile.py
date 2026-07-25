@@ -132,9 +132,7 @@ def test_python_build_environment_and_sources_have_separate_cache_inputs() -> No
         assert f"from=spectrum-{source}-source,source=/src,target=/src" in containerfile
     assert "from=spectrum-image-source,source=/src,target=/src" in containerfile
     assert (
-        containerfile.count(
-            "packages/dotfiles-python/src/workstation/lib/sources.py"
-        )
+        containerfile.count("packages/dotfiles-python/src/workstation/lib/sources.py")
         == 1
     )
     for metadata_only_module in ("discord", "rustdesk", "sops", "vscode"):
