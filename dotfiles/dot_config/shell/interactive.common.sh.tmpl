@@ -678,16 +678,19 @@ brewup() {
 update() {
 	(
 		cd "$_dotfiles_repo_path" &&
-			_dotfiles_ansible_playbook ansible/playbooks/userland.yml "$@"
+			_dotfiles_ansible_playbook ansible/site.yml --tags userland "$@"
 	) || return
-	chezmoi apply --refresh-externals=auto --force
+	chezmoi apply --refresh-externals=auto --force || return
+	(
+		cd "$_dotfiles_repo_path" &&
+			_dotfiles_ansible_playbook ansible/site.yml --tags host "$@"
+	)
 }
 
 rebuild() {
 	(
 		cd "$_dotfiles_repo_path" &&
-			_dotfiles_ansible_playbook ansible/playbooks/bootstrap.yml "$@" &&
-			_dotfiles_ansible_playbook ansible/playbooks/userland.yml "$@"
+			_dotfiles_ansible_playbook ansible/site.yml --tags userland "$@"
 	)
 }
 
@@ -695,9 +698,7 @@ check() {
 	(
 		cd "$_dotfiles_repo_path" &&
 			_dotfiles_brew_bundle check --verbose &&
-			_dotfiles_ansible_playbook --syntax-check ansible/playbooks/bootstrap.yml &&
-			_dotfiles_ansible_playbook --syntax-check ansible/playbooks/userland.yml &&
-			_dotfiles_ansible_playbook --syntax-check ansible/playbooks/site.yml
+			_dotfiles_ansible_playbook --syntax-check ansible/site.yml
 	)
 }
 
@@ -708,12 +709,12 @@ micfix() {
 update() {
 	(
 		cd "$_dotfiles_repo_path" &&
-			_dotfiles_ansible_playbook ansible/playbooks/userland.yml
+			_dotfiles_ansible_playbook ansible/site.yml --tags userland
 	) || return
 	chezmoi apply --refresh-externals=auto --force || return
 	(
 		cd "$_dotfiles_repo_path" &&
-			_dotfiles_ansible_playbook ansible/playbooks/host.yml
+			_dotfiles_ansible_playbook ansible/site.yml --tags host
 	)
 }
 
@@ -740,10 +741,7 @@ check() {
 		cd "$_dotfiles_repo_path" &&
 			_dotfiles_brew_bundle check --verbose &&
 			just check &&
-			_dotfiles_ansible_playbook --syntax-check ansible/playbooks/bootstrap.yml &&
-			_dotfiles_ansible_playbook --syntax-check ansible/playbooks/userland.yml &&
-			_dotfiles_ansible_playbook --syntax-check ansible/playbooks/host.yml &&
-			_dotfiles_ansible_playbook --syntax-check ansible/playbooks/site.yml
+			_dotfiles_ansible_playbook --syntax-check ansible/site.yml
 	)
 }
 
