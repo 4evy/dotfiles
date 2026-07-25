@@ -3,6 +3,7 @@
 #include <gio/gio.h>
 #include <glib.h>
 #include <glib/gstdio.h>
+#include <signal.h>
 
 static TtrManifest *test_manifest;
 
@@ -38,6 +39,34 @@ static void test_runner_propagates_exit_and_environment(void) {
                   ==, 23);
   g_assert_no_error(error);
   g_unsetenv("TTR_CHILD_UNSET");
+}
+
+static void test_runner_maps_signal_to_shell_status(void) {
+  char runner_name[] = "sh";
+  char integration[] = "";
+  char shell[] = "/bin/sh";
+  char default_flag[] = "-c";
+  char *programs[] = {shell, nullptr};
+  char *empty[] = {nullptr};
+  char *default_args[] = {default_flag, nullptr};
+  g_autoptr(GHashTable) environment =
+      g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+  TtrRunner runner = {
+      .name = runner_name,
+      .programs = programs,
+      .skip_env = empty,
+      .default_args = default_args,
+      .env = environment,
+      .env_unset = empty,
+      .integration = integration,
+  };
+  char command[] = "kill -TERM $$";
+  char *arguments[] = {command, nullptr};
+  GError *error = nullptr;
+  g_assert_cmpint(ttr_runner_run(&runner, nullptr, ttr_manifest_runtime(test_manifest),
+                                 arguments, &error),
+                  ==, 128 + SIGTERM);
+  g_assert_no_error(error);
 }
 
 static void test_runner_skips_same_executable_through_symlink(void) {
@@ -93,6 +122,7 @@ int main(int argc, char **argv) {
   g_assert_nonnull(test_manifest);
   g_test_add_func("/runner/exit-and-environment",
                   test_runner_propagates_exit_and_environment);
+  g_test_add_func("/runner/signal-status", test_runner_maps_signal_to_shell_status);
   g_test_add_func("/runner/skip-symlink",
                   test_runner_skips_same_executable_through_symlink);
   const int status = g_test_run();

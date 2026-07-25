@@ -274,9 +274,13 @@ static int spawn_and_wait(const TtrRunner *runner, const char *executable,
   if (!g_subprocess_wait(process, nullptr, error)) {
     return 1;
   }
-  const int status =
-      g_subprocess_get_if_exited(process) ? g_subprocess_get_exit_status(process) : -1;
-  return status;
+  if (g_subprocess_get_if_exited(process)) {
+    return g_subprocess_get_exit_status(process);
+  }
+  if (g_subprocess_get_if_signaled(process)) {
+    return 128 + g_subprocess_get_term_sig(process);
+  }
+  return 1;
 }
 
 int ttr_runner_run(const TtrRunner *runner, const TtrIntegration *integration,
