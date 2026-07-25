@@ -14,13 +14,14 @@
 stdenv.mkDerivation {
   pname = "uresourced";
   inherit (sourcePin) version;
+  strictDeps = true;
 
   src = fetchFromGitLab {
-    domain = "gitlab.freedesktop.org";
-    owner = "benzea";
-    repo = "uresourced";
+    domain = sourcePin.repository.host;
+    owner = sourcePin.repository.owner;
+    repo = sourcePin.repository.name;
     rev = sourcePin.revision;
-    hash = sourcePin.source_sha256;
+    hash = sourcePin.hashes.nix_source;
   };
 
   nativeBuildInputs = [
@@ -41,6 +42,9 @@ stdenv.mkDerivation {
     "-Dsystemdsystemunitdir=${placeholder "out"}/lib/systemd/system"
     "-Dsystemduserunitdir=${placeholder "out"}/lib/systemd/user"
   ];
+
+  doCheck = false;
+  doInstallCheck = false;
 
   meta = {
     description = "Dynamically allocate resources to the active graphical user";

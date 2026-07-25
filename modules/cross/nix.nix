@@ -5,7 +5,7 @@
   ...
 }:
 let
-  flakeInputs = lib.attrsets.filterAttrs (_: lib.types.isType "flake") inputs;
+  flakeInputs = lib.attrsets.filterAttrs (_: input: (input._type or null) == "flake") inputs;
   nixPathEntries = lib.attrsets.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
 in
 {
@@ -19,7 +19,10 @@ in
         trusted-users = [
           "4evy"
         ];
-        experimental-features = "nix-command flakes";
+        experimental-features = [
+          "flakes"
+          "nix-command"
+        ];
         builders-use-substitutes = true;
         keep-outputs = true;
         substituters = [

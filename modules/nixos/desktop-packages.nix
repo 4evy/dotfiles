@@ -111,7 +111,13 @@ in
       deps = [ "users" ];
       text = ''
         mkdir -p '${heliumProfileDir}'
-        chown 4evy:users '/home/4evy/.config' '/home/4evy/.config/net.imput.helium' '${heliumProfileDir}' 2>/dev/null || true
+        install -m 0644 '${../../browser/helium-profile-avatar.png}' '${heliumProfileDir}/Custom Avatar Picture.png'
+        chown 4evy:users \
+          '/home/4evy/.config' \
+          '/home/4evy/.config/net.imput.helium' \
+          '${heliumProfileDir}' \
+          '${heliumProfileDir}/Custom Avatar Picture.png' \
+          2>/dev/null || true
 
         if command -v runuser >/dev/null 2>&1; then
           token="$(runuser -u 4evy -- ${pkgs.gh}/bin/gh auth token 2>/dev/null || true)"

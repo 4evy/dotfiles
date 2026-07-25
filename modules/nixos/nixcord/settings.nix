@@ -1,6 +1,6 @@
 { inputs, lib, ... }:
 let
-  discordQuickCss = builtins.readFile ../../../ansible/files/apps/equicord/quickCss.css;
+  discordQuickCss = builtins.readFile ../../../packages/equicord/quickCss.css;
   equicordSettings = import ../../equicord/settings.nix {
     inherit lib;
     parseRules = builtins.fromJSON (

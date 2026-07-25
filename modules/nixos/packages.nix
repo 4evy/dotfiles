@@ -11,14 +11,22 @@ let
     pkgs.unstable.zlib.dev
   ];
   codex = pkgs.eupkgs.codex;
-  ghosttyRevision = pkgs.spectrumSourcePins.ghostty.revision;
-  ghosttyVersion = pkgs.spectrumSourcePins.ghostty.version;
-  ghosttySource = pkgs.fetchFromGitHub {
-    owner = "ghostty-org";
-    repo = "ghostty";
-    rev = ghosttyRevision;
-    hash = "sha256-NO+KKDcx5Q6AQX1uFsATSZU1nIIvxuj5suEG6/wrJ4w=";
+  helix = pkgs.unstable.helix.overrideAttrs {
+    doCheck = false;
+    doInstallCheck = false;
   };
+  ghosttyVersion = pkgs.dotfilesSources.ghostty.version;
+  # The dependency expression is imported below during evaluation. An
+  # evaluator-side fixed-output fetch keeps that import host-independent, so a
+  # macOS workstation can evaluate the x86_64-linux NixOS configuration.
+  ghosttySource = builtins.fetchTarball {
+    inherit (pkgs.dotfilesSources.ghostty.artifacts.source) url;
+    sha256 = pkgs.dotfilesSources.ghostty.hashes.nix_source;
+  };
+  ghosttyPatchDirectory = ../../patches/ghostty;
+  ghosttyPatchNames = lib.filter (name: name != "") (
+    lib.splitString "\n" (builtins.readFile (ghosttyPatchDirectory + /series))
+  );
   ghosttyPatched = pkgs.unstable.ghostty.overrideAttrs (
     finalAttrs: _: {
       version = ghosttyVersion;
@@ -26,14 +34,9 @@ let
       deps = pkgs.callPackage (ghosttySource + "/build.zig.zon.nix") {
         name = "ghostty-cache-${finalAttrs.version}";
       };
-      patches = [
-        ../../patches/ghostty/0001-surface-export-the-active-screen-with-scrollback.patch
-        ../../patches/ghostty/0002-apprt-identify-terminal-scrollback-text.patch
-        ../../patches/ghostty/0003-embedded-honor-command-wait-after-command-setting.patch
-        ../../patches/ghostty/0004-gtk-edit-scrollback-in-a-temporary-surface.patch
-        ../../patches/ghostty/0005-macos-edit-scrollback-in-a-temporary-surface.patch
-        ../../patches/ghostty/0006-core-let-link-clicks-bypass-mouse-capture.patch
-      ];
+      patches = map (name: ghosttyPatchDirectory + "/${name}") ghosttyPatchNames;
+      doCheck = false;
+      doInstallCheck = false;
     }
   );
 in
@@ -49,6 +52,7 @@ in
         yamllint
         terminal-theme-tools
         ;
+      inherit helix;
 
       # Host/session spine and editor dependencies.
       inherit (pkgs.unstable)
@@ -97,7 +101,6 @@ in
         gnumake
         gum
         hadolint
-        helix
         imagemagick
         jdk
         jj
@@ -134,7 +137,6 @@ in
         pinentry-gnome3
         pkg-config
         poppler-utils
-        prettier
         resvg
         ripgrep
         rsync

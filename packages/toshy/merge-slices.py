@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.14
 """Merge dotfiles Toshy slices into an upstream Toshy config.
 
 Toshy's installer preserves named regions delimited by SLICE_MARK comments.

@@ -4,7 +4,7 @@
     specialArgs = { inherit inputs; };
     modules = [
       ./configuration.nix
-      inputs.self.nixosModules.default
+      ../../modules/nixos
       {
         local = {
           shell.enable = true;
