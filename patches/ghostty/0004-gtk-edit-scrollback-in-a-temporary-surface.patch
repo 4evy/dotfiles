@@ -1,9 +1,11 @@
-From 2a57fdeb3a437b0b5e337df1ceb555b79f76ce58 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: 4evy <git@evy.pink>
-Date: Sun, 12 Jul 2026 18:36:14 +0300
+Date: Thu, 1 Jan 1970 00:00:00 +0000
 Subject: [PATCH 4/6] gtk: edit scrollback in a temporary surface
 
-Add a configurable terminal editor for scrollback files. Replace the current pane while the editor runs, restore the original surface on exit, and clean up the temporary export directory.
+Add a configurable terminal editor for scrollback files. Replace the
+current pane while the editor runs, restore the original surface on
+exit, and clean up the temporary export directory.
 ---
  src/apprt/gtk/class/application.zig | 163 +++++++++++++++++++++++++++-
  src/apprt/gtk/class/split_tree.zig  |  26 +++++
@@ -12,10 +14,10 @@ Add a configurable terminal editor for scrollback files. Replace the current pan
  4 files changed, 249 insertions(+), 2 deletions(-)
 
 diff --git a/src/apprt/gtk/class/application.zig b/src/apprt/gtk/class/application.zig
-index a627086..5ed94db 100644
+index 8243d8e3903300461ca3e207eb24bad9847321b2..c0da13cd55e9c190263d8127e5c667a6b6849952 100644
 --- a/src/apprt/gtk/class/application.zig
 +++ b/src/apprt/gtk/class/application.zig
-@@ -721,7 +721,7 @@ pub const Application = extern struct {
+@@ -727,7 +727,7 @@ pub const Application = extern struct {
  
              .open_config => return Action.openConfig(self),
  
@@ -24,7 +26,7 @@ index a627086..5ed94db 100644
  
              .pwd => Action.pwd(target, value),
  
-@@ -2339,14 +2339,21 @@ const Action = struct {
+@@ -2354,14 +2354,21 @@ const Action = struct {
  
          // Open it using openURL. "path" isn't actually a URL but
          // at the time of writing that works just fine for GTK.
@@ -47,7 +49,7 @@ index a627086..5ed94db 100644
          if (std.mem.startsWith(u8, value.url, "/")) {
              self.openUrlFallback(value.kind, value.url);
              return;
-@@ -2363,6 +2370,158 @@ const Action = struct {
+@@ -2378,6 +2385,158 @@ const Action = struct {
          };
      }
  
@@ -192,7 +194,7 @@ index a627086..5ed94db 100644
 +        overlay.split_tree.unref();
 +        const app = overlay.app;
 +        if (std.fs.path.dirname(overlay.temp_path)) |dir| {
-+            std.fs.deleteTreeAbsolute(dir) catch |err|
++            std.Io.Dir.cwd().deleteTree(global.io(), dir) catch |err|
 +                log.warn("failed to delete scrollback directory path={s} err={}", .{
 +                    dir,
 +                    err,
@@ -207,7 +209,7 @@ index a627086..5ed94db 100644
          target: apprt.Target,
          value: apprt.action.Pwd,
 diff --git a/src/apprt/gtk/class/split_tree.zig b/src/apprt/gtk/class/split_tree.zig
-index 7a6b66d..56bd185 100644
+index 7a6b66def85cd147005d6bf0ed5bda9bb8cbf8ce..56bd185ae028705a1ab0a702ef5edfae1ecbbcbc 100644
 --- a/src/apprt/gtk/class/split_tree.zig
 +++ b/src/apprt/gtk/class/split_tree.zig
 @@ -387,6 +387,32 @@ pub const SplitTree = extern struct {
@@ -244,10 +246,10 @@ index 7a6b66d..56bd185 100644
          const tree = self.getTree() orelse return;
          var it = tree.iterator();
 diff --git a/src/config/Config.zig b/src/config/Config.zig
-index d6a038d..bc48ee4 100644
+index 90ccfc3197fe3303a4eb7632b5a517bf4328f350..bf2eb5f269768eb80e2d1d2e95bc4abc17cb735d 100644
 --- a/src/config/Config.zig
 +++ b/src/config/Config.zig
-@@ -1417,6 +1417,22 @@ input: RepeatableReadableIO = .{},
+@@ -1405,6 +1405,22 @@ input: RepeatableReadableIO = .{},
  /// already compressed remain compressed until their contents are accessed.
  @"scrollback-compression": bool = true,
  
@@ -271,7 +273,7 @@ index d6a038d..bc48ee4 100644
  ///
  /// The default value is `system`.
 diff --git a/src/datastruct/split_tree.zig b/src/datastruct/split_tree.zig
-index 1dc924c..353e394 100644
+index 1dc924ca70f7cc1a9ef5484d62a7d28cc81f5406..353e3941a64358d1d83838ec106323bee26559ee 100644
 --- a/src/datastruct/split_tree.zig
 +++ b/src/datastruct/split_tree.zig
 @@ -164,6 +164,28 @@ pub fn SplitTree(comptime V: type) type {
@@ -335,5 +337,4 @@ index 1dc924c..353e394 100644
      const testing = std.testing;
      const alloc = testing.allocator;
 -- 
-2.55.0
-
+2.54.0

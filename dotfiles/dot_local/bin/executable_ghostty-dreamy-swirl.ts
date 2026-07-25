@@ -270,8 +270,7 @@ function runCommand(command: string, args: readonly string[]): void {
 
 const runMagick = (args: readonly string[]): void => runCommand("magick", args);
 
-const signed = (value: number): string =>
-  value >= 0 ? `+${value}` : `${value}`;
+const signed = (value: number): string => (value >= 0 ? `+${value}` : `${value}`);
 mkdirSync(dirname(OUTPUT), { recursive: true });
 const temporary = join(dirname(OUTPUT), `.dreamy-swirl.${process.pid}.png`);
 const work = mkdtempSync(join(tmpdir(), "ghostty-dreamy-swirl."));

@@ -27,7 +27,11 @@ env = SHELL=/bin/zsh
 font-size = 14
 quit-after-last-window-closed = true
 scrollback-limit = 100000000
+{{- if eq .chezmoi.os "darwin" }}
+scrollback-editor = direct:/opt/homebrew/bin/terminal-theme-run helix
+{{- else }}
 scrollback-editor = direct:{{ .chezmoi.homeDir }}/.local/bin/terminal-theme-run helix
+{{- end }}
 window-padding-x = 8
 window-padding-y = 4
 window-padding-balance = true

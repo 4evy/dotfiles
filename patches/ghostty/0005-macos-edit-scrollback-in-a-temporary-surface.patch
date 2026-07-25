@@ -1,16 +1,18 @@
-From d3b9b3cbd533c8b887f4671fa4c9a9bd16614fad Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: 4evy <git@evy.pink>
-Date: Sun, 12 Jul 2026 18:36:14 +0300
+Date: Thu, 1 Jan 1970 00:00:00 +0000
 Subject: [PATCH 5/6] macos: edit scrollback in a temporary surface
 
-Open terminal scrollback text in a themed Helix surface that temporarily replaces the current pane. Restore the original surface and remove the exported file directory when the editor exits.
+Open terminal scrollback text in a themed Helix surface that temporarily
+replaces the current pane. Restore the original surface and remove
+the exported file directory when the editor exits.
 ---
  macos/Sources/Ghostty/Ghostty.Action.swift |   3 +
  macos/Sources/Ghostty/Ghostty.App.swift    | 101 ++++++++++++++++++++-
  2 files changed, 103 insertions(+), 1 deletion(-)
 
 diff --git a/macos/Sources/Ghostty/Ghostty.Action.swift b/macos/Sources/Ghostty/Ghostty.Action.swift
-index f3842fc..11153ca 100644
+index f3842fc5628dd51415fe98e31d0e759f77f5cba2..11153ca9d19a7e7d1fad9d1c1785e0f092601f62 100644
 --- a/macos/Sources/Ghostty/Ghostty.Action.swift
 +++ b/macos/Sources/Ghostty/Ghostty.Action.swift
 @@ -46,6 +46,7 @@ extension Ghostty.Action {
@@ -31,7 +33,7 @@ index f3842fc..11153ca 100644
                      self = .unknown
                  }
 diff --git a/macos/Sources/Ghostty/Ghostty.App.swift b/macos/Sources/Ghostty/Ghostty.App.swift
-index 5833570..f6e88c2 100644
+index 58335707798034fb548bf4600615349f80d8d070..f6e88c2f9ea190c470d309f5a283ffe24d0a3f21 100644
 --- a/macos/Sources/Ghostty/Ghostty.App.swift
 +++ b/macos/Sources/Ghostty/Ghostty.App.swift
 @@ -324,6 +324,27 @@ extension Ghostty {
@@ -136,7 +138,7 @@ index 5833570..f6e88c2 100644
 +            var config = SurfaceConfiguration(
 +                from: ghostty_surface_inherited_config(surface, GHOSTTY_SURFACE_CONTEXT_SPLIT)
 +            )
-+            config.command = "\"$HOME/.local/bin/terminal-theme-run\" helix \(shellQuote(url.path))"
++            config.command = "/opt/homebrew/bin/terminal-theme-run helix \(shellQuote(url.path))"
 +            config.context = GHOSTTY_SURFACE_CONTEXT_SPLIT
 +
 +            let editor = SurfaceView(app, baseConfig: config)
@@ -172,5 +174,4 @@ index 5833570..f6e88c2 100644
              let undoManager: UndoManager?
              switch target.tag {
 -- 
-2.55.0
-
+2.54.0

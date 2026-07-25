@@ -2,33 +2,39 @@ require "json"
 
 class GhosttyPatched < Formula
   tap_root = Pathname(__dir__).parent
-  source_pins = tap_root/"source-pins.json"
-  source_pins = tap_root/"spectrum/scripts/spectrum_build/programs/source-pins.json" unless source_pins.exist?
-  ghostty_pin = JSON.parse(
-    source_pins.read,
-  ).fetch("ghostty")
+  sources = tap_root/"sources.json"
+  sources = tap_root/"manifests/sources.json" unless sources.exist?
+  ghostty_source = JSON.parse(
+    sources.read,
+  ).fetch("sources").fetch("ghostty")
+  ghostty_artifact = ghostty_source.fetch("artifacts").fetch("source")
 
   desc "Fast, native terminal emulator with dotfiles scrollback patches"
   homepage "https://ghostty.org"
-  url "https://github.com/ghostty-org/ghostty/archive/#{ghostty_pin.fetch("revision")}.tar.gz"
-  version ghostty_pin.fetch("version")
-  sha256 ghostty_pin.fetch("source_sha256")
+  url ghostty_artifact.fetch("url")
+  version ghostty_source.fetch("version")
+  sha256 ghostty_artifact.fetch("sha256")
   license "MIT"
 
   depends_on "gettext" => :build
   depends_on xcode: :build
-  depends_on "zig@0.15" => :build
+  depends_on "zig" => :build
   depends_on :macos
 
   def install
     patch_dir = Pathname(__dir__).parent/"Patches/ghostty"
-    patches = patch_dir.glob("*.patch").sort
+    patches = (patch_dir/"series").readlines(chomp: true)
+              .map(&:strip)
+              .reject { |line| line.empty? || line.start_with?("#") }
+              .map { |name| patch_dir/name }
     odie "Ghostty patch series is empty: #{patch_dir}" if patches.empty?
+    odie "Ghostty patch series contains a missing file" unless patches.all?(&:file?)
 
     system "git", "apply", "--check", *patches
     system "git", "apply", *patches
-    system formula_opt_bin("zig@0.15")/"zig", "build",
+    system formula_opt_bin("zig")/"zig", "build",
            "-Doptimize=ReleaseFast",
+           "-Demit-test-exe=false",
            "-Dversion-string=#{version}"
 
     prefix.install "zig-out/Ghostty.app"

@@ -1,0 +1,6 @@
+0001-surface-export-the-active-screen-with-scrollback.patch
+0002-apprt-identify-terminal-scrollback-text.patch
+0003-embedded-honor-command-wait-after-command-setting.patch
+0004-gtk-edit-scrollback-in-a-temporary-surface.patch
+0005-macos-edit-scrollback-in-a-temporary-surface.patch
+0006-core-prioritize-modified-link-clicks-over-mouse-capt.patch
