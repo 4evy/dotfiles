@@ -64,6 +64,7 @@ def test_systemd_units_have_one_manifest_for_enablement_and_validation() -> None
 
 def test_python_build_environment_and_sources_have_separate_cache_inputs() -> None:
     containerfile = CONTAINERFILE.read_text(encoding="utf-8")
+    build_environment = "/opt/spectrum-build-venv"
 
     project_stage = containerfile.index("FROM scratch AS python-project")
     common_source_stage = containerfile.index(
@@ -128,6 +129,15 @@ def test_python_build_environment_and_sources_have_separate_cache_inputs() -> No
     )
     assert "--python /usr/bin/python3" in containerfile
     assert "--no-python-downloads" in containerfile
+    assert f"export UV_PROJECT_ENVIRONMENT={build_environment}" in containerfile
+    assert f"    {build_environment} && \\" in containerfile
+    assert (
+        containerfile.count(
+            "from=spectrum-python,"
+            f"source={build_environment},target={build_environment}"
+        )
+        == 7
+    )
     for source in ("packaged", "extension", "ghostty", "kmscon", "image"):
         assert f"from=spectrum-{source}-source,source=/src,target=/src" in containerfile
     assert "from=spectrum-image-source,source=/src,target=/src" in containerfile

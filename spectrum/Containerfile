@@ -138,12 +138,12 @@ RUN --mount=type=bind,from=python-project,source=/,target=/project \
     'import sys; assert sys.version_info[:2] == (3, 14), sys.version' && \
     export UV_CACHE_DIR=/var/cache/uv && \
     export UV_LINK_MODE=copy && \
-    export UV_PROJECT_ENVIRONMENT=/var/tmp/spectrum-build-venv && \
+    export UV_PROJECT_ENVIRONMENT=/opt/spectrum-build-venv && \
     uv --directory /project venv \
     --python /usr/bin/python3 \
     --no-python-downloads \
     --system-site-packages \
-    /var/tmp/spectrum-build-venv && \
+    /opt/spectrum-build-venv && \
     uv --directory /project sync \
     --locked \
     --no-dev \
@@ -191,7 +191,7 @@ COPY --from=nix-tools /spectrum-nix-tools /usr/libexec/spectrum-nix-tools
 # Install repository/RPM applications together because they share DNF and release
 # lookup machinery. The optional GitHub token is a secret mount: release lookups
 # can use it, but neither the token nor the Python build environment is shipped.
-RUN --mount=type=bind,from=spectrum-python,source=/var/tmp/spectrum-build-venv,target=/opt/spectrum-build-venv \
+RUN --mount=type=bind,from=spectrum-python,source=/opt/spectrum-build-venv,target=/opt/spectrum-build-venv \
     --mount=type=bind,from=spectrum-packaged-source,source=/src,target=/src \
     --mount=type=cache,id=spectrum-dnf5,sharing=locked,target=/var/cache/libdnf5 \
     --mount=type=tmpfs,target=/boot \
@@ -206,7 +206,7 @@ RUN --mount=type=bind,from=spectrum-python,source=/var/tmp/spectrum-build-venv,t
 
 # Copyous tracks a separate upstream release and has a small dependency set.
 # Keeping it out of the RPM-app layer lets extension-only work restart here.
-RUN --mount=type=bind,from=spectrum-python,source=/var/tmp/spectrum-build-venv,target=/opt/spectrum-build-venv \
+RUN --mount=type=bind,from=spectrum-python,source=/opt/spectrum-build-venv,target=/opt/spectrum-build-venv \
     --mount=type=bind,from=spectrum-extension-source,source=/src,target=/src \
     --mount=type=cache,id=spectrum-dnf5,sharing=locked,target=/var/cache/libdnf5 \
     --mount=type=tmpfs,target=/boot \
@@ -221,7 +221,7 @@ RUN --mount=type=bind,from=spectrum-python,source=/var/tmp/spectrum-build-venv,t
 
 # Ghostty and KMSCON are long source builds with independent failure/retry
 # boundaries. Neither needs the GitHub API secret or package-manager cache.
-RUN --mount=type=bind,from=spectrum-python,source=/var/tmp/spectrum-build-venv,target=/opt/spectrum-build-venv \
+RUN --mount=type=bind,from=spectrum-python,source=/opt/spectrum-build-venv,target=/opt/spectrum-build-venv \
     --mount=type=bind,from=spectrum-ghostty-source,source=/src,target=/src \
     --mount=type=tmpfs,target=/tmp \
     PYTHONPATH=/src/packages/dotfiles-python/src:/src/spectrum/scripts \
@@ -230,7 +230,7 @@ RUN --mount=type=bind,from=spectrum-python,source=/var/tmp/spectrum-build-venv,t
 # This separate layer is the cache boundary; combining it with Ghostty would
 # discard a completed Ghostty build whenever KMSCON alone fails.
 # hadolint ignore=DL3059
-RUN --mount=type=bind,from=spectrum-python,source=/var/tmp/spectrum-build-venv,target=/opt/spectrum-build-venv \
+RUN --mount=type=bind,from=spectrum-python,source=/opt/spectrum-build-venv,target=/opt/spectrum-build-venv \
     --mount=type=bind,from=spectrum-kmscon-source,source=/src,target=/src \
     --mount=type=tmpfs,target=/tmp \
     PYTHONPATH=/src/packages/dotfiles-python/src:/src/spectrum/scripts \
@@ -238,7 +238,7 @@ RUN --mount=type=bind,from=spectrum-python,source=/var/tmp/spectrum-build-venv,t
 
 # Image policy is a separate cheap phase. Because it mounts the broader image
 # source stage, shell/metadata validation edits do not poison program caches.
-RUN --mount=type=bind,from=spectrum-python,source=/var/tmp/spectrum-build-venv,target=/opt/spectrum-build-venv \
+RUN --mount=type=bind,from=spectrum-python,source=/opt/spectrum-build-venv,target=/opt/spectrum-build-venv \
     --mount=type=bind,from=spectrum-image-source,source=/src,target=/src \
     PYTHONPATH=/src/packages/dotfiles-python/src:/src/spectrum/scripts \
     /opt/spectrum-build-venv/bin/python -m spectrum_build.cli configure
@@ -287,7 +287,7 @@ ARG IMAGE_REF="ostree-image:docker://ghcr.io/4evy/spectrum"
 ARG IMAGE_REVISION
 ARG IMAGE_VERSION
 
-RUN --mount=type=bind,from=spectrum-python,source=/var/tmp/spectrum-build-venv,target=/opt/spectrum-build-venv \
+RUN --mount=type=bind,from=spectrum-python,source=/opt/spectrum-build-venv,target=/opt/spectrum-build-venv \
     --mount=type=bind,from=spectrum-image-source,source=/src,target=/src \
     BLUEFIN_BASE_IMAGE="${BLUEFIN_BASE_IMAGE}" \
     BLUEFIN_BASE_IMAGE_NAME="${BLUEFIN_BASE_IMAGE_NAME}" \
@@ -304,7 +304,7 @@ RUN --mount=type=bind,from=spectrum-python,source=/var/tmp/spectrum-build-venv,t
 # Validate only after the Spectrum rootfs overlay is present. This catches both
 # dynamic installer failures and a static file that accidentally overrides an
 # installed program/unit. As above, validation tooling is mounted, not shipped.
-RUN --mount=type=bind,from=spectrum-python,source=/var/tmp/spectrum-build-venv,target=/opt/spectrum-build-venv \
+RUN --mount=type=bind,from=spectrum-python,source=/opt/spectrum-build-venv,target=/opt/spectrum-build-venv \
     --mount=type=bind,from=spectrum-image-source,source=/src,target=/src \
     IMAGE_NAME="${IMAGE_NAME}" \
     PYTHONPATH=/src/packages/dotfiles-python/src:/src/spectrum/scripts \
