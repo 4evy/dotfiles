@@ -11,10 +11,14 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
     "strict": true,
     "target": "ESNext",
     "types": ["bun"],
     "verbatimModuleSyntax": true
   },
-  "files": ["executable_ghostty-dreamy-swirl.ts"]
+  "files": [
+    "dot_local/bin/executable_ghostty-dreamy-swirl.ts",
+    "dot_pi/agent/extensions/system-runner.ts"
+  ]
 }

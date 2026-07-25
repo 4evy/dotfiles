@@ -7,9 +7,11 @@ ignore: |
   .devenv/
   .venv/
   ansible.cfg
-  build/
+  build*/
   dist/
   node_modules/
+  packages/terminal-theme-tools/build*/
+  packages/terminal-theme-tools/subprojects/*/
   result
   secrets/
 

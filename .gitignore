@@ -6,10 +6,13 @@ Thumbs.db
 
 .devenv/
 .ansible/
+.jj/
 .venv/
 .cache/
+.complexipy_cache/
 .pytest_cache/
 .ruff_cache/
+.rumdl_cache/
 __pycache__/
 *.py[cod]
 .docker-cache/
@@ -27,6 +30,8 @@ result
 **/packages/
 !/packages/
 !/packages/**
+!/spectrum/image/packages/
+!/spectrum/image/packages/required.txt
 /packages/**/.DS_Store
 **/__pycache__/
 **/*.py[cod]
@@ -34,12 +39,19 @@ node_modules/
 **/node_modules/
 
 **/target/
+.coverage
 lcov.info
 
 # Generated outputs
 build/
+build-*/
+builddir/
 dist/
 *.egg-info/
 .dotfiles-gnome-extension/
 tmp/
-/ansible/collections/ansible_collections/evy/dotfiles/tests/output/
+
+# Meson wrap downloads
+/packages/terminal-theme-tools/subprojects/*/
+!/packages/terminal-theme-tools/subprojects/packagefiles/
+!/packages/terminal-theme-tools/subprojects/packagefiles/**

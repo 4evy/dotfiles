@@ -14,15 +14,18 @@
 .gitattributes linguist-detectable -linguist-vendored
 .gitignore linguist-detectable -linguist-vendored
 .dockerignore linguist-detectable
-go.mod linguist-detectable
 
 # Classify chezmoi templates and extension-less scripts by their rendered
 # language so they contribute alongside the matching source files.
 *.bash.tmpl linguist-language=Shell linguist-detectable
 *.conf.tmpl linguist-language=INI linguist-detectable
+*.css.in linguist-language=CSS
 *.gitconfig.tmpl linguist-language=gitconfig linguist-detectable
+*.glsl.tmpl linguist-language=GLSL
+*.ghostty.tmpl linguist-language=INI linguist-detectable
 # Linguist has no HJSON entry; JSON5 is the closest supported data syntax.
 *.hjson.tmpl linguist-language=JSON5 linguist-detectable
+*.jsonc.tmpl linguist-language=jsonc linguist-detectable
 *.json.tmpl linguist-language=JSON linguist-detectable
 *.kdl.tmpl linguist-language=KDL linguist-detectable
 *.nix.tmpl linguist-language=Nix
@@ -38,14 +41,12 @@ go.mod linguist-detectable
 *.zsh.tmpl linguist-language=Shell linguist-detectable
 dotfiles/.chezmoitemplates/*.conf.tmpl linguist-language=INI linguist-detectable
 dotfiles/.chezmoitemplates/catppuccin_rgb linguist-language=Go-Template linguist-detectable
-dotfiles/Library/Application[[:space:]]Support/com.mitchellh.ghostty/config.tmpl linguist-language=INI linguist-detectable
+dotfiles/.chezmoitemplates/executable_fingerprint linguist-language=Go-Template linguist-detectable
 dotfiles/dot_bash_profile.tmpl linguist-language=Shell linguist-detectable
 dotfiles/dot_bashenv.tmpl linguist-language=Shell linguist-detectable
 dotfiles/dot_bashrc.tmpl linguist-language=Shell linguist-detectable
-dotfiles/dot_config/ghostty/config.tmpl linguist-language=INI linguist-detectable
 dotfiles/dot_gitconfig.tmpl linguist-language=gitconfig linguist-detectable
 dotfiles/dot_gitignore_global linguist-language=Ignore-List linguist-detectable
-dotfiles/dot_local/bin/executable_* linguist-language=Shell
 dotfiles/dot_local/share/applications/*.desktop.tmpl linguist-language=desktop linguist-detectable
 dotfiles/dot_ssh/config.tmpl linguist-language=sshconfig linguist-detectable
 dotfiles/dot_zshenv.tmpl linguist-language=Shell linguist-detectable
@@ -54,11 +55,14 @@ dotfiles/dot_zshrc.tmpl linguist-language=Shell linguist-detectable
 # Cover config formats whose extensions are either too generic or unknown to
 # Linguist, while still using known Linguist language names where available.
 .ansible-lint linguist-language=YAML linguist-detectable
+.clang-format linguist-language=YAML linguist-detectable
+.clang-tidy linguist-language=YAML linguist-detectable
 .shellcheckrc linguist-language=Shell
 .yamllint linguist-language=YAML linguist-detectable
 dotfiles/.chezmoiignore linguist-language=Ignore-List linguist-detectable
 dotfiles/.chezmoiremove linguist-language=Ignore-List linguist-detectable
 *.cfg linguist-language=INI linguist-detectable
+*.cnf.in linguist-language=INI linguist-detectable
 *.conf linguist-language=INI linguist-detectable
 *.fc linguist-language=sepolicy linguist-detectable
 *.if linguist-language=sepolicy linguist-detectable
@@ -75,8 +79,10 @@ Containerfile linguist-language=Dockerfile linguist-detectable
 # Linguist does not have a Kanata language entry; Kanata config uses
 # s-expression syntax, so Scheme is the closest supported highlighter.
 dotfiles/dot_config/kanata/*.kbd linguist-language=Scheme
-spectrum/repos/*.repo.in linguist-language=INI linguist-detectable
-patches/**/*.patch -whitespace linguist-language=Diff linguist-detectable
+meson.options linguist-language=Meson
+packages/terminal-theme-tools/src/terminal-theme-run/runner-fields.def linguist-language=C
+packages/terminal-theme-tools/subprojects/*.wrap linguist-language=INI linguist-detectable
+**/*.patch -whitespace linguist-language=Diff linguist-detectable
 
 # GitHub and VS Code configuration are repo-owned source here, but Linguist
 # treats these directories as vendored by default.
@@ -90,11 +96,10 @@ packages/hyper-window-tiling/src/**/*.d.ts -linguist-vendored
 
 # These files are checked in generated/runtime artifacts built from package
 # sources, host discovery, encryption tools, or dependency resolvers.
+bun.lock linguist-generated
 flake.lock linguist-generated
-go.sum linguist-generated
 hosts/**/hardware-configuration.nix linguist-generated
 package-lock.json linguist-generated
-packages/hyper-window-tiling/bun.lock linguist-generated
 packages/**/dist/** linguist-generated
 secrets/*.yaml linguist-generated
 uv.lock linguist-generated
