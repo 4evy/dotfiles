@@ -45,10 +45,9 @@ brew "sd"
 
 # Development
 brew "actionlint"
-brew "ansible"
-brew "ansible-lint"
 brew "bash-language-server"
 brew "biome"
+brew "clang-format"
 brew "delve"
 brew "dockerfmt"
 brew "gh"
@@ -77,7 +76,6 @@ brew "ninja"
 brew "pinact"
 brew "gpatch"
 brew "pkgconf"
-brew "prettier"
 brew "rumdl"
 brew "selene"
 brew "shellcheck"
@@ -149,7 +147,7 @@ brew "netcat"
 brew "nmap"
 brew "openssh"
 brew "sshpass"
-# Linux Tailscale is a host service managed by the image and host-layer scripts.
+# Linux Tailscale is a host service managed by the image and system role.
 if OS.mac?
   # tailscaled requires a boot-level root service; Ansible owns that service.
   brew "tailscale"
@@ -170,14 +168,15 @@ brew "btop"
 brew "fastfetch"
 brew "fzf"
 brew "ghidra"
-# Linux Kanata is installed into the host layer with uinput/systemd setup.
+# Linux Kanata is installed by the keyboard role with uinput/systemd setup.
 # macOS uses a local Ansible-installed Homebrew formula matching the former
 # nix-darwin kanata-with-cmd package.
 if OS.mac?
   brew "gettext"
   brew "hidapi"
   brew "mas"
-  brew "zig@0.15"
+  brew "4evy/dotfiles/terminal-theme-tools"
+  brew "zig"
   brew "4evy/dotfiles/kanata-with-cmd"
 end
 brew "lsof"
@@ -218,7 +217,7 @@ if OS.mac?
   cask "stats"
   cask "telegram"
   cask "visual-studio-code"
-  # Raycast Beta is installed by ansible/roles/applications/tasks/macos.yml.
+  # Raycast Beta is installed by ansible/roles/applications/tasks/raycast-macos.yml.
 end
 
 # Fonts
