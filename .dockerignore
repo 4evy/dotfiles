@@ -7,8 +7,6 @@
 !.ansible-lint
 !.yamllint
 !ansible.cfg
-!go.mod
-!go.sum
 !pyproject.toml
 !uv.lock
 
@@ -38,8 +36,21 @@
 
 !packages/
 packages/*
+!packages/dotfiles-python/
+!packages/dotfiles-python/src/
+!packages/dotfiles-python/src/workstation/
+!packages/dotfiles-python/src/workstation/__init__.py
+!packages/dotfiles-python/src/workstation/errors.py
+!packages/dotfiles-python/src/workstation/lib/
+!packages/dotfiles-python/src/workstation/lib/__init__.py
+!packages/dotfiles-python/src/workstation/lib/commands.py
+!packages/dotfiles-python/src/workstation/lib/files.py
+!packages/dotfiles-python/src/workstation/lib/http.py
+!packages/dotfiles-python/src/workstation/lib/validation.py
 !packages/scripts/
 !packages/scripts/**
+!packages/terminal-theme-tools/
+!packages/terminal-theme-tools/**
 
 # Never send local generated state if it appears under an included path.
 **/.DS_Store

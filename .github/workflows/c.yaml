@@ -1,0 +1,186 @@
+name: C23
+
+on:
+  pull_request: null
+  push: null
+  workflow_dispatch: null
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+permissions:
+  contents: read # needed to checkout repository contents
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  ASAN_OPTIONS: abort_on_error=1:check_initialization_order=1:detect_leaks=1:strict_string_checks=1
+  C_PROJECT_DIR: packages/terminal-theme-tools
+  G_DEBUG: fatal-criticals,fatal-warnings
+  LSAN_OPTIONS: exitcode=23:max_leaks=0:report_objects=1
+  TSAN_OPTIONS: halt_on_error=1:history_size=7:ignore_noninstrumented_modules=1:second_deadlock_stack=1
+  UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    container: &fedora
+      image: registry.fedoraproject.org/fedora:45@sha256:7791538bb091b82097f1aef71ec64b2154f886716f6f0b822dc839bb3c74c0aa
+    steps:
+      - name: Install Tools
+        run: dnf install -y --setopt=install_weak_deps=False clang-tools-extra git
+
+      - name: Checkout Repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Check Formatting
+        run: git ls-files -z -- "*.c" "*.h" | xargs -0 clang-format --dry-run --Werror
+
+  check:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container: *fedora
+    env:
+      CC: ${{ matrix.compiler }}
+      C_PACKAGES: ${{ matrix.packages }}
+      G_SLICE: ${{ matrix.g-slice }}
+      MESON_COMPILE_TARGET: ${{ matrix.compile-target }}
+      MESON_SETUP_ARGS: ${{ matrix.setup-args }}
+      MESON_TEST_WRAPPER: ${{ matrix.test-wrapper }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: GCC Debug
+            compiler: gcc
+            packages: gcc
+            setup-args: ""
+            compile-target: ""
+            run-tests: true
+            test-wrapper: ""
+            g-slice: ""
+          - name: Clang Debug
+            compiler: clang
+            packages: clang
+            setup-args: ""
+            compile-target: ""
+            run-tests: true
+            test-wrapper: ""
+            g-slice: ""
+          - name: GCC Release
+            compiler: gcc
+            packages: gcc
+            setup-args: --buildtype=release -Db_lto=true
+            compile-target: ""
+            run-tests: true
+            test-wrapper: ""
+            g-slice: ""
+          - name: Clang Release
+            compiler: clang
+            packages: clang
+            setup-args: --buildtype=release -Db_lto=true
+            compile-target: ""
+            run-tests: true
+            test-wrapper: ""
+            g-slice: ""
+          - name: Address + Undefined + Leak Sanitizers
+            compiler: clang
+            packages: clang compiler-rt
+            setup-args: -Db_lundef=false -Db_sanitize=address,undefined
+            compile-target: ""
+            run-tests: true
+            test-wrapper: ""
+            g-slice: ""
+          - name: Thread Sanitizer
+            compiler: clang
+            packages: clang compiler-rt
+            setup-args: -Db_lundef=false -Db_sanitize=thread
+            compile-target: ""
+            run-tests: true
+            test-wrapper: ""
+            g-slice: ""
+          - name: GCC Analyzer
+            compiler: gcc
+            packages: gcc
+            setup-args: -Dgcc_analyzer=true
+            compile-target: ""
+            run-tests: false
+            test-wrapper: ""
+            g-slice: ""
+          - name: Clang-Tidy
+            compiler: clang
+            packages: clang clang-tools-extra
+            setup-args: ""
+            compile-target: ""
+            clang-tidy: true
+            run-tests: false
+            test-wrapper: ""
+            g-slice: ""
+          - name: Valgrind
+            compiler: gcc
+            packages: gcc valgrind
+            setup-args: ""
+            compile-target: ""
+            run-tests: true
+            g-slice: always-malloc
+            test-wrapper: >-
+              valgrind --error-exitcode=23
+              --errors-for-leak-kinds=definite,indirect
+              --leak-check=full --quiet
+              --show-leak-kinds=definite,indirect
+              --track-fds=bad --track-origins=yes
+    steps:
+      - name: Install Build Dependencies
+        run: |
+          read -r -a compiler_packages <<<"$C_PACKAGES"
+          dnf install -y --setopt=install_weak_deps=False \
+            git \
+            glib2-devel \
+            libgit2_1.9-devel \
+            libvterm-devel \
+            meson \
+            ninja-build \
+            pkgconf-pkg-config \
+            "${compiler_packages[@]}"
+
+      - name: Checkout Repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Configure
+        run: |
+          read -r -a setup_args <<<"$MESON_SETUP_ARGS"
+          meson setup "$C_PROJECT_DIR/build/ci" "$C_PROJECT_DIR" "${setup_args[@]}"
+
+      - name: Build
+        run: |
+          compile_args=()
+          if [[ -n "$MESON_COMPILE_TARGET" ]]; then
+            compile_args+=("$MESON_COMPILE_TARGET")
+          fi
+          meson compile -C "$C_PROJECT_DIR/build/ci" "${compile_args[@]}"
+
+      - name: Clang-Tidy
+        if: matrix.clang-tidy
+        working-directory: ${{ env.C_PROJECT_DIR }}
+        run: >-
+          run-clang-tidy -quiet -p build/ci
+          '^(?!.*subprojects/).*'
+
+      - name: Test
+        if: matrix.run-tests
+        run: |
+          test_args=(--print-errorlogs)
+          if [[ -n "$MESON_TEST_WRAPPER" ]]; then
+            test_args+=(--wrapper="$MESON_TEST_WRAPPER")
+          fi
+          meson test -C "$C_PROJECT_DIR/build/ci" "${test_args[@]}"

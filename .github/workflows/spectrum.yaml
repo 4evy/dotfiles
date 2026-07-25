@@ -4,31 +4,30 @@ on:
   pull_request:
     branches:
       - master
-    paths:
+    paths: &spectrum-paths
       - .github/workflows/spectrum.yaml
       - .dockerignore
+      - packages/dotfiles-python/src/workstation/__init__.py
+      - packages/dotfiles-python/src/workstation/errors.py
+      - packages/dotfiles-python/src/workstation/lib/**
+      - manifests/**
+      - patches/**
       - pyproject.toml
       - spectrum/**
       - uv.lock
   push:
     branches:
       - master
-    paths:
-      - .github/workflows/spectrum.yaml
-      - .dockerignore
-      - pyproject.toml
-      - spectrum/**
-      - uv.lock
+    paths: *spectrum-paths
   schedule:
     - cron: "42 4 * * *"
   workflow_dispatch: null
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-permissions:
-  contents: read # needed to checkout repository contents
+permissions: {}
 
 env:
   BLUEFIN_BASE_IMAGE: ghcr.io/ublue-os/bluefin-nvidia-open:stable@sha256:167d18ed51092b17687fbfcf5405e9efbc13414ddcfc5e5c5217b87beb0f074b
@@ -40,6 +39,9 @@ jobs:
   build:
     name: Build Bluefin Image
     runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      PUBLISH: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
     permissions:
       contents: read # needed to checkout repository contents
       packages: write # needed to push images to GitHub Container Registry
@@ -52,19 +54,20 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Free Runner Space
-        run: |
-          sudo rm -rf \
-            /usr/share/dotnet \
-            /usr/local/lib/android \
-            /opt/ghc \
-            /opt/hostedtoolcache/CodeQL
-          sudo docker system prune --all --force || true
+      - name: Free Runner Disk Space
+        uses: ./.github/actions/free-disk-space
 
-      - name: Install Build Tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y podman skopeo
+      # Registry layer cache reuses complete RUN results. This second cache is
+      # intentionally different: it preserves the DNF and uv cache-mount data
+      # under /var/tmp/buildah-cache-* when a RUN really must execute again.
+      - name: Restore Buildah Package Caches
+        id: buildah-cache
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: /var/tmp/buildah-cache-*
+          key: spectrum-buildah-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('spectrum/Containerfile', 'spectrum/image/packages/required.txt', 'pyproject.toml', 'uv.lock') }}
+          restore-keys: |
+            spectrum-buildah-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
@@ -113,11 +116,23 @@ jobs:
             echo "EOF"
           } >>"$GITHUB_OUTPUT"
 
+      - name: Login to GitHub Container Registry
+        if: env.PUBLISH == 'true'
+        env:
+          GHCR_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USERNAME: ${{ github.actor }}
+        run: |
+          printf '%s' "${GHCR_PASSWORD}" \
+            | sudo podman login ghcr.io \
+                --username "${GHCR_USERNAME}" \
+                --password-stdin
+
       - name: Build Bluefin Image
         env:
           BLUEFIN_BASE_IMAGE: ${{ env.BLUEFIN_BASE_IMAGE }}
           BLUEFIN_BASE_IMAGE_NAME: ${{ env.BLUEFIN_BASE_IMAGE_NAME }}
           BLUEFIN_BASE_IMAGE_TAG: ${{ env.BLUEFIN_BASE_IMAGE_TAG }}
+          CACHE_REF: "${{ steps.image.outputs.image_ref }}-build-cache"
           CREATED: "${{ steps.image.outputs.created }}"
           GITHUB_TOKEN: ${{ github.token }}
           IMAGE_REF: "${{ steps.image.outputs.image_ref }}"
@@ -129,6 +144,7 @@ jobs:
           URL: "${{ steps.image.outputs.url }}"
           DOCUMENTATION: "${{ steps.image.outputs.documentation }}"
           README: "${{ steps.image.outputs.readme }}"
+          PUBLISH: ${{ env.PUBLISH }}
         run: |
           github_token_file=$(mktemp)
           trap 'rm -f "${github_token_file}"' EXIT
@@ -141,7 +157,19 @@ jobs:
             exit 1
           fi
 
+          cache_args=(--layers=true)
+          # Buildah's registry cache stores SHA-keyed intermediate images, so
+          # the repository may be readable without having a normal tagged
+          # manifest for `skopeo inspect`. Bluefin uses list-tags for this probe.
+          if sudo skopeo list-tags "docker://${CACHE_REF}" >/dev/null 2>&1; then
+            cache_args+=(--cache-from "${CACHE_REF}")
+          fi
+          if [[ "${PUBLISH}" == true ]]; then
+            cache_args+=(--cache-to "${CACHE_REF}")
+          fi
+
           sudo podman build \
+            "${cache_args[@]}" \
             --pull=newer \
             --secret "id=github_token,src=${github_token_file}" \
             --tag "${LOCAL_REF}" \
@@ -163,6 +191,20 @@ jobs:
             --label "org.opencontainers.image.base.digest=${base_image_digest}" \
             --file spectrum/Containerfile \
             .
+
+      - name: Make Buildah Package Caches Readable
+        if: always() && !cancelled() && env.PUBLISH == 'true'
+        run: |
+          if compgen -G '/var/tmp/buildah-cache-*' >/dev/null; then
+            sudo chmod --recursive a+rwX /var/tmp/buildah-cache-*
+          fi
+
+      - name: Save Buildah Package Caches
+        if: always() && !cancelled() && env.PUBLISH == 'true'
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: /var/tmp/buildah-cache-*
+          key: ${{ steps.buildah-cache.outputs.cache-primary-key }}
 
       - name: Validate OCI Metadata
         env:
@@ -215,11 +257,11 @@ jobs:
             --volume "$PWD:/workspace:ro" \
             "${LOCAL_REF}" \
             -ceu '
-              mkdir -p /tmp/spectrum-workspace/ansible/files/scripts
+              mkdir -p /tmp/spectrum-workspace/packages/dotfiles-python/src
               mkdir -p /tmp/spectrum-workspace/spectrum
               cp /workspace/pyproject.toml /workspace/uv.lock /tmp/spectrum-workspace/
-              cp -a /workspace/ansible/files/scripts/workstation \
-                /tmp/spectrum-workspace/ansible/files/scripts/
+              cp -a /workspace/packages/dotfiles-python/src/workstation \
+                /tmp/spectrum-workspace/packages/dotfiles-python/src/
               cp -a /workspace/spectrum/scripts /tmp/spectrum-workspace/spectrum/
               UV_PROJECT_ENVIRONMENT=/tmp/spectrum-boot-report-venv \
                 uv --cache-dir /tmp/spectrum-uv-cache \
@@ -227,20 +269,9 @@ jobs:
                   run --locked python /tmp/spectrum-workspace/spectrum/scripts/boot_artifacts.py
             '
 
-      - name: Login to GitHub Container Registry
-        if: github.event_name != 'pull_request'
-        env:
-          GHCR_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-          GHCR_USERNAME: ${{ github.actor }}
-        run: |
-          printf '%s' "${GHCR_PASSWORD}" \
-            | sudo podman login ghcr.io \
-                --username "${GHCR_USERNAME}" \
-                --password-stdin
-
       - name: Push Image
         id: push
-        if: github.event_name != 'pull_request'
+        if: env.PUBLISH == 'true'
         env:
           IMAGE_REF: "${{ steps.image.outputs.image_ref }}"
           LOCAL_REF: "${{ steps.image.outputs.local_ref }}"
@@ -268,13 +299,13 @@ jobs:
 
       - name: Download Syft
         id: syft
-        if: github.event_name != 'pull_request'
+        if: env.PUBLISH == 'true'
         uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
           syft-version: v1.42.3
 
       - name: Generate SPDX SBOM
-        if: github.event_name != 'pull_request'
+        if: env.PUBLISH == 'true'
         env:
           DIGEST: ${{ steps.push.outputs.digest }}
           IMAGE_REF: "${{ steps.image.outputs.image_ref }}"
@@ -294,15 +325,16 @@ jobs:
             --output spdx-json=spectrum.spdx.json
 
       - name: Upload SPDX SBOM
-        if: github.event_name != 'pull_request'
+        if: env.PUBLISH == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: spectrum.spdx.json
           path: spectrum.spdx.json
           if-no-files-found: error
+          retention-days: 14
 
       - name: Sign Image
-        if: github.event_name != 'pull_request'
+        if: env.PUBLISH == 'true'
         env:
           DIGEST: ${{ steps.push.outputs.digest }}
           GHCR_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -316,7 +348,7 @@ jobs:
           cosign sign --yes "${IMAGE_REF}@${DIGEST}"
 
       - name: Attest Image
-        if: github.event_name != 'pull_request'
+        if: env.PUBLISH == 'true'
         uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1.1
         with:
           subject-name: ${{ steps.image.outputs.image_ref }}
@@ -324,7 +356,7 @@ jobs:
           push-to-registry: true
 
       - name: Attest Image SBOM
-        if: github.event_name != 'pull_request'
+        if: env.PUBLISH == 'true'
         uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1.1
         with:
           subject-name: ${{ steps.image.outputs.image_ref }}

@@ -38,19 +38,12 @@ ENV TMP=${TEST_HOME}/.cache/tmp
 ENV TEMP=${TEST_HOME}/.cache/tmp
 ENV PATH=${TEST_HOME}/.local/bin:${TEST_HOME}/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ENV DOTFILES_PROCESS_CAPTURE_TIMEOUT_SECS=180
-ENV GOTOOLCHAIN=auto
-ENV GOCACHE=${TEST_HOME}/.cache/go-build
-ENV GOMODCACHE=${TEST_HOME}/go/pkg/mod
 
-RUN mkdir -p "${TMPDIR}" "${GOCACHE}" "${GOMODCACHE}" "${HOME}/.local/bin"
+RUN mkdir -p "${TMPDIR}" "${HOME}/.local/bin"
 
 COPY --from=uv /uv /usr/local/bin/uv
 
 WORKDIR /workspace/dotfiles
-
-COPY --chown=${TEST_USER}:${TEST_USER} go.mod go.sum ./
-RUN --mount=type=cache,id=dotfiles-go-mod-${TARGETPLATFORM},target=/home/dotfiles/go/pkg/mod,uid=${TEST_UID},gid=${TEST_GID} \
-    go mod download
 
 COPY --chown=${TEST_USER}:${TEST_USER} . .
 
@@ -58,27 +51,13 @@ USER root
 RUN chown -R "${TEST_UID}:${TEST_GID}" "${TEST_HOME}" /workspace/dotfiles
 USER ${TEST_USER}
 
-# ansible-test discovers its collection from the working directory.
-# hadolint ignore=DL3003
-RUN --mount=type=cache,id=dotfiles-go-mod-${TARGETPLATFORM},target=/home/dotfiles/go/pkg/mod,uid=${TEST_UID},gid=${TEST_GID} \
-    --mount=type=cache,id=dotfiles-go-build-${TARGETPLATFORM},target=/home/dotfiles/.cache/go-build,uid=${TEST_UID},gid=${TEST_GID} \
-    set -eu; \
+RUN set -eu; \
     ansible-galaxy collection install -r ansible/requirements.yml -p .ansible/collections; \
-    for playbook in ansible/playbooks/bootstrap.yml ansible/playbooks/userland.yml ansible/playbooks/host.yml ansible/playbooks/site.yml; do \
-      ansible-playbook --syntax-check "${playbook}"; \
-    done; \
-    ansible-playbook ansible/playbooks/site.yml --tags local; \
+    ansible-playbook --syntax-check ansible/site.yml; \
+    ANSIBLE_BECOME_ASK_PASS=false ansible-playbook ansible/tests/integration/operation.yml; \
+    ansible-playbook ansible/site.yml --tags repo-tools; \
     ansible-lint ansible; \
-    yamllint .; \
-    cd ansible/collections/ansible_collections/evy/dotfiles; \
-    PYTHONWARNINGS=ignore::DeprecationWarning \
-      uv tool run --from pycodestyle pycodestyle \
-        --max-line-length 160 \
-        --config /dev/null \
-        --ignore E203,E402,E701,E704,E741,W503,W504 \
-        plugins/modules/operation.py; \
-    ansible-test sanity --local --skip-test pep8 --skip-test validate-modules; \
-    ansible-test integration --local operation
+    yamllint .
 
 USER root
 RUN chown -R "${TEST_UID}:${TEST_GID}" "${TEST_HOME}" /workspace/dotfiles

@@ -4,7 +4,7 @@ on:
   pull_request:
     branches:
       - master
-    paths:
+    paths: &dockerfile-paths
       - .github/workflows/dockerfile.yaml
       - .ansible-lint
       - .dockerignore
@@ -12,33 +12,21 @@ on:
       - Dockerfile
       - ansible.cfg
       - ansible/**
-      - cmd/**
+      - browser/**
       - compose.yaml
       - containers/**
       - dotfiles/**
-      - go.mod
-      - go.sum
       - internal/**
-      - packages/scripts/**
+      - manifests/**
+      - packages/dotfiles-python/**
+      - packages/toshy/**
+      - patches/**
+      - pyproject.toml
+      - uv.lock
   push:
     branches:
       - master
-    paths:
-      - .github/workflows/dockerfile.yaml
-      - .ansible-lint
-      - .dockerignore
-      - .yamllint
-      - Dockerfile
-      - ansible.cfg
-      - ansible/**
-      - cmd/**
-      - compose.yaml
-      - containers/**
-      - dotfiles/**
-      - go.mod
-      - go.sum
-      - internal/**
-      - packages/scripts/**
+    paths: *dockerfile-paths
   workflow_dispatch: null
 
 concurrency:
@@ -52,18 +40,12 @@ jobs:
   smoke:
     name: Build Smoke Image
     runs-on: ubuntu-24.04
-    permissions:
-      contents: read # needed to checkout repository contents
+    timeout-minutes: 45
     steps:
       - name: Checkout Repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
-
-      - name: Install Build Tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y podman
 
       - name: Build Image
         run: |
