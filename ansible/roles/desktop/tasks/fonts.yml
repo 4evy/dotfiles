@@ -53,7 +53,6 @@
           - JetBrainsMonoNLNerdFontMono-*.ttf
         mode: "0644"
       notify:
-        - Refresh system font cache
         - Refresh user font cache
 
     - name: Refresh fontconfig before font verification
@@ -216,31 +215,6 @@
   loop_control:
     loop_var: desktop_flatpak_app
     label: "{{ desktop_flatpak_app.path | basename }}"
-  tags:
-    - host
-    - fonts
-    - font-cache
-
-- name: Find stale user fontconfig caches
-  ansible.builtin.find:
-    paths: "{{ dotfiles_cache_home }}/fontconfig"
-    patterns: "*cache-11"
-    file_type: any
-    recurse: false
-  register: desktop_stale_user_font_caches
-  failed_when: false
-  tags:
-    - host
-    - fonts
-    - font-cache
-
-- name: Remove stale user fontconfig caches
-  ansible.builtin.file:
-    path: "{{ item.path }}"
-    state: absent
-  loop: "{{ desktop_stale_user_font_caches.files | default([]) }}"
-  loop_control:
-    label: "{{ item.path }}"
   tags:
     - host
     - fonts

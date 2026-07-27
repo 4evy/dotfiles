@@ -168,6 +168,24 @@
     - flatpak
     - sushi-preview
 
+- name: Read Sushi Flatpak overrides
+  ansible.builtin.command:
+    argv:
+      - flatpak
+      - override
+      - --user
+      - --show
+      - "{{ desktop_sushi_app_id }}"
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  register: desktop_sushi_overrides
+  when: desktop_flatpak_command.rc == 0
+  tags:
+    - host
+    - flatpak
+    - sushi-preview
+
 - name: Configure Sushi Flatpak graphics environment
   ansible.builtin.command:
     argv:
@@ -176,11 +194,12 @@
       - --user
       - --env=GDK_GL=gles
       - "{{ desktop_sushi_app_id }}"
-  changed_when: desktop_sushi_build is changed
+  changed_when: true
   when:
     - not ansible_check_mode
     - desktop_flatpak_command.rc == 0
     - desktop_sushi_installed.rc == 0 or desktop_sushi_build is changed
+    - desktop_sushi_overrides.stdout is not search('(?m)^GDK_GL=gles$')
   tags:
     - host
     - flatpak

@@ -16,11 +16,13 @@
   loop: "{{ desktop_user_fontconfig_files.files | default([]) }}"
   loop_control:
     label: "{{ item.path | basename }}"
+  register: desktop_flatpak_fontconfig_sync
 
-- name: Check Flatpak font cache for {{ desktop_flatpak_app.path | basename }}
+- name: Check Flatpak font cache for {{ desktop_flatpak_app.path | basename }} # noqa: no-handler
   ansible.builtin.stat:
     path: "{{ desktop_flatpak_app.path }}/cache/fontconfig"
   register: desktop_flatpak_font_cache_directory
+  when: desktop_flatpak_fontconfig_sync.changed | default(false)
 
 - name: Find stale Flatpak font caches for {{ desktop_flatpak_app.path | basename }}
   ansible.builtin.find:
@@ -29,12 +31,15 @@
     file_type: file
     recurse: false
   register: desktop_stale_flatpak_font_caches
-  when: desktop_flatpak_font_cache_directory.stat.isdir | default(false)
+  when:
+    - desktop_flatpak_fontconfig_sync.changed | default(false)
+    - desktop_flatpak_font_cache_directory.stat.isdir | default(false)
 
-- name: Remove stale Flatpak font caches for {{ desktop_flatpak_app.path | basename }}
+- name: Remove stale Flatpak font caches for {{ desktop_flatpak_app.path | basename }} # noqa: no-handler
   ansible.builtin.file:
     path: "{{ item.path }}"
     state: absent
   loop: "{{ desktop_stale_flatpak_font_caches.files | default([]) }}"
   loop_control:
     label: "{{ item.path }}"
+  when: desktop_flatpak_fontconfig_sync.changed | default(false)
