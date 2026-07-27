@@ -15,7 +15,6 @@ tools_python_tools:
   - dotfiles-scripts
   - hyper-window-tiling-build
   - install-ghidra-mcp
-  - system-runner
 
 tools_upstream_script_tools:
   - name: yt-dlp-script
@@ -46,7 +45,7 @@ tools_nix_paths:
   - "{{ tools_nix_bin | dirname }}"
   - /run/current-system/sw/bin
   - "{{ dotfiles_home_dir }}/.nix-profile/bin"
-  - "{{ bootstrap_homebrew_path | default(dotfiles_path) }}"
+  - "{{ platform_homebrew_path | default(dotfiles_path) }}"
 tools_nix_path: "{{ tools_nix_paths | join(':') }}"
 tools_eupkgs_flake: github:euvlok/pkgs
 tools_nix_profile_packages:

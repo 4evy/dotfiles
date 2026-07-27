@@ -5,12 +5,12 @@
       - meson
       - setup
       - "{{ item.build_dir }}"
-      - --wipe
       - "--prefix={{ dotfiles_home_dir }}/.local"
     chdir: "{{ dotfiles_repo_root }}/{{ item.source_dir }}"
   environment:
-    PATH: "{{ bootstrap_homebrew_path | default(dotfiles_path) }}"
-  changed_when: true
+    PATH: "{{ platform_homebrew_path | default(dotfiles_path) }}"
+  register: tools_c_configure
+  changed_when: "'Directory already configured.' not in tools_c_configure.stdout"
   loop: "{{ tools_c_tools }}"
   loop_control:
     label: "{{ item.name }}"
@@ -28,8 +28,9 @@
       - "{{ item.build_dir }}"
     chdir: "{{ dotfiles_repo_root }}/{{ item.source_dir }}"
   environment:
-    PATH: "{{ bootstrap_homebrew_path | default(dotfiles_path) }}"
-  changed_when: true
+    PATH: "{{ platform_homebrew_path | default(dotfiles_path) }}"
+  register: tools_c_compile
+  changed_when: "'no work to do.' not in tools_c_compile.stdout"
   loop: "{{ tools_c_tools }}"
   loop_control:
     label: "{{ item.name }}"
@@ -46,10 +47,12 @@
       - -C
       - "{{ item.build_dir }}"
       - --no-rebuild
+      - --only-changed
     chdir: "{{ dotfiles_repo_root }}/{{ item.source_dir }}"
   environment:
-    PATH: "{{ bootstrap_homebrew_path | default(dotfiles_path) }}"
-  changed_when: true
+    PATH: "{{ platform_homebrew_path | default(dotfiles_path) }}"
+  register: tools_c_install
+  changed_when: "'Nothing to install.' not in tools_c_install.stdout"
   loop: "{{ tools_c_tools }}"
   loop_control:
     label: "{{ item.name }}"

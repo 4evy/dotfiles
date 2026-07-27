@@ -14,7 +14,7 @@
 - name: Verify Homebrew-managed command binaries
   ansible.builtin.command:
     argv:
-      - "{{ bootstrap_homebrew_prefix }}/bin/{{ item }}"
+      - "{{ platform_homebrew_prefix }}/bin/{{ item }}"
       - "--version"
   changed_when: false
   loop: "{{ tools_homebrew_commands }}"

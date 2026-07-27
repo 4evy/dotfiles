@@ -1,21 +1,48 @@
 ---
-- name: Install Bun global tools
+- name: Inspect Bun global tool commands
+  ansible.builtin.stat:
+    path: "{{ dotfiles_home_dir }}/.cache/.bun/bin/{{ item.bin }}"
+  register: tools_bun_global_commands
+  loop: "{{ tools_bun_global_packages }}"
+  loop_control:
+    label: "{{ item.package }}"
+  tags:
+    - bun
+
+- name: Discover outdated Bun global tools
   ansible.builtin.command:
     argv:
-      - >-
-        {{
-          bootstrap_homebrew_prefix + '/bin/bun'
-          if bootstrap_homebrew_prefix is defined
-          else 'bun'
-        }}
-      - add
+      - "{{ platform_homebrew_prefix }}/bin/bun"
+      - outdated
       - --global
-      - "{{ item.package }}"
-  args:
-    creates: "{{ dotfiles_home_dir }}/.cache/.bun/bin/{{ item.bin }}"
   environment:
     BUN_INSTALL: "{{ dotfiles_home_dir }}/.cache/.bun"
-    PATH: "{{ bootstrap_homebrew_path | default(dotfiles_path) }}"
-  loop: "{{ tools_bun_global_packages }}"
+    PATH: "{{ platform_homebrew_path | default(dotfiles_path) }}"
+  register: tools_bun_outdated
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  tags:
+    - bun
+
+- name: Install or update managed Bun global tools
+  ansible.builtin.command:
+    argv:
+      - "{{ platform_homebrew_prefix }}/bin/bun"
+      - add
+      - --global
+      - "{{ item.item.package }}@latest"
+  environment:
+    BUN_INSTALL: "{{ dotfiles_home_dir }}/.cache/.bun"
+    PATH: "{{ platform_homebrew_path | default(dotfiles_path) }}"
+  changed_when: true
+  loop: "{{ tools_bun_global_commands.results }}"
+  loop_control:
+    label: "{{ item.item.package }}"
+  when:
+    - not ansible_check_mode
+    - >-
+      not item.stat.executable | default(false)
+      or item.item.package in tools_bun_outdated.stdout | default('')
   tags:
     - bun
