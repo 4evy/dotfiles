@@ -1,8 +1,0 @@
-{{- if eq .chezmoi.os "darwin" -}}
-#!/usr/bin/env python3.14
-{{ template "dotfiles_command_body.py.tmpl" (dict
-  "mode" "if-executable"
-  "path" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts")
-  "subcommand" "alt-tab-license"
-) -}}
-{{- end -}}

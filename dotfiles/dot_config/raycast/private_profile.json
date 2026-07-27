@@ -1,0 +1,44 @@
+{
+  "avatar_url": "https://avatars.githubusercontent.com/u/57304299?v=4",
+  "current_user": {
+    "id": "4evy",
+    "name": "4evy",
+    "username": "4evy",
+    "handle": "4evy",
+    "email": "raycast@evy.pink",
+    "organizations": [],
+    "has_pro_features": true,
+    "can_apply_for_free_trial": false,
+    "subscription": {
+      "id": "eu0vi",
+      "status": "active",
+      "plan_name": "Pro",
+      "billing_cycle": "yearly",
+      "renewal_date": "2099-12-31T23:59:59Z"
+    }
+  },
+  "oauth_token": {
+    "access_token": "6HcEm5ekCPD277R6SUJ8xwtZZBejQq29MbzeriGr",
+    "refresh_token": "8AJuVJ7tWnLUZMgHafPwQQRxrBgZs",
+    "token_type": "Bearer",
+    "expires_in": 999999999,
+    "scope": "read write"
+  },
+  "command_aliases": [
+    {
+      "id": "c:r:applications::*::application::=::/Applications/Ghostty.app",
+      "extension_id": "e:r:applications",
+      "alias": "terminal"
+    },
+    {
+      "id": "c:r:applications::*::application::=::/Applications/Helium.app",
+      "extension_id": "e:r:applications",
+      "alias": "chrome"
+    },
+    {
+      "id": "c:r:clipboard-history::-::history",
+      "extension_id": "e:r:clipboard-history",
+      "alias": "paste"
+    }
+  ]
+}

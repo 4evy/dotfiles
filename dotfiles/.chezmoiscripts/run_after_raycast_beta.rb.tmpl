@@ -1,0 +1,44 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+brew = "/opt/homebrew/bin/brew"
+formula = "4evy/dotfiles/raycast-beta"
+manager = "/opt/homebrew/bin/raycast-beta-manager"
+brew_environment = {
+  "HOMEBREW_NO_AUTO_UPDATE" => "1",
+  "HOMEBREW_NO_ASK" => "1",
+}
+
+unless File.executable?(brew)
+  warn "raycast-beta: warning: Homebrew not installed; skipping"
+  exit 0
+end
+
+formula_installed = system(
+  brew_environment,
+  brew,
+  "list",
+  "--versions",
+  formula,
+  out: File::NULL,
+  err: File::NULL,
+)
+brew_action = formula_installed ? "upgrade" : "install"
+unless system(
+  brew_environment,
+  brew,
+  brew_action,
+  formula,
+)
+  warn "raycast-beta: error: could not #{brew_action} #{formula}"
+  exit 1
+end
+
+unless File.executable?(manager)
+  warn "raycast-beta: error: formula did not install #{manager}"
+  exit 1
+end
+
+exec manager, "refresh"
+{{- end -}}

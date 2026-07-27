@@ -14,13 +14,3 @@
   ansible.builtin.import_tasks: helium-macos.yml
   tags:
     - helium
-
-- name: Install Raycast Beta on macOS
-  ansible.builtin.import_tasks: raycast-macos.yml
-  tags:
-    - raycast
-
-- name: Configure Shottr on macOS
-  ansible.builtin.import_tasks: shottr-macos.yml
-  tags:
-    - shottr
