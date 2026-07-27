@@ -11,6 +11,7 @@ from workstation.lib.host import user_cache_home
 _SHELL_TOOLS = ("atuin", "broot", "fzf", "starship", "zoxide")
 _COMPLETION_COMMANDS = (
     ("chezmoi", ("chezmoi", "completion", "{shell}")),
+    ("op", ("op", "completion", "{shell}")),
     ("jj", ("jj", "util", "completion", "{shell}")),
     ("starship", ("starship", "completions", "{shell}")),
     ("deno", ("deno", "completions", "{shell}")),

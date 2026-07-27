@@ -4,9 +4,14 @@
     file: "{{ dotfiles_repo_root }}/secrets/secrets.yaml"
     name: applications_private_settings
     expressions: ignore
+    age_key_cmd: >-
+      {{
+        (dotfiles_repo_root ~
+         '/dotfiles/dot_local/bin/executable_sops-age-key-1password')
+        if platform_is_macos else omit
+      }}
   no_log: true
   when: platform_is_linux or platform_is_macos
   tags:
     - applications
     - helium
-    - shottr

@@ -1,5 +1,6 @@
 .pi/agent/extensions/catppuccin-system-theme.ts
 .config/ghostty/config
+.ssh/github_key
 {{- if eq .chezmoi.os "darwin" }}
 Library/Application Support/com.mitchellh.ghostty/config
 Library/Application Support/com.mitchellh.ghostty/themes/catppuccin-frappe-pink.conf

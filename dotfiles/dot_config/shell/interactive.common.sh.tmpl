@@ -87,6 +87,26 @@ mp4-cut() { _dotfiles_ytdlp mp4-cut "$@"; }
 alias oo="opencode"
 alias cza="chezmoi apply --force"
 
+# `op plugin init` owns this generated file. Keeping the source guarded makes
+# shell-plugin aliases portable without making 1Password a shell startup
+# dependency on machines where the CLI or plugin configuration is absent.
+if [[ -r "$HOME/.config/op/plugins.sh" ]]; then
+	# shellcheck disable=SC1091
+	source "$HOME/.config/op/plugins.sh"
+fi
+
+# Pull the GitHub token from 1Password for each invocation. The tools' native
+# environment variables support the OAuth token format the shell plugins reject.
+if command -v op >/dev/null 2>&1; then
+	gh() {
+		GH_TOKEN='op://Personal/GitHub Token/token' command op run -- gh "$@"
+	}
+
+	brew() {
+		HOMEBREW_GITHUB_API_TOKEN='op://Personal/GitHub Token/token' command op run -- brew "$@"
+	}
+fi
+
 pmclean() {
 	if command -v podman >/dev/null 2>&1; then
 		command podman system prune "$@"
@@ -96,33 +116,6 @@ pmclean() {
 		printf '%s\n' "podman and docker are not installed" >&2
 		return 127
 	fi
-}
-
-jj() {
-	local shim_result
-	local shim_state
-	local shim_status
-
-	if [[ $# -ge 2 && "$1" == git && "$2" == fetch && -x "$HOME/.local/bin/jj-git-fetch" ]]; then
-		if ! shim_state="$(mktemp "${TMPDIR:-/tmp}/jj-git-fetch-shim.XXXXXX")"; then
-			command jj "$@"
-			return
-		fi
-
-		shim_status=0
-		JJ_GIT_FETCH_SHIM_STATE="$shim_state" "$HOME/.local/bin/jj-git-fetch" "$@" || shim_status=$?
-		shim_result="$(<"$shim_state")"
-		rm -f -- "$shim_state"
-
-		if [[ "$shim_result" == handled ]]; then
-			return "$shim_status"
-		fi
-		if [[ "$shim_result" != delegate ]]; then
-			return "$shim_status"
-		fi
-	fi
-
-	command jj "$@"
 }
 
 _dotfiles_tk_path_is_lock() {

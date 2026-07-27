@@ -58,9 +58,22 @@ _dotfiles_ssh_auth_sock="$HOME/.1password/agent.sock"
 if [[ -z "${SSH_CONNECTION:-}" ]]; then
 	export SSH_AUTH_SOCK="$_dotfiles_ssh_auth_sock"
 fi
+if [[ -S "$_dotfiles_ssh_auth_sock" ]]; then
+	export OP_BIOMETRIC_UNLOCK_ENABLED="${OP_BIOMETRIC_UNLOCK_ENABLED:-true}"
+fi
 unset _dotfiles_ssh_auth_sock
 
-# 03 / tool defaults
+# 03 / 1Password-backed SOPS
+# Linux keeps its machine-local age identity so boot and activation never
+# depend on an unlocked desktop app.
+
+{{- if eq .chezmoi.os "darwin" }}
+if command -v sops-age-key-1password >/dev/null 2>&1; then
+	export SOPS_AGE_KEY_CMD="${SOPS_AGE_KEY_CMD:-sops-age-key-1password}"
+fi
+{{- end }}
+
+# 04 / tool defaults
 # Defaults shared by scripts and interactive shells.
 
 export BASH_ENV="${BASH_ENV:-$HOME/.bashenv}"

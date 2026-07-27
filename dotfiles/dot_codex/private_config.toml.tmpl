@@ -50,6 +50,22 @@ open_transcript = "ctrl-t"
 {{- end }}
 open_external_editor = "ctrl-x"
 
+{{- $onePasswordMcp := "" }}
+{{- if eq .chezmoi.os "darwin" }}
+{{- $onePasswordMcp = "/Applications/1Password.app/Contents/MacOS/1password-mcp" }}
+{{- else if lookPath "1password-mcp" }}
+{{- $onePasswordMcp = lookPath "1password-mcp" }}
+{{- end }}
+{{- if and $onePasswordMcp (stat $onePasswordMcp) }}
+[mcp_servers.1password]
+command = "{{ $onePasswordMcp }}"
+args = []
+enabled = true
+startup_timeout_sec = 30
+tool_timeout_sec = 120
+default_tools_approval_mode = "approve"
+{{- end }}
+
 [mcp_servers.ghidra]
 url = "http://127.0.0.1:8090/mcp"
 enabled = false

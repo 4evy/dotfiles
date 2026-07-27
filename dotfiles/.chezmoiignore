@@ -4,14 +4,6 @@
 .oh-my-zsh/cache/
 .oh-my-zsh/cache/**
 
-{{- $sopsAgeKey := joinPath .chezmoi.homeDir ".config/sops/age/keys.txt" -}}
-{{- if eq .chezmoi.os "darwin" -}}
-{{- $sopsAgeKey = joinPath .chezmoi.homeDir "Library/Application Support/sops/age/keys.txt" -}}
-{{- end -}}
-{{- if or (not (lookPath "sops")) (not (stat $sopsAgeKey)) }}
-.ssh/github_key
-{{ end }}
-
 {{ if eq .chezmoi.os "windows" }}
 .chezmoiexternal.toml.tmpl
 .chezmoiscripts/
@@ -30,7 +22,6 @@
 .config/raycast/
 .config/yazi/
 .ssh/config
-.ssh/github_key
 Library/
 {{ end }}
 
