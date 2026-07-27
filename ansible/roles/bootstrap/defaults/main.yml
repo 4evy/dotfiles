@@ -1,9 +1,13 @@
 ---
 bootstrap_homebrew_installer_url: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
-bootstrap_rustup_installer_url: https://sh.rustup.rs
-
-bootstrap_homebrew_required_commands:
-  - btop
+bootstrap_homebrew_repository: >-
+  {{
+    bootstrap_homebrew_prefix
+    if platform_is_macos and platform_architecture == 'arm64'
+    else bootstrap_homebrew_prefix ~ '/Homebrew'
+  }}
+bootstrap_homebrew_local_tap_dir: >-
+  {{ bootstrap_homebrew_repository }}/Library/Taps/4evy/homebrew-dotfiles
 
 bootstrap_bootstrap_packages:
   apt:
@@ -46,7 +50,6 @@ bootstrap_build_toolchain_packages:
     - clang
     - cmake
     - libclang-dev
-    - libgit2-dev
     - libglib2.0-dev
     - libssl-dev
     - libvterm-dev
@@ -62,7 +65,6 @@ bootstrap_build_toolchain_packages:
     - clang
     - cmake
     - glib-dev
-    - libgit2-dev
     - libvterm-dev
     - linux-headers
     - lld
@@ -80,7 +82,6 @@ bootstrap_build_toolchain_packages:
     - gcc-c++
     - glibc-devel
     - glib2-devel
-    - pkgconfig(libgit2)
     - libvterm-devel
     - lld
     - lldb
@@ -96,7 +97,6 @@ bootstrap_build_toolchain_packages:
     - clang
     - cmake
     - glib2
-    - libgit2
     - libvterm
     - lld
     - lldb

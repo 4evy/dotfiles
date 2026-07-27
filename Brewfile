@@ -1,6 +1,5 @@
 if OS.mac?
   cask_args appdir: "/Applications"
-  tap "4evy/dotfiles", __dir__, trusted: true
 end
 
 # Bootstrap shell and provisioning tools
@@ -63,7 +62,7 @@ brew "automake"
 brew "cmake"
 brew "just"
 brew "just-lsp"
-brew "jj"
+brew "4evy/dotfiles/jj-patched"
 brew "libtool"
 brew "lld"
 brew "lua"
@@ -197,9 +196,12 @@ end
 # GUI applications
 if OS.mac?
   cask "1password"
+  cask "1password-cli"
   cask "alt-tab"
+  brew "4evy/dotfiles/alt-tab-license"
   cask "appcleaner"
   cask "brave-browser"
+  cask "chatgpt"
   cask "discord"
   # Ansible installs Docker Desktop separately and excludes it from Bundle so
   # an ordinary userland refresh never removes its root-owned helper tools.
@@ -214,10 +216,10 @@ if OS.mac?
   cask "prismlauncher"
   cask "rustdesk"
   cask "shottr"
+  brew "4evy/dotfiles/shottr-license"
   cask "stats"
   cask "telegram"
   cask "visual-studio-code"
-  # Raycast Beta is installed by ansible/roles/applications/tasks/raycast-macos.yml.
 end
 
 # Fonts

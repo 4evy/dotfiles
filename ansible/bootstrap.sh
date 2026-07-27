@@ -338,12 +338,6 @@ if ! "$ansible_playbook_bin" --version |
 	die "uv Ansible is not running on Python 3.14"
 fi
 
-if [ "$kernel_name" = Darwin ] &&
-	"$homebrew_bin" list --cask karabiner-elements >/dev/null 2>&1; then
-	ensure_sudo_available "removing Karabiner-Elements"
-	"$homebrew_bin" uninstall --cask --force karabiner-elements
-fi
-
 cd "$repo_dir"
 install_ansible_collections "$ansible_galaxy_bin"
 
