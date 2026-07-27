@@ -1,0 +1,132 @@
+{
+  "$schema": "./PermissionTargets.schema.json",
+  "version": 1,
+  "defaults": {
+    "required": true,
+    "permissions": {
+      "sets": ["all-automatable"]
+    }
+  },
+  "targets": [
+    {
+      "id": "homebrew-cask:1password",
+      "name": "1Password",
+      "bundleIdentifiers": ["com.1password.1password"],
+      "pathCandidates": ["/Applications/1Password.app"]
+    },
+    {
+      "id": "homebrew-cask:alt-tab",
+      "name": "AltTab",
+      "bundleIdentifiers": ["com.lwouis.alt-tab-macos"],
+      "pathCandidates": ["/Applications/AltTab.app"]
+    },
+    {
+      "id": "homebrew-cask:appcleaner",
+      "name": "AppCleaner",
+      "bundleIdentifiers": ["net.freemacsoft.AppCleaner"],
+      "pathCandidates": ["/Applications/AppCleaner.app"]
+    },
+    {
+      "id": "homebrew-cask:brave-browser",
+      "name": "Brave Browser",
+      "bundleIdentifiers": ["com.brave.Browser"],
+      "pathCandidates": ["/Applications/Brave Browser.app"]
+    },
+    {
+      "id": "homebrew-cask:chatgpt",
+      "name": "ChatGPT",
+      "bundleIdentifiers": ["com.openai.codex"],
+      "pathCandidates": ["/Applications/ChatGPT.app"]
+    },
+    {
+      "id": "homebrew-cask:discord",
+      "name": "Discord",
+      "bundleIdentifiers": ["com.hnc.Discord"],
+      "pathCandidates": ["/Applications/Discord.app"]
+    },
+    {
+      "id": "homebrew-cask:docker-desktop",
+      "name": "Docker Desktop",
+      "bundleIdentifiers": ["com.docker.docker"],
+      "pathCandidates": ["/Applications/Docker.app"]
+    },
+    {
+      "id": "homebrew-cask:firefox",
+      "name": "Firefox",
+      "bundleIdentifiers": ["org.mozilla.firefox"],
+      "pathCandidates": ["/Applications/Firefox.app"]
+    },
+    {
+      "id": "homebrew-cask:google-chrome",
+      "name": "Google Chrome",
+      "bundleIdentifiers": ["com.google.Chrome"],
+      "pathCandidates": ["/Applications/Google Chrome.app"]
+    },
+    {
+      "id": "homebrew-cask:helium-browser",
+      "name": "Helium",
+      "bundleIdentifiers": ["net.imput.helium"],
+      "pathCandidates": ["/Applications/Helium.app"]
+    },
+    {
+      "id": "homebrew-cask:iina",
+      "name": "IINA",
+      "bundleIdentifiers": ["com.colliderli.iina"],
+      "pathCandidates": ["/Applications/IINA.app"]
+    },
+    {
+      "id": "homebrew-cask:imhex",
+      "name": "ImHex",
+      "bundleIdentifiers": ["net.WerWolv.ImHex"],
+      "pathCandidates": ["/Applications/ImHex.app"]
+    },
+    {
+      "id": "homebrew-cask:itsycal",
+      "name": "Itsycal",
+      "bundleIdentifiers": ["com.mowglii.ItsycalApp"],
+      "pathCandidates": ["/Applications/Itsycal.app"]
+    },
+    {
+      "id": "homebrew-cask:libreoffice",
+      "name": "LibreOffice",
+      "bundleIdentifiers": ["org.libreoffice.script"],
+      "pathCandidates": ["/Applications/LibreOffice.app"]
+    },
+    {
+      "id": "homebrew-cask:prismlauncher",
+      "name": "Prism Launcher",
+      "bundleIdentifiers": ["org.prismlauncher.PrismLauncher"],
+      "pathCandidates": ["/Applications/Prism Launcher.app"]
+    },
+    {
+      "id": "homebrew-cask:rustdesk",
+      "name": "RustDesk",
+      "bundleIdentifiers": ["com.carriez.rustdesk"],
+      "pathCandidates": ["/Applications/RustDesk.app"]
+    },
+    {
+      "id": "homebrew-cask:shottr",
+      "name": "Shottr",
+      "bundleIdentifiers": ["cc.ffitch.shottr"],
+      "pathCandidates": ["/Applications/Shottr.app"]
+    },
+    {
+      "id": "homebrew-cask:stats",
+      "name": "Stats",
+      "bundleIdentifiers": ["eu.exelban.Stats"],
+      "pathCandidates": ["/Applications/Stats.app"]
+    },
+    {
+      "id": "homebrew-cask:telegram",
+      "name": "Telegram",
+      "bundleIdentifiers": ["ru.keepcoder.Telegram"],
+      "pathCandidates": ["/Applications/Telegram.app"]
+    },
+    {
+      "id": "homebrew-cask:visual-studio-code",
+      "name": "Visual Studio Code",
+      "bundleIdentifiers": ["com.microsoft.VSCode"],
+      "pathCandidates": ["/Applications/Visual Studio Code.app"]
+    }
+  ]
+}

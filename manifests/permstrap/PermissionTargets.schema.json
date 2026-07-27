@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/4evy/permstrap/main/resources/PermissionTargets.schema.json",
+  "title": "Permstrap Runtime Permission Targets",
+  "description": "User-supplied applications and executables to configure at runtime.",
+  "type": "object",
+  "required": ["$schema", "version", "targets"],
+  "properties": {
+    "$schema": {
+      "const": "./PermissionTargets.schema.json"
+    },
+    "version": {
+      "const": 1
+    },
+    "defaults": {
+      "$ref": "#/$defs/defaults"
+    },
+    "targets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/target"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nonEmptyUniqueStrings": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      }
+    },
+    "permissionSelection": {
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "inheritDefaults": {
+          "type": "boolean",
+          "default": true
+        },
+        "sets": {
+          "$ref": "#/$defs/nonEmptyUniqueStrings"
+        },
+        "include": {
+          "$ref": "#/$defs/nonEmptyUniqueStrings"
+        },
+        "exclude": {
+          "$ref": "#/$defs/nonEmptyUniqueStrings"
+        }
+      },
+      "additionalProperties": false
+    },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "permissions": {
+          "$ref": "#/$defs/permissionSelection"
+        }
+      },
+      "additionalProperties": false
+    },
+    "target": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "kind": {
+          "enum": ["application-bundle", "executable"],
+          "default": "application-bundle"
+        },
+        "bundleIdentifiers": {
+          "$ref": "#/$defs/nonEmptyUniqueStrings"
+        },
+        "pathCandidates": {
+          "$ref": "#/$defs/nonEmptyUniqueStrings"
+        },
+        "permissions": {
+          "$ref": "#/$defs/permissionSelection"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "executable"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "required": ["pathCandidates"],
+            "not": {
+              "required": ["bundleIdentifiers"]
+            }
+          },
+          "else": {
+            "anyOf": [
+              {
+                "required": ["bundleIdentifiers"]
+              },
+              {
+                "required": ["pathCandidates"]
+              }
+            ]
+          }
+        }
+      ],
+      "additionalProperties": false
+    }
+  }
+}

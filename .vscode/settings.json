@@ -8,6 +8,8 @@
     "*.json.tmpl": "jsonc",
     "*.kdl.tmpl": "kdl",
     "*.lua.tmpl": "lua",
+    "*.m": "objective-c",
+    "*.mm": "objective-cpp",
     "*.plist.in": "xml",
     "*.ron.tmpl": "rust",
     "*.sh.tmpl": "shellscript",
@@ -35,6 +37,8 @@
   "explorer.excludeGitIgnore": true,
   "C_Cpp.default.compileCommands": "${workspaceFolder}/build/meson/compile_commands.json",
   "C_Cpp.default.configurationProvider": "mesonbuild.mesonbuild",
+  "C_Cpp.default.compilerPath": "/usr/bin/clang",
+  "C_Cpp.default.intelliSenseMode": "macos-clang-arm64",
   "C_Cpp.default.cStandard": "c23",
   // cpptools still misparses C23 constexpr declarations. Rely on clang-tidy
   // and Meson diagnostics until its C23 parser support catches up:
@@ -48,7 +52,7 @@
   "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true,
   "C_Cpp.formatting": "clangFormat",
   "mesonbuild.buildFolder": "build/meson",
-  "mesonbuild.configureOnOpen": false,
+  "mesonbuild.configureOnOpen": true,
   "mesonbuild.debuggerExtension": "cpptools",
   "mesonbuild.formatting.enabled": true,
   "mesonbuild.formatting.provider": "meson",
@@ -161,6 +165,16 @@
     "editor.defaultFormatter": "mkhl.shfmt"
   },
   "[c]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools",
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true
+  },
+  "[objective-c]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools",
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true
+  },
+  "[objective-cpp]": {
     "editor.defaultFormatter": "ms-vscode.cpptools",
     "editor.formatOnSave": true,
     "editor.formatOnType": true

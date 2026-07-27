@@ -88,7 +88,7 @@
     },
     {
       "label": "meson: configure",
-      "detail": "Configure the terminal-theme-tools C build and compilation database.",
+      "detail": "Configure every native workspace project and its compilation database.",
       "type": "process",
       "command": "meson",
       "args": ["setup", "${workspaceFolder}/build/meson", "${workspaceFolder}"],
@@ -102,7 +102,7 @@
     },
     {
       "label": "meson: compile",
-      "detail": "Compile terminal-theme-tools with Meson.",
+      "detail": "Compile every native workspace project with Meson.",
       "type": "process",
       "command": "meson",
       "args": ["compile", "-C", "${workspaceFolder}/build/meson"],
@@ -118,7 +118,7 @@
     },
     {
       "label": "meson: test",
-      "detail": "Build and run the terminal-theme-tools test suite.",
+      "detail": "Build and run every native workspace test suite.",
       "type": "process",
       "command": "meson",
       "args": ["test", "-C", "${workspaceFolder}/build/meson", "--print-errorlogs"],
