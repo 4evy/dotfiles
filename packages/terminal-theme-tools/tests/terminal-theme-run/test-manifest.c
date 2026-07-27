@@ -104,6 +104,54 @@ static void test_manifest_override_replaces_runner(void) {
   g_free(temporary);
 }
 
+static void test_runtime_data_directory_override(void) {
+  g_autofree char *original_data_directory =
+      g_strdup(g_getenv("TERMINAL_THEME_RUN_DATA_DIR"));
+  g_assert_nonnull(original_data_directory);
+  g_autoptr(GError) error = nullptr;
+  g_autofree char *temporary =
+      g_dir_make_tmp("terminal-theme-run-data-test-XXXXXX", &error);
+  g_assert_no_error(error);
+
+  static const char *const names[] = {
+      "runners.toml",
+      "integrations.toml",
+      "runtime-defaults.toml",
+      nullptr,
+  };
+  for (size_t index = 0; names[index] != nullptr; index++) {
+    g_autofree char *source =
+        g_build_filename(original_data_directory, names[index], nullptr);
+    g_autofree char *destination = g_build_filename(temporary, names[index], nullptr);
+    g_autofree char *contents = nullptr;
+    g_assert_true(g_file_get_contents(source, &contents, nullptr, &error));
+    g_assert_no_error(error);
+    if (g_str_equal(names[index], "runtime-defaults.toml")) {
+      g_autoptr(GString) edited = g_string_new(contents);
+      g_assert_cmpuint(g_string_replace(edited, "theme_probe_timeout_ms = 100",
+                                        "theme_probe_timeout_ms = 321", 1),
+                       ==, 1);
+      g_free(contents);
+      contents = g_string_free_and_steal(g_steal_pointer(&edited));
+    }
+    g_assert_true(g_file_set_contents(destination, contents, -1, &error));
+    g_assert_no_error(error);
+  }
+
+  g_setenv("TERMINAL_THEME_RUN_DATA_DIR", temporary, true);
+  g_autoptr(TtrManifest) manifest = ttr_manifest_load(&error);
+  g_assert_no_error(error);
+  g_assert_nonnull(manifest);
+  g_assert_cmpint(ttr_manifest_runtime(manifest)->theme_probe_timeout_ms, ==, 321);
+  g_setenv("TERMINAL_THEME_RUN_DATA_DIR", original_data_directory, true);
+
+  for (size_t index = 0; names[index] != nullptr; index++) {
+    g_autofree char *path = g_build_filename(temporary, names[index], nullptr);
+    g_assert_cmpint(g_remove(path), ==, 0);
+  }
+  g_assert_cmpint(g_rmdir(temporary), ==, 0);
+}
+
 static void test_manifest_rejects_invalid_schema(void) {
   GError *error = nullptr;
   char *temporary = g_dir_make_tmp("terminal-theme-run-schema-test-XXXXXX", &error);
@@ -186,6 +234,7 @@ int main(int argc, char **argv) {
   g_test_init(&argc, &argv, nullptr);
   g_test_add_func("/manifest/default", test_default_manifest);
   g_test_add_func("/manifest/override", test_manifest_override_replaces_runner);
+  g_test_add_func("/manifest/runtime-data", test_runtime_data_directory_override);
   g_test_add_func("/manifest/invalid-schema", test_manifest_rejects_invalid_schema);
   return g_test_run();
 }

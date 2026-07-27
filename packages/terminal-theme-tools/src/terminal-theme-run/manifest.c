@@ -1,4 +1,5 @@
 #include "manifest.h"
+#include "config.h"
 
 #include "toml-schema.h"
 #include "util.h"
@@ -7,17 +8,38 @@
 #include <stdlib.h>
 #include <string.h>
 
-static constexpr unsigned char default_runner_data[] = {
-#embed "../../data/terminal-theme-run/runners.toml" suffix(, 0) if_empty(0)
-};
+#define TTR_FIELD_C_TYPE_STRING char *
+#define TTR_FIELD_C_TYPE_STRING_ARRAY char **
+#define TTR_FIELD_C_TYPE_STRING_MAP GHashTable *
+#define TTR_FIELD_C_TYPE_ENVIRONMENT GHashTable *
+#define TTR_FIELD_C_TYPE_INT64 gint64
 
-static constexpr unsigned char default_integration_data[] = {
-#embed "../../data/terminal-theme-run/integrations.toml" suffix(, 0) if_empty(0)
-};
+/*
+ * C23's typeof_unqual and empty initialization let the schema prove that each
+ * offset names the exact C type its loader accesses. A field-list edit that
+ * pairs (for example) a char ** member with the string loader now fails during
+ * translation instead of depending on object-pointer representation details.
+ */
+#define TTR_ASSERT_SCHEMA_FIELD(record_type, member, field_type, is_required)          \
+  static_assert(_Generic((typeof_unqual(((record_type *)nullptr)->member)){},          \
+                    TTR_FIELD_C_TYPE_##field_type: true,                               \
+                    default: false),                                                   \
+                #record_type "." #member " has the wrong C type for " #field_type)
 
-static constexpr unsigned char default_runtime_data[] = {
-#embed "../../data/terminal-theme-run/runtime-defaults.toml" suffix(, 0) if_empty(0)
-};
+#define TTR_RUNNER_FIELD(member, field_type, is_required)                              \
+  TTR_ASSERT_SCHEMA_FIELD(TtrRunner, member, field_type, is_required);
+#include "runner-fields.def"
+#undef TTR_RUNNER_FIELD
+
+#define TTR_INTEGRATION_FIELD(member, field_type, is_required)                         \
+  TTR_ASSERT_SCHEMA_FIELD(TtrIntegration, member, field_type, is_required);
+#include "integration-fields.def"
+#undef TTR_INTEGRATION_FIELD
+
+#define TTR_RUNTIME_FIELD(member, field_type, is_required)                             \
+  TTR_ASSERT_SCHEMA_FIELD(TtrRuntimeConfig, member, field_type, is_required);
+#include "runtime-fields.def"
+#undef TTR_RUNTIME_FIELD
 
 #define TTR_SCHEMA_FIELD(record_type, member, field_type, is_required)                 \
   {                                                                                    \
@@ -49,6 +71,12 @@ static const TtrTomlField runtime_fields[] = {
 };
 
 #undef TTR_SCHEMA_FIELD
+#undef TTR_ASSERT_SCHEMA_FIELD
+#undef TTR_FIELD_C_TYPE_INT64
+#undef TTR_FIELD_C_TYPE_ENVIRONMENT
+#undef TTR_FIELD_C_TYPE_STRING_MAP
+#undef TTR_FIELD_C_TYPE_STRING_ARRAY
+#undef TTR_FIELD_C_TYPE_STRING
 
 typedef struct {
   char *name;
@@ -71,6 +99,21 @@ typedef struct {
 
 static GQuark manifest_error_quark(void) {
   return g_quark_from_static_string("terminal-theme-run-manifest-error");
+}
+
+static const char *data_directory(void) {
+  const char *configured = g_getenv("TERMINAL_THEME_RUN_DATA_DIR");
+  return ttr_string_is_set(configured) ? configured : TTR_DATA_DIR;
+}
+
+static bool load_default_data(const char *name, char **contents, gsize *length,
+                              char **source, GError **error) {
+  *source = g_build_filename(data_directory(), name, nullptr);
+  if (g_file_get_contents(*source, contents, length, error)) {
+    return true;
+  }
+  g_prefix_error(error, "failed to load terminal-theme-run runtime data %s: ", *source);
+  return false;
 }
 
 static void runner_free(gpointer data) {
@@ -174,34 +217,61 @@ static bool argument_integration_is_valid(const TtrIntegration *integration,
     return false;
   }
 
-  const bool has_table = ttr_string_is_set(integration->trust_table);
-  const bool has_field = ttr_string_is_set(integration->trust_field);
-  const bool has_value = ttr_string_is_set(integration->trust_value);
-  const bool has_cwd_flags = integration->trust_cwd_flags[0] != nullptr ||
-                             integration->trust_cwd_prefixes[0] != nullptr;
+  const bool has_table = ttr_string_is_set(integration->context_table);
+  const bool has_field = ttr_string_is_set(integration->context_field);
+  const bool has_value = ttr_string_is_set(integration->context_value);
+  const bool has_context_options =
+      integration->context_path_flags[0] != nullptr ||
+      integration->context_path_prefixes[0] != nullptr ||
+      ttr_string_is_set(integration->context_argument_separator) ||
+      integration->context_directory_commands[0] != nullptr;
   if (has_table != has_field || has_field != has_value) {
     g_set_error(error, manifest_error_quark(), 1,
-                "integration %s must set trust_table, trust_field, and trust_value "
+                "integration %s must set context_table, context_field, and "
+                "context_value "
                 "together",
                 integration->name);
     return false;
   }
-  if (has_table && !templates_contain(integration->arguments, "{trust}")) {
+  if (!has_table && has_context_options) {
     g_set_error(error, manifest_error_quark(), 1,
-                "integration %s arguments do not contain {trust}", integration->name);
-    return false;
-  }
-  if (has_table != has_cwd_flags) {
-    g_set_error(error, manifest_error_quark(), 1,
-                "integration %s must set trust cwd flags together with trust fields",
+                "integration %s context options require context_table, "
+                "context_field, and context_value",
                 integration->name);
     return false;
   }
-  if (ttr_strv_contains(integration->trust_cwd_flags, "") ||
-      ttr_strv_contains(integration->trust_cwd_prefixes, "")) {
+  if (has_table && !templates_contain(integration->arguments, "{context}")) {
     g_set_error(error, manifest_error_quark(), 1,
-                "integration %s trust cwd flags must not be empty", integration->name);
+                "integration %s arguments do not contain {context}", integration->name);
     return false;
+  }
+  if (ttr_strv_contains(integration->context_path_flags, "") ||
+      ttr_strv_contains(integration->context_path_prefixes, "")) {
+    g_set_error(error, manifest_error_quark(), 1,
+                "integration %s context path flags must not be empty",
+                integration->name);
+    return false;
+  }
+  for (size_t index = 0; integration->context_directory_commands[index] != nullptr;
+       index++) {
+    int count = 0;
+    g_auto(GStrv) arguments = nullptr;
+    g_autoptr(GError) parse_error = nullptr;
+    const char *command = integration->context_directory_commands[index];
+    if (!g_shell_parse_argv(command, &count, &arguments, &parse_error) || count == 0) {
+      g_set_error(error, manifest_error_quark(), 1,
+                  "integration %s has an invalid context directory command: %s",
+                  integration->name,
+                  parse_error != nullptr ? parse_error->message : "command is empty");
+      return false;
+    }
+    if (strstr(command, "{directory}") == nullptr) {
+      g_set_error(error, manifest_error_quark(), 1,
+                  "integration %s context directory commands must contain "
+                  "{directory}",
+                  integration->name);
+      return false;
+    }
   }
   return true;
 }
@@ -548,19 +618,22 @@ static bool runtime_is_valid(const TtrRuntimeConfig *runtime, GError **error) {
   return true;
 }
 
-static bool load_runtime(TtrRuntimeConfig *runtime, GError **error) {
+static bool load_runtime(const char *contents, size_t length, const char *source,
+                         TtrRuntimeConfig *runtime, GError **error) {
   *runtime = (TtrRuntimeConfig){};
-  g_auto(toml_result_t) parsed = toml_parse_named(
-      (const char *)default_runtime_data, (int)(sizeof default_runtime_data - 1),
-      "embedded runtime-defaults.toml");
+  if (length > INT_MAX) {
+    g_set_error(error, manifest_error_quark(), 1, "%s is too large to parse", source);
+    return false;
+  }
+  g_auto(toml_result_t) parsed = toml_parse_named(contents, (int)length, source);
   if (!parsed.ok) {
-    g_set_error(error, manifest_error_quark(), 1,
-                "failed to parse embedded runtime-defaults.toml: %s", parsed.errmsg);
+    g_set_error(error, manifest_error_quark(), 1, "failed to parse %s: %s", source,
+                parsed.errmsg);
     return false;
   }
   if (!ttr_toml_load_fields(parsed.toptab, runtime, runtime_fields,
                             G_N_ELEMENTS(runtime_fields), error)) {
-    g_prefix_error_literal(error, "embedded runtime-defaults.toml: ");
+    g_prefix_error(error, "%s: ", source);
     return false;
   }
   if (!runtime_is_valid(runtime, error)) {
@@ -588,16 +661,29 @@ static bool runner_integrations_are_valid(const TtrManifest *manifest, GError **
 }
 
 TtrManifest *ttr_manifest_load(GError **error) {
+  g_autofree char *runner_data = nullptr;
+  g_autofree char *runner_source = nullptr;
+  gsize runner_length = 0;
+  if (!load_default_data("runners.toml", &runner_data, &runner_length, &runner_source,
+                         error)) {
+    return nullptr;
+  }
   g_auto(ManifestFragment) defaults = {};
-  if (!parse_manifest_fragment((const char *)default_runner_data,
-                               sizeof default_runner_data - 1, "embedded runners.toml",
-                               &defaults, error)) {
+  if (!parse_manifest_fragment(runner_data, runner_length, runner_source, &defaults,
+                               error)) {
+    return nullptr;
+  }
+
+  g_autofree char *integration_data = nullptr;
+  g_autofree char *integration_source = nullptr;
+  gsize integration_length = 0;
+  if (!load_default_data("integrations.toml", &integration_data, &integration_length,
+                         &integration_source, error)) {
     return nullptr;
   }
   g_auto(ManifestFragment) integration_defaults = {};
-  if (!parse_manifest_fragment(
-          (const char *)default_integration_data, sizeof default_integration_data - 1,
-          "embedded integrations.toml", &integration_defaults, error)) {
+  if (!parse_manifest_fragment(integration_data, integration_length, integration_source,
+                               &integration_defaults, error)) {
     return nullptr;
   }
   merge_named_records(defaults.runners, integration_defaults.runners);
@@ -606,7 +692,14 @@ TtrManifest *ttr_manifest_load(GError **error) {
   TtrManifest *manifest = g_new0(TtrManifest, 1);
   manifest->runners = g_steal_pointer(&defaults.runners);
   manifest->integrations = g_steal_pointer(&defaults.integrations);
-  if (!load_runtime(&manifest->runtime, error)) {
+
+  g_autofree char *runtime_data = nullptr;
+  g_autofree char *runtime_source = nullptr;
+  gsize runtime_length = 0;
+  if (!load_default_data("runtime-defaults.toml", &runtime_data, &runtime_length,
+                         &runtime_source, error) ||
+      !load_runtime(runtime_data, runtime_length, runtime_source, &manifest->runtime,
+                    error)) {
     ttr_manifest_free(manifest);
     return nullptr;
   }

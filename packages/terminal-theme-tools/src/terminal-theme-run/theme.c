@@ -1,7 +1,7 @@
 #include "theme.h"
 
+#include "context.h"
 #include "toml-schema.h"
-#include "trust.h"
 #include "util.h"
 
 #include <errno.h>
@@ -39,9 +39,9 @@ static char *replace_placeholder(const char *text, const char *placeholder,
 }
 
 static char *render_argument(const char *template, const char *theme,
-                             const char *trust) {
+                             const char *context) {
   g_autofree char *with_theme = replace_placeholder(template, "{theme}", theme);
-  return replace_placeholder(with_theme, "{trust}", trust);
+  return replace_placeholder(with_theme, "{context}", context);
 }
 
 static bool joined_config_flag_matches(const TtrIntegration *config,
@@ -109,18 +109,57 @@ static bool assignment_key_matches(const char *line, const char *key) {
   return *line == '=';
 }
 
+static bool table_header_belongs_to_key(const char *line, const char *key) {
+  while (g_ascii_isspace(*line)) {
+    line++;
+  }
+  if (*line != '[' || line[1] == '[') {
+    return false;
+  }
+  line++;
+  while (g_ascii_isspace(*line)) {
+    line++;
+  }
+  const size_t key_length = strlen(key);
+  if (strncmp(line, key, key_length) != 0) {
+    return false;
+  }
+  line += key_length;
+  while (*line == ' ' || *line == '\t') {
+    line++;
+  }
+  return *line == ']' || *line == '.';
+}
+
 static char *patch_assignment(const char *text, const char *key,
-                              const char *quoted_value, int parsed_line) {
+                              const char *quoted_value, int parsed_line,
+                              toml_type_t assignment_type) {
   g_auto(GStrv) lines = g_strsplit(text != nullptr ? text : "", "\n", -1);
   g_autoptr(GString) output = g_string_new(nullptr);
   bool replaced = false;
+  bool skipping_table = false;
   for (size_t index = 0; lines[index] != nullptr; index++) {
     const char *line = lines[index];
+    if (skipping_table) {
+      const char *trimmed = line;
+      while (g_ascii_isspace(*trimmed)) {
+        trimmed++;
+      }
+      if (*trimmed != '[') {
+        continue;
+      }
+      if (table_header_belongs_to_key(line, key)) {
+        continue;
+      }
+      skipping_table = false;
+    }
     const bool matches = parsed_line > 0 ? index + 1 == (size_t)parsed_line
                                          : assignment_key_matches(line, key);
     if (!replaced && matches) {
       g_string_append_printf(output, "%s = %s", key, quoted_value);
       replaced = true;
+      skipping_table =
+          assignment_type == TOML_TABLE && table_header_belongs_to_key(line, key);
     } else {
       g_string_append(output, line);
     }
@@ -179,9 +218,11 @@ static bool write_temporary(const char *directory, const char *prefix,
 }
 
 static bool inspect_config(const TtrIntegration *config, const char *contents,
-                           gsize length, int *assignment_line, GError **error) {
+                           gsize length, int *assignment_line,
+                           toml_type_t *assignment_type, GError **error) {
   const bool validate_toml = g_str_equal(config->validation, "toml");
   *assignment_line = validate_toml ? 0 : -1;
+  *assignment_type = TOML_UNKNOWN;
   if (!validate_toml || length == 0) {
     return true;
   }
@@ -197,12 +238,14 @@ static bool inspect_config(const TtrIntegration *config, const char *contents,
     return false;
   }
   const toml_datum_t assignment = toml_get(parsed.toptab, config->assignment);
-  if (assignment.type != TOML_UNKNOWN && assignment.type != TOML_STRING) {
+  if (assignment.type != TOML_UNKNOWN && assignment.type != TOML_STRING &&
+      assignment.type != TOML_TABLE) {
     g_set_error(error, theme_error_quark(), 1, "%s config field %s must be a string",
                 config->display_name, config->assignment);
     return false;
   }
-  if (assignment.type == TOML_STRING) {
+  *assignment_type = assignment.type;
+  if (assignment.type == TOML_STRING || assignment.type == TOML_TABLE) {
     *assignment_line = assignment.lineno;
   }
   return true;
@@ -220,15 +263,17 @@ static bool prepare_argument_theme_args(const TtrIntegration *config, TtrThemeMo
                                         TtrPreparedArgs *prepared,
                                         [[maybe_unused]] GError **error) {
   const char *theme = theme_name(config, mode);
-  g_autofree char *trust = nullptr;
-  if (ttr_string_is_set(config->trust_table)) {
-    trust = ttr_toml_worktree_trust_override(
-        config->trust_table, config->trust_field, config->trust_value, extra_args,
-        config->trust_cwd_flags, config->trust_cwd_prefixes);
+  g_autofree char *context = nullptr;
+  if (ttr_string_is_set(config->context_table)) {
+    context = ttr_toml_directory_context(
+        config->context_table, config->context_field, config->context_value, extra_args,
+        config->context_path_flags, config->context_path_prefixes,
+        config->context_argument_separator, config->context_directory_commands);
   }
   g_autoptr(GStrvBuilder) arguments = g_strv_builder_new();
   for (size_t index = 0; config->arguments[index] != nullptr; index++) {
-    g_autofree char *rendered = render_argument(config->arguments[index], theme, trust);
+    g_autofree char *rendered =
+        render_argument(config->arguments[index], theme, context);
     g_strv_builder_add(arguments, rendered);
   }
   ttr_strv_builder_addv(arguments, extra_args);
@@ -247,18 +292,21 @@ static bool prepare_config_theme_args(const TtrIntegration *config, TtrThemeMode
     length = 0;
   }
   int assignment_line = -1;
-  if (!inspect_config(config, contents, length, &assignment_line, error)) {
+  toml_type_t assignment_type = TOML_UNKNOWN;
+  if (!inspect_config(config, contents, length, &assignment_line, &assignment_type,
+                      error)) {
     return false;
   }
 
   const char *theme = theme_name(config, mode);
   g_autofree char *quoted =
       g_strdup_printf("%c%s%c", *config->quote, theme, *config->quote);
-  g_autofree char *patched =
-      patch_assignment(contents, config->assignment, quoted, assignment_line);
+  g_autofree char *patched = patch_assignment(contents, config->assignment, quoted,
+                                              assignment_line, assignment_type);
   int generated_assignment_line = -1;
+  toml_type_t generated_assignment_type = TOML_UNKNOWN;
   if (!inspect_config(config, patched, strlen(patched), &generated_assignment_line,
-                      error)) {
+                      &generated_assignment_type, error)) {
     return false;
   }
 

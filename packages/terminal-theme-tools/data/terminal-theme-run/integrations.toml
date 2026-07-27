@@ -3,12 +3,18 @@ name = "codex"
 strategy = "arguments"
 dark_theme = "catppuccin-frappe-pink"
 light_theme = "catppuccin-latte-pink"
-arguments = ["-c", 'tui.theme="{theme}"', "-c", "{trust}"]
-trust_table = "projects"
-trust_field = "trust_level"
-trust_value = "trusted"
-trust_cwd_flags = ["-C", "--cd"]
-trust_cwd_prefixes = ["-C", "--cd="]
+arguments = ["-c", 'tui.theme="{theme}"', "-c", "{context}"]
+
+# Program-specific directory and trust policy is runtime data. The C context
+# layer only resolves declared path options, runs these argv-safe probes, and
+# renders the requested nested TOML value.
+context_table = "projects"
+context_field = "trust_level"
+context_value = "trusted"
+context_path_flags = ["-C", "--cd"]
+context_path_prefixes = ["-C", "--cd="]
+context_argument_separator = "--"
+context_directory_commands = ["git -C {directory} rev-parse --show-toplevel"]
 
 [[integration]]
 name = "btop"

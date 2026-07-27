@@ -3,12 +3,14 @@ name = "argument-theme"
 strategy = "arguments"
 dark_theme = "night"
 light_theme = "day"
-arguments = ["--appearance", "{theme}", "--access", "{trust}"]
-trust_table = "workspaces"
-trust_field = "access"
-trust_value = "allowed"
-trust_cwd_flags = ["-C", "--cd"]
-trust_cwd_prefixes = ["-C", "--cd="]
+arguments = ["--appearance", "{theme}", "--access", "{context}"]
+context_table = "workspaces"
+context_field = "access"
+context_value = "allowed"
+context_path_flags = ["-C", "--cd"]
+context_path_prefixes = ["-C", "--cd="]
+context_argument_separator = "--"
+context_directory_commands = []
 
 [[integration]]
 name = "cached-config"

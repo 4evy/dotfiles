@@ -146,7 +146,6 @@ jobs:
           dnf install -y --setopt=install_weak_deps=False \
             git \
             glib2-devel \
-            libgit2_1.9-devel \
             libvterm-devel \
             meson \
             ninja-build \

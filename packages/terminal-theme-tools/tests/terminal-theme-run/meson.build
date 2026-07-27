@@ -1,12 +1,17 @@
+default_data_environment = [
+    'TERMINAL_THEME_RUN_DATA_DIR='
+    + meson.project_source_root() / 'data/terminal-theme-run',
+]
+
 foreach module : [
     'manifest',
     'runner',
     'terminal',
     'theme',
     'toml-schema',
-    'trust',
+    'context',
 ]
-    test_environment = []
+    test_environment = default_data_environment
     extra_test_files = []
     if module == 'theme'
         integration_fixture = meson.current_source_dir() / 'fixtures/integrations.toml'
@@ -39,11 +44,13 @@ test(
     'terminal-theme-run / help',
     terminal_theme_run,
     args: ['--help'],
+    env: default_data_environment,
     suite: 'terminal-theme-run',
 )
 test(
     'terminal-theme-run / version',
     terminal_theme_run,
     args: ['--version'],
+    env: default_data_environment,
     suite: 'terminal-theme-run',
 )

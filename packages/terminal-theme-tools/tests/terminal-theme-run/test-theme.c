@@ -158,6 +158,51 @@ static void test_validated_config_theme(void) {
   g_free(temporary);
 }
 
+static void test_validated_config_table_theme(void) {
+  GError *error = nullptr;
+  char *temporary =
+      g_dir_make_tmp("terminal-theme-run-table-theme-test-XXXXXX", &error);
+  g_assert_no_error(error);
+  char *config = g_build_filename(temporary, "config.toml", nullptr);
+  g_assert_true(g_file_set_contents(config,
+                                    "[appearance]\n"
+                                    "dark = \"night\"\n"
+                                    "light = \"day\"\n"
+                                    "fallback = \"night\"\n"
+                                    "\n"
+                                    "[view]\n"
+                                    "line_numbers = \"relative\"\n",
+                                    -1, &error));
+  g_assert_no_error(error);
+  g_setenv("HOME", temporary, true);
+  g_setenv("TERMINAL_THEME", "light", true);
+
+  char *extra[] = {
+      TTR_MUTABLE_STRING("--settings"),
+      config,
+      nullptr,
+  };
+  TtrPreparedArgs prepared;
+  g_assert_true(prepare_integration("validated-config", extra, &prepared, &error));
+  g_assert_no_error(error);
+
+  char *contents = nullptr;
+  g_assert_true(g_file_get_contents(prepared.argv[1], &contents, nullptr, &error));
+  g_assert_no_error(error);
+  g_assert_nonnull(strstr(contents, "appearance = 'day'"));
+  g_assert_null(strstr(contents, "[appearance]"));
+  g_assert_null(strstr(contents, "fallback = \"night\""));
+  g_assert_nonnull(strstr(contents, "[view]\nline_numbers = \"relative\""));
+  g_free(contents);
+  ttr_prepared_args_clear(&prepared);
+  g_unsetenv("TERMINAL_THEME");
+
+  g_remove(config);
+  g_rmdir(temporary);
+  g_free(config);
+  g_free(temporary);
+}
+
 int main(int argc, char **argv) {
   g_test_init(&argc, &argv, nullptr);
   GError *error = nullptr;
@@ -168,6 +213,7 @@ int main(int argc, char **argv) {
   g_test_add_func("/theme/integration-registry", test_integration_registry);
   g_test_add_func("/theme/config-cache", test_cached_config_theme);
   g_test_add_func("/theme/config-validation", test_validated_config_theme);
+  g_test_add_func("/theme/config-table", test_validated_config_table_theme);
   const int status = g_test_run();
   ttr_manifest_free(test_manifest);
   return status;

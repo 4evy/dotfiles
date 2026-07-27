@@ -1,7 +1,6 @@
 {
   glib,
   lib,
-  libgit2,
   libvterm-neovim,
   meson,
   ninja,
@@ -36,7 +35,6 @@ stdenv.mkDerivation {
   ];
   buildInputs = [
     glib
-    libgit2
     libvterm-neovim
     tomlc17
   ];

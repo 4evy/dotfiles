@@ -1,5 +1,6 @@
 #include "toml-schema.h"
 
+#include <stdckdint.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -11,13 +12,40 @@ static void *field_address(void *target, gsize offset) {
   return G_STRUCT_MEMBER_P(target, offset);
 }
 
-static void *field_value(void *target, gsize offset) {
-  void *value = nullptr;
+/*
+ * The schema stores member offsets independently of their aggregate types, so
+ * use memcpy to avoid forming a potentially misaligned lvalue at a byte
+ * offset. Keep the temporary's type identical to the member's declared type:
+ * ISO C only guarantees common representations for specific pointer
+ * categories, not for every object pointer and pointer-to-pointer type.
+ */
+static char *string_field_value(void *target, gsize offset) {
+  char *value = nullptr;
   memcpy(&value, field_address(target, offset), sizeof value);
   return value;
 }
 
-static void set_field_value(void *target, gsize offset, void *value) {
+static void set_string_field_value(void *target, gsize offset, char *value) {
+  memcpy(field_address(target, offset), &value, sizeof value);
+}
+
+static char **string_array_field_value(void *target, gsize offset) {
+  char **value = nullptr;
+  memcpy(&value, field_address(target, offset), sizeof value);
+  return value;
+}
+
+static void set_string_array_field_value(void *target, gsize offset, char **value) {
+  memcpy(field_address(target, offset), &value, sizeof value);
+}
+
+static GHashTable *hash_table_field_value(void *target, gsize offset) {
+  GHashTable *value = nullptr;
+  memcpy(&value, field_address(target, offset), sizeof value);
+  return value;
+}
+
+static void set_hash_table_field_value(void *target, gsize offset, GHashTable *value) {
   memcpy(field_address(target, offset), &value, sizeof value);
 }
 
@@ -41,15 +69,15 @@ typedef struct {
 } FieldOperations;
 
 static void initialize_string(void *target, gsize offset) {
-  set_field_value(target, offset, g_strdup(""));
+  set_string_field_value(target, offset, g_strdup(""));
 }
 
 static void initialize_string_array(void *target, gsize offset) {
-  set_field_value(target, offset, g_new0(char *, 1));
+  set_string_array_field_value(target, offset, g_new0(char *, 1));
 }
 
 static void initialize_string_map(void *target, gsize offset) {
-  set_field_value(target, offset, new_string_map());
+  set_hash_table_field_value(target, offset, new_string_map());
 }
 
 static void initialize_int64(void *target, gsize offset) {
@@ -62,7 +90,7 @@ static bool load_string(toml_datum_t value, void *target, gsize offset, const ch
     g_set_error(error, toml_schema_error_quark(), 1, "field %s must be a string", key);
     return false;
   }
-  set_field_value(target, offset, g_strdup(value.u.s));
+  set_string_field_value(target, offset, g_strdup(value.u.s));
   return true;
 }
 
@@ -72,7 +100,14 @@ static bool load_string_array(toml_datum_t value, void *target, gsize offset,
     g_set_error(error, toml_schema_error_quark(), 1, "field %s must be an array", key);
     return false;
   }
-  g_auto(GStrv) output = g_new0(char *, (gsize)value.u.arr.size + 1);
+  gsize allocation_count = 0;
+  if (value.u.arr.size < 0 ||
+      ckd_add(&allocation_count, (gsize)value.u.arr.size, (gsize)1)) {
+    g_set_error(error, toml_schema_error_quark(), 1,
+                "field %s has an invalid array size", key);
+    return false;
+  }
+  g_auto(GStrv) output = g_new0(char *, allocation_count);
   for (int32_t index = 0; index < value.u.arr.size; index++) {
     const toml_datum_t element = value.u.arr.elem[index];
     if (element.type != TOML_STRING) {
@@ -82,7 +117,7 @@ static bool load_string_array(toml_datum_t value, void *target, gsize offset,
     }
     output[index] = g_strdup(element.u.s);
   }
-  set_field_value(target, offset, g_steal_pointer(&output));
+  set_string_array_field_value(target, offset, g_steal_pointer(&output));
   return true;
 }
 
@@ -103,7 +138,7 @@ static bool load_string_map(toml_datum_t value, void *target, gsize offset,
     g_hash_table_insert(output, g_strdup(value.u.tab.key[index]),
                         g_strdup(element.u.s));
   }
-  set_field_value(target, offset, g_steal_pointer(&output));
+  set_hash_table_field_value(target, offset, g_steal_pointer(&output));
   return true;
 }
 
@@ -134,7 +169,7 @@ static bool load_environment(toml_datum_t value, void *target, gsize offset,
     }
     g_hash_table_replace(output, g_strdup(assignment[0]), g_strdup(assignment[1]));
   }
-  set_field_value(target, offset, g_steal_pointer(&output));
+  set_hash_table_field_value(target, offset, g_steal_pointer(&output));
   return true;
 }
 
@@ -149,22 +184,22 @@ static bool load_int64(toml_datum_t value, void *target, gsize offset, const cha
   return true;
 }
 
-static void clear_pointer(void *target, gsize offset) {
-  g_free(field_value(target, offset));
-  set_field_value(target, offset, nullptr);
+static void clear_string(void *target, gsize offset) {
+  g_free(string_field_value(target, offset));
+  set_string_field_value(target, offset, nullptr);
 }
 
 static void clear_string_array(void *target, gsize offset) {
-  g_strfreev(field_value(target, offset));
-  set_field_value(target, offset, nullptr);
+  g_strfreev(string_array_field_value(target, offset));
+  set_string_array_field_value(target, offset, nullptr);
 }
 
 static void clear_hash_table(void *target, gsize offset) {
-  GHashTable *value = field_value(target, offset);
+  GHashTable *value = hash_table_field_value(target, offset);
   if (value != nullptr) {
     g_hash_table_unref(value);
   }
-  set_field_value(target, offset, nullptr);
+  set_hash_table_field_value(target, offset, nullptr);
 }
 
 static void clear_int64(void *target, gsize offset) {

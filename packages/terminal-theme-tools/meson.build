@@ -183,7 +183,6 @@ gio_unix_dep = dependency(
     version: '>=2.76',
     include_type: 'system',
 )
-libgit2_dep = dependency('libgit2', version: '>=1.7', include_type: 'system')
 libvterm_dep = dependency('vterm', version: '>=0.3', include_type: 'system')
 tomlc17_dep = dependency(
     'libtomlc17',
@@ -193,6 +192,10 @@ tomlc17_dep = dependency(
 
 project_configuration = configuration_data()
 project_configuration.set_quoted('TTR_VERSION', meson.project_version())
+project_configuration.set_quoted(
+    'TTR_DATA_DIR',
+    get_option('prefix') / get_option('datadir') / meson.project_name() / 'terminal-theme-run',
+)
 project_config_header = configure_file(
     output: 'config.h',
     configuration: project_configuration,

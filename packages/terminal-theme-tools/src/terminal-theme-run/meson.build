@@ -1,10 +1,10 @@
 terminal_theme_run_sources = files(
+    'context.c',
     'manifest.c',
     'runner.c',
     'terminal.c',
     'theme.c',
     'toml-schema.c',
-    'trust.c',
     'util.c',
 )
 
@@ -21,12 +21,11 @@ terminal_theme_run_lib = static_library(
     terminal_theme_run_sources,
     c_args: strict_c_args,
     extra_files: terminal_theme_run_data + terminal_theme_run_declarative_sources,
-    include_directories: include_directories('.'),
+    include_directories: [include_directories('.'), project_config_include],
     dependencies: [
         glib_dep,
         gio_dep,
         gio_unix_dep,
-        libgit2_dep,
         libvterm_dep,
         tomlc17_dep,
     ],
@@ -40,7 +39,6 @@ terminal_theme_run_dep = declare_dependency(
         glib_dep,
         gio_dep,
         gio_unix_dep,
-        libgit2_dep,
         libvterm_dep,
         tomlc17_dep,
     ],
