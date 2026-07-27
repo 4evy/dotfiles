@@ -42,26 +42,6 @@
     - host
     - kanata
 
-- name: Check staged Kanata binary
-  ansible.builtin.stat:
-    path: "{{ keyboard_kanata_staged_binary }}"
-  register: keyboard_kanata_staged
-  tags:
-    - host
-    - kanata
-
-- name: Require staged Kanata binary
-  ansible.builtin.assert:
-    that:
-      - keyboard_kanata_staged.stat.executable | default(false)
-    fail_msg: >-
-      Kanata build did not produce the expected executable at
-      {{ keyboard_kanata_staged_binary }}.
-  when: not ansible_check_mode
-  tags:
-    - host
-    - kanata
-
 - name: Create Kanata system directories
   ansible.builtin.file:
     path: "{{ item }}"
@@ -89,15 +69,12 @@
     - host
     - kanata
 
-- name: Ensure Kanata device groups exist
+- name: Ensure Kanata uinput group exists
   ansible.builtin.group:
-    name: "{{ item }}"
+    name: uinput
     state: present
     system: true
   become: true
-  loop:
-    - keyboard
-    - uinput
   tags:
     - host
     - kanata

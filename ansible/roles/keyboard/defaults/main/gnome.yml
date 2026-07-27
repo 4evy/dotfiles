@@ -24,6 +24,3 @@ keyboard_toshy_gnome_extensions:
   - uuid: xremap@k0kubun.com
     label: Xremap
     window_context: true
-  - uuid: appindicatorsupport@rgcjonas.gmail.com
-    label: AppIndicator and KStatusNotifierItem Support
-    window_context: false
