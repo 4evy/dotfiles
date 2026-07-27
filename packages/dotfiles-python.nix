@@ -53,7 +53,6 @@ python314Packages.buildPythonApplication {
       jinja2
       jsonschema
       packaging
-      pillow
       platformdirs
       plumbum
       psutil

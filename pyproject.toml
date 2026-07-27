@@ -19,7 +19,6 @@ dependencies = [
   "jinja2>=3.1,<4",
   "jsonschema>=4.26,<5",
   "packaging>=24,<27",
-  "pillow>=11,<13",
   "platformdirs>=4.3,<5",
   "plumbum>=2,<3",
   "psutil>=7,<8",
@@ -32,7 +31,6 @@ dependencies = [
 ]
 
 [project.scripts]
-alt-tab-license = "workstation.local.licenses:alt_tab_license_entrypoint"
 codex = "workstation.local.shims:codex_entrypoint"
 desktop-perf-audit = "workstation.local.desktop_audit:desktop_perf_audit_entrypoint"
 discord-equicord = "workstation.apps.discord:entrypoint"
@@ -44,10 +42,7 @@ hyper-window-tiling-build = "workstation.local.hyper_window_tiling_build:entrypo
 install-ghidra-mcp = "workstation.apps.ghidra_mcp:entrypoint"
 install-yaml-language-server = "workstation.host.devtools:install_entrypoint"
 jj-get = "workstation.local.jj:jj_get_entrypoint"
-jj-git-fetch = "workstation.local.jj:jj_git_fetch_entrypoint"
-jj-redate = "workstation.local.jj:jj_redate_entrypoint"
 phone-mirror = "workstation.local.phone_mirror:entrypoint"
-raycast-beta-patch = "workstation.local.raycast:entrypoint"
 spectrum-build = "spectrum_build.cli:entrypoint"
 system-runner = "workstation.local.system_runner:entrypoint"
 vscode-nixd = "workstation.local.shims:vscode_nixd_entrypoint"

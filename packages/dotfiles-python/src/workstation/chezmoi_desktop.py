@@ -2,37 +2,12 @@
 
 import os
 from pathlib import Path
-from typing import Literal
 
 from workstation.apps.discord import main as discord_main
 from workstation.console import error_console
 from workstation.lib.commands import run, which
 from workstation.lib.paths import find_repo_root
 from workstation.local.gnome import _gnome_accent_apply
-from workstation.local.licenses import (
-    alt_tab_license as update_alt_tab_license,
-    shottr_license as update_shottr_license,
-)
-from workstation.local.raycast import main as raycast_patch
-
-
-def alt_tab_license() -> None:
-    """Show the installed AltTab license state."""
-    update_alt_tab_license("status")
-
-
-def shottr_license(
-    action: Literal["install", "status"] = "status",
-    *,
-    force: bool = False,
-) -> None:
-    """Install or show the Shottr license state."""
-    update_shottr_license(action, force=force)
-
-
-def raycast_beta_patch() -> None:
-    """Refresh the Raycast Beta local user profile."""
-    raycast_patch()
 
 
 def gnome_accent() -> None:
