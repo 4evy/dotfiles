@@ -73,7 +73,7 @@
 
 - name: Install native Helix tip build
   ansible.builtin.import_tasks: helix.yml
-  when: platform_is_linux or platform_is_macos
+  when: platform_is_linux
   tags:
     - applications
     - helix
@@ -83,7 +83,6 @@
   tags:
     - applications
     - helium
-    - shottr
 
 - name: Install Helium on Linux
   ansible.builtin.import_tasks: helium-linux.yml

@@ -1,15 +1,4 @@
 ---
-- name: Install Helium Homebrew cask on macOS
-  community.general.homebrew_cask:
-    name: helium-browser
-    state: present
-    path: "{{ bootstrap_homebrew_prefix | default('/opt/homebrew') }}/bin"
-  environment:
-    HOMEBREW_NO_ASK: "1"
-    PATH: "{{ bootstrap_homebrew_path | default(dotfiles_path) }}"
-  tags:
-    - helium
-
 - name: Detect a running Helium application on macOS
   ansible.builtin.command:
     argv:
@@ -47,7 +36,7 @@
     context: "{{ dotfiles_automation_context }}"
     chdir: "{{ dotfiles_repo_root }}"
     environment:
-      PATH: "{{ bootstrap_homebrew_path | default(dotfiles_path) }}"
+      PATH: "{{ platform_homebrew_path | default(dotfiles_path) }}"
       DOTFILES_HELIUM_COOKIE_ALLOWLIST: >-
         {{
           applications_private_settings['chromium-cookie-allowed-for-urls']
