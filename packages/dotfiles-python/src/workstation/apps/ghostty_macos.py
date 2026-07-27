@@ -161,9 +161,7 @@ def install_ghostty_tip_macos(
     current = build_current and signature_current
     if automation_check_mode():
         if build_current and not signature_current:
-            message = (
-                "Would stably sign the existing patched Ghostty macOS build"
-            )
+            message = "Would stably sign the existing patched Ghostty macOS build"
         elif current:
             message = "Ghostty macOS tip is current"
         else:

@@ -329,9 +329,7 @@ def test_ghostty_macos_repairs_unstable_signature_without_rebuilding(
     )
 
     assert response.changed
-    assert response.msg == (
-        "Stably signed the existing patched Ghostty macOS build"
-    )
+    assert response.msg == ("Stably signed the existing patched Ghostty macOS build")
     assert signed == [app_root / "Ghostty.app"]
 
 

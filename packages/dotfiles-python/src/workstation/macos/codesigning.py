@@ -55,9 +55,7 @@ def ensure_signing_identity(
     if not keychain.is_file():
         raise DotfilesError(f"code-signing keychain does not exist: {keychain}")
 
-    with tempfile.TemporaryDirectory(
-        prefix="dotfiles-codesign-"
-    ) as temporary:
+    with tempfile.TemporaryDirectory(prefix="dotfiles-codesign-") as temporary:
         root = Path(temporary)
         openssl_config = root / "codesign-openssl.cnf"
         render_template(
@@ -111,9 +109,7 @@ def ensure_signing_identity(
         run(trust_arguments)
 
     if not signing_identity_available(identity, keychain):
-        raise DotfilesError(
-            f"created code-signing identity is not valid: {identity}"
-        )
+        raise DotfilesError(f"created code-signing identity is not valid: {identity}")
     return True
 
 
@@ -130,8 +126,7 @@ def bundle_has_signing_identity(
         capture=True,
     )
     authority_matches = result.returncode == 0 and any(
-        line.strip() == f"Authority={identity}"
-        for line in result.stderr.splitlines()
+        line.strip() == f"Authority={identity}" for line in result.stderr.splitlines()
     )
     if not authority_matches:
         return False
