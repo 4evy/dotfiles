@@ -1,0 +1,132 @@
+---
+- name: Require a Permstrap-compatible Mac
+  ansible.builtin.assert:
+    that:
+      - platform_architecture == 'arm64'
+      - ansible_facts.distribution_version is version('26.0', '>=')
+    fail_msg: >-
+      Permstrap {{ bootstrap_permstrap_version }} requires Apple Silicon and
+      macOS 26.0 or newer.
+  tags:
+    - bootstrap
+    - permissions
+    - permstrap
+
+- name: Ensure the Permstrap installer cache exists
+  ansible.builtin.file:
+    path: "{{ dotfiles_cache_dir }}/installers"
+    state: directory
+    mode: "0755"
+  tags:
+    - bootstrap
+    - permissions
+    - permstrap
+
+- name: Download the pinned Permstrap release
+  ansible.builtin.get_url:
+    url: "{{ bootstrap_permstrap_archive_url }}"
+    dest: >-
+      {{ dotfiles_cache_dir }}/installers/permstrap-{{ bootstrap_permstrap_version }}-macos-arm64.zip
+    checksum: "{{ bootstrap_permstrap_archive_checksum }}"
+    mode: "0644"
+  tags:
+    - bootstrap
+    - permissions
+    - permstrap
+
+- name: Inspect the installed Permstrap application
+  ansible.builtin.stat:
+    path: "{{ bootstrap_permstrap_app_path }}"
+    follow: false
+  register: bootstrap_permstrap_app
+  tags:
+    - bootstrap
+    - permissions
+    - permstrap
+
+- name: Read the installed Permstrap version
+  ansible.builtin.command:
+    argv:
+      - /usr/libexec/PlistBuddy
+      - -c
+      - "Print :CFBundleShortVersionString"
+      - "{{ bootstrap_permstrap_app_path }}/Contents/Info.plist"
+  register: bootstrap_permstrap_installed_version
+  changed_when: false
+  failed_when: false
+  when: bootstrap_permstrap_app.stat.exists
+  tags:
+    - bootstrap
+    - permissions
+    - permstrap
+
+- name: Install Permstrap from its pinned release archive
+  when: >-
+    not bootstrap_permstrap_app.stat.exists
+    or bootstrap_permstrap_app.stat.islnk | default(false)
+    or bootstrap_permstrap_installed_version.stdout | default('') | trim
+      != bootstrap_permstrap_version
+  tags:
+    - bootstrap
+    - permissions
+    - permstrap
+  block:
+    - name: Remove the superseded Permstrap application
+      ansible.builtin.file:
+        path: "{{ bootstrap_permstrap_app_path }}"
+        state: absent
+
+    - name: Expand the Permstrap release into Applications
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/ditto
+          - -x
+          - -k
+          - >-
+            {{ dotfiles_cache_dir }}/installers/permstrap-{{ bootstrap_permstrap_version }}-macos-arm64.zip
+          - /Applications
+      changed_when: true
+
+- name: Verify the installed Permstrap code signature
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/codesign
+      - --verify
+      - --deep
+      - --strict
+      - "{{ bootstrap_permstrap_app_path }}"
+  changed_when: false
+  tags:
+    - bootstrap
+    - permissions
+    - permstrap
+
+- name: Verify the installed Permstrap version
+  ansible.builtin.command:
+    argv:
+      - "{{ bootstrap_permstrap_app_path }}/Contents/MacOS/permstrap"
+      - --version
+  register: bootstrap_permstrap_version_check
+  changed_when: false
+  failed_when: >-
+    bootstrap_permstrap_version_check.rc != 0
+    or bootstrap_permstrap_version not in bootstrap_permstrap_version_check.stdout
+  tags:
+    - bootstrap
+    - permissions
+    - permstrap
+
+- name: Open Permstrap with permissions for every GUI cask
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/open
+      - "{{ bootstrap_permstrap_app_path }}"
+      - --args
+      - --targets
+      - "{{ bootstrap_permstrap_targets_path }}"
+  changed_when: false
+  when: not ansible_check_mode
+  tags:
+    - bootstrap
+    - permissions
+    - permstrap

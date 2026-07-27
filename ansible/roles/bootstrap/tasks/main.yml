@@ -21,6 +21,14 @@
     - bootstrap
     - homebrew
 
+- name: Install Permstrap and apply macOS permissions
+  ansible.builtin.import_tasks: permstrap.yml
+  when: platform_is_macos
+  tags:
+    - bootstrap
+    - permissions
+    - permstrap
+
 - name: Install the dotfiles CLI early
   ansible.builtin.import_tasks: dotfiles-cli.yml
   when: platform_system in ['Darwin', 'Linux']

@@ -9,6 +9,15 @@ bootstrap_homebrew_repository: >-
 bootstrap_homebrew_local_tap_dir: >-
   {{ bootstrap_homebrew_repository }}/Library/Taps/4evy/homebrew-dotfiles
 
+bootstrap_permstrap_version: 1.0.0
+bootstrap_permstrap_archive_url: >-
+  https://github.com/4evy/permstrap/releases/download/v{{ bootstrap_permstrap_version }}/permstrap-{{ bootstrap_permstrap_version }}-macos-arm64.zip
+bootstrap_permstrap_archive_checksum: >-
+  sha256:54991233614cfca6e59bf8d0dfaa29ac33bd96f6e919a6f82149beeb608565df
+bootstrap_permstrap_app_path: /Applications/Permstrap.app
+bootstrap_permstrap_targets_path: >-
+  {{ dotfiles_repo_root }}/manifests/permstrap/PermissionTargets.json
+
 bootstrap_bootstrap_packages:
   apt:
     - bubblewrap
