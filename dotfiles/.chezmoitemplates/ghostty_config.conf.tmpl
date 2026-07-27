@@ -26,7 +26,7 @@ env = SHELL=/bin/zsh
 {{- end }}
 font-size = 14
 quit-after-last-window-closed = true
-scrollback-limit = 100000000
+scrollback-limit-bytes = 100000000
 {{- if eq .chezmoi.os "darwin" }}
 scrollback-editor = direct:/opt/homebrew/bin/terminal-theme-run helix
 {{- else }}
