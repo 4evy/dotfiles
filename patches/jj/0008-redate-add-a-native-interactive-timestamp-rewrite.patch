@@ -1,0 +1,661 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 4evy <git@evy.pink>
+Date: Thu, 1 Jan 1970 00:00:00 +0000
+Subject: [PATCH] redate: add a native interactive timestamp rewrite
+
+---
+ Cargo.lock                    |   1 +
+ Cargo.toml                    |   1 +
+ cli/Cargo.toml                |   1 +
+ cli/src/commands/metaedit.rs  |  57 +++++-
+ cli/src/commands/mod.rs       |   3 +
+ cli/src/commands/redate.rs    | 348 ++++++++++++++++++++++++++++++++++
+ cli/src/config-schema.json    |  20 ++
+ cli/src/config/colors.toml    |   4 +
+ cli/src/config/revsets.toml   |   1 +
+ cli/src/config/templates.toml |   8 +
+ 10 files changed, 440 insertions(+), 4 deletions(-)
+ create mode 100644 cli/src/commands/redate.rs
+
+diff --git a/Cargo.lock b/Cargo.lock
+index 4b2207935..8dcf5ae41 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -2620,6 +2620,7 @@ dependencies = [
+  "shlex",
+  "slab",
+  "tempfile",
++ "termwiz",
+  "test-case",
+  "testutils",
+  "textwrap",
+diff --git a/Cargo.toml b/Cargo.toml
+index 507b9768b..207d38aa1 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -117,6 +117,7 @@ smallvec = { version = "1.15.1", features = [
+ strsim = "0.11.1"
+ syn = "2.0.111"
+ tempfile = "3.27.0"
++termwiz = "0.23.3"
+ test-case = "3.3.1"
+ textwrap = "0.16.2"
+ thiserror = "2.0.17"
+diff --git a/cli/Cargo.toml b/cli/Cargo.toml
+index a825b4f86..9e0cde88a 100644
+--- a/cli/Cargo.toml
++++ b/cli/Cargo.toml
+@@ -103,6 +103,7 @@ serde_json = { workspace = true }
+ shlex = { workspace = true }
+ slab = { workspace = true }
+ tempfile = { workspace = true }
++termwiz = { workspace = true }
+ textwrap = { workspace = true }
+ tokio = { workspace = true }
+ thiserror = { workspace = true }
+diff --git a/cli/src/commands/metaedit.rs b/cli/src/commands/metaedit.rs
+index 03edfdbd7..58fe9c3d5 100644
+--- a/cli/src/commands/metaedit.rs
++++ b/cli/src/commands/metaedit.rs
+@@ -19,6 +19,7 @@ use futures::TryStreamExt as _;
+ use jj_lib::backend::Timestamp;
+ use jj_lib::commit::Commit;
+ use jj_lib::object_id::ObjectId as _;
++use jj_lib::signing::SignBehavior;
+ use jj_lib::time_util::parse_datetime;
+ use tracing::instrument;
+ 
+@@ -29,6 +30,7 @@ use crate::cli_util::print_updated_commits;
+ use crate::command_error::CommandError;
+ use crate::complete;
+ use crate::description_util::join_message_paragraphs;
++use crate::rewrite_util::reparent_preserving_metadata;
+ use crate::text_util::parse_author;
+ use crate::ui::Ui;
+ 
+@@ -38,7 +40,7 @@ use crate::ui::Ui;
+ /// are also updated for all rebased commits. The name and email may come from
+ /// the `JJ_USER` and `JJ_EMAIL` environment variables, as well as by passing
+ /// `--config user.name` and `--config user.email`.
+-#[derive(clap::Args, Clone, Debug)]
++#[derive(clap::Args, Clone, Debug, Default)]
+ pub(crate) struct MetaeditArgs {
+     /// The revision(s) to modify (default: @) [aliases: -r]
+     #[arg(value_name = "REVSETS")]
+@@ -132,6 +134,23 @@ pub(crate) struct MetaeditArgs {
+     force_rewrite: bool,
+ }
+ 
++#[derive(Clone, Copy, Default)]
++pub(crate) struct CommitEditOptions {
++    timestamp: Option<Timestamp>,
++    sign: bool,
++    preserve_descendant_metadata: bool,
++}
++
++impl CommitEditOptions {
++    pub(crate) fn redate(timestamp: Timestamp) -> Self {
++        Self {
++            timestamp: Some(timestamp),
++            sign: true,
++            preserve_descendant_metadata: true,
++        }
++    }
++}
++
+ #[instrument(skip_all)]
+ pub(crate) async fn cmd_metaedit(
+     ui: &mut Ui,
+@@ -160,13 +179,21 @@ pub(crate) async fn cmd_metaedit(
+         return Ok(());
+     }
+ 
+-    edit_commits(ui, &mut workspace_command, args, commit_ids).await
++    edit_commits(
++        ui,
++        &mut workspace_command,
++        args,
++        CommitEditOptions::default(),
++        commit_ids,
++    )
++    .await
+ }
+ 
+ pub(crate) async fn edit_commits(
+     ui: &mut Ui,
+     workspace_command: &mut WorkspaceCommandHelper,
+     args: &MetaeditArgs,
++    options: CommitEditOptions,
+     commit_ids: Vec<jj_lib::backend::CommitId>,
+ ) -> Result<(), CommandError> {
+     let mut tx = workspace_command.start_transaction();
+@@ -217,6 +244,9 @@ pub(crate) async fn edit_commits(
+                 if let Some(author_date) = args.author_timestamp {
+                     new_author.timestamp = author_date;
+                 }
++                if let Some(timestamp) = options.timestamp {
++                    new_author.timestamp = timestamp;
++                }
+                 // If the old commit had an unset author, the commit builder
+                 // may already have the author updated from the current config.
+                 // Thus, compare to the actual old_author to correctly detect
+@@ -224,12 +254,20 @@ pub(crate) async fn edit_commits(
+                 if new_author.name != old_author.name
+                     || new_author.email != old_author.email
+                     || (new_author.timestamp != commit_builder.author().timestamp
+-                        && new_author.timestamp != old_author.timestamp)
++                        && (options.timestamp.is_some()
++                            || new_author.timestamp != old_author.timestamp))
+                 {
+                     commit_builder = commit_builder.set_author(new_author);
+                     rewrite = true;
+                 }
+ 
++                if let Some(timestamp) = options.timestamp {
++                    let mut committer = commit_builder.committer().clone();
++                    committer.timestamp = timestamp;
++                    commit_builder = commit_builder.set_committer(committer);
++                    rewrite = true;
++                }
++
+                 if let Some(description) = &new_description
+                     && description != commit_builder.description()
+                 {
+@@ -242,12 +280,23 @@ pub(crate) async fn edit_commits(
+                     rewrite = true;
+                 }
+ 
++                if options.sign {
++                    commit_builder = commit_builder.set_sign_behavior(SignBehavior::Force);
++                    rewrite = true;
++                }
++
+                 if rewrite {
+                     let new_commit = commit_builder.write().await?;
+                     modified.push(new_commit);
+                 }
+             } else if rewriter.parents_changed() {
+-                rewriter.reparent().write().await?;
++                if options.sign || options.preserve_descendant_metadata {
++                    reparent_preserving_metadata(rewriter, options.sign)
++                        .write()
++                        .await?;
++                } else {
++                    rewriter.reparent().write().await?;
++                }
+                 num_reparented += 1;
+             }
+             Ok(())
+diff --git a/cli/src/commands/mod.rs b/cli/src/commands/mod.rs
+index db93b7714..87fb61412 100644
+--- a/cli/src/commands/mod.rs
++++ b/cli/src/commands/mod.rs
+@@ -44,6 +44,7 @@ mod operation;
+ mod parallelize;
+ mod prev;
+ mod rebase;
++mod redate;
+ mod redo;
+ mod resolve;
+ mod restore;
+@@ -140,6 +141,7 @@ enum Command {
+     Parallelize(parallelize::ParallelizeArgs),
+     Prev(prev::PrevArgs),
+     Rebase(rebase::RebaseArgs),
++    Redate(redate::RedateArgs),
+     Redo(redo::RedoArgs),
+     Resolve(resolve::ResolveArgs),
+     Restore(restore::RestoreArgs),
+@@ -205,6 +207,7 @@ pub async fn run_command(ui: &mut Ui, command_helper: &CommandHelper) -> Result<
+         Command::Parallelize(args) => parallelize::cmd_parallelize(ui, command_helper, args).await,
+         Command::Prev(args) => prev::cmd_prev(ui, command_helper, args).await,
+         Command::Rebase(args) => rebase::cmd_rebase(ui, command_helper, args).await,
++        Command::Redate(args) => redate::cmd_redate(ui, command_helper, args).await,
+         Command::Redo(args) => redo::cmd_redo(ui, command_helper, args).await,
+         Command::Resolve(args) => resolve::cmd_resolve(ui, command_helper, args).await,
+         Command::Restore(args) => restore::cmd_restore(ui, command_helper, args).await,
+diff --git a/cli/src/commands/redate.rs b/cli/src/commands/redate.rs
+new file mode 100644
+index 000000000..4c1b15b07
+--- /dev/null
++++ b/cli/src/commands/redate.rs
+@@ -0,0 +1,348 @@
++// Copyright 2026 4evy
++// SPDX-License-Identifier: Apache-2.0
++
++use std::collections::HashSet;
++use std::io;
++use std::io::IsTerminal as _;
++
++use ansi_to_tui::IntoText as _;
++use chrono::Local;
++use chrono::NaiveDate;
++use chrono::NaiveTime;
++use chrono::TimeZone as _;
++use clap_complete::ArgValueCompleter;
++use crossterm::ExecutableCommand as _;
++use crossterm::event;
++use crossterm::event::Event;
++use crossterm::event::KeyCode;
++use crossterm::event::KeyModifiers;
++use crossterm::terminal::EnterAlternateScreen;
++use crossterm::terminal::LeaveAlternateScreen;
++use crossterm::terminal::disable_raw_mode;
++use crossterm::terminal::enable_raw_mode;
++use futures::TryStreamExt as _;
++use jj_lib::backend::Timestamp;
++use jj_lib::commit::Commit;
++use jj_lib::config::ConfigGetResultExt as _;
++use jj_lib::repo::Repo as _;
++use jj_lib::revset::RevsetStreamExt as _;
++use ratatui::Terminal;
++use ratatui::layout::Constraint;
++use ratatui::layout::Layout;
++use ratatui::prelude::CrosstermBackend;
++use ratatui::style::Color;
++use ratatui::style::Modifier;
++use ratatui::style::Style;
++use ratatui::text::Line;
++use ratatui::text::Span;
++use ratatui::text::Text;
++use ratatui::widgets::Block;
++use ratatui::widgets::List;
++use ratatui::widgets::ListItem;
++use ratatui::widgets::ListState;
++use ratatui::widgets::Paragraph;
++use termwiz::lineedit::LineEditor;
++use termwiz::lineedit::NopLineEditorHost;
++use termwiz::lineedit::line_editor_terminal;
++use tracing::instrument;
++
++use crate::cleanup_guard::CleanupGuard;
++use crate::cli_util::CommandHelper;
++use crate::cli_util::RevisionArg;
++use crate::cli_util::WorkspaceCommandHelper;
++use crate::command_error::CommandError;
++use crate::command_error::internal_error;
++use crate::command_error::user_error;
++use crate::complete;
++use crate::formatter::FormatterExt as _;
++use crate::ui::Ui;
++
++use super::metaedit;
++use super::metaedit::CommitEditOptions;
++
++/// Interactively set timestamps and sign rewritten revisions
++#[derive(clap::Args, Clone, Debug)]
++pub(crate) struct RedateArgs {
++    /// The revisions to redate
++    #[arg(value_name = "REVSETS")]
++    #[arg(add = ArgValueCompleter::new(complete::revset_expression_mutable))]
++    revisions_pos: Vec<RevisionArg>,
++
++    #[arg(short = 'r', hide = true, value_name = "REVSETS")]
++    #[arg(add = ArgValueCompleter::new(complete::revset_expression_mutable))]
++    revisions_opt: Vec<RevisionArg>,
++}
++
++#[instrument(skip_all)]
++pub(crate) async fn cmd_redate(
++    ui: &mut Ui,
++    command: &CommandHelper,
++    args: &RedateArgs,
++) -> Result<(), CommandError> {
++    let mut workspace_command = command.workspace_helper(ui).await?;
++    if !workspace_command.repo().store().signer().can_sign() {
++        return Err(user_error("No signing backend configured").hinted(
++            "For configuring a signing backend, see \
++             https://docs.jj-vcs.dev/latest/config/#commit-signing",
++        ));
++    }
++    if !ui.can_prompt() {
++        return Err(user_error("Cannot prompt for a redate timestamp")
++            .hinted("Run from a terminal or set JJ_INTERACTIVE=1"));
++    }
++    let interactive = args.revisions_pos.is_empty()
++        && args.revisions_opt.is_empty()
++        && io::stdin().is_terminal()
++        && io::stdout().is_terminal();
++    let target_expression = if !args.revisions_pos.is_empty() || !args.revisions_opt.is_empty() {
++        workspace_command
++            .parse_union_revsets(ui, &[&*args.revisions_pos, &*args.revisions_opt].concat())?
++    } else if interactive {
++        let revset = workspace_command.settings().get_string("revsets.redate")?;
++        let revset = match workspace_command
++            .settings()
++            .get::<usize>("redate.limit")
++            .optional()?
++        {
++            Some(0) => return Err(user_error("redate.limit must be greater than zero")),
++            Some(limit) => format!("latest(({revset}), {limit})"),
++            None => revset,
++        };
++        workspace_command.parse_revset(ui, &RevisionArg::from(revset))?
++    } else {
++        workspace_command.parse_revset(ui, &RevisionArg::AT)?
++    }
++    .resolve()?;
++    workspace_command
++        .check_rewritable_expr(&target_expression)
++        .await?;
++    let commits: Vec<Commit> = target_expression
++        .evaluate(workspace_command.repo().as_ref())?
++        .stream()
++        .commits(workspace_command.repo().store())
++        .try_collect()
++        .await?;
++    if commits.is_empty() {
++        writeln!(ui.status(), "No revisions to redate.")?;
++        return Ok(());
++    }
++    let commit_ids: Vec<jj_lib::backend::CommitId> = if interactive {
++        let rows = render_rows(ui, &workspace_command, &commits)?;
++        let Some(indices) = select_revisions(rows)? else {
++            return Ok(());
++        };
++        indices
++            .into_iter()
++            .map(|index| commits[index].id().clone())
++            .collect()
++    } else {
++        commits.iter().map(|commit| commit.id().clone()).collect()
++    };
++    let timestamp = prompt_timestamp(ui)?;
++    let display_timestamp = timestamp.to_datetime().unwrap().to_rfc3339();
++    let revision_label = match commit_ids.as_slice() {
++        [_] => "1 revision".to_owned(),
++        revisions => format!("{} revisions", revisions.len()),
++    };
++    if !ui.prompt_yes_no(
++        &format!("Redate {revision_label} to {display_timestamp}?"),
++        Some(true),
++    )? {
++        return Ok(());
++    }
++    metaedit::edit_commits(
++        ui,
++        &mut workspace_command,
++        &metaedit::MetaeditArgs::default(),
++        CommitEditOptions::redate(timestamp),
++        commit_ids,
++    )
++    .await
++}
++
++fn render_rows(
++    ui: &Ui,
++    workspace_command: &WorkspaceCommandHelper,
++    commits: &[Commit],
++) -> Result<Vec<Text<'static>>, CommandError> {
++    let template = workspace_command
++        .parse_commit_template(
++            ui,
++            &workspace_command
++                .settings()
++                .get_string("templates.redate")?,
++        )?
++        .labeled(["commit"]);
++    commits
++        .iter()
++        .map(|commit| {
++            let mut output = vec![];
++            let mut formatter = ui.new_formatter(&mut output).into_labeled("redate");
++            template
++                .format(commit, formatter.as_mut())
++                .map_err(|error| internal_error(format!("Failed to format redate row: {error}")))?;
++            drop(formatter);
++            output
++                .into_text()
++                .map_err(|error| internal_error(format!("Failed to render redate row: {error}")))
++        })
++        .collect()
++}
++
++fn select_revisions(rows: Vec<Text<'static>>) -> Result<Option<Vec<usize>>, CommandError> {
++    io::stdout().execute(EnterAlternateScreen)?;
++    let _terminal_guard = CleanupGuard::new(|| {
++        drop(disable_raw_mode());
++        drop(io::stdout().execute(LeaveAlternateScreen));
++    });
++    enable_raw_mode()?;
++    let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
++    terminal.clear()?;
++    run_selector(&mut terminal, &rows)
++}
++
++fn run_selector<B: ratatui::backend::Backend>(
++    terminal: &mut Terminal<B>,
++    rows: &[Text<'static>],
++) -> Result<Option<Vec<usize>>, CommandError> {
++    let mut list_state = ListState::default().with_selected(Some(0));
++    let mut selected = HashSet::new();
++    let mut invalid = false;
++
++    loop {
++        terminal
++            .draw(|frame| {
++                let areas = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)])
++                    .split(frame.area());
++                let items = rows.iter().enumerate().map(|(index, row)| {
++                    let mut row = row.clone();
++                    let marker = if selected.contains(&index) {
++                        Span::styled(
++                            "● ",
++                            Style::default()
++                                .fg(Color::Magenta)
++                                .add_modifier(Modifier::BOLD),
++                        )
++                    } else {
++                        Span::styled("○ ", Style::default().fg(Color::DarkGray))
++                    };
++                    if let Some(line) = row.lines.first_mut() {
++                        line.spans.insert(0, marker);
++                    } else {
++                        row.lines.push(Line::from(marker));
++                    }
++                    ListItem::new(row)
++                });
++                let list = List::new(items)
++                    .block(
++                        Block::bordered()
++                            .title(format!(" Select revisions ({} selected) ", selected.len())),
++                    )
++                    .highlight_symbol(
++                        Line::from("› ").style(
++                            Style::default()
++                                .fg(Color::Magenta)
++                                .add_modifier(Modifier::BOLD),
++                        ),
++                    )
++                    .scroll_padding(1);
++                frame.render_stateful_widget(list, areas[0], &mut list_state);
++
++                let footer = if invalid {
++                    Line::from("Select at least one revision")
++                        .style(Style::default().fg(Color::Red))
++                } else {
++                    Line::from("↑↓/jk move · space toggle · enter confirm · q cancel")
++                        .style(Style::default().fg(Color::DarkGray))
++                };
++                frame.render_widget(Paragraph::new(footer), areas[1]);
++            })
++            .map_err(|error| internal_error(format!("Failed to draw redate TUI: {error}")))?;
++
++        let Event::Key(key) = event::read()
++            .map_err(|error| internal_error(format!("Failed to read redate TUI input: {error}")))?
++        else {
++            continue;
++        };
++        if key.is_release() {
++            continue;
++        }
++        let current = list_state.selected().unwrap_or(0).min(rows.len() - 1);
++        match (key.code, key.modifiers) {
++            (KeyCode::Char('q') | KeyCode::Esc, KeyModifiers::NONE)
++            | (KeyCode::Char('c'), KeyModifiers::CONTROL) => return Ok(None),
++            (KeyCode::Enter, KeyModifiers::NONE) if !selected.is_empty() => {
++                return Ok(Some(
++                    (0..rows.len())
++                        .filter(|index| selected.contains(index))
++                        .collect(),
++                ));
++            }
++            (KeyCode::Enter, KeyModifiers::NONE) => invalid = true,
++            (KeyCode::Down | KeyCode::Char('j'), KeyModifiers::NONE) => {
++                list_state.select(Some((current + 1).min(rows.len() - 1)));
++            }
++            (KeyCode::Up | KeyCode::Char('k'), KeyModifiers::NONE) => {
++                list_state.select(Some(current.saturating_sub(1)));
++            }
++            (KeyCode::Char(' '), KeyModifiers::NONE) => {
++                if !selected.insert(current) {
++                    selected.remove(&current);
++                }
++                invalid = false;
++            }
++            _ => {}
++        }
++    }
++}
++
++fn prompt_timestamp(ui: &Ui) -> Result<Timestamp, CommandError> {
++    let now = Local::now();
++    let default_date = now.format("%Y-%m-%d").to_string();
++    let date = prompt_prefilled(ui, "Date (YYYY-MM-DD)", &default_date, |input| {
++        NaiveDate::parse_from_str(input, "%Y-%m-%d")
++    })?;
++    let default_time = now.format("%H:%M:%S").to_string();
++    let time = prompt_prefilled(ui, "Time (HH[:MM[:SS]])", &default_time, parse_time)?;
++    let local = Local
++        .from_local_datetime(&date.and_time(time))
++        .earliest()
++        .ok_or_else(|| user_error("The selected local time does not exist"))?;
++    Ok(Timestamp::from_datetime(local.fixed_offset()))
++}
++
++fn prompt_prefilled<T, E: std::fmt::Debug + std::fmt::Display>(
++    ui: &Ui,
++    prompt: &str,
++    initial: &str,
++    mut parse: impl FnMut(&str) -> Result<T, E>,
++) -> Result<T, CommandError> {
++    if !io::stdin().is_terminal() {
++        return Ok(ui.prompt_choice_with(prompt, Some(initial), parse)?);
++    }
++    let mut terminal = line_editor_terminal().map_err(internal_error)?;
++    let mut editor = LineEditor::new(&mut terminal);
++    editor.set_prompt(&format!("{prompt}: "));
++    let mut host = NopLineEditorHost::default();
++    let mut input = initial.to_owned();
++    loop {
++        input = editor
++            .read_line_with_optional_initial_value(&mut host, Some(&input))
++            .map_err(internal_error)?
++            .ok_or_else(|| user_error("Prompt canceled"))?;
++        match parse(input.trim()) {
++            Ok(value) => return Ok(value),
++            Err(error) => writeln!(ui.warning_no_heading(), "{error}")?,
++        }
++    }
++}
++
++fn parse_time(input: &str) -> Result<NaiveTime, String> {
++    let normalized = match input.matches(':').count() {
++        0 => format!("{input}:00:00"),
++        1 => format!("{input}:00"),
++        2 => input.to_owned(),
++        _ => return Err("invalid time; expected HH[:MM[:SS]]".to_owned()),
++    };
++    NaiveTime::parse_from_str(&normalized, "%H:%M:%S").map_err(|error| error.to_string())
++}
+diff --git a/cli/src/config-schema.json b/cli/src/config-schema.json
+index 54f585508..d599190f7 100644
+--- a/cli/src/config-schema.json
++++ b/cli/src/config-schema.json
+@@ -731,6 +731,11 @@
+                     "description": "Default set of revisions to run a command on when no explicit revset is given for jj run",
+                     "default": "reachable(@, mutable())"
+                 },
++                "redate": {
++                    "type": "string",
++                    "description": "Default set of revisions to offer in the jj redate TUI",
++                    "default": "mutable() & remote_bookmarks().."
++                },
+                 "simplify-parents": {
+                     "type": "string",
+                     "description": "Default set of revisions to simplify when no explicit revset is given for jj simplify-parents",
+@@ -884,6 +889,17 @@
+                 }
+             }
+         },
++        "redate": {
++            "type": "object",
++            "description": "Settings for the `jj redate` command",
++            "properties": {
++                "limit": {
++                    "type": "integer",
++                    "minimum": 1,
++                    "description": "Maximum number of revisions offered in the interactive picker"
++                }
++            }
++        },
+         "experimental-advance-branches": {
+             "type": "object",
+             "description": "Settings controlling the 'advance-branches' feature which moves bookmarks forward when new commits are created.",
+@@ -1064,6 +1080,10 @@
+                     "type": "string",
+                     "description": "`jj arrange``'s template for commits in the main view"
+                 },
++                "redate": {
++                    "type": "string",
++                    "description": "`jj redate`'s template for revisions in the interactive picker"
++                },
+                 "bookmark_list": {
+                     "type": "string",
+                     "description": "`jj bookmark list`'s output"
+diff --git a/cli/src/config/colors.toml b/cli/src/config/colors.toml
+index 76e553428..2c549cedc 100644
+--- a/cli/src/config/colors.toml
++++ b/cli/src/config/colors.toml
+@@ -118,3 +118,7 @@
+ "signature status invalid" = "red"
+ 
+ "arrange context commit" = { dim = true }
++"redate commit working_copy" = { fg = "magenta", bold = true }
++"redate commit change" = { fg = "cyan", bold = true }
++"redate commit empty" = { fg = "bright black", italic = true }
++"redate commit timestamp" = "bright black"
+diff --git a/cli/src/config/revsets.toml b/cli/src/config/revsets.toml
+index 8dc0f0ded..4ded007ae 100644
+--- a/cli/src/config/revsets.toml
++++ b/cli/src/config/revsets.toml
+@@ -6,6 +6,7 @@ arrange = "reachable(@, mutable())"
+ fix = "reachable(@, mutable())"
+ run = "reachable(@, mutable())"
+ simplify-parents = "reachable(@, mutable())"
++redate = "mutable() & remote_bookmarks().."
+ # log revset is also used as the default short-prefixes. If it failed to
+ # evaluate, lengthy warning messages would be printed. Use present(expr) if
+ # symbols in expr might not always exist.
+diff --git a/cli/src/config/templates.toml b/cli/src/config/templates.toml
+index afdb50828..e994c88f7 100644
+--- a/cli/src/config/templates.toml
++++ b/cli/src/config/templates.toml
+@@ -3,6 +3,14 @@ bookmark_list = 'format_commit_ref(self, "bookmark") ++ "\n"'
+ 
+ commit_summary = 'format_commit_summary_with_refs(self, format_commit_ref_names(bookmarks))'
+ arrange = 'builtin_log_compact'
++redate = '''
++separate("  ",
++  if(current_working_copy, label("working_copy", "@"), " "),
++  label("change", change_id.shortest(8)),
++  coalesce(description.first_line(), label("empty", "(no description set)")),
++  label("timestamp", committer.timestamp().local().format("%Y-%m-%d %H:%M")),
++)
++'''
+ 
+ file_annotate = '''
+ join(" ",
+-- 
+2.55.0
+

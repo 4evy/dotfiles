@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 4evy <git@evy.pink>
+Date: Thu, 1 Jan 1970 00:00:00 +0000
+Subject: [PATCH 2/7] git push: apply the local signing timestamp policy
+
+Sign every unsigned commit in the outgoing range. Set the committer
+timestamp to the author timestamp when the author matches either the jj
+or Git identity; otherwise use the timestamp captured when pushing.
+
+Preserve the authors, committer timestamps, and signature state of
+rewritten descendants. This limits changes to those required by the new
+ancestry.
+---
+ cli/src/commands/git/push.rs | 50 ++++++++++++++++++++++++++++++------
+ 1 file changed, 42 insertions(+), 8 deletions(-)
+
+diff --git a/cli/src/commands/git/push.rs b/cli/src/commands/git/push.rs
+index 2d3fd0d28..0c848280c 100644
+--- a/cli/src/commands/git/push.rs
++++ b/cli/src/commands/git/push.rs
+@@ -805,16 +805,29 @@ async fn sign_commits_before_push(
+     commits_to_push: Arc<UserRevsetExpression>,
+     ref_updates: GitPushRefTargets,
+ ) -> Result<GitPushRefTargets, CommandError> {
+-    let mut sign_settings = tx.settings().sign_settings();
+-    sign_settings.behavior = SignBehavior::Own;
++    let current_committer = tx.settings().signature();
++    let mut own_identities = vec![(
++        tx.settings().user_name().to_owned(),
++        tx.settings().user_email().to_owned(),
++    )];
++    if let Ok(git_backend) = git::get_git_backend(tx.repo().store()) {
++        let git_repo = git_backend.git_repo();
++        let config = git_repo.config_snapshot();
++        let name = config
++            .string("user.name")
++            .and_then(|value| std::str::from_utf8(&value).ok().map(ToOwned::to_owned));
++        let email = config
++            .string("user.email")
++            .and_then(|value| std::str::from_utf8(&value).ok().map(ToOwned::to_owned));
++        if let (Some(name), Some(email)) = (name, email) {
++            own_identities.push((name, email));
++        }
++    }
+     let commit_ids: IndexSet<CommitId> = tx
+         .base_workspace_helper()
+         .attach_revset_evaluator(commits_to_push)
+         .evaluate_to_commits()?
+-        // TODO: make filter condition configurable by revset?
+-        .try_filter(|commit| {
+-            future::ready(!commit.is_signed() && sign_settings.should_sign(commit.store_commit()))
+-        })
++        .try_filter(|commit| future::ready(!commit.is_signed()))
+         .map_ok(|commit| commit.id().clone())
+         .try_collect()
+         .await?;
+@@ -838,16 +851,37 @@ async fn sign_commits_before_push(
+                             .display(&short_change_hash(old_commit.change_id()))
+                             .ok();
+                     }
++                    let author = old_commit.author().clone();
+                     if commit_ids.contains(&old_commit_id) {
++                        let mut committer = current_committer.clone();
++                        if own_identities.iter().any(|(name, email)| {
++                            author.name == name.as_str() && author.email.eq_ignore_ascii_case(email)
++                        }) {
++                            committer.timestamp = author.timestamp;
++                        }
+                         let commit = rewriter
+                             .reparent()
+-                            .set_sign_behavior(sign_settings.behavior)
++                            .set_author(author)
++                            .set_committer(committer)
++                            .set_sign_behavior(SignBehavior::Force)
+                             .write()
+                             .await?;
+                         old_to_new_commits_map.insert(old_commit_id, commit.id().clone());
+                     } else {
+                         num_rebased_descendants += 1;
+-                        let commit = rewriter.reparent().write().await?;
++                        let committer = old_commit.committer().clone();
++                        let sign_behavior = if old_commit.is_signed() {
++                            SignBehavior::Force
++                        } else {
++                            SignBehavior::Drop
++                        };
++                        let commit = rewriter
++                            .reparent()
++                            .set_author(author)
++                            .set_committer(committer)
++                            .set_sign_behavior(sign_behavior)
++                            .write()
++                            .await?;
+                         old_to_new_commits_map.insert(old_commit_id, commit.id().clone());
+                     }
+                     Ok(())

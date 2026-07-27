@@ -1,0 +1,181 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 4evy <git@evy.pink>
+Date: Thu, 1 Jan 1970 00:00:00 +0000
+Subject: [PATCH 6/7] rewrite: share metadata-preserving reparenting
+
+Move descendant reparenting into a shared helper that retains complete
+author and committer metadata. Recreate a signature when the original
+commit was signed, or when the caller explicitly requires signing.
+
+Use the helper in the push signing path so later metadata rewrites can
+share the same semantics.
+---
+ cli/src/commands/git/push.rs | 79 +++++++++++++++---------------------
+ cli/src/lib.rs               |  1 +
+ cli/src/rewrite_util.rs      | 40 ++++++++++++++++++
+ 3 files changed, 74 insertions(+), 46 deletions(-)
+ create mode 100644 cli/src/rewrite_util.rs
+
+diff --git a/cli/src/commands/git/push.rs b/cli/src/commands/git/push.rs
+index 6cdb89e06..120b3ff34 100644
+--- a/cli/src/commands/git/push.rs
++++ b/cli/src/commands/git/push.rs
+@@ -56,7 +56,6 @@ use jj_lib::revset::RevsetEvaluationError;
+ use jj_lib::revset::RevsetExpression;
+ use jj_lib::revset::RevsetStreamExt as _;
+ use jj_lib::revset::UserRevsetExpression;
+-use jj_lib::rewrite::CommitRewriter;
+ use jj_lib::signing::SignBehavior;
+ use jj_lib::str_util::StringExpression;
+ use jj_lib::view::View;
+@@ -82,6 +81,7 @@ use crate::git_util::print_push_stats;
+ use crate::progress::ProgressWriter;
+ use crate::revset_util::parse_bookmark_name;
+ use crate::revset_util::parse_union_name_patterns;
++use crate::rewrite_util::reparent_preserving_metadata;
+ use crate::ui::Ui;
+ 
+ /// Push to a Git remote
+@@ -842,52 +842,39 @@ async fn sign_commits_before_push(
+         let mut progress_writer = ProgressWriter::new(ui, "Signing");
+ 
+         tx.repo_mut()
+-            .transform_descendants(
+-                commit_ids.iter().cloned().collect_vec(),
+-                async |rewriter: CommitRewriter<'_>| {
+-                    let old_commit = rewriter.old_commit();
+-                    let old_commit_id = old_commit.id().clone();
+-                    if let Some(writer) = &mut progress_writer {
+-                        writer
+-                            .display(&short_change_hash(old_commit.change_id()))
+-                            .ok();
+-                    }
+-                    let author = old_commit.author().clone();
+-                    if commit_ids.contains(&old_commit_id) {
+-                        let mut committer = current_committer.clone();
+-                        if own_identities.iter().any(|(name, email)| {
+-                            author.name == name.as_str() && author.email.eq_ignore_ascii_case(email)
+-                        }) {
+-                            committer.timestamp = author.timestamp;
+-                        }
+-                        let commit = rewriter
+-                            .reparent()
+-                            .set_author(author)
+-                            .set_committer(committer)
+-                            .set_sign_behavior(SignBehavior::Force)
+-                            .write()
+-                            .await?;
+-                        old_to_new_commits_map.insert(old_commit_id, commit.id().clone());
+-                    } else {
+-                        num_rebased_descendants += 1;
+-                        let committer = old_commit.committer().clone();
+-                        let sign_behavior = if old_commit.is_signed() {
+-                            SignBehavior::Force
+-                        } else {
+-                            SignBehavior::Drop
+-                        };
+-                        let commit = rewriter
+-                            .reparent()
+-                            .set_author(author)
+-                            .set_committer(committer)
+-                            .set_sign_behavior(sign_behavior)
+-                            .write()
+-                            .await?;
+-                        old_to_new_commits_map.insert(old_commit_id, commit.id().clone());
++            .transform_descendants(commit_ids.iter().cloned().collect_vec(), async |rewriter| {
++                let old_commit = rewriter.old_commit();
++                let old_commit_id = old_commit.id().clone();
++                if let Some(writer) = &mut progress_writer {
++                    writer
++                        .display(&short_change_hash(old_commit.change_id()))
++                        .ok();
++                }
++                let author = old_commit.author().clone();
++                if commit_ids.contains(&old_commit_id) {
++                    let mut committer = current_committer.clone();
++                    if own_identities.iter().any(|(name, email)| {
++                        author.name == name.as_str() && author.email.eq_ignore_ascii_case(email)
++                    }) {
++                        committer.timestamp = author.timestamp;
+                     }
+-                    Ok(())
+-                },
+-            )
++                    let commit = rewriter
++                        .reparent()
++                        .set_author(author)
++                        .set_committer(committer)
++                        .set_sign_behavior(SignBehavior::Force)
++                        .write()
++                        .await?;
++                    old_to_new_commits_map.insert(old_commit_id, commit.id().clone());
++                } else {
++                    num_rebased_descendants += 1;
++                    let commit = reparent_preserving_metadata(rewriter, false)
++                        .write()
++                        .await?;
++                    old_to_new_commits_map.insert(old_commit_id, commit.id().clone());
++                }
++                Ok(())
++            })
+             .await?;
+     }
+ 
+diff --git a/cli/src/lib.rs b/cli/src/lib.rs
+index f9c02c6a0..2a524a4ab 100644
+--- a/cli/src/lib.rs
++++ b/cli/src/lib.rs
+@@ -49,6 +49,7 @@ pub mod movement_util;
+ pub mod operation_templater;
+ mod progress;
+ pub mod revset_util;
++mod rewrite_util;
+ pub mod template_builder;
+ pub mod template_parser;
+ pub mod templater;
+diff --git a/cli/src/rewrite_util.rs b/cli/src/rewrite_util.rs
+new file mode 100644
+index 000000000..fb8dbafbe
+--- /dev/null
++++ b/cli/src/rewrite_util.rs
+@@ -0,0 +1,40 @@
++// Copyright 2026 4evy
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++// https://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++use jj_lib::commit_builder::CommitBuilder;
++use jj_lib::rewrite::CommitRewriter;
++use jj_lib::signing::SignBehavior;
++
++/// Reparents a commit without changing its author or committer metadata.
++///
++/// Rewritten signatures are recreated when the old commit was signed, or when
++/// `force_sign` is requested. Unsigned commits otherwise remain unsigned.
++pub(crate) fn reparent_preserving_metadata(
++    rewriter: CommitRewriter<'_>,
++    force_sign: bool,
++) -> CommitBuilder<'_> {
++    let old_commit = rewriter.old_commit();
++    let author = old_commit.author().clone();
++    let committer = old_commit.committer().clone();
++    let sign_behavior = if force_sign || old_commit.is_signed() {
++        SignBehavior::Force
++    } else {
++        SignBehavior::Drop
++    };
++    rewriter
++        .reparent()
++        .set_author(author)
++        .set_committer(committer)
++        .set_sign_behavior(sign_behavior)
++}

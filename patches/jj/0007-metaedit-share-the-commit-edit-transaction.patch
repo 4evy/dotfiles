@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 4evy <git@evy.pink>
+Date: Thu, 1 Jan 1970 00:00:00 +0000
+Subject: [PATCH 7/8] metaedit: share the commit edit transaction
+
+---
+ cli/src/commands/metaedit.rs | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/cli/src/commands/metaedit.rs b/cli/src/commands/metaedit.rs
+index 3ac3b2d5a..03edfdbd7 100644
+--- a/cli/src/commands/metaedit.rs
++++ b/cli/src/commands/metaedit.rs
+@@ -24,6 +24,7 @@ use tracing::instrument;
+ 
+ use crate::cli_util::CommandHelper;
+ use crate::cli_util::RevisionArg;
++use crate::cli_util::WorkspaceCommandHelper;
+ use crate::cli_util::print_updated_commits;
+ use crate::command_error::CommandError;
+ use crate::complete;
+@@ -159,6 +160,15 @@ pub(crate) async fn cmd_metaedit(
+         return Ok(());
+     }
+ 
++    edit_commits(ui, &mut workspace_command, args, commit_ids).await
++}
++
++pub(crate) async fn edit_commits(
++    ui: &mut Ui,
++    workspace_command: &mut WorkspaceCommandHelper,
++    args: &MetaeditArgs,
++    commit_ids: Vec<jj_lib::backend::CommitId>,
++) -> Result<(), CommandError> {
+     let mut tx = workspace_command.start_transaction();
+     let tx_description = match commit_ids.as_slice() {
+         [] => unreachable!(),
+-- 
+2.55.0
+

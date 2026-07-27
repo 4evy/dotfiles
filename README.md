@@ -143,12 +143,6 @@ just smoke                            # Build and validate the Fedora smoke-test
 just smoke-shell                      # Open a shell in the Fedora smoke-test container
 ```
 
-Python command surfaces use Cyclopts as their single CLI framework. Function signatures
-and docstrings declare commands and help; `Parameter`, `Group`, and environment
-configuration declare validation, aliases, and settings. Small bootstrap scripts that
-must run before project dependencies are installed stay on the standard library's
-`argparse`
-
 ### Nix and Ansible
 
 ```bash

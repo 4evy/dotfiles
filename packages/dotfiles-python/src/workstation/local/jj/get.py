@@ -11,15 +11,9 @@ from .repository import (
     git as _git,
     is_shallow as _shallow,
     jj_command as _jj,
-    shallow_boundary as _shallow_boundary,
     workspace_root as _workspace_root,
 )
 from .settings import settings as _settings
-
-
-def _reindex_if_shallow_boundary_changed(previous: str) -> None:
-    if _shallow_boundary() != previous:
-        run((*_jj(), "--quiet", "debug", "reindex"))
 
 
 class _GitHubOwner(BaseModel):
@@ -85,55 +79,29 @@ def _fetch_url(repo: str) -> str:
     return value
 
 
-def _fetch_shallow_stack(source: str, refspec: str, base_ref: str) -> None:
-    destination = refspec.rsplit(":", 1)[-1]
-    common_args = (
-        "--no-write-fetch-head",
-        "--no-tags",
-        "--",
-        source,
-        refspec,
-    )
-    run(
-        (
-            "git",
-            "fetch",
-            f"--shallow-exclude={base_ref}",
-            "--prune",
-            *common_args,
-        ),
-        cwd=_workspace_root(),
-    )
-    try:
-        stack_depth = int(_git("rev-list", "--count", destination))
-    except ValueError as error:
-        raise DotfilesError(f"could not determine depth of {destination}") from error
-    if stack_depth < 1:
-        raise DotfilesError(f"empty shallow stack for {destination}")
-    # Include exactly one commit beyond the stack. That commit supplies the
-    # oldest change's diff base while remaining a shallow root. In particular,
-    # don't deepen through the parents when that base happens to be a merge.
-    run(
-        ("git", "fetch", f"--depth={stack_depth + 1}", *common_args),
-        cwd=_workspace_root(),
-    )
-
-
-def _track_remote_bookmark(bookmark: str, remote: str) -> None:
-    tracked = output((
+def _fetch_ref(
+    source: str,
+    source_ref: str,
+    remote: str,
+    bookmark: str,
+    shallow_exclude: str | None,
+) -> None:
+    args = [
         *_jj(),
-        "--ignore-working-copy",
-        "bookmark",
-        "list",
-        "--tracked",
+        "git",
+        "fetch-ref",
+        "--source",
+        source,
+        source_ref,
         "--remote",
-        f"exact:{remote}",
-        f"exact:{bookmark}",
-        "--template",
-        "name",
-    ))
-    if not tracked:
-        run((*_jj(), "bookmark", "track", f"{bookmark}@{remote}"))
+        remote,
+        "--bookmark",
+        bookmark,
+        "--track",
+    ]
+    if shallow_exclude:
+        args.extend(("--shallow-exclude", shallow_exclude))
+    run(tuple(args))
 
 
 def _resolve_pr(number: str, repo_arg: str | None) -> None:
@@ -150,32 +118,13 @@ def _resolve_pr(number: str, repo_arg: str | None) -> None:
         "--json",
         "baseRefName,headRefName",
     )
-    url = _fetch_url(repo)
-    remote = _settings().jj_get_pr_remote
-    bookmark = info.head_ref_name
-    refspec = f"+refs/pull/{number}/head:refs/remotes/{remote}/{bookmark}"
-    shallow = _shallow()
-    boundary = _shallow_boundary() if shallow else ""
-    if shallow:
-        _fetch_shallow_stack(url, refspec, f"refs/heads/{info.base_ref_name}")
-    else:
-        run(
-            (
-                "git",
-                "fetch",
-                "--prune",
-                "--no-write-fetch-head",
-                "--no-tags",
-                "--",
-                url,
-                refspec,
-            ),
-            cwd=_workspace_root(),
-        )
-    run((*_jj(), "git", "import"))
-    if shallow:
-        _reindex_if_shallow_boundary_changed(boundary)
-    _track_remote_bookmark(bookmark, remote)
+    _fetch_ref(
+        _fetch_url(repo),
+        f"refs/pull/{number}/head",
+        _settings().jj_get_pr_remote,
+        info.head_ref_name,
+        f"refs/heads/{info.base_ref_name}" if _shallow() else None,
+    )
 
 
 def _infer_base(remote: str) -> str:
@@ -206,19 +155,19 @@ def _resolve_branch(bookmark: str, remote: str | None, base: str | None) -> None
         remote = remotes[0] if len(remotes) == 1 else "origin"
     if not _git("remote", "get-url", remote, check=False):
         raise DotfilesError(f"jj-get: unknown remote: {remote}")
-    shallow = _shallow()
-    boundary = _shallow_boundary() if shallow else ""
-    if shallow:
+
+    shallow_exclude = None
+    if _shallow():
         base = base or _settings().jj_get_base or _infer_base(remote)
         base = base.removeprefix(f"{remote}/")
-        base_ref = base if base.startswith("refs/") else f"refs/heads/{base}"
-        refspec = f"+refs/heads/{bookmark}:refs/remotes/{remote}/{bookmark}"
-        _fetch_shallow_stack(remote, refspec, base_ref)
-        run((*_jj(), "git", "import"))
-        _reindex_if_shallow_boundary_changed(boundary)
-    else:
-        run((*_jj(), "git", "fetch", "--remote", remote, "--branch", bookmark))
-    _track_remote_bookmark(bookmark, remote)
+        shallow_exclude = base if base.startswith("refs/") else f"refs/heads/{base}"
+    _fetch_ref(
+        remote,
+        f"refs/heads/{bookmark}",
+        remote,
+        bookmark,
+        shallow_exclude,
+    )
 
 
 def _validate_arguments(arguments: ArgumentCollection) -> None:

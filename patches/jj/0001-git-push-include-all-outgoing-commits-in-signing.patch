@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 4evy <git@evy.pink>
+Date: Thu, 1 Jan 1970 00:00:00 +0000
+Subject: [PATCH 1/7] git push: include all outgoing commits in signing
+
+Use remote bookmarks and tags as the lower boundary for the outgoing
+range. Keep only the synthetic root immutable so explicitly pushed
+immutable commits, including tag targets, can be rewritten and signed.
+---
+ cli/src/commands/git/push.rs | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/cli/src/commands/git/push.rs b/cli/src/commands/git/push.rs
+index c4e91c84e..2d3fd0d28 100644
+--- a/cli/src/commands/git/push.rs
++++ b/cli/src/commands/git/push.rs
+@@ -786,11 +786,12 @@ fn ready_to_push_revset_expression(
+     let old_heads = repo
+         .view()
+         .remote_bookmarks(remote)
+-        .flat_map(|(_, old_head)| old_head.target.added_ids())
++        .chain(repo.view().remote_tags(remote))
++        .flat_map(|(_, old_ref)| old_ref.target.added_ids())
+         .cloned()
+         .collect_vec();
+     RevsetExpression::commits(old_heads)
+-        .union(workspace_helper.env().immutable_heads_expression())
++        .union(&RevsetExpression::root())
+         .range(&RevsetExpression::commits(new_heads))
+ }
+ 

@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 4evy <git@evy.pink>
+Date: Thu, 1 Jan 1970 00:00:00 +0000
+Subject: [PATCH 3/7] git push: move tags after signing rewrites
+
+Remap every local tag that points into the rewritten commit graph. This
+keeps explicitly pushed tags and tags on rebased descendants attached to
+the signed replacement instead of the obsolete unsigned commit.
+---
+ cli/src/commands/git/push.rs | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/cli/src/commands/git/push.rs b/cli/src/commands/git/push.rs
+index 0c848280c..6cdb89e06 100644
+--- a/cli/src/commands/git/push.rs
++++ b/cli/src/commands/git/push.rs
+@@ -37,6 +37,7 @@ use jj_lib::git::GitPushRefTargets;
+ use jj_lib::git::GitSettings;
+ use jj_lib::index::IndexResult;
+ use jj_lib::merge::Diff;
++use jj_lib::merge::Merge;
+ use jj_lib::op_store::RefTarget;
+ use jj_lib::operation::Operation;
+ use jj_lib::ref_name::RefName;
+@@ -903,6 +904,26 @@ async fn sign_commits_before_push(
+         bookmarks: map_to_new_commits(ref_updates.bookmarks),
+         tags: map_to_new_commits(ref_updates.tags),
+     };
++    let rewritten_tags = tx
++        .repo()
++        .view()
++        .local_tags()
++        .filter_map(|(name, target)| {
++            let terms = target
++                .as_merge()
++                .into_iter()
++                .map(|term| {
++                    term.as_ref()
++                        .map(|id| old_to_new_commits_map.get(id).unwrap_or(id).clone())
++                })
++                .collect_vec();
++            let new_target = RefTarget::from_merge(Merge::from_vec(terms));
++            (new_target != *target).then(|| (name.to_owned(), new_target))
++        })
++        .collect_vec();
++    for (name, target) in rewritten_tags {
++        tx.repo_mut().set_local_tag_target(&name, target);
++    }
+ 
+     if let Some(mut formatter) = ui.status_formatter() {
+         let num_updated_signatures = commit_ids.len();
