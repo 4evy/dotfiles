@@ -16,15 +16,15 @@
         "owner": "ghostty-org",
         "name": "ghostty"
       },
-      "revision": "4c725242b7dbe8c77c6e227ef1f9540c5ef17921",
-      "version": "1.3.2-dev.4c72524",
+      "revision": "739603b8a2b643b167031a99718127cc0ca311a5",
+      "version": "1.3.2-dev.739603b",
       "hashes": {
-        "nix_source": "sha256-DvPf4hVaD8iEeSfqhPCfAtD9kWkBAODqvxp9rmEBgPo="
+        "nix_source": "sha256-gBrnaKO6d4KR1PJVgb+q84zL1+c4UC7kkGj2pw3DeXE="
       },
       "artifacts": {
         "source": {
-          "url": "https://github.com/ghostty-org/ghostty/archive/4c725242b7dbe8c77c6e227ef1f9540c5ef17921.tar.gz",
-          "sha256": "c699424733430b83107ff106647511e8bc5f644356bda90bbf540a3c4c06c5a6"
+          "url": "https://github.com/ghostty-org/ghostty/archive/739603b8a2b643b167031a99718127cc0ca311a5.tar.gz",
+          "sha256": "b7a144dc94162186f6306ed1634cafc43f5c2f31aecc17ec9e01a2343f0ddb5c"
         }
       },
       "components": {

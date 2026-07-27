@@ -20,6 +20,11 @@ from workstation.lib.paths import asset_path
 from workstation.lib.retry import wait_until
 from workstation.lib.sources import SOURCES
 from workstation.lib.templates import render_template
+from workstation.macos.codesigning import (
+    DOTFILES_SIGNING_IDENTITY,
+    SYSTEM_KEYCHAIN,
+    ensure_signing_identity,
+)
 
 KARABINER_SOURCE = SOURCES.require("karabiner_vhid")
 KARABINER_VERSION = KARABINER_SOURCE.require_version()
@@ -141,87 +146,6 @@ def _ensure_virtual_hid() -> None:
         raise DotfilesError(f"kanata: {KARABINER_LABEL} did not reach running state")
 
 
-def _ensure_signing_identity(identity: str, keychain: Path) -> bool:
-    identities = run(
-        ("security", "find-identity", "-v", "-p", "codesigning", keychain),
-        check=False,
-        capture=True,
-    ).stdout
-    if identity in identities:
-        return True
-    with tempfile.TemporaryDirectory(prefix="kanata-codesign-") as temporary:
-        root = Path(temporary)
-        openssl_config = root / "kanata-codesign-openssl.cnf"
-        render_template(
-            _source_root() / "templates/kanata-codesign-openssl.cnf.in",
-            openssl_config,
-            {"identity": identity},
-        )
-        key = root / "kanata.key"
-        certificate = root / "kanata.crt"
-        archive = root / "kanata.p12"
-        run((
-            "openssl",
-            "req",
-            "-newkey",
-            "rsa:2048",
-            "-nodes",
-            "-keyout",
-            key,
-            "-x509",
-            "-days",
-            "3650",
-            "-out",
-            certificate,
-            "-config",
-            openssl_config,
-        ))
-        run((
-            "openssl",
-            "pkcs12",
-            "-export",
-            "-inkey",
-            key,
-            "-in",
-            certificate,
-            "-out",
-            archive,
-            "-passout",
-            "pass:kanata-local",
-        ))
-        run((
-            "security",
-            "import",
-            archive,
-            "-k",
-            keychain,
-            "-P",
-            "kanata-local",
-            "-T",
-            "/usr/bin/codesign",
-        ))
-        run((
-            "security",
-            "add-trusted-cert",
-            "-d",
-            "-r",
-            "trustRoot",
-            "-p",
-            "codeSign",
-            "-k",
-            keychain,
-            certificate,
-        ))
-    return (
-        identity
-        in run(
-            ("security", "find-identity", "-v", "-p", "codesigning", keychain),
-            check=False,
-            capture=True,
-        ).stdout
-    )
-
-
 def _stop_daemon(label: str) -> None:
     _bootout(Path(f"/Library/LaunchDaemons/{label}.plist"))
 
@@ -251,8 +175,8 @@ def configure_kanata(
     app = Path("/Applications/Kanata.app")
     app_bin = app / "Contents/MacOS/kanata"
     info_plist = app / "Contents/Info.plist"
-    identity = "Kanata Local Code Signing"
-    keychain = Path("/Library/Keychains/System.keychain")
+    identity = DOTFILES_SIGNING_IDENTITY
+    keychain = SYSTEM_KEYCHAIN
 
     _ensure_virtual_hid()
     ensure_directory(app_bin.parent, "0755")
@@ -263,18 +187,20 @@ def configure_kanata(
         {"BUNDLE_IDENTIFIER": label},
     )
     _chown_root(app)
-    if _ensure_signing_identity(identity, keychain):
-        run((
-            "codesign",
-            "--force",
-            "--keychain",
-            keychain,
-            "--sign",
-            identity,
-            app,
-        ))
-    else:
-        run(("codesign", "--force", "--sign", "-", app))
+    ensure_signing_identity(
+        identity,
+        keychain,
+        administrator_trust=True,
+    )
+    run((
+        "codesign",
+        "--force",
+        "--keychain",
+        keychain,
+        "--sign",
+        identity,
+        app,
+    ))
     run((
         "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister",
         "-f",

@@ -30,6 +30,13 @@ from workstation.lib.files import (
     replace_directory,
     require_executable,
 )
+from workstation.macos.codesigning import (
+    DOTFILES_SIGNING_IDENTITY,
+    SYSTEM_KEYCHAIN,
+    bundle_has_signing_identity,
+    ensure_signing_identity,
+    sign_bundle,
+)
 
 
 def _ghostty_macos_toolchain() -> str:
@@ -65,6 +72,22 @@ def _ghostty_macos_patch_current(executable: Path) -> bool:
     return result.returncode == 0 and any(
         line.partition("=")[0].strip() == "scrollback-editor"
         for line in result.stdout.splitlines()
+    )
+
+
+def _ghostty_stably_signed(app_dir: Path) -> bool:
+    return bundle_has_signing_identity(
+        app_dir,
+        DOTFILES_SIGNING_IDENTITY,
+    )
+
+
+def _stably_sign_ghostty(app_dir: Path) -> None:
+    ensure_signing_identity(DOTFILES_SIGNING_IDENTITY, SYSTEM_KEYCHAIN)
+    sign_bundle(
+        app_dir,
+        DOTFILES_SIGNING_IDENTITY,
+        SYSTEM_KEYCHAIN,
     )
 
 
@@ -128,27 +151,40 @@ def install_ghostty_tip_macos(
     valid_install = _ghostty_version_current(
         executable
     ) and _ghostty_macos_patch_current(executable)
-    current = (
+    build_current = (
         state is not None
         and state.revision == GHOSTTY_REVISION
         and state.inputs == {"patches": patch_key, "target": "native-macos"}
         and valid_install
     )
+    signature_current = valid_install and _ghostty_stably_signed(app_dir)
+    current = build_current and signature_current
     if automation_check_mode():
+        if build_current and not signature_current:
+            message = (
+                "Would stably sign the existing patched Ghostty macOS build"
+            )
+        elif current:
+            message = "Ghostty macOS tip is current"
+        else:
+            message = "Would build and install the patched Ghostty macOS tip"
         return OperationResult(
             changed=not current,
-            msg=(
-                "Ghostty macOS tip is current"
-                if current
-                else "Would build and install the patched Ghostty macOS tip"
-            ),
+            msg=message,
         )
     if current:
         return OperationResult(msg="Ghostty macOS tip is current")
 
-    require_commands("/usr/bin/codesign")
+    if build_current:
+        _stably_sign_ghostty(app_dir)
+        return OperationResult(
+            changed=True,
+            msg="Stably signed the existing patched Ghostty macOS build",
+            data={"source_key": GHOSTTY_REVISION},
+        )
+
     if valid_install and state is None:
-        run(("/usr/bin/codesign", "--verify", "--deep", "--strict", app_dir))
+        _stably_sign_ghostty(app_dir)
         BuildState.write(
             state_path,
             GHOSTTY_REVISION,
@@ -166,7 +202,7 @@ def install_ghostty_tip_macos(
     app_root = ensure_directory(app_root)
     ensure_directory(cache_dir / "zig")
     _build_ghostty_macos(cache_dir, app_root, zig_executable, patches)
-    run(("/usr/bin/codesign", "--verify", "--deep", "--strict", app_dir))
+    _stably_sign_ghostty(app_dir)
     if not _ghostty_version_current(executable) or not _ghostty_macos_patch_current(
         executable
     ):

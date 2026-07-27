@@ -175,7 +175,10 @@ def test_ghostty_current_state_is_idempotent(
     assert response.msg == "Ghostty tip was checked recently"
 
 
-def test_ghostty_macos_current_state_is_idempotent(tmp_path: Path) -> None:
+def test_ghostty_macos_current_state_is_idempotent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     app_root = tmp_path / "apps/ghostty-patched"
     executable = app_root / "Ghostty.app/Contents/MacOS/ghostty"
     executable.parent.mkdir(parents=True)
@@ -192,6 +195,11 @@ def test_ghostty_macos_current_state_is_idempotent(tmp_path: Path) -> None:
             "patches": ghostty_macos._ghostty_patch_key(patches),
             "target": "native-macos",
         },
+    )
+    monkeypatch.setattr(
+        ghostty_macos,
+        "_ghostty_stably_signed",
+        lambda _app: True,
     )
     response = run_machine_protocol(
         _payload(
@@ -237,6 +245,17 @@ def test_ghostty_macos_changed_patch_state_rebuilds(
     monkeypatch.setattr(ghostty_macos, "run", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
         ghostty_macos,
+        "_ghostty_stably_signed",
+        lambda _app: False,
+    )
+    signed: list[Path] = []
+    monkeypatch.setattr(
+        ghostty_macos,
+        "_stably_sign_ghostty",
+        signed.append,
+    )
+    monkeypatch.setattr(
+        ghostty_macos,
         "_build_ghostty_macos",
         lambda cache, app, zig, _patches: builds.append((cache, app, zig)),
     )
@@ -247,12 +266,73 @@ def test_ghostty_macos_changed_patch_state_rebuilds(
 
     assert response.changed
     assert builds == [(cache_dir, app_root, zig)]
+    assert signed == [app_root / "Ghostty.app"]
     state = ghostty.BuildState.read(app_root / ".ghostty-tip-state.json")
     assert state is not None
     assert state.inputs == {
         "patches": ghostty_macos._ghostty_patch_key(ghostty._ghostty_patches()),
         "target": "native-macos",
     }
+
+
+def test_ghostty_macos_repairs_unstable_signature_without_rebuilding(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app_root = tmp_path / "apps/ghostty-patched"
+    executable = app_root / "Ghostty.app/Contents/MacOS/ghostty"
+    executable.parent.mkdir(parents=True)
+    executable.write_text("#!/bin/sh\n")
+    executable.chmod(0o755)
+    patches = ghostty._ghostty_patches()
+    ghostty.BuildState.write(
+        app_root / ".ghostty-tip-state.json",
+        ghostty.GHOSTTY_REVISION,
+        inputs={
+            "patches": ghostty_macos._ghostty_patch_key(patches),
+            "target": "native-macos",
+        },
+    )
+    monkeypatch.setattr(
+        ghostty_macos,
+        "_ghostty_version_current",
+        lambda _path: True,
+    )
+    monkeypatch.setattr(
+        ghostty_macos,
+        "_ghostty_macos_patch_current",
+        lambda _path: True,
+    )
+    monkeypatch.setattr(
+        ghostty_macos,
+        "_ghostty_stably_signed",
+        lambda _app: False,
+    )
+    signed: list[Path] = []
+    monkeypatch.setattr(
+        ghostty_macos,
+        "_stably_sign_ghostty",
+        signed.append,
+    )
+    monkeypatch.setattr(
+        ghostty_macos,
+        "_build_ghostty_macos",
+        lambda *_args: (_ for _ in ()).throw(
+            AssertionError("signature repair must not rebuild Ghostty")
+        ),
+    )
+
+    response = ghostty_macos.install_ghostty_tip_macos(
+        tmp_path / "cache",
+        app_root,
+        tmp_path / "zig",
+    )
+
+    assert response.changed
+    assert response.msg == (
+        "Stably signed the existing patched Ghostty macOS build"
+    )
+    assert signed == [app_root / "Ghostty.app"]
 
 
 def test_build_state_round_trips_and_rejects_corruption(
