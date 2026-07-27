@@ -1,44 +1,9 @@
 ---
 - name: Set Homebrew paths on macOS
   ansible.builtin.set_fact:
-    bootstrap_homebrew_prefix: "{{ bootstrap_macos_homebrew_prefix }}"
-    bootstrap_homebrew_path: >-
-      {{
-        [
-          bootstrap_macos_homebrew_prefix ~ '/opt/coreutils/libexec/gnubin',
-          bootstrap_macos_homebrew_prefix ~ '/opt/findutils/libexec/gnubin',
-          bootstrap_macos_homebrew_prefix ~ '/opt/gnu-sed/libexec/gnubin',
-          bootstrap_macos_homebrew_prefix ~ '/opt/grep/libexec/gnubin',
-          bootstrap_macos_homebrew_prefix ~ '/opt/gawk/libexec/gnubin',
-          bootstrap_macos_homebrew_prefix ~ '/opt/gnu-tar/libexec/gnubin',
-          bootstrap_macos_homebrew_prefix ~ '/opt/gnu-which/libexec/gnubin',
-          bootstrap_macos_homebrew_prefix ~ '/opt/diffutils/libexec/gnubin',
-          bootstrap_macos_homebrew_prefix ~ '/opt/make/libexec/gnubin',
-          bootstrap_macos_homebrew_prefix ~ '/opt/gnu-getopt/bin',
-          bootstrap_macos_homebrew_prefix ~ '/bin',
-          bootstrap_macos_homebrew_prefix ~ '/sbin',
-          dotfiles_path,
-        ]
-        | join(':')
-      }}
-    bootstrap_modern_bash: "{{ bootstrap_macos_homebrew_prefix }}/bin/bash"
-    bootstrap_homebrew_bootstrap_formulae:
-      - bash
-      - uv
-      - coreutils
-      - diffutils
-      - findutils
-      - gawk
-      - gnu-getopt
-      - gnu-sed
-      - gnu-tar
-      - gnu-which
-      - grep
-      - make
-      - mas
+    bootstrap_homebrew_prefix: "{{ platform_homebrew_prefix }}"
+    bootstrap_homebrew_path: "{{ platform_homebrew_path }}"
     bootstrap_homebrew_enabled: true
-  vars:
-    bootstrap_macos_homebrew_prefix: "{{ '/opt/homebrew' if platform_architecture == 'arm64' else '/usr/local' }}"
   when: platform_is_macos
   tags:
     - bootstrap
@@ -48,12 +13,8 @@
 
 - name: Set Homebrew paths on Linux
   ansible.builtin.set_fact:
-    bootstrap_homebrew_prefix: /home/linuxbrew/.linuxbrew
-    bootstrap_homebrew_path: "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:{{ dotfiles_path }}"
-    bootstrap_modern_bash: /home/linuxbrew/.linuxbrew/bin/bash
-    bootstrap_homebrew_bootstrap_formulae:
-      - bash
-      - uv
+    bootstrap_homebrew_prefix: "{{ platform_homebrew_prefix }}"
+    bootstrap_homebrew_path: "{{ platform_homebrew_path }}"
     bootstrap_homebrew_enabled: true
   when: platform_is_linux
   tags:
@@ -161,91 +122,3 @@
     - bootstrap
     - bash
     - homebrew
-
-- name: Ensure Homebrew bootstrap formulae are available
-  community.general.homebrew:
-    name: "{{ bootstrap_homebrew_bootstrap_formulae }}"
-    state: present
-    path: "{{ bootstrap_homebrew_prefix }}/bin"
-  environment:
-    HOMEBREW_NO_ASK: "1"
-    PATH: "{{ bootstrap_homebrew_path }}"
-  when: bootstrap_homebrew_enabled | default(false)
-  tags:
-    - bootstrap
-    - bash
-    - homebrew
-
-- name: Verify GNU userland is on the Homebrew PATH
-  ansible.builtin.command:
-    argv:
-      - "{{ bootstrap_modern_bash }}"
-      - -c
-      - |
-        set -euo pipefail
-        for command_name in awk cp date diff find grep install ln make mkdir mktemp mv rm rmdir sed sort stat tar uniq which; do
-          "$command_name" --version >/dev/null
-          printf '%s %s\n' "$command_name" "$(command -v "$command_name")"
-        done
-        getopt --version >/dev/null
-        printf 'getopt %s\n' "$(command -v getopt)"
-  environment:
-    PATH: "{{ bootstrap_homebrew_path }}"
-  changed_when: false
-  when:
-    - bootstrap_homebrew_enabled | default(false)
-    - platform_is_macos
-  tags:
-    - bootstrap
-    - bash
-    - homebrew
-
-- name: Verify modern Bash from Homebrew
-  ansible.builtin.command:
-    argv:
-      - "{{ bootstrap_modern_bash }}"
-      - -c
-      - |
-        major=${BASH_VERSINFO[0]}
-        minor=${BASH_VERSINFO[1]}
-        if ((major < 5 || (major == 5 && minor < 3))); then
-          printf 'Bash 5.3 or newer is required; found %s\n' "$BASH_VERSION" >&2
-          exit 1
-        fi
-        printf '%s\n' "$BASH_VERSION"
-  changed_when: false
-  when: bootstrap_homebrew_enabled | default(false)
-  tags:
-    - bootstrap
-    - bash
-    - homebrew
-
-- name: Verify the uv-managed Python runtime
-  ansible.builtin.command:
-    argv:
-      - "{{ dotfiles_bin_dir }}/python3.14"
-      - -c
-      - >-
-        import sys;
-        assert sys.version_info[:2] == (3, 14), sys.version
-  changed_when: false
-  when: bootstrap_homebrew_enabled | default(false)
-  tags:
-    - bootstrap
-    - homebrew
-    - python
-
-- name: Verify Ansible controller and local target use Python 3.14
-  ansible.builtin.assert:
-    that:
-      - ansible_facts.python.version.major == 3
-      - ansible_facts.python.version.minor == 14
-    fail_msg: >-
-      Bootstrap requires both the Ansible controller and localhost modules to
-      run on Python 3.14; controller={{ ansible_playbook_python }},
-      target={{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}.
-  when: bootstrap_homebrew_enabled | default(false)
-  tags:
-    - bootstrap
-    - homebrew
-    - python

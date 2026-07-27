@@ -6,7 +6,7 @@
     - bootstrap
     - packages
 
-- name: Install Homebrew and modern Bash first
+- name: Install Homebrew
   ansible.builtin.import_tasks: homebrew.yml
   when: platform_system in ['Darwin', 'Linux']
   tags:
@@ -29,13 +29,6 @@
     - repo-tools
     - scripts
     - system-runner
-
-- name: Install non-Linux bootstrap packages
-  ansible.builtin.import_tasks: packages.yml
-  when: not platform_is_linux
-  tags:
-    - bootstrap
-    - packages
 
 - name: Install Rust
   ansible.builtin.import_tasks: rust.yml

@@ -25,6 +25,48 @@
   tags:
     - platform
 
+- name: Set Homebrew platform paths
+  ansible.builtin.set_fact:
+    platform_homebrew_prefix: "{{ platform_homebrew_prefix_value }}"
+    platform_homebrew_path: "{{ platform_homebrew_path_entries | join(':') }}"
+  vars:
+    platform_homebrew_prefix_value: >-
+      {{
+        (
+          '/opt/homebrew'
+          if platform_architecture == 'arm64'
+          else '/usr/local'
+        )
+        if platform_is_macos
+        else '/home/linuxbrew/.linuxbrew'
+      }}
+    platform_homebrew_path_entries: >-
+      {{
+        (
+          [
+            platform_homebrew_prefix_value ~ '/opt/coreutils/libexec/gnubin',
+            platform_homebrew_prefix_value ~ '/opt/findutils/libexec/gnubin',
+            platform_homebrew_prefix_value ~ '/opt/gnu-sed/libexec/gnubin',
+            platform_homebrew_prefix_value ~ '/opt/grep/libexec/gnubin',
+            platform_homebrew_prefix_value ~ '/opt/gawk/libexec/gnubin',
+            platform_homebrew_prefix_value ~ '/opt/gnu-tar/libexec/gnubin',
+            platform_homebrew_prefix_value ~ '/opt/gnu-which/libexec/gnubin',
+            platform_homebrew_prefix_value ~ '/opt/diffutils/libexec/gnubin',
+            platform_homebrew_prefix_value ~ '/opt/make/libexec/gnubin',
+            platform_homebrew_prefix_value ~ '/opt/gnu-getopt/bin',
+          ]
+          if platform_is_macos
+          else []
+        )
+        + [
+          platform_homebrew_prefix_value ~ '/bin',
+          platform_homebrew_prefix_value ~ '/sbin',
+          dotfiles_path,
+        ]
+      }}
+  tags:
+    - platform
+
 - name: Detect rpm-ostree
   ansible.builtin.stat:
     path: /usr/bin/rpm-ostree
