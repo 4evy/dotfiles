@@ -17,7 +17,7 @@
 - name: Register Homebrew Zsh as a macOS login shell
   ansible.builtin.lineinfile:
     path: /etc/shells
-    line: /opt/homebrew/bin/zsh
+    line: "{{ platform_homebrew_prefix }}/bin/zsh"
     state: present
   become: true
   tags:
@@ -29,7 +29,7 @@
     name: >-
       {{ ansible_facts.get('user_id',
          ansible_facts.get('ansible_user_id', lookup('env', 'USER'))) }}
-    shell: /opt/homebrew/bin/zsh
+    shell: "{{ platform_homebrew_prefix }}/bin/zsh"
   become: true
   tags:
     - host
@@ -60,12 +60,12 @@
 - name: Install Tailscale as a system launch daemon
   ansible.builtin.command:
     argv:
-      - /opt/homebrew/bin/brew
+      - "{{ platform_homebrew_prefix }}/bin/brew"
       - services
       - start
       - tailscale
   environment:
-    PATH: /opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin
+    PATH: "{{ platform_homebrew_path }}"
   become: true
   register: system_tailscale_system_service_install
   changed_when: >-
@@ -108,7 +108,7 @@
     variable_end_string: "@"
   vars:
     system_python_bin: "{{ dotfiles_bin_dir }}/python3.14"
-    system_tailscale_bin: /opt/homebrew/bin/tailscale
+    system_tailscale_bin: "{{ platform_homebrew_prefix }}/bin/tailscale"
   become: true
   register: system_tailscale_ssh_helper_result
   tags:
@@ -162,7 +162,7 @@
     context: "{{ dotfiles_automation_context }}"
     chdir: "{{ dotfiles_repo_root }}"
     environment:
-      PATH: "{{ bootstrap_homebrew_path }}"
+      PATH: "{{ platform_homebrew_path }}"
   become: true
   tags:
     - host
@@ -179,7 +179,7 @@
     context: "{{ dotfiles_automation_context }}"
     chdir: "{{ dotfiles_repo_root }}"
     environment:
-      PATH: "{{ bootstrap_homebrew_path }}"
+      PATH: "{{ platform_homebrew_path }}"
   become: true
   tags:
     - host

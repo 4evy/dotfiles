@@ -19,7 +19,6 @@
   failed_when: false
   loop:
     - apparmor_parser
-    - flatpak
     - update-desktop-database
   register: system_rustdesk_tools
   when: system_rustdesk_command.rc == 0
@@ -99,25 +98,6 @@
       - option: direct-access-port
         value: '"21118"'
 
-- name: Remove the user RustDesk Flatpak
-  community.general.flatpak:
-    name: com.rustdesk.RustDesk
-    state: absent
-    method: user
-  when:
-    - system_rustdesk_command.rc == 0
-    - system_rustdesk_tools.results[1].rc == 0
-
-- name: Remove the system RustDesk Flatpak
-  community.general.flatpak:
-    name: com.rustdesk.RustDesk
-    state: absent
-    method: system
-  become: true
-  when:
-    - system_rustdesk_command.rc == 0
-    - system_rustdesk_tools.results[1].rc == 0
-
 - name: Ensure the user application directory exists
   ansible.builtin.file:
     path: "{{ dotfiles_data_home }}/applications"
@@ -164,7 +144,7 @@
   changed_when: true
   when:
     - system_rustdesk_desktop is changed
-    - system_rustdesk_tools.results[2].rc == 0
+    - system_rustdesk_tools.results[1].rc == 0
 
 - name: Reconcile RustDesk host policy
   dotfiles_operation:
@@ -177,3 +157,4 @@
     chdir: "{{ dotfiles_repo_root }}"
     environment:
       PATH: "{{ dotfiles_bin_dir }}:{{ dotfiles_path }}"
+  when: system_rustdesk_command.rc == 0

@@ -28,3 +28,4 @@
     chdir: "{{ dotfiles_repo_root }}"
     environment:
       PATH: "{{ dotfiles_bin_dir }}:{{ dotfiles_path }}"
+  when: system_tailscale_command.rc == 0
