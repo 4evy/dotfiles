@@ -33,13 +33,7 @@ tools_bun_global_packages:
     bin: opencode
 
 tools_determinate_nix_installer_url: https://install.determinate.systems/nix
-tools_nixos_nix_installer_url: https://artifacts.nixos.org/nix-installer
-tools_nix_installer_url: >-
-  {{
-    tools_nixos_nix_installer_url
-    if platform_is_macos
-    else tools_determinate_nix_installer_url
-  }}
+tools_nix_installer_url: "{{ tools_determinate_nix_installer_url }}"
 tools_nix_bin: /nix/var/nix/profiles/default/bin/nix
 tools_nix_paths:
   - "{{ tools_nix_bin | dirname }}"

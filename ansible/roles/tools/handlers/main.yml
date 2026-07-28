@@ -1,0 +1,10 @@
+---
+- name: Restart Determinate Nix daemon
+  ansible.builtin.command:
+    argv:
+      - launchctl
+      - kickstart
+      - -k
+      - system/systems.determinate.nix-daemon
+  become: true
+  changed_when: true

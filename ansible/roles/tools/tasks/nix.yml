@@ -123,14 +123,13 @@
   tags:
     - nix
 
-- name: Install upstream Nix with the NixOS installer on macOS
+- name: Install Determinate Nix on macOS
   ansible.builtin.command:
     argv:
       - /bin/sh
       - "{{ dotfiles_cache_dir }}/installers/nix-installer.sh"
       - install
       - macos
-      - --enable-flakes
       - --no-confirm
       - --no-modify-profile
   args:
@@ -157,6 +156,37 @@
         if tools_nix_default_bin.stat.executable | default(false)
         else 'nix'
       }}
+  tags:
+    - nix
+
+- name: Detect Nix distribution
+  ansible.builtin.command:
+    argv:
+      - "{{ tools_nix_command_bin }}"
+      - --version
+  changed_when: false
+  check_mode: false
+  register: tools_nix_version
+  tags:
+    - nix
+
+- name: Configure Determinate Nix overrides on macOS
+  ansible.builtin.copy:
+    src: nix.custom.conf
+    dest: /etc/nix/nix.custom.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  become: true
+  notify: Restart Determinate Nix daemon
+  when:
+    - platform_is_macos
+    - "'Determinate Nix' in tools_nix_version.stdout"
+  tags:
+    - nix
+
+- name: Apply Determinate Nix configuration changes
+  ansible.builtin.meta: flush_handlers
   tags:
     - nix
 

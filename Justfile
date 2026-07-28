@@ -16,7 +16,6 @@ base_image_tag := env("SPECTRUM_BLUEFIN_BASE_IMAGE_TAG", "stable")
 compose := env("COMPOSE", "podman-compose")
 podman := env("PODMAN", "podman")
 determinate_nix_installer_url := "https://install.determinate.systems/nix"
-nixos_nix_installer_url := "https://artifacts.nixos.org/nix-installer"
 
 host_os := os()
 repo_dir := justfile_directory()
@@ -565,13 +564,13 @@ _ensure-nix:
       curl -fsSL {{ quote(determinate_nix_installer_url) }} | sh -s -- install "$plan" --no-confirm
     fi
 
-# Install Nix on macOS without modifying the user's shell profile.
+# Install Determinate Nix on macOS without modifying the user's shell profile.
 [macos]
 [private]
 _ensure-nix:
     command -v nix >/dev/null 2>&1 ||
-      curl -fsSL {{ quote(nixos_nix_installer_url) }} |
-        sh -s -- install macos --enable-flakes --no-confirm --no-modify-profile
+      curl -fsSL {{ quote(determinate_nix_installer_url) }} |
+        sh -s -- install macos --no-confirm --no-modify-profile
 
 # Install Nix on the live host and ensure Nix profile tools exist.
 [group('setup')]
