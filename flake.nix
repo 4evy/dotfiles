@@ -5,6 +5,8 @@
     browser.inputs.nixpkgs.follows = "nixpkgs-unstable";
     browser.url = "github:4evy/browser";
 
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
+
     eupkgs.inputs.nixpkgs.follows = "nixpkgs-unstable";
     eupkgs.url = "github:euvlok/pkgs";
 

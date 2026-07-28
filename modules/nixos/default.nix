@@ -3,6 +3,7 @@
   imports = [
     ../cross
     inputs.browser.nixosModules.default
+    inputs.determinate.nixosModules.default
     ./desktop-packages.nix
     ./gnome.nix
     ./ghidra-mcp.nix
@@ -18,5 +19,6 @@
     ./zed-remote.nix
   ];
 
+  determinate.enable = true;
   programs.nixcord.user = "4evy";
 }
