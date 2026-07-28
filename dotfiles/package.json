@@ -7,7 +7,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "0.82.0",
+    "@earendil-works/pi-coding-agent": "0.82.1",
     "@types/bun": "catalog:",
     "typebox": "1.3.8",
     "typescript": "catalog:"
