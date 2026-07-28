@@ -54,9 +54,16 @@ From an installed NixOS system:
 ```bash
 git clone https://github.com/4evy/dotfiles.git ~/dotfiles
 cd ~/dotfiles
-sudo nixos-rebuild switch --flake .#nixos
+sudo nixos-rebuild \
+  --option extra-substituters https://install.determinate.systems \
+  --option extra-trusted-public-keys cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= \
+  --flake .#nixos \
+  switch
 just setup
 ```
+
+The one-time extra cache options let an upstream Nix installation fetch Determinate Nix
+during the first switch. Subsequent rebuilds use the regular `nixos-rebuild` command.
 
 `just setup` runs the shared bootstrap orchestration and applies the chezmoi source. On
 NixOS, host and package changes belong in `hosts/linux` or `modules/nixos`, followed by
@@ -75,6 +82,10 @@ cd ~/dotfiles
 ./ansible/bootstrap.sh --tags userland
 just setup
 ```
+
+Determinate Nix owns `/etc/nix/nix.conf` on macOS. The Ansible tools role manages
+host-specific overrides in `/etc/nix/nix.custom.conf`; this setup intentionally does
+not use nix-darwin.
 
 ## Commands
 
