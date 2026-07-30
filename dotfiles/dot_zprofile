@@ -1,0 +1,11 @@
+# Zsh login environment entry point.
+#
+# macOS runs /usr/libexec/path_helper from /etc/zprofile after ~/.zshenv.
+# Rebuild the preferred PATH once more so Homebrew's GNU userland keeps
+# precedence in login shells.
+
+unset _dotfiles_environment_loaded
+if [[ -r "$HOME/.config/shell/environment.sh" ]]; then
+	# shellcheck source=/dev/null
+	source "$HOME/.config/shell/environment.sh"
+fi

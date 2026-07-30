@@ -1,15 +1,24 @@
-# ░█▀▀░█▀█░█░█
-# ░█▀▀░█░█░▀▄▀
-# ░▀▀▀░▀░▀░░▀░
-# shared environment / Bash and Zsh
-# Homebrew paths, SSH agent selection, and tool defaults.
+# shellcheck shell=bash
+# Environment shared by Bash and Zsh.
+#
+# This file is sourced from .bashenv and .zshenv, including non-interactive
+# shells. It must stay quiet, avoid terminal-only work, and preserve a caller's
+# deliberately customized environment after the first load in each shell.
 
-# 01 / Homebrew
-# Resolve the prefix once and expose the standard Homebrew variables.
+if [[ -n "${_dotfiles_environment_loaded:-}" ]]; then
+	return 0
+fi
+
+{{- $isNixOS := false }}
+{{- if eq .chezmoi.os "linux" }}
+{{- $isNixOS = eq .chezmoi.osRelease.id "nixos" }}
+{{- end }}
+
+# 01 / Homebrew metadata
 
 _dotfiles_homebrew_prefix=
 {{- if eq .chezmoi.os "linux" }}
-{{- if ne .chezmoi.osRelease.id "nixos" }}
+{{- if not $isNixOS }}
 if [[ -d /home/linuxbrew/.linuxbrew ]]; then
 	_dotfiles_homebrew_prefix=/home/linuxbrew/.linuxbrew
 elif [[ -d "$HOME/.linuxbrew" ]]; then
@@ -35,20 +44,109 @@ fi
 if [[ -n "$_dotfiles_homebrew_prefix" ]]; then
 	export HOMEBREW_PREFIX="$_dotfiles_homebrew_prefix"
 	export HOMEBREW_CELLAR="$HOMEBREW_PREFIX/Cellar"
-
 	if [[ "$HOMEBREW_PREFIX" == /opt/homebrew ]]; then
 		export HOMEBREW_REPOSITORY="$HOMEBREW_PREFIX"
 	else
 		export HOMEBREW_REPOSITORY="$HOMEBREW_PREFIX/Homebrew"
 	fi
-
 	[[ -z "${MANPATH-}" ]] || export MANPATH=":${MANPATH#:}"
 	export INFOPATH="$HOMEBREW_PREFIX/share/info:${INFOPATH:-}"
 fi
 unset _dotfiles_homebrew_prefix
 
-# 02 / SSH agent
-# Local shells use 1Password; remote sessions keep sshd's forwarded agent.
+# 02 / PATH
+# Build a unique preferred prefix, then append the inherited PATH in its
+# original order. Empty entries are omitted so PATH never implies the current
+# working directory.
+
+_dotfiles_new_path=
+_dotfiles_path_append_once() {
+	local candidate
+	for candidate; do
+		[[ -n "$candidate" ]] || continue
+		case ":${_dotfiles_new_path}:" in
+			*":$candidate:"*) ;;
+			*)
+				_dotfiles_new_path="${_dotfiles_new_path:+$_dotfiles_new_path:}$candidate"
+				;;
+		esac
+	done
+}
+
+{{- if eq .chezmoi.os "linux" }}
+if [[ -d /run/wrappers/bin ]]; then
+	_dotfiles_path_append_once /run/wrappers/bin
+fi
+{{- end }}
+{{- if not $isNixOS }}
+_dotfiles_path_append_once \
+	"$HOME/.local/bin" \
+	"$HOME/.pi/agent/bin" \
+	"$HOME/.local/share/dotfiles/helix-tip/bin"
+{{- if eq .chezmoi.os "darwin" }}
+{{- if eq .chezmoi.arch "arm64" }}
+_dotfiles_path_append_once \
+	/opt/homebrew/opt/coreutils/libexec/gnubin \
+	/opt/homebrew/opt/findutils/libexec/gnubin \
+	/opt/homebrew/opt/gnu-sed/libexec/gnubin \
+	/opt/homebrew/opt/grep/libexec/gnubin \
+	/opt/homebrew/opt/gawk/libexec/gnubin \
+	/opt/homebrew/opt/gnu-tar/libexec/gnubin \
+	/opt/homebrew/opt/gnu-which/libexec/gnubin \
+	/opt/homebrew/opt/diffutils/libexec/gnubin \
+	/opt/homebrew/opt/make/libexec/gnubin \
+	/opt/homebrew/opt/gnu-getopt/bin
+{{- else }}
+_dotfiles_path_append_once \
+	/usr/local/opt/coreutils/libexec/gnubin \
+	/usr/local/opt/findutils/libexec/gnubin \
+	/usr/local/opt/gnu-sed/libexec/gnubin \
+	/usr/local/opt/grep/libexec/gnubin \
+	/usr/local/opt/gawk/libexec/gnubin \
+	/usr/local/opt/gnu-tar/libexec/gnubin \
+	/usr/local/opt/gnu-which/libexec/gnubin \
+	/usr/local/opt/diffutils/libexec/gnubin \
+	/usr/local/opt/make/libexec/gnubin \
+	/usr/local/opt/gnu-getopt/bin
+{{- end }}
+{{- end }}
+if [[ -n "${HOMEBREW_PREFIX:-}" ]]; then
+	_dotfiles_path_append_once "$HOMEBREW_PREFIX/bin" "$HOMEBREW_PREFIX/sbin"
+fi
+_dotfiles_path_append_once \
+	"$HOME/.bun/bin" \
+	"$HOME/.bun/install/global/node_modules/.bin" \
+	"$HOME/.cache/.bun/bin" \
+	"$HOME/.npm/bin" \
+	"$HOME/.cargo/bin" \
+	"$HOME/.go/bin" \
+	"$HOME/.yarn/bin"
+{{- if eq .chezmoi.os "linux" }}
+_dotfiles_path_append_once \
+	"$HOME/.nix-profile/bin" \
+	/nix/var/nix/profiles/default/bin
+{{- end }}
+{{- end }}
+{{- if eq .chezmoi.os "linux" }}
+_dotfiles_path_append_once /usr/local/bin /usr/bin /bin /usr/sbin /sbin
+{{- else if and (eq .chezmoi.os "darwin") (eq .chezmoi.arch "arm64") }}
+_dotfiles_path_append_once /usr/local/bin /usr/local/sbin
+{{- end }}
+
+_dotfiles_path_remainder="${PATH-}:"
+while [[ "$_dotfiles_path_remainder" == *:* ]]; do
+	_dotfiles_path_entry="${_dotfiles_path_remainder%%:*}"
+	_dotfiles_path_remainder="${_dotfiles_path_remainder#*:}"
+	_dotfiles_path_append_once "$_dotfiles_path_entry"
+done
+
+PATH=$_dotfiles_new_path
+export PATH
+unset _dotfiles_new_path _dotfiles_path_entry _dotfiles_path_remainder
+unset -f _dotfiles_path_append_once
+
+# 03 / SSH agent
+# Local shells use 1Password; remote sessions retain sshd's forwarded agent.
 
 {{- if eq .chezmoi.os "darwin" }}
 _dotfiles_ssh_auth_sock="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
@@ -63,9 +161,7 @@ if [[ -S "$_dotfiles_ssh_auth_sock" ]]; then
 fi
 unset _dotfiles_ssh_auth_sock
 
-# 03 / 1Password-backed SOPS
-# Linux keeps its machine-local age identity so boot and activation never
-# depend on an unlocked desktop app.
+# 04 / shared tool defaults
 
 {{- if eq .chezmoi.os "darwin" }}
 if command -v sops-age-key-1password >/dev/null 2>&1; then
@@ -73,9 +169,8 @@ if command -v sops-age-key-1password >/dev/null 2>&1; then
 fi
 {{- end }}
 
-# 04 / tool defaults
-# Defaults shared by scripts and interactive shells.
-
 export BASH_ENV="${BASH_ENV:-$HOME/.bashenv}"
 export UV_PYTHON_PREFERENCE="${UV_PYTHON_PREFERENCE:-only-managed}"
 export GLAMOUR_STYLE="${GLAMOUR_STYLE:-$HOME/.config/glamour/styles/catppuccin-frappe-pink.json}"
+_dotfiles_environment_loaded=1
+unset DOTFILES_ENVIRONMENT_LOADED

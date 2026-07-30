@@ -1,0 +1,7 @@
+# C1 / shared commands
+# interactive.zsh loads cross-shell aliases and then adds Zsh completions.
+
+if [[ -r "$HOME/.config/shell/interactive.zsh" ]]; then
+  # shellcheck source=/dev/null
+  source "$HOME/.config/shell/interactive.zsh"
+fi

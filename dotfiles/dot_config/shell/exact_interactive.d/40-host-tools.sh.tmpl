@@ -1,0 +1,347 @@
+# shellcheck disable=SC2154
+# B1 / host runner
+# Run host commands through system-runner with non-interactive sudo.
+
+_dotfiles_system_runner() {
+	local runner="$HOME/.local/bin/system-runner"
+	local env_args=(
+		--env "PATH=$PATH"
+		--env "HOME=$HOME"
+	)
+
+	if [[ ! -x "$runner" ]]; then
+		printf '%s\n' "system-runner is not installed" >&2
+		return 127
+	fi
+
+	[[ -z ${XDG_CONFIG_HOME-} ]] || env_args+=(--env "XDG_CONFIG_HOME=$XDG_CONFIG_HOME")
+	[[ -z ${XDG_DATA_HOME-} ]] || env_args+=(--env "XDG_DATA_HOME=$XDG_DATA_HOME")
+	[[ -z ${XDG_CACHE_HOME-} ]] || env_args+=(--env "XDG_CACHE_HOME=$XDG_CACHE_HOME")
+	[[ -z ${XDG_STATE_HOME-} ]] || env_args+=(--env "XDG_STATE_HOME=$XDG_STATE_HOME")
+	[[ -z ${TERM-} ]] || env_args+=(--env "TERM=$TERM")
+	[[ -z ${COLORTERM-} ]] || env_args+=(--env "COLORTERM=$COLORTERM")
+
+	sudo -n "$runner" "${env_args[@]}" -- "$@"
+}
+
+free() {
+	_dotfiles_system_runner "$@"
+}
+
+f_usage() {
+	printf '%s\n' "usage: f COMMAND [ARG...]"
+}
+
+f() {
+	if (($# == 0)); then
+		f_usage >&2
+		return 2
+	fi
+
+	case "$1" in
+		cza)
+			shift
+			free chezmoi apply --force "$@"
+			;;
+		*)
+			free "$@"
+			;;
+	esac
+}
+
+# B2 / Codex wrapper
+# Reset focus reporting around the themed Codex session and optional debuggers.
+
+cx() {
+	local cmd_status
+
+	_dotfiles_disable_terminal_focus_reporting
+	terminal-theme-run codex "$@"
+	cmd_status=$?
+	_dotfiles_disable_terminal_focus_reporting
+
+	return "$cmd_status"
+}
+
+_dotfiles_ghidra_mcp_state_dir() {
+	if [[ -n "${GHIDRA_MCP_STATE:-}" ]]; then
+		printf '%s\n' "$GHIDRA_MCP_STATE"
+	elif [[ -n "${XDG_STATE_HOME:-}" ]]; then
+		printf '%s\n' "$XDG_STATE_HOME/ghidra-mcp-headless"
+	else
+		printf '%s\n' "$HOME/.local/state/ghidra-mcp-headless"
+	fi
+}
+
+_dotfiles_ghidra_mcp_ready() {
+	local host="${GHIDRA_MCP_BRIDGE_HOST:-127.0.0.1}"
+	local port="${GHIDRA_MCP_BRIDGE_PORT:-8090}"
+
+	if command -v nc >/dev/null 2>&1; then
+		nc -z "$host" "$port" >/dev/null 2>&1
+		return
+	fi
+
+	if command -v curl >/dev/null 2>&1; then
+		curl --silent --show-error --max-time 1 --output /dev/null "http://$host:$port/mcp" >/dev/null 2>&1
+		return
+	fi
+
+	return 1
+}
+
+_dotfiles_ghidra_mcp_prune_refs() {
+	local refs_dir=$1
+	local ref
+	local pid
+
+	[[ -d "$refs_dir" ]] || return 0
+
+	while IFS= read -r ref; do
+		pid=
+		IFS= read -r pid <"$ref" || pid=
+		if [[ -z "$pid" ]] || ! kill -0 "$pid" >/dev/null 2>&1; then
+			rm -f -- "$ref"
+		fi
+	done < <(find "$refs_dir" -type f -name '*.ref' -print 2>/dev/null)
+}
+
+_dotfiles_ghidra_mcp_has_refs() {
+	local refs_dir=$1
+
+	_dotfiles_ghidra_mcp_prune_refs "$refs_dir"
+	find "$refs_dir" -type f -name '*.ref' -print -quit 2>/dev/null | grep -q .
+}
+
+_dotfiles_register_ghidra_mcp_for_cxg() {
+	local state_dir
+	local refs_dir
+	local ref_file
+
+	state_dir="$(_dotfiles_ghidra_mcp_state_dir)"
+	refs_dir="$state_dir/cxg-refs"
+	mkdir -p "$refs_dir" || return
+
+	ref_file="$refs_dir/$$-$RANDOM-$SECONDS.ref"
+	printf '%s\n' "$$" >"$ref_file" || return
+
+	_dotfiles_cxg_ghidra_mcp_ref_file="$ref_file"
+	_dotfiles_cxg_ghidra_mcp_state_dir="$state_dir"
+}
+
+_dotfiles_wait_ghidra_mcp() {
+	local pid=$1
+	local log_file=$2
+	local timeout="${GHIDRA_MCP_STARTUP_TIMEOUT_SEC:-60}"
+	local deadline=$((SECONDS + timeout))
+
+	while ((SECONDS < deadline)); do
+		if _dotfiles_ghidra_mcp_ready; then
+			return 0
+		fi
+		if ! kill -0 "$pid" >/dev/null 2>&1; then
+			printf '%s\n' "ghidra-mcp exited before becoming ready; log: $log_file" >&2
+			[[ ! -r "$log_file" ]] || tail -n 40 "$log_file" >&2
+			return 1
+		fi
+		sleep 1
+	done
+
+	printf '%s\n' "ghidra-mcp did not become ready within ${timeout}s; log: $log_file" >&2
+	[[ ! -r "$log_file" ]] || tail -n 40 "$log_file" >&2
+	return 1
+}
+
+_dotfiles_acquire_ghidra_mcp_start_lock() {
+	local lock_dir=$1
+	local timeout="${GHIDRA_MCP_STARTUP_TIMEOUT_SEC:-60}"
+	local deadline=$((SECONDS + timeout))
+	local lock_pid
+
+	while ! mkdir "$lock_dir" 2>/dev/null; do
+		if _dotfiles_ghidra_mcp_ready; then
+			return 2
+		fi
+
+		lock_pid=
+		IFS= read -r lock_pid <"$lock_dir/pid" 2>/dev/null || lock_pid=
+		if [[ -n "$lock_pid" ]] && ! kill -0 "$lock_pid" >/dev/null 2>&1; then
+			rm -f -- "$lock_dir/pid"
+			rmdir "$lock_dir" 2>/dev/null || true
+			continue
+		fi
+
+		if ((SECONDS >= deadline)); then
+			printf '%s\n' "ghidra-mcp startup is already in progress and did not become ready within ${timeout}s" >&2
+			return 1
+		fi
+		sleep 1
+	done
+
+	printf '%s\n' "$$" >"$lock_dir/pid" || true
+	return 0
+}
+
+_dotfiles_release_ghidra_mcp_start_lock() {
+	local lock_dir=$1
+
+	rm -f -- "$lock_dir/pid"
+	rmdir "$lock_dir" 2>/dev/null || true
+}
+
+_dotfiles_start_ghidra_mcp_for_cxg() {
+	local state_dir
+	local log_file
+	local lock_dir
+	local lock_status
+	local pid_file
+
+	_dotfiles_cxg_ghidra_mcp_pid=
+	_dotfiles_cxg_started_ghidra_mcp=0
+
+	if _dotfiles_ghidra_mcp_ready; then
+		return 0
+	fi
+
+	state_dir="${_dotfiles_cxg_ghidra_mcp_state_dir:-$(_dotfiles_ghidra_mcp_state_dir)}"
+	mkdir -p "$state_dir" || return
+	log_file="$state_dir/cxg-ghidra-mcp.log"
+	lock_dir="$state_dir/cxg-ghidra-mcp.start.lock"
+	pid_file="$state_dir/cxg-ghidra-mcp.pid"
+
+	_dotfiles_acquire_ghidra_mcp_start_lock "$lock_dir"
+	lock_status=$?
+	if ((lock_status == 2)); then
+		return 0
+	fi
+	if ((lock_status != 0)); then
+		return "$lock_status"
+	fi
+
+	if _dotfiles_ghidra_mcp_ready; then
+		_dotfiles_release_ghidra_mcp_start_lock "$lock_dir"
+		return 0
+	fi
+
+	if command -v ghidra-mcp-serve >/dev/null 2>&1; then
+		env \
+			GHIDRA_MCP_ALLOW_SCRIPTS="${GHIDRA_MCP_ALLOW_SCRIPTS:-1}" \
+			GHIDRA_MCP_STATE="$state_dir" \
+			JAVA_OPTS="${JAVA_OPTS:--Xmx4g -XX:+UseG1GC}" \
+			ghidra-mcp-serve >"$log_file" 2>&1 &
+	elif command -v nix >/dev/null 2>&1 && [[ -f "$_dotfiles_repo_path/flake.nix" ]]; then
+		env \
+			GHIDRA_MCP_ALLOW_SCRIPTS="${GHIDRA_MCP_ALLOW_SCRIPTS:-1}" \
+			GHIDRA_MCP_STATE="$state_dir" \
+			JAVA_OPTS="${JAVA_OPTS:--Xmx4g -XX:+UseG1GC}" \
+			nix run "$_dotfiles_repo_path#ghidra-mcp" >"$log_file" 2>&1 &
+	else
+		_dotfiles_release_ghidra_mcp_start_lock "$lock_dir"
+		printf '%s\n' "ghidra-mcp-serve is not on PATH and nix flake fallback is unavailable" >&2
+		return 127
+	fi
+
+	_dotfiles_cxg_ghidra_mcp_pid=$!
+	_dotfiles_cxg_started_ghidra_mcp=1
+	printf '%s\n' "$_dotfiles_cxg_ghidra_mcp_pid" >"$pid_file" || true
+
+	if ! _dotfiles_wait_ghidra_mcp "$_dotfiles_cxg_ghidra_mcp_pid" "$log_file"; then
+		kill "$_dotfiles_cxg_ghidra_mcp_pid" >/dev/null 2>&1 || true
+		wait "$_dotfiles_cxg_ghidra_mcp_pid" >/dev/null 2>&1 || true
+		rm -f -- "$pid_file"
+		_dotfiles_release_ghidra_mcp_start_lock "$lock_dir"
+		return 1
+	fi
+
+	_dotfiles_release_ghidra_mcp_start_lock "$lock_dir"
+}
+
+_dotfiles_stop_ghidra_mcp_for_cxg() {
+	local state_dir="${_dotfiles_cxg_ghidra_mcp_state_dir:-$(_dotfiles_ghidra_mcp_state_dir)}"
+	local refs_dir="$state_dir/cxg-refs"
+	local pid_file="$state_dir/cxg-ghidra-mcp.pid"
+	local server_pid="${_dotfiles_cxg_ghidra_mcp_pid:-}"
+	local timeout="${GHIDRA_MCP_SHUTDOWN_TIMEOUT_SEC:-5}"
+	local deadline
+	local process_state
+
+	if [[ -n "${_dotfiles_cxg_ghidra_mcp_ref_file:-}" ]]; then
+		rm -f -- "$_dotfiles_cxg_ghidra_mcp_ref_file"
+		_dotfiles_cxg_ghidra_mcp_ref_file=
+	fi
+
+	if _dotfiles_ghidra_mcp_has_refs "$refs_dir"; then
+		_dotfiles_cxg_ghidra_mcp_pid=
+		_dotfiles_cxg_started_ghidra_mcp=0
+		_dotfiles_cxg_ghidra_mcp_state_dir=
+		return 0
+	fi
+
+	if [[ -z "$server_pid" ]] && [[ -r "$pid_file" ]]; then
+		IFS= read -r server_pid <"$pid_file" || server_pid=
+	fi
+
+	if [[ -n "$server_pid" ]]; then
+		# The serve wrapper waits for its foreground bridge before running traps,
+		# so TERM sent only to the wrapper can be deferred forever. Stop its
+		# children too, and never let cxg teardown wait without a deadline.
+		if command -v pkill >/dev/null 2>&1; then
+			pkill -TERM -P "$server_pid" >/dev/null 2>&1 || true
+		fi
+		kill "$server_pid" >/dev/null 2>&1 || true
+
+		deadline=$((SECONDS + timeout))
+		while kill -0 "$server_pid" >/dev/null 2>&1 && ((SECONDS < deadline)); do
+			process_state="$(ps -o stat= -p "$server_pid" 2>/dev/null)"
+			[[ "$process_state" != *Z* ]] || break
+			sleep 0.1
+		done
+
+		if kill -0 "$server_pid" >/dev/null 2>&1; then
+			if command -v pkill >/dev/null 2>&1; then
+				pkill -KILL -P "$server_pid" >/dev/null 2>&1 || true
+			fi
+			kill -KILL "$server_pid" >/dev/null 2>&1 || true
+		fi
+		wait "$server_pid" >/dev/null 2>&1 || true
+	fi
+
+	rm -f -- "$pid_file"
+	_dotfiles_cxg_ghidra_mcp_pid=
+	_dotfiles_cxg_started_ghidra_mcp=0
+	_dotfiles_cxg_ghidra_mcp_state_dir=
+}
+
+cxg() (
+	local -a codex_args
+	local cmd_status
+
+	trap '_dotfiles_stop_ghidra_mcp_for_cxg' EXIT
+	trap 'exit 129' HUP
+	trap 'exit 130' INT
+	trap 'exit 143' TERM
+
+	_dotfiles_register_ghidra_mcp_for_cxg
+	cmd_status=$?
+	if ((cmd_status != 0)); then
+		exit "$cmd_status"
+	fi
+
+	_dotfiles_start_ghidra_mcp_for_cxg
+	cmd_status=$?
+	if ((cmd_status != 0)); then
+		exit "$cmd_status"
+	fi
+
+	codex_args=(-c mcp_servers.ghidra.enabled=true)
+	if command -v lldb-mcp-launcher >/dev/null 2>&1; then
+		codex_args+=(-c mcp_servers.lldb.enabled=true)
+	fi
+
+	_dotfiles_disable_terminal_focus_reporting
+	terminal-theme-run codex "${codex_args[@]}" "$@"
+	cmd_status=$?
+	_dotfiles_disable_terminal_focus_reporting
+
+	exit "$cmd_status"
+)

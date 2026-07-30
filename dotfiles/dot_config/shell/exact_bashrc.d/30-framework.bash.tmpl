@@ -1,0 +1,25 @@
+# 05 / Oh My Bash
+# Load the framework before shared aliases and functions.
+export OSH="$HOME/.oh-my-bash"
+# shellcheck disable=SC2034
+OSH_THEME=""
+
+# Keep the plugin list explicit. Zoxide already provides directory jumping;
+# bashmarks also steals the Git plugin's `g` alias when it loads afterward.
+# shellcheck disable=SC2034
+plugins=(git)
+
+# Completion list; gh joins only when present.
+completions=(git ssh system)
+if _dotfiles_command_path gh >/dev/null; then
+	completions+=(gh)
+fi
+
+# Shared commands come later, after framework setup.
+# shellcheck disable=SC2034
+aliases=()
+
+if [[ -r "$OSH/oh-my-bash.sh" ]]; then
+	# shellcheck source=/dev/null
+	source "$OSH/oh-my-bash.sh"
+fi

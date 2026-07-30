@@ -1,0 +1,13 @@
+# B2 / terminal focus events
+# Bind focus-in and focus-out escape sequences to a no-op widget.
+
+_dotfiles_disable_terminal_focus_reporting() {
+  emulate -L zsh
+  [[ -t 1 ]] || return 0
+  print -rn -- $'\e[?1004l' >/dev/tty 2>/dev/null || true
+}
+
+_dotfiles_ignore_terminal_focus_event() {}
+zle -N _dotfiles_ignore_terminal_focus_event
+bindkey $'\e[I' _dotfiles_ignore_terminal_focus_event
+bindkey $'\e[O' _dotfiles_ignore_terminal_focus_event

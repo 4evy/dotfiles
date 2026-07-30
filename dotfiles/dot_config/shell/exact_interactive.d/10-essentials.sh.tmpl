@@ -1,0 +1,83 @@
+# shellcheck disable=SC2154
+# ░█▀▀░█▄█░█▀▄░█▀▀
+# ░█░░░█░█░█░█░▀▀█
+# ░▀▀▀░▀░▀░▀▀░░▀▀▀
+# C M D S / shared commands
+#  .+"+.+"+.+"+.+"+.+"+.+"+.
+# (                         )
+#  ) Bash and Zsh agree    (
+# (  aliases stay in sync   )
+#  ) loaded once           (
+# (                         )
+#  "+.+"+.+"+.+"+.+"+.+"+.+"
+# Editor, files, media, host tools, repo maintenance, and completions.
+#
+# Loaded after shell frameworks so shared aliases take precedence.
+
+# Interactive tools should keep their styling even when a parent process was
+# started with NO_COLOR set.
+unset NO_COLOR
+
+# A1 / editor
+#      h v vi vim ───────────────> hx
+
+export EDITOR="hx"
+export VISUAL="hx"
+
+alias h="hx"
+alias v="hx"
+alias vi="hx"
+alias vim="hx"
+
+# A2 / file and system views
+# Shared aliases load after the shell frameworks, so these definitions replace
+# their platform-specific `ls` wrappers in both Bash and Zsh.
+
+unalias afind egrep fgrep grep 2>/dev/null || true
+
+alias ls="eza --icons=auto --group-directories-first"
+alias l="eza --icons=auto --group-directories-first"
+alias la="eza -a --icons=auto --group-directories-first"
+alias ll="eza -la --icons=auto --group-directories-first --git"
+alias lt="eza --tree --icons=auto --group-directories-first"
+
+alias btop="terminal-theme-run btop"
+alias htop="terminal-theme-run btop"
+alias top="terminal-theme-run btop"
+
+unalias pfetch neofetch 2>/dev/null || true
+
+pfetch() {
+	local terminal_width="${COLUMNS:-120}"
+	local -a fetch_options=()
+
+	if ! command -v fastfetch >/dev/null 2>&1; then
+		command pfetch "$@"
+		return
+	fi
+
+	if [[ ! -t 1 ]]; then
+		fetch_options+=(--pipe --logo none --key-width 0)
+	elif [[ "$terminal_width" =~ ^[0-9]+$ ]] && ((terminal_width < 100)); then
+		fetch_options+=(--logo none)
+	fi
+
+	command fastfetch "${fetch_options[@]}" "$@"
+}
+
+neofetch() { pfetch "$@"; }
+
+# A3 / media helpers
+#      m4a ─┐  mp3 ─┐  mp4 ─┐
+#           └─ cut variants share one yt-dlp runner
+
+_dotfiles_ytdlp() {
+	env -u PROMPT_MULTILINE_INDICATOR "$HOME/.local/bin/yt-dlp-script" "$@"
+}
+
+m4a() { _dotfiles_ytdlp m4a "$@"; }
+m4a-cut() { _dotfiles_ytdlp m4a-cut "$@"; }
+mp3() { _dotfiles_ytdlp mp3 "$@"; }
+mp3-cut() { _dotfiles_ytdlp mp3-cut "$@"; }
+mp4() { _dotfiles_ytdlp mp4 "$@"; }
+mp4-cut() { _dotfiles_ytdlp mp4-cut "$@"; }

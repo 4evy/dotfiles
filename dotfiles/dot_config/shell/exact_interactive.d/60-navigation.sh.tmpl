@@ -1,0 +1,47 @@
+# C2 / yazi
+# Follow the directory selected by yazi when it exits.
+
+yy() {
+	local tmp cwd cmd_status
+
+	tmp="$(mktemp -t "yazi-cwd.XXXXX")" || return
+	yazi "$@" --cwd-file="$tmp"
+	cmd_status=$?
+	if cwd="$(command cat -- "$tmp")" && [[ -n "$cwd" && "$cwd" != "$PWD" ]]; then
+		builtin cd -- "$cwd" || cmd_status=$?
+	fi
+	rm -f -- "$tmp"
+
+	return "$cmd_status"
+}
+
+# C3 / Python via uv
+# Route Python through uv and create a virtual environment for pip when needed.
+
+python() { uv run python "$@"; }
+python3() { uv run python3 "$@"; }
+
+pip() {
+	[[ -z "$VIRTUAL_ENV" && ! -d ".venv" ]] && uv venv -q
+	uv pip "$@"
+}
+
+pip3() {
+	[[ -z "$VIRTUAL_ENV" && ! -d ".venv" ]] && uv venv -q
+	uv pip "$@"
+}
+
+# C4 / fzf palette
+# Catppuccin Frappé Pink. Pink is a neutral.
+
+{{- $ctp := include ".chezmoitemplates/catppuccin_palette.json" | fromJson }}
+{{- $p := index $ctp "frappe" }}
+export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border
+  --color=bg+:{{ index $p "surface0" }},bg:{{ index $p "base" }}\
+,spinner:{{ index $p "pink" }},hl:{{ index $p "red" }}
+  --color=fg:{{ index $p "text" }},header:{{ index $p "red" }}\
+,info:{{ index $p "pink" }},pointer:{{ index $p "pink" }}
+  --color=marker:{{ index $p "lavender" }},fg+:{{ index $p "text" }}\
+,prompt:{{ index $p "pink" }},hl+:{{ index $p "red" }}
+  --color=selected-bg:{{ index $p "surface1" }},border:{{ index $p "overlay0" }}\
+,label:{{ index $p "text" }}"

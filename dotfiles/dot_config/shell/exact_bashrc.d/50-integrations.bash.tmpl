@@ -1,0 +1,45 @@
+# 07 / prompt, picker, and history
+# Prefer cached init scripts; generate them directly on a fresh install.
+_starship_bin="$(_dotfiles_command_path starship 2>/dev/null || true)"
+if [[ -n "$_starship_bin" ]]; then
+	_dotfiles_wrap_command starship "$_starship_bin"
+fi
+if [[ -n "$_starship_bin" && -r "$HOME/.cache/starship/init.bash" ]]; then
+	# shellcheck source=/dev/null
+	source "$HOME/.cache/starship/init.bash"
+elif [[ -n "$_starship_bin" ]]; then
+	eval "$("$_starship_bin" init bash)"
+fi
+unset _starship_bin
+_fzf_bin="$(_dotfiles_command_path fzf 2>/dev/null || true)"
+if [[ -n "$_fzf_bin" ]]; then
+	_dotfiles_wrap_command fzf "$_fzf_bin"
+	if [[ -r "$HOME/.cache/fzf/init.bash" ]]; then
+		# shellcheck source=/dev/null
+		source "$HOME/.cache/fzf/init.bash"
+	else
+		eval "$("$_fzf_bin" --bash)"
+	fi
+fi
+unset _fzf_bin
+_atuin_bin="$(_dotfiles_command_path atuin 2>/dev/null || true)"
+if [[ -t 0 && -t 1 && -n "$_atuin_bin" && -r "$HOME/.cache/atuin/init.bash" ]]; then
+	_dotfiles_wrap_command atuin "$_atuin_bin"
+	# shellcheck source=/dev/null
+	source "$HOME/.cache/atuin/init.bash"
+	__atuin_search_cmd() (
+		local -a search_args=("$@")
+		local result_file status
+
+		result_file="$(mktemp)" || exit 1
+		trap 'rm -f -- "$result_file"' EXIT
+		ATUIN_SHELL=bash \
+			ATUIN_LOG=error \
+			ATUIN_QUERY=$READLINE_LINE \
+			atuin search "${search_args[@]}" -i --result-file "$result_file" 1>&2
+		status=$?
+		cat -- "$result_file"
+		exit "$status"
+	)
+fi
+unset _atuin_bin

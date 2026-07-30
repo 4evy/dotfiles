@@ -1,0 +1,50 @@
+#      __^__                         __^__
+#     ( ___ )──── B1 PLUGINS ───────( ___ )
+#      | / |                         | \ |
+#      | / | Oh My Zsh + plugins     | \ |
+#      | / | fzf-tab keeps Tab       | \ |
+#      | / | highlighting first      | \ |
+#      |___|                         |___|
+#     (_____)───────────────────────(_____)
+# Starship owns the prompt; Atuin waits for a real TTY.
+export ZSH="$HOME/.oh-my-zsh"
+# shellcheck disable=SC2034
+ZSH_THEME=""
+# shellcheck disable=SC2034
+DISABLE_AUTO_UPDATE="true"
+# shellcheck disable=SC2034
+DISABLE_UNTRACKED_FILES_DIRTY="true"
+
+# Keep the plugin list explicit.
+plugins=(
+  git
+  rust
+  nmap
+  rsync
+  colored-man-pages
+  sudo
+  extract
+  copypath
+  copyfile
+  fzf-tab
+  zsh-autosuggestions
+  zsh-syntax-highlighting
+)
+if _dotfiles_command_path gh >/dev/null; then
+  plugins+=(gh)
+fi
+
+# Make cached completions available before compinit.
+fpath=("$HOME/.cache/zsh/completions" "${fpath[@]}")
+
+# The highlighting plugin reads this palette when Oh My Zsh loads it.
+
+if [[ -r "$HOME/.config/shell/zsh-syntax-highlighting.zsh" ]]; then
+  # shellcheck source=/dev/null
+  source "$HOME/.config/shell/zsh-syntax-highlighting.zsh"
+fi
+
+if [[ -r "$ZSH/oh-my-zsh.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$ZSH/oh-my-zsh.sh"
+fi

@@ -1,0 +1,24 @@
+# C2 / zoxide
+# Load it after the framework so its `cd` alias wins.
+
+if [[ -r "$HOME/.config/shell/zoxide.zsh" ]]; then
+  # shellcheck source=/dev/null
+  source "$HOME/.config/shell/zoxide.zsh"
+fi
+
+# C3 / directory-aware tools
+# Load generated hooks when available and fall back to the installed commands
+# on a fresh machine.
+
+_broot_bin="$(_dotfiles_command_path broot 2>/dev/null || true)"
+if [[ -n "$_broot_bin" && -r "$HOME/.cache/broot/init.zsh" ]]; then
+  # shellcheck source=/dev/null
+  source "$HOME/.cache/broot/init.zsh"
+elif [[ -n "$_broot_bin" ]]; then
+  eval "$("$_broot_bin" --print-shell-function zsh)"
+fi
+unset _broot_bin
+
+if (( $+functions[enable-fzf-tab] )); then
+  enable-fzf-tab
+fi

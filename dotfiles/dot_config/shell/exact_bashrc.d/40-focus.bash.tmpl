@@ -1,0 +1,10 @@
+# 06 / terminal focus events
+# Bind focus-in and focus-out escape sequences to no-op Readline keys.
+
+_dotfiles_disable_terminal_focus_reporting() {
+	[[ -t 1 ]] || return 0
+	printf '\e[?1004l' >/dev/tty 2>/dev/null || true
+}
+
+bind '"\e[I": ""' 2>/dev/null || true
+bind '"\e[O": ""' 2>/dev/null || true

@@ -1,0 +1,6 @@
+# 08 / completion cache
+# Load generated completions from ~/.cache/bash/completions.
+for f in "$HOME/.cache/bash/completions"/*; do
+	# shellcheck source=/dev/null
+	[[ -f "$f" ]] && source "$f"
+done

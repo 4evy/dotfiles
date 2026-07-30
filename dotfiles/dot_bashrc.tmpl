@@ -1,255 +1,33 @@
 # shellcheck shell=bash
-#       ▄▄                            ▄▄
-#       ██                            ██
-#       ██▄███▄    ▄█████▄  ▄▄█████▄  ██▄████▄
-#       ██▀  ▀██   ▀ ▄▄▄██  ██▄▄▄▄ ▀  ██▀   ██
-#       ██    ██  ▄██▀▀▀██   ▀▀▀▀██▄  ██    ██
-#       ███▄▄██▀  ██▄▄▄███  █▄▄▄▄▄██  ██    ██
-#       ▀▀ ▀▀▀     ▀▀▀▀ ▀▀   ▀▀▀▀▀▀   ▀▀    ▀▀
-#       B A S H / interactive setup
-#  .bashenv / Ghostty / Oh My Bash / Starship / Atuin / zoxide
-#  Non-interactive shells return before prompt setup.
+# Bash startup: environment first, then ordered interactive modules.
 
-# 00 / environment
-# .bashenv provides PATH and shared exports.
 # shellcheck source=/dev/null
 [[ -r "$HOME/.bashenv" ]] && source "$HOME/.bashenv"
 
-# 01 / terminal integration
-# Load Ghostty integration and fall back when its terminfo is unavailable.
-if [[ -n "${GHOSTTY_RESOURCES_DIR:-}" ]] &&
-	[[ -r "${GHOSTTY_RESOURCES_DIR}/shell-integration/bash/ghostty.bash" ]]; then
-	builtin source "${GHOSTTY_RESOURCES_DIR}/shell-integration/bash/ghostty.bash"
+[[ $- == *i* ]] || return 0
+
+_dotfiles_bash_module_dir="$HOME/.config/shell/bashrc.d"
+_dotfiles_bash_local_dir="$HOME/.config/shell/bashrc.local.d"
+_dotfiles_bash_nullglob_was_set=0
+if shopt -q nullglob; then
+	_dotfiles_bash_nullglob_was_set=1
 fi
+shopt -s nullglob
 
-if [[ "${TERM:-}" == "xterm-ghostty" ]] && ! infocmp xterm-ghostty &>/dev/null; then
-	export TERM=xterm-256color
-fi
-
-[[ $- != *i* ]] && return
-
-{{- if eq .chezmoi.os "linux" }}
-_dotfiles_path_append_once() {
-	local candidate
-
-	for candidate; do
-		[[ -n "$candidate" ]] || continue
-		case ":${PATH:-}:" in
-			*":$candidate:"*) ;;
-			*) PATH="${PATH:+$PATH:}$candidate" ;;
-		esac
-	done
-}
-
-_dotfiles_brew_prefix="${HOMEBREW_PREFIX:-}"
-if [[ -z "$_dotfiles_brew_prefix" ]]; then
-	if [[ -d /home/linuxbrew/.linuxbrew ]]; then
-		_dotfiles_brew_prefix=/home/linuxbrew/.linuxbrew
-	elif [[ -d "$HOME/.linuxbrew" ]]; then
-		_dotfiles_brew_prefix="$HOME/.linuxbrew"
-	fi
-fi
-if [[ -n "$_dotfiles_brew_prefix" ]]; then
-	export HOMEBREW_PREFIX="$_dotfiles_brew_prefix"
-	export HOMEBREW_CELLAR="$HOMEBREW_PREFIX/Cellar"
-	if [[ "$HOMEBREW_PREFIX" == /home/linuxbrew/.linuxbrew ]]; then
-		export HOMEBREW_REPOSITORY="$HOMEBREW_PREFIX/Homebrew"
-	else
-		export HOMEBREW_REPOSITORY="$HOMEBREW_PREFIX"
-	fi
-	_dotfiles_path_append_once "$HOMEBREW_PREFIX/bin" "$HOMEBREW_PREFIX/sbin"
-	export PATH
-fi
-unset _dotfiles_brew_prefix
-unset -f _dotfiles_path_append_once
-{{- end }}
-
-# 02 / shell options
-# Keep glob and array expansion behavior predictable.
-shopt -s array_expand_once globskipdots
-
-# 03 / startup helpers
-# Resolve real binaries before generated init scripts replace command names.
-
-_dotfiles_wrap_command() {
-	local -r command_name=$1
-	local -r command_path=$2
-	local quoted_path
-
-	printf -v quoted_path '%q' "$command_path"
-	eval "$command_name() { command $quoted_path \"\$@\"; }"
-}
-
-_dotfiles_command_path() {
-	local command_path
-	command_path="$(type -P -- "$1")" || return 1
-	[[ -n "$command_path" ]] || return 1
-	printf '%s\n' "$command_path"
-}
-
-# 04 / dotfiles repository
-# DOTFILES_REPO takes priority, followed by platform defaults.
-
-_dotfiles_ansible_playbook() {
-	if command -v ansible-playbook >/dev/null 2>&1; then
-		ansible-playbook "$@"
-	elif command -v uvx >/dev/null 2>&1; then
-		uvx --from ansible-core ansible-playbook "$@"
-	else
-		printf '%s\n' "ansible-playbook and uvx are not available" >&2
-		return 127
-	fi
-}
-
-_dotfiles_repo_path="${DOTFILES_REPO:-}"
-if [[ -z "$_dotfiles_repo_path" ]]; then
-	case "$(uname -s 2>/dev/null)" in
-		Darwin)
-			_dotfiles_repo_candidates=("$HOME/Developer/dotfiles" "$HOME/dotfiles")
-			;;
-		*)
-			_dotfiles_repo_candidates=("$HOME/dotfiles")
-			;;
-	esac
-	for _dotfiles_repo_candidate in "${_dotfiles_repo_candidates[@]}"; do
-		[[ -f "$_dotfiles_repo_candidate/Justfile" ]] || continue
-		[[ -d "$_dotfiles_repo_candidate/ansible" ]] || continue
-		_dotfiles_repo_path="$_dotfiles_repo_candidate"
-		break
-	done
-fi
-if [[ -z "$_dotfiles_repo_path" ]]; then
-	_dotfiles_repo_path="$HOME/dotfiles"
-fi
-if [[ -d "$_dotfiles_repo_path" ]]; then
-	_dotfiles_repo_path="$(
-		cd -P -- "$_dotfiles_repo_path" 2>/dev/null &&
-			pwd ||
-			printf '%s\n' "$_dotfiles_repo_path"
-	)"
-fi
-unset _dotfiles_repo_candidate _dotfiles_repo_candidates
-
-# 05 / Oh My Bash
-# Load the framework before shared aliases and functions.
-export OSH="$HOME/.oh-my-bash"
-# shellcheck disable=SC2034
-OSH_THEME=""
-
-# Keep the plugin list explicit. Zoxide already provides directory jumping;
-# bashmarks also steals the Git plugin's `g` alias when it loads afterward.
-# shellcheck disable=SC2034
-plugins=(git)
-
-# Completion list; gh joins only when present.
-completions=(git ssh system)
-if _dotfiles_command_path gh >/dev/null; then
-	completions+=(gh)
-fi
-
-# Shared commands come later, after framework setup.
-# shellcheck disable=SC2034
-aliases=()
-
-if [[ -r "$OSH/oh-my-bash.sh" ]]; then
+for _dotfiles_bash_module in \
+	"$_dotfiles_bash_module_dir"/*.bash \
+	"$_dotfiles_bash_local_dir"/*.bash; do
+	[[ -r "$_dotfiles_bash_module" ]] || continue
 	# shellcheck source=/dev/null
-	source "$OSH/oh-my-bash.sh"
-fi
-
-# 06 / terminal focus events
-# Bind focus-in and focus-out escape sequences to no-op Readline keys.
-
-_dotfiles_disable_terminal_focus_reporting() {
-	[[ -t 1 ]] || return 0
-	printf '\e[?1004l' >/dev/tty 2>/dev/null || true
-}
-
-bind '"\e[I": ""' 2>/dev/null || true
-bind '"\e[O": ""' 2>/dev/null || true
-
-# 07 / prompt, picker, and history
-# Prefer cached init scripts; generate them directly on a fresh install.
-_starship_bin="$(_dotfiles_command_path starship 2>/dev/null || true)"
-if [[ -n "$_starship_bin" ]]; then
-	_dotfiles_wrap_command starship "$_starship_bin"
-fi
-if [[ -n "$_starship_bin" && -r "$HOME/.cache/starship/init.bash" ]]; then
-	# shellcheck source=/dev/null
-	source "$HOME/.cache/starship/init.bash"
-elif [[ -n "$_starship_bin" ]]; then
-	eval "$("$_starship_bin" init bash)"
-fi
-unset _starship_bin
-_fzf_bin="$(_dotfiles_command_path fzf 2>/dev/null || true)"
-if [[ -n "$_fzf_bin" ]]; then
-	_dotfiles_wrap_command fzf "$_fzf_bin"
-	if [[ -r "$HOME/.cache/fzf/init.bash" ]]; then
-		# shellcheck source=/dev/null
-		source "$HOME/.cache/fzf/init.bash"
-	else
-		eval "$("$_fzf_bin" --bash)"
-	fi
-fi
-unset _fzf_bin
-_atuin_bin="$(_dotfiles_command_path atuin 2>/dev/null || true)"
-if [[ -t 0 && -t 1 && -n "$_atuin_bin" && -r "$HOME/.cache/atuin/init.bash" ]]; then
-	_dotfiles_wrap_command atuin "$_atuin_bin"
-	# shellcheck source=/dev/null
-	source "$HOME/.cache/atuin/init.bash"
-	__atuin_search_cmd() (
-		local -a search_args=("$@")
-		local result_file status
-
-		result_file="$(mktemp)" || exit 1
-		trap 'rm -f -- "$result_file"' EXIT
-		ATUIN_SHELL=bash \
-			ATUIN_LOG=error \
-			ATUIN_QUERY=$READLINE_LINE \
-			atuin search "${search_args[@]}" -i --result-file "$result_file" 1>&2
-		status=$?
-		cat -- "$result_file"
-		exit "$status"
-	)
-fi
-unset _atuin_bin
-
-# 08 / completion cache
-# Load generated completions from ~/.cache/bash/completions.
-for f in "$HOME/.cache/bash/completions"/*; do
-	# shellcheck source=/dev/null
-	[[ -f "$f" ]] && source "$f"
+	source "$_dotfiles_bash_module"
 done
 
-# 09 / shared commands
-# Load aliases and functions after prompt and framework setup.
+((_dotfiles_bash_nullglob_was_set)) || shopt -u nullglob
+unset \
+	_dotfiles_bash_module \
+	_dotfiles_bash_module_dir \
+	_dotfiles_bash_local_dir \
+	_dotfiles_bash_nullglob_was_set
 
-if [[ -r "$HOME/.config/shell/interactive.bash" ]]; then
-	# shellcheck source=/dev/null
-	source "$HOME/.config/shell/interactive.bash"
-fi
-
-# 10 / zoxide
-# Load it late so its `cd` wrapper wins.
-
-if [[ -r "$HOME/.config/shell/zoxide.bash" ]]; then
-	# shellcheck source=/dev/null
-	source "$HOME/.config/shell/zoxide.bash"
-fi
-
-# 11 / directory-aware tools
-# Load generated hooks when available and fall back to the installed commands
-# on a fresh machine.
-
-_broot_bin="$(_dotfiles_command_path broot 2>/dev/null || true)"
-if [[ -n "$_broot_bin" && -r "$HOME/.cache/broot/init.bash" ]]; then
-	# shellcheck source=/dev/null
-	source "$HOME/.cache/broot/init.bash"
-elif [[ -n "$_broot_bin" ]]; then
-	eval "$("$_broot_bin" --print-shell-function bash)"
-fi
-unset _broot_bin
-
-# 12 / cleanup
-# Remove startup-only helpers from the interactive shell.
-
+# Startup-only helpers are intentionally unavailable after initialization.
 unset -f _dotfiles_wrap_command _dotfiles_command_path

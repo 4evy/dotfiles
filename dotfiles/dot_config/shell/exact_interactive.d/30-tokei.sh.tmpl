@@ -1,0 +1,481 @@
+# Tokei / Git-aware authored-source metrics
+
+_dotfiles_tk_path_is_lock() {
+	case "$1" in
+		*.lock | \
+			*.lockb | \
+			cabal.project.freeze | */cabal.project.freeze | \
+			go.sum | */go.sum | \
+			gradle.lockfile | */gradle.lockfile | \
+			Manifest.toml | */Manifest.toml | \
+			npm-shrinkwrap.json | */npm-shrinkwrap.json | \
+			package-lock.json | */package-lock.json | \
+			Package.resolved | */Package.resolved | \
+			packages.lock.json | */packages.lock.json | \
+			pnpm-lock.yaml | */pnpm-lock.yaml)
+			return 0
+			;;
+	esac
+	return 1
+}
+
+_dotfiles_tk_format_bytes() {
+	local bytes="$1"
+	local unit=1 suffix="B"
+	local tenths
+
+	if ((bytes >= 1073741824)); then
+		unit=1073741824
+		suffix="GiB"
+	elif ((bytes >= 1048576)); then
+		unit=1048576
+		suffix="MiB"
+	elif ((bytes >= 1024)); then
+		unit=1024
+		suffix="KiB"
+	fi
+
+	if ((unit == 1)); then
+		printf '%d %s' "$bytes" "$suffix"
+	else
+		tenths=$((bytes * 10 / unit))
+		printf '%d.%d %s' "$((tenths / 10))" "$((tenths % 10))" "$suffix"
+	fi
+}
+
+_dotfiles_tk_print_locks() {
+	local root="$1"
+	local lock_files="$2"
+	local detailed="${3:-0}"
+	local file_path line_count byte_count size
+	local total_files=0 total_lines=0 total_bytes=0
+
+	if ((detailed)); then
+		printf '%s\n' \
+			"Dependency lockfiles" \
+			"────────────────────────────────────────────────────────────────────────────────"
+		printf '%10s  %10s  %s\n' "Lines" "Size" "Path"
+	fi
+
+	while IFS= read -r -d '' file_path; do
+		[[ -f "$root/$file_path" && ! -L "$root/$file_path" ]] || continue
+		line_count="$(wc -l <"$root/$file_path")" || continue
+		byte_count="$(wc -c <"$root/$file_path")" || continue
+		line_count="${line_count//[[:space:]]/}"
+		byte_count="${byte_count//[[:space:]]/}"
+		total_files=$((total_files + 1))
+		total_lines=$((total_lines + line_count))
+		total_bytes=$((total_bytes + byte_count))
+		if ((detailed)); then
+			size="$(_dotfiles_tk_format_bytes "$byte_count")"
+			printf '%10d  %10s  %s\n' "$line_count" "$size" "$file_path"
+		fi
+	done <"$lock_files"
+
+	size="$(_dotfiles_tk_format_bytes "$total_bytes")"
+	if ((detailed)); then
+		printf '%s\n' \
+			"────────────────────────────────────────────────────────────────────────────────"
+		printf '%10d  %10s  %d files\n' "$total_lines" "$size" "$total_files"
+	elif ((total_files)); then
+		printf '\nDependency locks: %d files · %d lines · %s\n' \
+			"$total_files" "$total_lines" "$size"
+	fi
+}
+
+_dotfiles_tk_attr_is_enabled() {
+	case "$1" in
+		set | true) return 0 ;;
+	esac
+	return 1
+}
+
+_dotfiles_tk_linguist_extension() {
+	# Tokei identifies languages from filenames and final extensions. Translate
+	# common Linguist overrides so templates and extensionless files use the
+	# parser selected by the repository instead of falling through to `*.tmpl`.
+	case "$1" in
+		ABAP) printf '%s\n' "abap" ;;
+		Bash | BASH) printf '%s\n' "bash" ;;
+		C) printf '%s\n' "c" ;;
+		"C++" | Cpp) printf '%s\n' "cpp" ;;
+		"C#" | CSharp) printf '%s\n' "cs" ;;
+		CMake) printf '%s\n' "cmake" ;;
+		CSS) printf '%s\n' "css" ;;
+		Dockerfile) printf '%s\n' "dockerfile" ;;
+		desktop | gitconfig | INI | sshconfig) printf '%s\n' "ini" ;;
+		Fish) printf '%s\n' "fish" ;;
+		GLSL) printf '%s\n' "glsl" ;;
+		Go) printf '%s\n' "go" ;;
+		Go-Template) printf '%s\n' "hbs" ;;
+		GraphQL) printf '%s\n' "graphql" ;;
+		Handlebars) printf '%s\n' "hbs" ;;
+		HCL | Terraform) printf '%s\n' "hcl" ;;
+		HTML) printf '%s\n' "html" ;;
+		Ignore-List | sepolicy) printf '%s\n' "sh" ;;
+		Java) printf '%s\n' "java" ;;
+		JavaScript) printf '%s\n' "js" ;;
+		JSON) printf '%s\n' "json" ;;
+		JSON5 | jsonc | KDL) printf '%s\n' "js" ;;
+		JSX) printf '%s\n' "jsx" ;;
+		Kotlin) printf '%s\n' "kt" ;;
+		Lua) printf '%s\n' "lua" ;;
+		Markdown) printf '%s\n' "md" ;;
+		Meson) printf '%s\n' "__meson__" ;;
+		Nix) printf '%s\n' "nix" ;;
+		Perl) printf '%s\n' "pl" ;;
+		PHP) printf '%s\n' "php" ;;
+		PowerShell) printf '%s\n' "ps1" ;;
+		Python) printf '%s\n' "py" ;;
+		Ruby) printf '%s\n' "rb" ;;
+		RON) printf '%s\n' "ron" ;;
+		Rust) printf '%s\n' "rs" ;;
+		Scheme) printf '%s\n' "scm" ;;
+		Shell) printf '%s\n' "sh" ;;
+		Swift) printf '%s\n' "swift" ;;
+		TOML) printf '%s\n' "toml" ;;
+		TSX) printf '%s\n' "tsx" ;;
+		TypeScript) printf '%s\n' "ts" ;;
+		Vue) printf '%s\n' "vue" ;;
+		XML | XML-Property-List) printf '%s\n' "xml" ;;
+		YAML) printf '%s\n' "yaml" ;;
+		Zig) printf '%s\n' "zig" ;;
+		Zsh) printf '%s\n' "zsh" ;;
+		*) return 1 ;;
+	esac
+}
+
+_dotfiles_tk_stage_file() {
+	local root="$1"
+	local mirror="$2"
+	local file_path="$3"
+	local linguist_language="${4:-}"
+	local source_path="$root/$file_path"
+	local extension dest dest_dir
+
+	[[ -f "$source_path" && ! -L "$source_path" ]] || return 10
+	_dotfiles_tk_path_is_lock "$file_path" && return 10
+
+	dest="$mirror/$file_path"
+	if [[ -n "$linguist_language" ]] &&
+		extension="$(_dotfiles_tk_linguist_extension "$linguist_language")"; then
+		if [[ "$extension" == "__meson__" ]]; then
+			dest="$dest.tk-language/meson.build"
+		else
+			dest="$dest.$extension"
+		fi
+	fi
+
+	dest_dir="${dest%/*}"
+	mkdir -p -- "$dest_dir" || return
+	ln -- "$source_path" "$dest" 2>/dev/null ||
+		cp -p -- "$source_path" "$dest"
+}
+
+_dotfiles_tk_help() {
+	printf '%s\n' \
+		"tk: Git-aware Tokei for authored working-tree source" \
+		"" \
+		"In a Git worktree, tk counts tracked files plus non-ignored untracked files," \
+		"including Git-visible dotfiles and files inside hidden directories. It" \
+		"honors .ignore/.tokeignore and Tokei options, reports dependency lockfiles" \
+		"separately from authored LOC," \
+		"and uses Linguist generated, vendored, documentation, and detectable" \
+		"attributes. Language overrides select the closest available Tokei parser." \
+		"Outside Git it behaves exactly like tokei." \
+		"" \
+		"Wrapper options:" \
+		"  --locks   Show the per-file dependency lock footprint instead of LOC." \
+		"  --no-git  Bypass the Git manifest and invoke tokei directly." \
+		"" \
+		"Tokei options:"
+	command tokei --help
+}
+
+tk() (
+	local invocation_dir root tmp candidates attrs selected_files mappings lock_files mirror
+	local file_path attr_name attr_path raw flags extension source_path dest dest_dir
+	local stage_status tokei_status
+	local linguist_generated generated linguist_vendored vendored
+	local linguist_documentation linguist_detectable linguist_language
+	local no_git=0 informational=0 selected=0 end_options=0
+	local locks_only=0 machine_output=0
+	local -a tokei_args inputs git_inputs
+
+	if ! command -v tokei >/dev/null 2>&1; then
+		printf '%s\n' "tokei is not installed" >&2
+		exit 127
+	fi
+
+	tokei_args=()
+	inputs=()
+	while (($#)); do
+		raw="$1"
+		shift
+
+		if ((end_options)); then
+			inputs+=("$raw")
+			continue
+		fi
+
+		case "$raw" in
+			--)
+				end_options=1
+				;;
+			--no-git)
+				no_git=1
+				;;
+			--locks)
+				locks_only=1
+				;;
+			--help | -h)
+				_dotfiles_tk_help
+				exit
+				;;
+			--languages | --version | -l | -V)
+				informational=1
+				tokei_args+=("$raw")
+				;;
+			--no-ignore | --no-ignore-parent | --no-ignore-vcs)
+				no_git=1
+				tokei_args+=("$raw")
+				;;
+			-c | --columns | -e | --exclude | -i | --input | -o | --output | \
+				-s | --sort | -r | --rsort | -t | --types | -n | --num-format | \
+				--streaming)
+				case "$raw" in
+					-o | --output | --streaming) machine_output=1 ;;
+				esac
+				tokei_args+=("$raw")
+				if (($#)); then
+					tokei_args+=("$1")
+					shift
+				fi
+				;;
+			-o?* | --output=* | --streaming=*)
+				machine_output=1
+				tokei_args+=("$raw")
+				;;
+			-[fClvVh]*)
+				flags="${raw#-}"
+				case "$flags" in
+					*[!fClvVh]*)
+						tokei_args+=("$raw")
+						;;
+					*h*)
+						_dotfiles_tk_help
+						exit
+						;;
+					*l* | *V*)
+						informational=1
+						tokei_args+=("$raw")
+						;;
+					*)
+						tokei_args+=("$raw")
+						;;
+				esac
+				;;
+			-*)
+				tokei_args+=("$raw")
+				;;
+			*)
+				inputs+=("$raw")
+				;;
+		esac
+	done
+
+	if ((locks_only && no_git)); then
+		printf '%s\n' "tk: --locks cannot be combined with --no-git" >&2
+		exit 2
+	fi
+
+	if ((informational || no_git)); then
+		if ((${#inputs[@]})); then
+			command tokei "${tokei_args[@]}" -- "${inputs[@]}"
+		else
+			command tokei "${tokei_args[@]}"
+		fi
+		exit
+	fi
+
+	invocation_dir="$(pwd -P)" || exit
+	if ! command -v git >/dev/null 2>&1 ||
+		! root="$(git -C "$invocation_dir" rev-parse --show-toplevel 2>/dev/null)" ||
+		[[ -z "$root" ]]; then
+		if ((locks_only)); then
+			printf '%s\n' "tk: --locks requires a Git worktree" >&2
+			exit 2
+		fi
+		if ((${#inputs[@]})); then
+			command tokei "${tokei_args[@]}" -- "${inputs[@]}"
+		else
+			command tokei "${tokei_args[@]}"
+		fi
+		exit
+	fi
+
+	tmp="$(mktemp -d "${TMPDIR:-/tmp}/tk.XXXXXXXX")" || exit
+	trap 'rm -rf -- "$tmp"' EXIT HUP INT TERM
+	candidates="$tmp/candidates.z"
+	attrs="$tmp/attrs.z"
+	selected_files="$tmp/selected.z"
+	mappings="$tmp/mappings.z"
+	lock_files="$tmp/locks.z"
+	mirror="$tmp/tree"
+	: >"$selected_files"
+	: >"$mappings"
+	: >"$lock_files"
+
+	if ((${#inputs[@]})); then
+		git_inputs=("${inputs[@]}")
+	else
+		git_inputs=(".")
+	fi
+
+	if ! git -C "$invocation_dir" ls-files -z --cached --others \
+		--exclude-standard --deduplicate --full-name -- \
+		"${git_inputs[@]}" >"$candidates" 2>/dev/null; then
+		if ((${#inputs[@]})); then
+			command tokei "${tokei_args[@]}" -- "${inputs[@]}"
+		else
+			command tokei "${tokei_args[@]}"
+		fi
+		exit
+	fi
+
+	if [[ ! -s "$candidates" ]]; then
+		printf '%s\n' "tk: no Git-visible files under requested scope" >&2
+		exit 0
+	fi
+
+	mkdir -p -- "$mirror" || exit
+	if git -C "$root" check-attr --stdin -z \
+		linguist-generated generated linguist-vendored vendored \
+		linguist-documentation linguist-detectable linguist-language \
+		<"$candidates" >"$attrs" 2>/dev/null; then
+		while IFS= read -r -d '' file_path &&
+			IFS= read -r -d '' attr_name &&
+			IFS= read -r -d '' linguist_generated &&
+			IFS= read -r -d '' attr_path &&
+			IFS= read -r -d '' attr_name &&
+			IFS= read -r -d '' generated &&
+			IFS= read -r -d '' attr_path &&
+			IFS= read -r -d '' attr_name &&
+			IFS= read -r -d '' linguist_vendored &&
+			IFS= read -r -d '' attr_path &&
+			IFS= read -r -d '' attr_name &&
+			IFS= read -r -d '' vendored &&
+			IFS= read -r -d '' attr_path &&
+			IFS= read -r -d '' attr_name &&
+			IFS= read -r -d '' linguist_documentation &&
+			IFS= read -r -d '' attr_path &&
+			IFS= read -r -d '' attr_name &&
+			IFS= read -r -d '' linguist_detectable &&
+			IFS= read -r -d '' attr_path &&
+			IFS= read -r -d '' attr_name &&
+			IFS= read -r -d '' linguist_language; do
+			: "$attr_name" "$attr_path"
+			source_path="$root/$file_path"
+			[[ -f "$source_path" && ! -L "$source_path" ]] || continue
+			if _dotfiles_tk_path_is_lock "$file_path"; then
+				printf '%s\0' "$file_path" >>"$lock_files"
+				continue
+			fi
+			if _dotfiles_tk_attr_is_enabled "$linguist_generated" ||
+				_dotfiles_tk_attr_is_enabled "$generated" ||
+				_dotfiles_tk_attr_is_enabled "$linguist_vendored" ||
+				_dotfiles_tk_attr_is_enabled "$vendored" ||
+				_dotfiles_tk_attr_is_enabled "$linguist_documentation"; then
+				continue
+			fi
+			case "$linguist_detectable" in
+				unset | false) continue ;;
+			esac
+			[[ "$linguist_language" == "unspecified" ]] &&
+				linguist_language=""
+			# Patches duplicate source from elsewhere and Tokei has no Diff
+			# parser. Do not disguise them as another language just to count
+			# their non-blank lines as code.
+			case "$linguist_language" in
+				Diff | Patch) continue ;;
+			esac
+			printf '%s\0' "$file_path" >>"$selected_files"
+			if [[ -n "$linguist_language" ]] &&
+				extension="$(_dotfiles_tk_linguist_extension "$linguist_language")"; then
+				printf '%s\0%s\0' "$file_path" "$extension" >>"$mappings"
+			fi
+			selected=$((selected + 1))
+		done <"$attrs"
+	else
+		while IFS= read -r -d '' file_path; do
+			source_path="$root/$file_path"
+			[[ -f "$source_path" && ! -L "$source_path" ]] || continue
+			if _dotfiles_tk_path_is_lock "$file_path"; then
+				printf '%s\0' "$file_path" >>"$lock_files"
+				continue
+			fi
+			printf '%s\0' "$file_path" >>"$selected_files"
+			selected=$((selected + 1))
+		done <"$candidates"
+	fi
+
+	if ((locks_only)); then
+		if [[ -s "$lock_files" ]]; then
+			_dotfiles_tk_print_locks "$root" "$lock_files" 1
+		else
+			printf '%s\n' "tk: no dependency lockfiles under requested scope"
+		fi
+		exit 0
+	fi
+
+	if ((selected == 0)); then
+		printf '%s\n' "tk: no authored source files under requested scope" >&2
+		if [[ -s "$lock_files" ]] && ((machine_output == 0)); then
+			_dotfiles_tk_print_locks "$root" "$lock_files"
+		fi
+		exit 0
+	fi
+
+	# Git already decided which VCS-ignored untracked files are visible. Disable
+	# Tokei's second VCS-ignore pass so force-added tracked files remain counted,
+	# while retaining .ignore, .tokeignore, --exclude, and hidden-file behavior.
+	git -C "$root" ls-files -z --cached --others --exclude-standard \
+		--deduplicate --full-name -- \
+		'.ignore' ':(glob)**/.ignore' \
+		'.tokeignore' ':(glob)**/.tokeignore' >>"$selected_files" 2>/dev/null || true
+
+	if command -v rsync >/dev/null 2>&1; then
+		rsync -a --from0 --files-from="$selected_files" -- \
+			"$root/" "$mirror/" || exit
+	else
+		while IFS= read -r -d '' file_path; do
+			if _dotfiles_tk_stage_file "$root" "$mirror" "$file_path"; then
+				:
+			else
+				stage_status=$?
+				((stage_status == 10)) || exit "$stage_status"
+			fi
+		done <"$selected_files"
+	fi
+
+	while IFS= read -r -d '' file_path &&
+		IFS= read -r -d '' extension; do
+		source_path="$mirror/$file_path"
+		[[ -f "$source_path" ]] || continue
+		if [[ "$extension" == "__meson__" ]]; then
+			dest="$source_path.tk-language/meson.build"
+			dest_dir="${dest%/*}"
+			mkdir -p -- "$dest_dir" || exit
+		else
+			dest="$source_path.$extension"
+		fi
+		mv -- "$source_path" "$dest" || exit
+	done <"$mappings"
+
+	command tokei "${tokei_args[@]}" --hidden --no-ignore-vcs -- "$mirror"
+	tokei_status=$?
+	if ((tokei_status == 0 && machine_output == 0)) && [[ -s "$lock_files" ]]; then
+		_dotfiles_tk_print_locks "$root" "$lock_files"
+	fi
+	exit "$tokei_status"
+)

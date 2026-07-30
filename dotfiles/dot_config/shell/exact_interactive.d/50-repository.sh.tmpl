@@ -1,0 +1,116 @@
+# shellcheck disable=SC2154
+# B3 / Brewfile
+# Always use the repository Brewfile and report missing prerequisites clearly.
+
+_dotfiles_brewfile_path() {
+	printf '%s\n' "$_dotfiles_repo_path/Brewfile"
+}
+
+_dotfiles_brew_bundle() {
+	local brewfile
+
+	if ! command -v brew >/dev/null 2>&1; then
+		printf '%s\n' "brew is not installed" >&2
+		return 127
+	fi
+
+	brewfile="$(_dotfiles_brewfile_path)"
+	if [[ ! -f "$brewfile" ]]; then
+		printf '%s\n' "Brewfile not found: $brewfile" >&2
+		return 1
+	fi
+
+	command brew bundle --file "$brewfile" "$@"
+}
+
+brewfile() {
+	_dotfiles_brew_bundle "$@"
+}
+
+brewcheck() {
+	_dotfiles_brew_bundle check --verbose "$@"
+}
+
+brewup() {
+	_dotfiles_brew_bundle install --jobs auto --force-cleanup "$@"
+}
+
+# C1 / repository maintenance
+# update applies userland state, rebuild provisions the host, and check runs
+# syntax and lint validation.
+
+{{- if eq .chezmoi.os "darwin" }}
+update() {
+	(
+		cd "$_dotfiles_repo_path" &&
+			_dotfiles_ansible_playbook ansible/site.yml --tags userland "$@"
+	) || return
+	chezmoi apply --refresh-externals=auto --force || return
+	(
+		cd "$_dotfiles_repo_path" &&
+			_dotfiles_ansible_playbook ansible/site.yml --tags host "$@"
+	)
+}
+
+rebuild() {
+	(
+		cd "$_dotfiles_repo_path" &&
+			_dotfiles_ansible_playbook ansible/site.yml --tags userland "$@"
+	)
+}
+
+check() {
+	(
+		cd "$_dotfiles_repo_path" &&
+			_dotfiles_brew_bundle check --verbose &&
+			_dotfiles_ansible_playbook --syntax-check ansible/site.yml
+	)
+}
+
+micfix() {
+	free killall coreaudiod "$@"
+}
+{{- else }}
+update() {
+	(
+		cd "$_dotfiles_repo_path" &&
+			_dotfiles_ansible_playbook ansible/site.yml --tags userland
+	) || return
+	chezmoi apply --refresh-externals=auto --force || return
+	(
+		cd "$_dotfiles_repo_path" &&
+			_dotfiles_ansible_playbook ansible/site.yml --tags host
+	)
+}
+
+rebuild() {
+	(
+		cd "$_dotfiles_repo_path" &&
+			free env \
+				-u XDG_RUNTIME_DIR \
+				-u DBUS_SESSION_BUS_ADDRESS \
+				-u WAYLAND_DISPLAY \
+				-u DISPLAY \
+				-u SSH_AUTH_SOCK \
+				podman build \
+				--pull=newer \
+				--tag localhost/spectrum:local \
+				--file spectrum/Containerfile \
+				.
+	) || return
+	free bootc switch --transport containers-storage localhost/spectrum:local "$@"
+}
+
+check() {
+	(
+		cd "$_dotfiles_repo_path" &&
+			_dotfiles_brew_bundle check --verbose &&
+			just check &&
+			_dotfiles_ansible_playbook --syntax-check ansible/site.yml
+	)
+}
+
+micfix() {
+	systemctl --user restart pipewire pipewire-pulse wireplumber "$@"
+}
+{{- end }}

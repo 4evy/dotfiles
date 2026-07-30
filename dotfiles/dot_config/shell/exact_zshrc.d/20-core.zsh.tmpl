@@ -1,0 +1,63 @@
+# A2 / startup helpers
+# Resolve binaries before generated init scripts replace command names.
+
+_dotfiles_wrap_command() {
+  emulate -L zsh
+  local -r command_name=$1
+  local -r command_path=$2
+  eval "$command_name() { command ${(q)command_path} \"\$@\"; }"
+}
+
+# A3 / dotfiles repository
+# DOTFILES_REPO takes priority. macOS also checks ~/Developer/dotfiles before
+# falling back to ~/dotfiles.
+
+_dotfiles_repo_path="${DOTFILES_REPO:-}"
+if [[ -z "$_dotfiles_repo_path" ]]; then
+  case "$(uname -s 2>/dev/null)" in
+    Darwin)
+      _dotfiles_repo_candidates=("$HOME/Developer/dotfiles" "$HOME/dotfiles")
+      ;;
+    *)
+      _dotfiles_repo_candidates=("$HOME/dotfiles")
+      ;;
+  esac
+  for _dotfiles_repo_candidate in "${_dotfiles_repo_candidates[@]}"; do
+    [[ -f "$_dotfiles_repo_candidate/Justfile" ]] || continue
+    [[ -d "$_dotfiles_repo_candidate/ansible" ]] || continue
+    _dotfiles_repo_path="$_dotfiles_repo_candidate"
+    break
+  done
+fi
+if [[ -z "$_dotfiles_repo_path" ]]; then
+  _dotfiles_repo_path="$HOME/dotfiles"
+fi
+if [[ -d "$_dotfiles_repo_path" ]]; then
+  _dotfiles_repo_path="$(
+    cd -P -- "$_dotfiles_repo_path" 2>/dev/null &&
+      pwd ||
+      printf '%s\n' "$_dotfiles_repo_path"
+  )"
+fi
+unset _dotfiles_repo_candidate _dotfiles_repo_candidates
+
+_dotfiles_command_path() {
+  emulate -L zsh
+  (( $+commands[$1] )) || return 1
+  print -r -- "$commands[$1]"
+}
+
+# A4 / Ansible fallback
+# Use uvx when ansible-playbook is not installed yet.
+
+_dotfiles_ansible_playbook() {
+  emulate -L zsh
+  if command -v ansible-playbook >/dev/null 2>&1; then
+    ansible-playbook "$@"
+  elif command -v uvx >/dev/null 2>&1; then
+    uvx --from ansible-core ansible-playbook "$@"
+  else
+    print -u2 "ansible-playbook and uvx are not available"
+    return 127
+  fi
+}
