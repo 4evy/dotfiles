@@ -8,7 +8,7 @@ let
   # Import the rootfs once. Taking each local file as an independent Nix path
   # would create another single-file store object for every shared policy.
   rootfs = builtins.path {
-    path = ../../files/system;
+    path = ../../bluebuild/files/system;
     name = "spectrum-rootfs";
   };
 

@@ -210,12 +210,12 @@
           shfmt = {
             includes = lib.mkAfter [
               "dotfiles/dot_local/bin/executable_*"
-              "files/system/usr/bin/*"
+              "bluebuild/files/system/usr/bin/*"
             ];
             excludes = [
               "dotfiles/dot_local/bin/executable_ghostty-dreamy-swirl.ts"
               "dotfiles/dot_local/bin/executable_helix-rumdl-lsp"
-              "files/system/usr/bin/open"
+              "bluebuild/files/system/usr/bin/open"
             ];
             options = lib.mkAfter [ "-ci" ];
           };
