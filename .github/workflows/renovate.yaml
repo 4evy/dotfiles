@@ -9,11 +9,16 @@ on:
     paths:
       - .tool-versions
       - .github/renovate.json
+      - .github/renovate/bun.lock
+      - .github/renovate/package.json
       - .github/workflows/renovate.yaml
       - .github/workflows/validate-renovate.yaml
-      - bun.lock
-      - package.json
+      - ansible/roles/system/defaults/main/macos.yml
+      - packages/dotfiles-python/src/workstation/apps/helium.py
       - pyproject.toml
+      - npins/sources.json
+      - bluebuild/recipes/spectrum.yml
+      - bluebuild/recipes/spectrum.lock
   workflow_dispatch: null
 
 concurrency:
@@ -49,15 +54,18 @@ jobs:
           bun-version-file: .tool-versions
 
       - name: Install Renovate
-        run: bun install --frozen-lockfile
+        run: bun install --cwd .github/renovate --frozen-lockfile
 
       - name: Install uv
         uses: astral-sh/setup-uv@d31148d669074a8d0a63714ba94f3201e7020bc3 # v8.3.0
         with:
           version-file: .tool-versions
 
+      - name: Install Determinate Nix
+        uses: DeterminateSystems/determinate-nix-action@d96678350ffd6a456235832eb11e1c491589b7bb # v3.21.8
+
       - name: Run Renovate
-        run: npm exec -- renovate
+        run: bun --cwd .github/renovate run renovate
         env:
           LOG_LEVEL: info
           RENOVATE_TOKEN: ${{ github.token }}
@@ -65,3 +73,5 @@ jobs:
           RENOVATE_GIT_PRIVATE_KEY: ${{ secrets.RENOVATE_GIT_PRIVATE_KEY }}
           RENOVATE_ONBOARDING: "false"
           RENOVATE_REPOSITORIES: '["${{ github.repository }}"]'
+          RENOVATE_ALLOWED_COMMANDS: >-
+            ["^nix shell nixpkgs#npins --command npins update$"]

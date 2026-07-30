@@ -26,17 +26,48 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Track the pinned Spectrum Bluefin base image in defaults and workflows",
+      "description": "Track the pinned Spectrum Bluefin base image",
       "managerFilePatterns": [
-        "/^Justfile$/",
-        "/^\\.github/workflows/spectrum\\.yaml$/"
+        "/^bluebuild\\/recipes\\/spectrum\\.yml$/",
+        "/^bluebuild\\/recipes\\/spectrum\\.lock$/"
       ],
       "matchStrings": [
-        "base_image := env\\(\"SPECTRUM_BLUEFIN_BASE_IMAGE\", \"(?<packageName>[^\\s:@]+(?:/[^\\s:@]+)+):(?<currentValue>[^\\s@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\"\\)",
-        "BLUEFIN_BASE_IMAGE: (?<packageName>[^\\s:@]+(?:/[^\\s:@]+)+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]+)"
+        "registry:\\s+ghcr\\.io\\n\\s+repository:\\s+projectbluefin/bluefin-nvidia\\n\\s+tag:\\s+(?<currentValue>[^\\s@]+)\\n\\s+digest:\\s+(?<currentDigest>sha256:[a-f0-9]+)",
+        "ghcr\\.io/projectbluefin/bluefin-nvidia:(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]+)"
       ],
+      "depNameTemplate": "ghcr.io/projectbluefin/bluefin-nvidia",
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the pinned Go Helium profile configurer",
+      "managerFilePatterns": [
+        "/^packages\\/dotfiles-python\\/src\\/workstation\\/apps\\/helium\\.py$/"
+      ],
+      "matchStrings": ["browser@(?<currentDigest>[a-f0-9]{40})"],
+      "depNameTemplate": "4evy/browser",
+      "datasourceTemplate": "github-digest",
+      "currentValueTemplate": "HEAD",
+      "versioningTemplate": "git"
+    },
+    {
+      "customType": "jsonata",
+      "description": "Discover non-frozen npins GitHub branch revisions",
+      "fileFormat": "json",
+      "managerFilePatterns": ["/^npins\\/sources\\.json$/"],
+      "matchStrings": [
+        "$each(pins, function($v, $k) { $v.type = \"Git\" and $v.repository.type = \"GitHub\" and $not($v.frozen = true) ? { \"depName\": $v.repository.owner & \"/\" & $v.repository.repo, \"currentValue\": $v.branch, \"currentDigest\": $v.revision, \"datasource\": \"github-digest\", \"versioning\": \"git\", \"depType\": \"npins\" } })"
+      ]
+    },
+    {
+      "customType": "jsonata",
+      "description": "Discover non-frozen npins GitHub release tags",
+      "fileFormat": "json",
+      "managerFilePatterns": ["/^npins\\/sources\\.json$/"],
+      "matchStrings": [
+        "$each(pins, function($v, $k) { $v.type = \"GitRelease\" and $v.repository.type = \"GitHub\" and $not($v.frozen = true) ? { \"depName\": $v.repository.owner & \"/\" & $v.repository.repo, \"currentValue\": $v.version, \"datasource\": \"github-tags\", \"versioning\": \"loose\", \"depType\": \"npins\" } })"
+      ]
     }
   ],
   "packageRules": [
@@ -55,9 +86,21 @@
     },
     {
       "description": "Keep the Spectrum Bluefin base image on the selected stream",
-      "matchDepNames": ["ghcr.io/ublue-os/bluefin-nvidia-open"],
+      "matchDepNames": ["ghcr.io/projectbluefin/bluefin-nvidia"],
       "matchUpdateTypes": ["digest", "pin", "pinDigest"],
       "schedule": ["at any time"]
+    },
+    {
+      "description": "Let npins own grouped lock updates and hash regeneration",
+      "matchManagers": ["custom.jsonata"],
+      "matchDepTypes": ["npins"],
+      "groupName": "npins sources",
+      "groupSlug": "npins-sources",
+      "postUpgradeTasks": {
+        "commands": ["nix shell nixpkgs#npins --command npins update"],
+        "fileFilters": ["npins/sources.json"],
+        "executionMode": "update"
+      }
     }
   ]
 }

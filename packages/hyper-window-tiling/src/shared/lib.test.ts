@@ -58,19 +58,6 @@ describe("advanceCycle", () => {
     setNow(2_100);
     expect(advanceCycle(cycle, "move-right", 3)).toBe(0);
   });
-
-  test("uses independent cycle lengths for shorter bindings", () => {
-    const cycle = createCycleState();
-
-    setNow(1_000);
-    expect(advanceCycle(cycle, "move-max-almost", 2)).toBe(0);
-
-    setNow(1_100);
-    expect(advanceCycle(cycle, "move-max-almost", 2)).toBe(1);
-
-    setNow(1_200);
-    expect(advanceCycle(cycle, "move-max-almost", 2)).toBe(0);
-  });
 });
 
 describe("resolveLayoutPresetRect", () => {

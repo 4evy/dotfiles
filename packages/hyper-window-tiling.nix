@@ -2,8 +2,8 @@
   stdenv,
   lib,
   bun,
+  bun2nix,
   glib,
-  writableTmpDirAsHomeHook,
 }:
 let
   repositoryRoot = ../.;
@@ -12,16 +12,13 @@ let
   gnomeMetadata = builtins.fromJSON (builtins.readFile (packageRoot + /gnome/metadata.json));
   kdeMetadata = builtins.fromJSON (builtins.readFile (packageRoot + /kde/metadata.json));
   inherit (packageMetadata) version;
-  pname = packageMetadata.name;
   extensionUuid = gnomeMetadata.uuid;
   pluginId = kdeMetadata.KPlugin.Id;
 
   src = lib.fileset.toSource {
     root = repositoryRoot;
     fileset = lib.fileset.unions [
-      (repositoryRoot + /bun.lock)
-      (repositoryRoot + /package.json)
-      (repositoryRoot + /dotfiles/package.json)
+      (packageRoot + /bun.lock)
       (packageRoot + /gnome/metadata.json)
       (packageRoot + /gnome/schemas)
       (packageRoot + /kde/metadata.json)
@@ -31,76 +28,43 @@ let
     ];
   };
 
-  nodeModulesHash = {
-    "x86_64-linux" = "sha256-RhXJXYE15AcDU8uz6HLF6KY0gupXok4jzyxH2R6DXok=";
+  bunDeps = bun2nix.fetchBunDeps {
+    bunNix = ./hyper-window-tiling/bun.nix;
   };
-  bunOS = "linux";
-  bunCPU =
-    {
-      "aarch64" = "arm64";
-      "x86_64" = "x64";
-    }
-    .${stdenv.hostPlatform.parsed.cpu.name}
-      or (throw "${pname}: unsupported Bun CPU ${stdenv.hostPlatform.parsed.cpu.name}");
 
-  node_modules = stdenv.mkDerivation {
-    pname = "${pname}-node_modules";
-    inherit version src;
+  buildPhaseFor = script: ''
+    runHook preBuild
+
+    bun run ${script}
+
+    runHook postBuild
+  '';
+
+  workspaceCheck = stdenv.mkDerivation {
+    pname = "hyper-window-tiling-workspace-check";
+    inherit version src bunDeps;
     strictDeps = true;
 
     postUnpack = ''
       sourceRoot="$sourceRoot/packages/hyper-window-tiling"
     '';
 
-    impureEnvVars = lib.fetchers.proxyImpureEnvVars ++ [
-      "GIT_PROXY_COMMAND"
-      "SOCKS_SERVER"
-    ];
-
     nativeBuildInputs = [
       bun
-      writableTmpDirAsHomeHook
+      bun2nix.hook
     ];
 
-    dontConfigure = true;
-    dontFixup = true;
-
-    buildPhase = ''
-      runHook preBuild
-
-      export BUN_INSTALL_CACHE_DIR=$(mktemp -d)
-      bun install --no-progress --frozen-lockfile --filter ${pname} --backend=copyfile --os=${bunOS} --cpu=${bunCPU}
-
-      runHook postBuild
-    '';
+    buildPhase = buildPhaseFor "check";
 
     installPhase = ''
       runHook preInstall
-
-      mkdir -p $out
-      cp -R ../../node_modules $out/node_modules
-
+      touch "$out"
       runHook postInstall
     '';
 
-    outputHash =
-      nodeModulesHash.${stdenv.hostPlatform.system}
-        or (throw "${pname}: Bun node_modules hash is not packaged for ${stdenv.hostPlatform.system}");
-    outputHashAlgo = "sha256";
-    outputHashMode = "recursive";
     doCheck = false;
     doInstallCheck = false;
   };
-
-  buildPhaseFor = script: ''
-    runHook preBuild
-
-    cp -R ${node_modules}/node_modules ../../node_modules
-    patchShebangs ../../node_modules
-    bun run ${script}
-
-    runHook postBuild
-  '';
 in
 {
   gnome = stdenv.mkDerivation {
@@ -114,8 +78,10 @@ in
 
     nativeBuildInputs = [
       bun
+      bun2nix.hook
       glib
     ];
+    inherit bunDeps;
 
     buildPhase = buildPhaseFor "build:gnome";
 
@@ -135,7 +101,10 @@ in
     doCheck = false;
     doInstallCheck = false;
 
-    passthru.extensionUuid = extensionUuid;
+    passthru = {
+      inherit extensionUuid;
+      tests.workspace = workspaceCheck;
+    };
 
     meta = {
       description = "Hyper-key window tiling extension for GNOME Shell";
@@ -155,7 +124,9 @@ in
 
     nativeBuildInputs = [
       bun
+      bun2nix.hook
     ];
+    inherit bunDeps;
 
     buildPhase = buildPhaseFor "build:kde";
 

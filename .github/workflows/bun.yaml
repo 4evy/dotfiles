@@ -43,7 +43,9 @@ jobs:
           bun-version-file: .tool-versions
 
       - name: Install Dependencies
-        run: bun install --frozen-lockfile
+        run: |
+          bun install --frozen-lockfile
+          bun install --cwd packages/hyper-window-tiling --frozen-lockfile
 
       - name: Check Workspace
         run: bun run check

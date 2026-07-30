@@ -5,10 +5,10 @@ on:
     paths: &renovate-paths
       - .tool-versions
       - .github/renovate.json
+      - .github/renovate/bun.lock
+      - .github/renovate/package.json
       - .github/workflows/renovate.yaml
       - .github/workflows/validate-renovate.yaml
-      - bun.lock
-      - package.json
   push:
     branches:
       - master
@@ -45,5 +45,5 @@ jobs:
 
       - name: Validate Renovate Config
         run: |
-          bun install --frozen-lockfile
-          npm exec -- renovate-config-validator .github/renovate.json
+          bun install --cwd .github/renovate --frozen-lockfile
+          bun --cwd .github/renovate run validate
