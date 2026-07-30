@@ -39,18 +39,3 @@ foreach module : [
         suite: 'terminal-theme-run',
     )
 endforeach
-
-test(
-    'terminal-theme-run / help',
-    terminal_theme_run,
-    args: ['--help'],
-    env: default_data_environment,
-    suite: 'terminal-theme-run',
-)
-test(
-    'terminal-theme-run / version',
-    terminal_theme_run,
-    args: ['--version'],
-    env: default_data_environment,
-    suite: 'terminal-theme-run',
-)

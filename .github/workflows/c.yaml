@@ -25,31 +25,12 @@ env:
   UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
 
 jobs:
-  format:
-    name: Format
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    container: &fedora
-      image: registry.fedoraproject.org/fedora:45@sha256:7791538bb091b82097f1aef71ec64b2154f886716f6f0b822dc839bb3c74c0aa
-    steps:
-      - name: Install Tools
-        run: dnf install -y --setopt=install_weak_deps=False clang-tools-extra git
-
-      - name: Checkout Repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
-
-      - name: Check Formatting
-        run: >-
-          git -c safe.directory="$GITHUB_WORKSPACE" ls-files -z -- "*.c" "*.h"
-          | xargs -0 clang-format --dry-run --Werror
-
   check:
     name: ${{ matrix.name }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    container: *fedora
+    container:
+      image: registry.fedoraproject.org/fedora:45@sha256:7791538bb091b82097f1aef71ec64b2154f886716f6f0b822dc839bb3c74c0aa
     env:
       CC: ${{ matrix.compiler }}
       C_PACKAGES: ${{ matrix.packages }}

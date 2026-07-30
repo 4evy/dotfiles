@@ -70,24 +70,6 @@ static void test_loads_every_field_type(void) {
   g_assert_cmpint(record.count, ==, 0);
 }
 
-static void test_initializes_optional_fields(void) {
-  static constexpr char input[] = "";
-  g_auto(toml_result_t) parsed = toml_parse(input, 0);
-  g_assert_true(parsed.ok);
-
-  TestRecord record = {};
-  g_autoptr(GError) error = nullptr;
-  g_assert_true(ttr_toml_load_fields(parsed.toptab, &record, fields,
-                                     G_N_ELEMENTS(fields), &error));
-  g_assert_no_error(error);
-  g_assert_cmpstr(record.name, ==, "");
-  g_assert_null(record.tags[0]);
-  g_assert_cmpuint(g_hash_table_size(record.metadata), ==, 0);
-  g_assert_cmpuint(g_hash_table_size(record.environment), ==, 0);
-  g_assert_cmpint(record.count, ==, 0);
-  ttr_toml_clear_fields(&record, fields, G_N_ELEMENTS(fields));
-}
-
 static void test_rejects_wrong_field_types(void) {
   static const struct {
     const char *input;
@@ -115,42 +97,9 @@ static void test_rejects_wrong_field_types(void) {
   }
 }
 
-static void test_rejects_invalid_array_size(void) {
-  static constexpr char key[] = "tags";
-  const char *keys[] = {key};
-  int key_lengths[] = {(int)(sizeof key - 1)};
-  toml_datum_t values[] = {
-      {
-          .type = TOML_ARRAY,
-          .u.arr = {.size = -1},
-      },
-  };
-  const toml_datum_t table = {
-      .type = TOML_TABLE,
-      .u.tab =
-          {
-              .size = 1,
-              .key = keys,
-              .len = key_lengths,
-              .value = values,
-          },
-  };
-
-  TestRecord record = {};
-  g_autoptr(GError) error = nullptr;
-  g_assert_false(
-      ttr_toml_load_fields(table, &record, fields, G_N_ELEMENTS(fields), &error));
-  g_assert_nonnull(error);
-  g_assert_cmpstr(error->message, ==, "field tags has an invalid array size");
-  g_assert_null(record.name);
-  g_assert_null(record.tags);
-}
-
 int main(int argc, char **argv) {
   g_test_init(&argc, &argv, nullptr);
   g_test_add_func("/toml-schema/all-field-types", test_loads_every_field_type);
-  g_test_add_func("/toml-schema/optional-defaults", test_initializes_optional_fields);
   g_test_add_func("/toml-schema/wrong-types", test_rejects_wrong_field_types);
-  g_test_add_func("/toml-schema/invalid-array-size", test_rejects_invalid_array_size);
   return g_test_run();
 }

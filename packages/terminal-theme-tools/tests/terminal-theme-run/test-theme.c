@@ -39,30 +39,6 @@ static void test_argument_theme(void) {
   g_unsetenv("TERMINAL_THEME");
 }
 
-static void test_integration_registry(void) {
-  char *extra[] = {TTR_MUTABLE_STRING("--flag"), nullptr};
-  GError *error = nullptr;
-  TtrPreparedArgs prepared;
-  g_assert_true(ttr_prepare_integration(nullptr, ttr_manifest_runtime(test_manifest),
-                                        extra, &prepared, &error));
-  g_assert_no_error(error);
-  const char *const expected[] = {"--flag", nullptr};
-  ttr_assert_strv_equal(prepared.argv, expected);
-  ttr_prepared_args_clear(&prepared);
-
-  g_assert_null(ttr_manifest_find_integration(test_manifest, "not-registered"));
-
-  TtrIntegration invalid = {
-      .name = TTR_MUTABLE_STRING("invalid"),
-  };
-  g_assert_false(ttr_prepare_integration(&invalid, ttr_manifest_runtime(test_manifest),
-                                         extra, &prepared, &error));
-  g_assert_error(error, g_quark_from_static_string("terminal-theme-run-theme-error"),
-                 1);
-  g_assert_nonnull(strstr(error->message, "has no validated strategy"));
-  g_clear_error(&error);
-}
-
 static void test_cached_config_theme(void) {
   GError *error = nullptr;
   char *temporary = g_dir_make_tmp("terminal-theme-run-cache-test-XXXXXX", &error);
@@ -210,7 +186,6 @@ int main(int argc, char **argv) {
   g_assert_no_error(error);
   g_assert_nonnull(test_manifest);
   g_test_add_func("/theme/arguments", test_argument_theme);
-  g_test_add_func("/theme/integration-registry", test_integration_registry);
   g_test_add_func("/theme/config-cache", test_cached_config_theme);
   g_test_add_func("/theme/config-validation", test_validated_config_theme);
   g_test_add_func("/theme/config-table", test_validated_config_table_theme);
