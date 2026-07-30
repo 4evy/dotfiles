@@ -27,9 +27,9 @@ have_command() {
 has_ansible_become_prompt_arg() {
 	for arg; do
 		case $arg in
-		--ask-become-pass | -K | --become-password-file | --become-password-file=* | --become-pass-file | --become-pass-file=*)
-			return 0
-			;;
+			--ask-become-pass | -K | --become-password-file | --become-password-file=* | --become-pass-file | --become-pass-file=*)
+				return 0
+				;;
 		esac
 	done
 
@@ -74,12 +74,12 @@ cleanup() {
 		[ -n "${tmp_dir_parent-}" ] &&
 		[ -d "$tmp_dir" ]; then
 		case $tmp_dir in
-		"$tmp_dir_parent"/dotfiles-bootstrap.*)
-			rm -rf "$tmp_dir"
-			;;
-		*)
-			printf 'warning: refusing to remove unexpected temporary path: %s\n' "$tmp_dir" >&2
-			;;
+			"$tmp_dir_parent"/dotfiles-bootstrap.*)
+				rm -rf "$tmp_dir"
+				;;
+			*)
+				printf 'warning: refusing to remove unexpected temporary path: %s\n' "$tmp_dir" >&2
+				;;
 		esac
 	fi
 	tmp_dir=
@@ -94,8 +94,8 @@ make_tmp_dir() {
 	fi
 
 	case $tmp_dir_parent in
-	/*) ;;
-	*) die "TMPDIR must be an absolute path: $tmp_dir_parent" ;;
+		/*) ;;
+		*) die "TMPDIR must be an absolute path: $tmp_dir_parent" ;;
 	esac
 
 	if [ ! -d "$tmp_dir_parent" ]; then
@@ -155,7 +155,7 @@ verify_sha256() {
 	sha256_path=$2
 
 	case $expected_sha256 in
-	sha256:*) expected_sha256=${expected_sha256#sha256:} ;;
+		sha256:*) expected_sha256=${expected_sha256#sha256:} ;;
 	esac
 
 	if [ -z "$expected_sha256" ]; then
@@ -217,11 +217,11 @@ install_ansible_collections() {
 
 script_path=$0
 case $script_path in
-*/*) ;;
-*)
-	script_path=$(command -v "$script_path") ||
-		die "failed to resolve script path: $0"
-	;;
+	*/*) ;;
+	*)
+		script_path=$(command -v "$script_path") ||
+			die "failed to resolve script path: $0"
+		;;
 esac
 
 script_dir=$(
@@ -242,29 +242,29 @@ kernel_name=$(uname -s)
 machine_arch=$(uname -m)
 
 case $kernel_name in
-Darwin | Linux) ;;
-*) die "unsupported operating system for this bootstrap: $kernel_name" ;;
+	Darwin | Linux) ;;
+	*) die "unsupported operating system for this bootstrap: $kernel_name" ;;
 esac
 
 case $kernel_name in
-Darwin)
-	case $machine_arch in
-	arm64)
-		homebrew_prefix=/opt/homebrew
+	Darwin)
+		case $machine_arch in
+			arm64)
+				homebrew_prefix=/opt/homebrew
+				;;
+			x86_64)
+				homebrew_prefix=/usr/local
+				;;
+			*)
+				die "unsupported macOS architecture for Homebrew: $machine_arch"
+				;;
+		esac
+		homebrew_path=$homebrew_prefix/opt/coreutils/libexec/gnubin:$homebrew_prefix/opt/findutils/libexec/gnubin:$homebrew_prefix/opt/gnu-sed/libexec/gnubin:$homebrew_prefix/opt/grep/libexec/gnubin:$homebrew_prefix/opt/gawk/libexec/gnubin:$homebrew_prefix/opt/gnu-tar/libexec/gnubin:$homebrew_prefix/opt/gnu-which/libexec/gnubin:$homebrew_prefix/opt/diffutils/libexec/gnubin:$homebrew_prefix/opt/make/libexec/gnubin:$homebrew_prefix/opt/gnu-getopt/bin:$homebrew_prefix/bin:$homebrew_prefix/sbin:$PATH
 		;;
-	x86_64)
-		homebrew_prefix=/usr/local
+	Linux)
+		homebrew_prefix=/home/linuxbrew/.linuxbrew
+		homebrew_path=$homebrew_prefix/bin:$homebrew_prefix/sbin:$PATH
 		;;
-	*)
-		die "unsupported macOS architecture for Homebrew: $machine_arch"
-		;;
-	esac
-	homebrew_path=$homebrew_prefix/opt/coreutils/libexec/gnubin:$homebrew_prefix/opt/findutils/libexec/gnubin:$homebrew_prefix/opt/gnu-sed/libexec/gnubin:$homebrew_prefix/opt/grep/libexec/gnubin:$homebrew_prefix/opt/gawk/libexec/gnubin:$homebrew_prefix/opt/gnu-tar/libexec/gnubin:$homebrew_prefix/opt/gnu-which/libexec/gnubin:$homebrew_prefix/opt/diffutils/libexec/gnubin:$homebrew_prefix/opt/make/libexec/gnubin:$homebrew_prefix/opt/gnu-getopt/bin:$homebrew_prefix/bin:$homebrew_prefix/sbin:$PATH
-	;;
-Linux)
-	homebrew_prefix=/home/linuxbrew/.linuxbrew
-	homebrew_path=$homebrew_prefix/bin:$homebrew_prefix/sbin:$PATH
-	;;
 esac
 
 homebrew_bin=$homebrew_prefix/bin/brew
