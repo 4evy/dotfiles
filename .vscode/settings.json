@@ -34,6 +34,20 @@
   "files.trimTrailingWhitespace": true,
   "files.trimFinalNewlines": true,
   "files.insertFinalNewline": true,
+  "json.schemas": [
+    {
+      "fileMatch": ["/spectrum/bluebuild/dnf.json"],
+      "url": "https://schema.blue-build.org/modules/dnf-v1.json"
+    },
+    {
+      "fileMatch": ["/spectrum/bluebuild/files.json"],
+      "url": "https://schema.blue-build.org/modules/files-v1.json"
+    },
+    {
+      "fileMatch": ["/spectrum/bluebuild/systemd.json"],
+      "url": "https://schema.blue-build.org/modules/systemd-v1.json"
+    }
+  ],
   "explorer.excludeGitIgnore": true,
   "C_Cpp.default.compileCommands": "${workspaceFolder}/build/meson/compile_commands.json",
   "C_Cpp.default.configurationProvider": "mesonbuild.mesonbuild",

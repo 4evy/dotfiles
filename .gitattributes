@@ -1,3 +1,8 @@
+# Keep source files portable and prevent binary assets from entering text
+# normalization or diff pipelines.
+* text=auto eol=lf
+*.png binary
+
 # Include data/config languages in GitHub language statistics. Linguist omits
 # these from the language breakdown by default, but this repo treats them as
 # first-class source for editor, OS, provisioning, and application behavior.
@@ -25,6 +30,7 @@
 *.ghostty.tmpl linguist-language=INI linguist-detectable
 # Linguist has no HJSON entry; JSON5 is the closest supported data syntax.
 *.hjson.tmpl linguist-language=JSON5 linguist-detectable
+*.j2 linguist-language=Jinja linguist-detectable
 *.jsonc.tmpl linguist-language=jsonc linguist-detectable
 *.json.tmpl linguist-language=JSON linguist-detectable
 *.kdl.tmpl linguist-language=KDL linguist-detectable
@@ -80,7 +86,7 @@ Containerfile linguist-language=Dockerfile linguist-detectable
 # s-expression syntax, so Scheme is the closest supported highlighter.
 dotfiles/dot_config/kanata/*.kbd linguist-language=Scheme
 meson.options linguist-language=Meson
-packages/terminal-theme-tools/src/terminal-theme-run/runner-fields.def linguist-language=C
+packages/terminal-theme-tools/src/terminal-theme-run/*.def linguist-language=C
 packages/terminal-theme-tools/subprojects/*.wrap linguist-language=INI linguist-detectable
 **/*.patch -whitespace linguist-language=Diff linguist-detectable
 

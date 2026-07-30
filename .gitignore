@@ -1,46 +1,45 @@
-# ignore macOS and Linux files
+# OS metadata
 .DS_Store
 Thumbs.db
-*.DS_Store
-*.swp
 
+# Editor and IDE state
+*.swp
+*~
+.vs/
+.vscode/
+!/.vscode/
+!/.vscode/**
+
+# Local environments and tool state
 .devenv/
 .ansible/
 .jj/
 .venv/
+.ruby-lsp/
 .cache/
 .complexipy_cache/
+.mypy_cache/
 .pytest_cache/
 .ruff_cache/
 .rumdl_cache/
-__pycache__/
-*.py[cod]
 .docker-cache/
-fallow/
-**/fallow/
 .fallow/
-**/.fallow/
-result
+fallow/
 
-# IDEs
-**/.vs/
-**/.vscode/
-!/.vscode/
-!/.vscode/settings.json
+# Local secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Dependencies
 **/packages/
 !/packages/
 !/packages/**
-!/spectrum/image/packages/
-!/spectrum/image/packages/required.txt
-/packages/**/.DS_Store
-**/__pycache__/
-**/*.py[cod]
+__pycache__/
+*.py[cod]
 node_modules/
-**/node_modules/
-
-**/target/
-.coverage
-lcov.info
+target/
 
 # Generated outputs
 build/
@@ -49,7 +48,15 @@ builddir/
 dist/
 *.egg-info/
 .dotfiles-gnome-extension/
+result
 tmp/
+
+# Test and coverage outputs
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+lcov.info
 
 # Meson wrap downloads
 /packages/terminal-theme-tools/subprojects/*/
