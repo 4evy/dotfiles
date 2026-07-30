@@ -10,9 +10,9 @@ from workstation.errors import DotfilesError
 from workstation.lib.commands import require_commands, run
 from workstation.lib.files import (
     ensure_directory,
-    install_file_if_changed,
     require_directory,
 )
+from workstation.lib.http import download
 from workstation.lib.paths import asset_path
 from workstation.lib.settings import EnvironmentSettings
 
@@ -20,6 +20,7 @@ from workstation.lib.settings import EnvironmentSettings
 BROWSER_GO_PACKAGE = (
     "downloads.com/4evy/browser/cmd/browser@b4f39de39c1d2cf516e78cc2a52803777f6fb02c"
 )
+PROFILE_AVATAR_URL = "https://github.com/4evy.png?size=256"
 CUSTOM_AVATAR_FILENAME = "Google Profile Picture.png"
 
 
@@ -69,6 +70,13 @@ def _profile_dir(platform_name: Literal["linux", "macos"]) -> Path:
     return config_home / "net.imput.helium/Default"
 
 
+def _install_profile_avatar(platform_name: Literal["linux", "macos"]) -> Path:
+    return download(
+        PROFILE_AVATAR_URL,
+        _profile_dir(platform_name) / CUSTOM_AVATAR_FILENAME,
+    )
+
+
 def _configure(
     platform_name: Literal["linux", "macos"],
     root: Path,
@@ -86,11 +94,7 @@ def _configure(
     ensure_directory(root)
     ensure_directory(bin_dir)
     ensure_directory(installer_bin)
-    profile = ensure_directory(_profile_dir(platform_name))
-    install_file_if_changed(
-        _helium_asset("helium-profile-avatar.png"),
-        profile / CUSTOM_AVATAR_FILENAME,
-    )
+    _install_profile_avatar(platform_name)
     config = _helium_asset("helium.toml")
     run(
         ("go", "install", BROWSER_GO_PACKAGE),

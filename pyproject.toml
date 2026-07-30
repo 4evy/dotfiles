@@ -67,10 +67,7 @@ packages = [
 
 [tool.setuptools.data-files]
 "share/dotfiles-python/npins" = ["npins/sources.json"]
-"share/dotfiles-python/apps/helium" = [
-  "browser/helium.toml",
-  "browser/helium-profile-avatar.png",
-]
+"share/dotfiles-python/apps/helium" = ["browser/helium.toml"]
 "share/dotfiles-python/apps/helium/settings" = ["browser/settings/*.json"]
 "share/dotfiles-python/host/apps" = [
   "packages/dotfiles-python/assets/host/apps/rustdesk.desktop",

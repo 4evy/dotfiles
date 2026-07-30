@@ -19,7 +19,6 @@ python314Packages.buildPythonApplication {
       ../ansible/roles/system/files/kmscon/kmscon-theme-config.py
       ../ansible/roles/system/templates/macos/tailscale-ssh-helper.py.in
       ../pyproject.toml
-      ../browser/helium-profile-avatar.png
       ../browser/helium.toml
       ../browser/settings
       ../ansible/tests

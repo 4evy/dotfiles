@@ -64,6 +64,7 @@ let
     name = "configure-helium";
     runtimeInputs = [
       pkgs.coreutils
+      pkgs.curl
       pkgs.gh
       pkgs.jq
     ];
@@ -72,8 +73,8 @@ let
       cache_home="''${XDG_CACHE_HOME:-$HOME/.cache}"
       profile_dir="$config_home/net.imput.helium/Default"
 
-      install -Dm0644 \
-        '${../../browser/helium-profile-avatar.png}' \
+      curl -fsSL 'https://github.com/4evy.png?size=256' |
+        install -Dm0644 /dev/stdin \
         "$profile_dir/Custom Avatar Picture.png"
 
       token="$(gh auth token 2>/dev/null || true)"
