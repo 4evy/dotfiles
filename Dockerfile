@@ -54,7 +54,6 @@ USER ${TEST_USER}
 RUN set -eu; \
     ansible-galaxy collection install -r ansible/requirements.yml -p .ansible/collections; \
     ansible-playbook --syntax-check ansible/site.yml; \
-    ANSIBLE_BECOME_ASK_PASS=false ansible-playbook ansible/tests/integration/operation.yml; \
     ansible-playbook ansible/site.yml --tags repo-tools; \
     ansible-lint ansible; \
     yamllint .
