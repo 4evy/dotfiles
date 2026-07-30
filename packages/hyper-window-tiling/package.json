@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "kwin-api": "6.0.9"
+    "kwin-api": "6.7.1"
   },
   "devDependencies": {
     "@girs/gjs": "4.1.0",

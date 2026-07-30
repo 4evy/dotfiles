@@ -21,7 +21,7 @@
       "name": "hyper-window-tiling",
       "version": "1.0.0",
       "dependencies": {
-        "kwin-api": "6.0.9",
+        "kwin-api": "6.7.1",
       },
       "devDependencies": {
         "@girs/gjs": "4.1.0",
@@ -935,7 +935,7 @@
 
     "klona": ["klona@2.0.6", "", {}, "sha512-dhG34DXATL5hSxJbIexCft8FChFXtmskoZYnoPWjXQuebWYCNkVeV3KkGegCK9CP1oswI/vQibS2GY7Em/sJJA=="],
 
-    "kwin-api": ["kwin-api@6.0.9", "", {}, "sha512-qxUuVUV6zK3KV9iR20pd6zF2UScjhggPtzY/AclcYLhzUPJFBt7xM7gdAFtSmiHoBIq+uZjnaxXkiZgTSzm/ZQ=="],
+    "kwin-api": ["kwin-api@6.7.1", "", {}, "sha512-I3CoszQa3N63/MVbL6mVGLpTr+zz/ivli417scAIFeIBLhGuJxv2msyVLbx+OglauCj+Mv7XLjIH8HWrRCQeow=="],
 
     "lines-and-columns": ["lines-and-columns@1.2.4", "", {}, "sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg=="],
 
