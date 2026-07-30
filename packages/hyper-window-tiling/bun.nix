@@ -313,9 +313,9 @@
     url = "https://registry.npmjs.org/fallow/-/fallow-3.9.1.tgz";
     hash = "sha512-OVbuoRAz5LDWLAjB64905VnlT1MwPUmuPBBKJ0KYnKejX24edJI0x5degiWf2By6UZQAJBRx2zqflSH2sC+Bcg==";
   };
-  "kwin-api@6.0.9" = fetchurl {
-    url = "https://registry.npmjs.org/kwin-api/-/kwin-api-6.0.9.tgz";
-    hash = "sha512-qxUuVUV6zK3KV9iR20pd6zF2UScjhggPtzY/AclcYLhzUPJFBt7xM7gdAFtSmiHoBIq+uZjnaxXkiZgTSzm/ZQ==";
+  "kwin-api@6.7.1" = fetchurl {
+    url = "https://registry.npmjs.org/kwin-api/-/kwin-api-6.7.1.tgz";
+    hash = "sha512-I3CoszQa3N63/MVbL6mVGLpTr+zz/ivli417scAIFeIBLhGuJxv2msyVLbx+OglauCj+Mv7XLjIH8HWrRCQeow==";
   };
   "typescript@7.0.2" = fetchurl {
     url = "https://registry.npmjs.org/typescript/-/typescript-7.0.2.tgz";
