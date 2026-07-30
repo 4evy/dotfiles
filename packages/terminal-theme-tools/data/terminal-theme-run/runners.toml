@@ -24,4 +24,3 @@ integration = "btop"
 [[runner]]
 name = "helix"
 programs = ["~/.local/share/dotfiles/helix-tip/bin/hx", "hx", "helix"]
-integration = "helix"

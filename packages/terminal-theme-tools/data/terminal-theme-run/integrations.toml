@@ -29,18 +29,3 @@ temporary_prefix = "terminal-theme-run-btop-XXXXXX"
 temporary_location = "cache"
 cache_subdirectory = "terminal-theme-run/btop"
 quote = '"'
-
-[[integration]]
-name = "helix"
-strategy = "config"
-display_name = "Helix"
-dark_theme = "catppuccin_frappe_pink"
-light_theme = "catppuccin_latte_pink"
-default_config = ".config/helix/config.toml"
-assignment = "theme"
-config_flags = ["--config", "-c"]
-config_output_flag = "--config"
-temporary_prefix = "terminal-theme-run-helix-XXXXXX"
-temporary_location = "system"
-quote = "'"
-validation = "toml"

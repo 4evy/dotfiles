@@ -1,25 +1,17 @@
-terminal_theme_run_sources = files(
-    'context.c',
-    'manifest.c',
-    'runner.c',
-    'terminal.c',
-    'theme.c',
-    'toml-schema.c',
-    'util.c',
-)
+subdir('config')
+subdir('launch')
+subdir('support')
+subdir('theme')
 
-terminal_theme_run_declarative_sources = files(
-    'integration-fields.def',
-    'integration-strategies.def',
-    'runner-fields.def',
-    'runtime-fields.def',
-    'toml-field-types.def',
-)
+terminal_theme_run_sources = terminal_theme_run_config_sources
+terminal_theme_run_sources += terminal_theme_run_launch_sources
+terminal_theme_run_sources += terminal_theme_run_support_sources
+terminal_theme_run_sources += terminal_theme_run_theme_sources
 
 terminal_theme_run_lib = static_library(
     'terminal-theme-run-internal',
     terminal_theme_run_sources,
-    c_args: strict_c_args,
+    c_args: project_c_args,
     extra_files: terminal_theme_run_data + terminal_theme_run_declarative_sources,
     include_directories: [include_directories('.'), project_config_include],
     dependencies: [
@@ -50,9 +42,9 @@ terminal_theme_run = executable(
         'main.c',
         project_config_header,
     ],
-    c_args: strict_c_args,
+    c_args: project_c_args,
     dependencies: terminal_theme_run_dep,
     include_directories: project_config_include,
     install: true,
-    link_args: strict_link_args,
+    link_args: project_link_args,
 )

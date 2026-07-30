@@ -17,7 +17,9 @@ stdenv.mkDerivation {
     root = ./.;
     fileset = lib.fileset.unions [
       ./.clang-tidy
+      ./README.md
       ./data
+      ./meson
       ./meson.build
       ./meson.options
       ./src

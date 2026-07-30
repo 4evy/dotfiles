@@ -1,16 +1,21 @@
 default_data_environment = [
-    'TERMINAL_THEME_RUN_DATA_DIR='
-    + meson.project_source_root() / 'data/terminal-theme-run',
+    'TERMINAL_THEME_RUN_DATA_DIR=' + meson.project_source_root() / 'data/terminal-theme-run',
 ]
 
-foreach module : [
-    'manifest',
-    'runner',
-    'terminal',
-    'theme',
-    'toml-schema',
-    'context',
+terminal_theme_run_test_include = include_directories('.')
+
+foreach test_definition : [
+    ['manifest', 'config/test-manifest.c'],
+    ['toml-schema', 'config/test-toml-schema.c'],
+    ['values', 'config/test-values.c'],
+    ['runner', 'launch/test-runner.c'],
+    ['io', 'support/test-io.c'],
+    ['context', 'theme/test-context.c'],
+    ['terminal', 'theme/test-terminal.c'],
+    ['theme', 'theme/test-theme.c'],
 ]
+    module = test_definition[0]
+    test_source = test_definition[1]
     test_environment = default_data_environment
     extra_test_files = []
     if module == 'theme'
@@ -22,13 +27,14 @@ foreach module : [
     module_tests = executable(
         'terminal-theme-run-test-' + module,
         [
-            'test-' + module + '.c',
-            'test-support.c',
+            test_source,
+            'support/test-support.c',
         ],
-        c_args: strict_c_args,
+        c_args: project_c_args,
         dependencies: terminal_theme_run_dep,
         extra_files: extra_test_files,
-        link_args: strict_link_args,
+        include_directories: terminal_theme_run_test_include,
+        link_args: project_link_args,
     )
 
     test(
