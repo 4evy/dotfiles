@@ -2,34 +2,23 @@ import os
 import sysconfig
 from contextlib import suppress
 from functools import cache
-from importlib.metadata import PackageNotFoundError, distribution
 from pathlib import Path
 
-from platformdirs import user_cache_path, user_data_path, user_state_path
+from platformdirs import PlatformDirs
 
-_DEVELOPMENT_ASSET_SOURCES = {
-    ("apps", "ghostty", "patches"): ("patches", "ghostty"),
-    ("apps", "helium"): ("browser",),
-    ("desktop", "catppuccin_palette.json"): (
-        "packages",
-        "dotfiles-python",
-        "assets",
-        "desktop",
-        "catppuccin_palette.json",
-    ),
-}
+_DIRECTORIES = PlatformDirs("dotfiles")
 
 
 def cache_path(*parts: str) -> Path:
-    return user_cache_path("dotfiles").joinpath(*parts)
+    return _DIRECTORIES.user_cache_path.joinpath(*parts)
 
 
 def data_path(*parts: str) -> Path:
-    return user_data_path("dotfiles").joinpath(*parts)
+    return _DIRECTORIES.user_data_path.joinpath(*parts)
 
 
 def state_path(*parts: str) -> Path:
-    return user_state_path("dotfiles").joinpath(*parts)
+    return _DIRECTORIES.user_state_path.joinpath(*parts)
 
 
 def state_path_for_home(home: Path, *parts: str) -> Path:
@@ -56,17 +45,15 @@ def repository_root() -> Path:
     return find_repo_root(Path(__file__))
 
 
-def _installed_asset_roots() -> tuple[Path, ...]:
+def installed_data_roots() -> tuple[Path, ...]:
+    """Return possible share/dotfiles-python roots for this installation."""
     data_root = Path(sysconfig.get_path("data")) / "share/dotfiles-python"
-    try:
-        installed = Path(str(distribution("dotfiles-python").locate_file(""))).resolve()
-    except PackageNotFoundError:
-        return (data_root,)
+    installed = Path(__file__).resolve()
     return (
         data_root,
         *(
             parent / "share/dotfiles-python"
-            for parent in (installed, *installed.parents)
+            for parent in (installed.parent, *installed.parents)
         ),
     )
 
@@ -75,7 +62,7 @@ def _installed_asset_roots() -> tuple[Path, ...]:
 def assets_root() -> Path:
     """Locate runtime assets in an override, installation, or source checkout."""
     configured = os.environ.get("DOTFILES_PYTHON_ASSETS")
-    candidates = list(_installed_asset_roots())
+    candidates = list(installed_data_roots())
     if configured:
         candidates.insert(0, Path(configured).expanduser())
     with suppress(FileNotFoundError):
@@ -86,14 +73,24 @@ def assets_root() -> Path:
     raise FileNotFoundError("could not locate dotfiles-python runtime assets")
 
 
-def asset_path(*parts: str) -> Path:
+def asset_path(
+    *parts: str,
+    development_source: tuple[str, ...] | None = None,
+) -> Path:
     """Return a path beneath the package's runtime assets."""
     installed = assets_root().joinpath(*parts)
     if installed.exists():
         return installed
     with suppress(FileNotFoundError):
         repository = repository_root()
-        for prefix, source in _DEVELOPMENT_ASSET_SOURCES.items():
-            if parts[: len(prefix)] == prefix:
-                return repository.joinpath(*source, *parts[len(prefix) :])
+        source_asset = repository.joinpath(
+            "packages",
+            "dotfiles-python",
+            "assets",
+            *parts,
+        )
+        if source_asset.exists():
+            return source_asset
+        if development_source is not None:
+            return repository.joinpath(*development_source)
     return installed

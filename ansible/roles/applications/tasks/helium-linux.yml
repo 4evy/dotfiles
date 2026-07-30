@@ -1,26 +1,112 @@
 ---
-- name: Install Helium on Linux
-  dotfiles_operation:
-    executable: "{{ dotfiles_bin_dir }}/dotfiles-scripts"
-    command:
-      - apps
-      - install-helium-linux
-      - "{{ dotfiles_cache_dir }}/helium-browser"
-      - "{{ dotfiles_data_dir }}/helium-browser"
-      - "{{ dotfiles_bin_dir }}"
-      - "{{ dotfiles_cache_dir }}/helium-browser/installer-bin"
-      - "--flags={{ helium_linux_flags }}"
-    context: "{{ dotfiles_automation_context }}"
-    chdir: "{{ dotfiles_repo_root }}"
-    environment:
-      PATH: "{{ dotfiles_bin_dir }}:{{ dotfiles_path }}"
-      DOTFILES_HELIUM_COOKIE_ALLOWLIST: >-
-        {{
-          applications_private_settings['chromium-cookie-allowed-for-urls']
-          | default([])
-          | to_json
-        }}
+- name: Fetch latest Helium Linux release metadata
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/imputnet/helium-linux/releases/latest
+    headers:
+      Accept: application/vnd.github+json
+      User-Agent: dotfiles-ansible
+    return_content: true
+    status_code: 200
+    timeout: 30
+  register: applications_helium_linux_release
+
+- name: Select latest Helium Linux x86_64 tarball
+  ansible.builtin.set_fact:
+    applications_helium_linux_asset: >-
+      {{
+        applications_helium_linux_release.json.assets
+        | selectattr(
+            'name',
+            'equalto',
+            'helium-'
+            ~ applications_helium_linux_release.json.tag_name
+            ~ '-x86_64_linux.tar.xz'
+          )
+        | first
+        | default({})
+      }}
+
+- name: Require checksummed Helium Linux x86_64 tarball
+  ansible.builtin.assert:
+    that:
+      - applications_helium_linux_asset.browser_download_url
+        | default('')
+        | length > 0
+      - applications_helium_linux_asset.digest
+        | default('')
+        is match('^sha256:[0-9a-f]{64}$')
+    fail_msg: >-
+      Latest Helium Linux release does not include the expected checksummed
+      x86_64 tarball.
+
+- name: Derive latest Helium Linux release paths
+  ansible.builtin.set_fact:
+    applications_helium_linux_archive: >-
+      {{ dotfiles_cache_dir }}/helium/{{ applications_helium_linux_asset.name }}
+    applications_helium_linux_install_dir: >-
+      {{ dotfiles_data_dir }}/helium/{{
+        applications_helium_linux_release.json.tag_name
+      }}
+
+- name: Create Helium download and application directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ dotfiles_cache_dir }}/helium"
+    - "{{ applications_helium_linux_install_dir }}"
+
+- name: Download latest Helium Linux release
+  ansible.builtin.get_url:
+    url: "{{ applications_helium_linux_asset.browser_download_url }}"
+    dest: "{{ applications_helium_linux_archive }}"
+    checksum: "{{ applications_helium_linux_asset.digest }}"
+    mode: "0644"
+
+- name: Extract latest Helium Linux release
+  ansible.builtin.unarchive:
+    src: "{{ applications_helium_linux_archive }}"
+    dest: "{{ applications_helium_linux_install_dir }}"
+    remote_src: true
+    extra_opts:
+      - --strip-components=1
+    creates: "{{ applications_helium_linux_install_dir }}/helium"
+
+- name: Select latest Helium Linux release
+  ansible.builtin.file:
+    src: "{{ applications_helium_linux_install_dir }}"
+    dest: "{{ applications_helium_linux_current }}"
+    state: link
+    force: true
+
+- name: Configure the Helium Linux profile
+  ansible.builtin.command:
+    argv: >-
+      {{
+        [
+          dotfiles_bin_dir ~ '/dotfiles-scripts',
+          'apps',
+          'configure-helium-linux',
+          dotfiles_cache_dir ~ '/helium',
+          applications_helium_linux_current,
+          dotfiles_bin_dir,
+          dotfiles_cache_dir ~ '/helium/configurer',
+          '--flags=' ~ helium_linux_flags
+        ]
+        + (['--check'] if ansible_check_mode else [])
+      }}
+  environment:
+    PATH: "{{ dotfiles_bin_dir }}:{{ dotfiles_path }}"
+    DOTFILES_HELIUM_COOKIE_ALLOWLIST: >-
+      {{
+        applications_private_settings['chromium-cookie-allowed-for-urls']
+        | default([])
+        | to_json
+      }}
   no_log: true
+  changed_when: false
+  check_mode: false
   vars:
     helium_enabled_features:
       - TouchpadOverscrollHistoryNavigation
@@ -30,67 +116,13 @@
       - BrowsingTopics
       - InterestGroupStorage
       - WaylandWpColorManagerV1
-    helium_platform_flags: >-
-      --no-first-run --no-default-browser-check --disable-search-engine-choice-screen
-      --extension-mime-request-handling=always-prompt-for-install
-      --omnibox-autocomplete-filtering=search --set-user-color=244,184,228
-      --set-color-scheme=dark --set-color-variant=tonal_spot
     helium_linux_flags: >-
       --ozone-platform=x11 --disable-gpu-process-crash-limit
       --enable-gpu-rasterization
       --enable-features={{ helium_enabled_features | join(',') }}
       --disable-features={{ helium_disabled_features | join(',') }}
-      {{ helium_platform_flags }}
-  tags:
-    - applications
-    - helium
-
-- name: Detect AppArmor support for Helium on Linux
-  ansible.builtin.command:
-    argv:
-      - sh
-      - -c
-      - >-
-        test -r /sys/module/apparmor/parameters/enabled &&
-        grep -qi '^Y' /sys/module/apparmor/parameters/enabled &&
-        command -v apparmor_parser >/dev/null
-  changed_when: false
-  failed_when: false
-  register: applications_helium_apparmor
-  tags:
-    - applications
-    - helium
-
-- name: Install AppArmor profile for Helium archive install
-  ansible.builtin.copy:
-    dest: /etc/apparmor.d/dotfiles-helium-browser
-    mode: "0644"
-    content: |
-      abi <abi/4.0>,
-      include <tunables/global>
-
-      profile dotfiles-helium-browser "{{ dotfiles_data_dir }}/helium-browser/app/helium" flags=(default_allow) {
-        userns,
-        include if exists <local/dotfiles-helium-browser>
-      }
-  become: true
-  register: applications_helium_apparmor_profile
-  when: applications_helium_apparmor.rc | default(1) == 0
-  tags:
-    - applications
-    - helium
-
-- name: Reload AppArmor profile for Helium archive install
-  ansible.builtin.command:
-    argv:
-      - apparmor_parser
-      - -r
-      - /etc/apparmor.d/dotfiles-helium-browser
-  become: true
-  changed_when: applications_helium_apparmor_profile.changed
-  when:
-    - applications_helium_apparmor.rc | default(1) == 0
-    - applications_helium_apparmor_profile.changed | default(false)
-  tags:
-    - applications
-    - helium
+      --no-first-run --no-default-browser-check
+      --disable-search-engine-choice-screen
+      --extension-mime-request-handling=always-prompt-for-install
+      --omnibox-autocomplete-filtering=search --set-user-color=244,184,228
+      --set-color-scheme=dark --set-color-variant=tonal_spot

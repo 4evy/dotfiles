@@ -10,7 +10,7 @@ import psutil
 
 from workstation.console import console
 from workstation.lib.commands import output, run, which
-from workstation.lib.host import gsettings_available
+from workstation.local.gsettings import available as gsettings_available
 
 AuditCollector = Callable[[], None]
 

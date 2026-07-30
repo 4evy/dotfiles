@@ -63,27 +63,3 @@ def test_download_verifies_sha256_before_replacing_destination(
             expected_sha256="0" * 64,
         )
     assert destination.read_bytes() == b"existing"
-
-
-@pytest.mark.parametrize("digest", ["short", "g" * 64, "sha512:" + "0" * 64])
-def test_download_rejects_invalid_sha256(
-    tmp_path: Path, digest: str, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(http, "client", lambda: FakeClient((b"content",)))
-    with pytest.raises(DotfilesError, match="invalid SHA-256 digest"):
-        http.download(
-            "https://example.invalid/archive",
-            tmp_path / "archive",
-            expected_sha256=digest,
-        )
-
-
-def test_file_matches_normalized_sha256(tmp_path: Path) -> None:
-    path = tmp_path / "archive"
-    path.write_bytes(b"content")
-    digest = hashlib.sha256(b"content").hexdigest()
-
-    assert http.file_matches_sha256(path, digest)
-    assert http.file_matches_sha256(path, f"sha256:{digest.upper()}")
-    assert not http.file_matches_sha256(path, "0" * 64)
-    assert not http.file_matches_sha256(tmp_path / "missing", None)

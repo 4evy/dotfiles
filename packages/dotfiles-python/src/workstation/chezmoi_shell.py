@@ -3,10 +3,14 @@
 import os
 from pathlib import Path
 
+from platformdirs import (
+    user_cache_path as user_cache_home,
+    user_config_path as user_config_home,
+)
+
 from workstation.console import error_console
 from workstation.lib.commands import run, which
 from workstation.lib.files import ensure_directory, write_if_changed
-from workstation.lib.host import user_cache_home
 
 _SHELL_TOOLS = ("atuin", "broot", "fzf", "starship", "zoxide")
 _COMPLETION_COMMANDS = (
@@ -53,10 +57,7 @@ def yazi_init() -> None:
     if which("ya") is None:
         error_console.print("Yazi plugin install skipped: ya not found")
         return
-    xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
-    config = (
-        Path(xdg_config_home) if xdg_config_home else Path.home() / ".config"
-    ) / "yazi"
+    config = user_config_home() / "yazi"
     if not (config / "package.toml").is_file():
         error_console.print(
             f"Yazi plugin install skipped: {config / 'package.toml'} not found"

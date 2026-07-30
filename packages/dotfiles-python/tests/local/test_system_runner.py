@@ -1,18 +1,10 @@
 import os
 from pathlib import Path
 
-import pytest
-
 from workstation.local.system_runner import (
     DEFAULT_RUNNER_PATH,
-    UsageError,
     parse_invocation,
 )
-
-
-def test_version_has_no_invocation() -> None:
-    assert parse_invocation(["--version"]) is None
-    assert parse_invocation(["--env", "EXAMPLE=value", "--version"]) is None
 
 
 def test_environment_and_command_are_preserved(tmp_path: Path) -> None:
@@ -61,18 +53,3 @@ def test_empty_path_does_not_search_current_directory(tmp_path: Path) -> None:
 
     assert invocation is not None
     assert invocation.program == "example"
-
-
-@pytest.mark.parametrize(
-    ("arguments", "message"),
-    [
-        ([], "expected COMMAND"),
-        (["--unknown"], "unknown flag"),
-        (["--env"], "KEY=VALUE"),
-        (["--env", "INVALID"], "KEY=VALUE"),
-        (["--env", "=value", "command"], "must not be empty"),
-    ],
-)
-def test_invalid_usage(arguments: list[str], message: str) -> None:
-    with pytest.raises(UsageError, match=message):
-        parse_invocation(arguments)

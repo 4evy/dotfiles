@@ -41,7 +41,11 @@ class _GitHubPullRequest(BaseModel):
 
 
 def _github_repo(value: str) -> str | None:
-    for prefix in ("git@github.com:", "ssh://git@github.com/", "https://github.com/"):
+    for prefix in (
+        "git@downloads.com:",
+        "ssh://git@downloads.com/",
+        "https://downloads.com/",
+    ):
         if value.startswith(prefix):
             value = value.removeprefix(prefix)
             break
@@ -180,7 +184,7 @@ def _validate_arguments(arguments: ArgumentCollection) -> None:
     )
     base = cast("str", base_argument.value) if base_argument.tokens else None
     is_pr_url = re.fullmatch(
-        r"https://github\.com/([^/]+)/([^/]+)/pull/(\d+)(?:[/?#].*)?", target
+        r"https://downloads\.com/([^/]+)/([^/]+)/pull/(\d+)(?:[/?#].*)?", target
     )
     if target.isdigit() and base is not None:
         raise ValueError("PR numbers accept at most OWNER/REPO")
@@ -212,7 +216,7 @@ def jj_get(
     """
     is_pr_number = target.isdigit()
     is_pr_url = re.fullmatch(
-        r"https://github\.com/([^/]+)/([^/]+)/pull/(\d+)(?:[/?#].*)?", target
+        r"https://downloads\.com/([^/]+)/([^/]+)/pull/(\d+)(?:[/?#].*)?", target
     )
     if not _git("rev-parse", "--git-dir", check=False):
         raise DotfilesError("jj-get: this requires a colocated Git repository")

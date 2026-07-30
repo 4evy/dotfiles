@@ -7,6 +7,7 @@
     - "{{ bootstrap_homebrew_local_tap_dir }}/Formula"
     - "{{ bootstrap_homebrew_local_tap_dir }}/Patches/ghostty"
     - "{{ bootstrap_homebrew_local_tap_dir }}/Patches/jj"
+    - "{{ bootstrap_homebrew_local_tap_dir }}/npins"
     - "{{ bootstrap_homebrew_local_tap_dir }}/Sources"
     - "{{ bootstrap_homebrew_local_tap_dir }}/libexec"
     - "{{ bootstrap_homebrew_local_tap_dir }}/secrets"
@@ -49,7 +50,7 @@
     label: "{{ item.path | basename }}"
   when:
     - bootstrap_homebrew_enabled | default(false)
-    - item.path | basename not in ['Formula', 'Patches', 'Sources', 'libexec', 'secrets', 'sources.json']
+    - item.path | basename not in ['Formula', 'Patches', 'Sources', 'libexec', 'npins', 'secrets']
   tags:
     - alt-tab
     - bootstrap
@@ -249,10 +250,10 @@
     - shottr
     - terminal-theme-tools
 
-- name: Sync shared source manifest into local Homebrew tap
+- name: Sync npins lock into local Homebrew tap
   ansible.builtin.copy:
-    src: "{{ dotfiles_repo_root }}/manifests/sources.json"
-    dest: "{{ bootstrap_homebrew_local_tap_dir }}/sources.json"
+    src: "{{ dotfiles_repo_root }}/npins/sources.json"
+    dest: "{{ bootstrap_homebrew_local_tap_dir }}/npins/sources.json"
     mode: "0644"
   when: platform_is_macos
   tags:

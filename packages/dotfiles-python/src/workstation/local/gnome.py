@@ -4,12 +4,13 @@ import subprocess
 from typing import Annotated
 
 from cyclopts import App, Group, Parameter, validators
+from platformdirs import user_config_path as user_config_home
 from pydantic import TypeAdapter
 
 from workstation.lib.commands import output, run, which
 from workstation.lib.files import write_if_changed
-from workstation.lib.host import gsettings_available, user_config_home
 from workstation.lib.paths import asset_path
+from workstation.local.gsettings import available as gsettings_available
 
 
 def _accent_colors() -> tuple[str, str]:

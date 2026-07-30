@@ -153,33 +153,170 @@
     - macos
     - tailscale
 
-- name: Configure Karabiner VirtualHID driver on macOS
-  dotfiles_operation:
-    executable: "{{ dotfiles_bin_dir }}/dotfiles-scripts"
-    command:
-      - macos
-      - karabiner-vhid
-    context: "{{ dotfiles_automation_context }}"
-    chdir: "{{ dotfiles_repo_root }}"
-    environment:
-      PATH: "{{ platform_homebrew_path }}"
+- name: Inspect Karabiner VirtualHID
+  ansible.builtin.stat:
+    path: "{{ system_macos_karabiner.manager }}"
+  register: system_karabiner_manager
+  tags:
+    - host
+    - kanata
+    - macos
+
+- name: Download Karabiner VirtualHID
+  ansible.builtin.get_url:
+    # renovate: datasource=github-releases depName=pqrs-org/Karabiner-DriverKit-VirtualHIDDevice
+    url: "{{ system_macos_karabiner.package_url }}"
+    dest: "{{ system_macos_karabiner.package_path }}"
+    checksum: "{{ system_macos_karabiner.package_checksum }}"
+    mode: "0644"
+  when: not system_karabiner_manager.stat.exists
+  tags:
+    - host
+    - kanata
+    - macos
+
+- name: Install Karabiner VirtualHID
+  ansible.builtin.command:
+    argv:
+      - /usr/sbin/installer
+      - -pkg
+      - "{{ system_macos_karabiner.package_path }}"
+      - -target
+      - /
+    creates: "{{ system_macos_karabiner.manager }}"
+  become: true
+  register: system_karabiner_package
+  tags:
+    - host
+    - kanata
+    - macos
+
+- name: Activate Karabiner VirtualHID
+  ansible.builtin.command:
+    argv:
+      - "{{ system_macos_karabiner.manager }}"
+      - forceActivate
+  become: true
+  changed_when: system_karabiner_package is changed
+  when: not ansible_check_mode
+  tags:
+    - host
+    - kanata
+    - macos
+
+- name: Ensure Karabiner VirtualHID log directory exists
+  ansible.builtin.file:
+    path: "{{ system_macos_karabiner.log_dir }}"
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
   become: true
   tags:
     - host
     - kanata
     - macos
 
-- name: Configure Kanata launch daemons on macOS
-  dotfiles_operation:
-    executable: "{{ dotfiles_bin_dir }}/dotfiles-scripts"
-    command:
-      - macos
-      - kanata
-      - "{{ dotfiles_repo_root }}/dotfiles/dot_config/kanata/kanata-macos.kbd"
-    context: "{{ dotfiles_automation_context }}"
-    chdir: "{{ dotfiles_repo_root }}"
-    environment:
-      PATH: "{{ platform_homebrew_path }}"
+- name: Install Karabiner VirtualHID launch daemon definition
+  ansible.builtin.template:
+    src: macos/karabiner-vhid.plist.j2
+    dest: "/Library/LaunchDaemons/{{ system_macos_karabiner.label }}.plist"
+    owner: root
+    group: wheel
+    mode: "0644"
+  become: true
+  register: system_karabiner_plist
+  tags:
+    - host
+    - kanata
+    - macos
+
+- name: Ensure Karabiner VirtualHID launch daemon is running
+  community.general.launchd:
+    name: "{{ system_macos_karabiner.label }}"
+    enabled: true
+    state: >-
+      {{
+        'restarted'
+        if system_karabiner_package is changed
+        or system_karabiner_plist is changed
+        else 'started'
+      }}
+  become: true
+  tags:
+    - host
+    - kanata
+    - macos
+
+- name: Install and sign Kanata on macOS
+  ansible.builtin.command:
+    argv: >-
+      {{
+        [
+          dotfiles_bin_dir ~ '/dotfiles-scripts',
+          'macos',
+          'kanata',
+          platform_homebrew_prefix ~ '/bin/kanata'
+        ]
+        + (['--check'] if ansible_check_mode else [])
+      }}
+  environment:
+    PATH: "{{ platform_homebrew_path }}"
+  become: true
+  register: system_kanata_application
+  changed_when: false
+  check_mode: false
+  tags:
+    - host
+    - kanata
+    - macos
+
+- name: Configure Logitech keyboard for Kanata
+  ansible.builtin.command:
+    argv:
+      - "{{ dotfiles_bin_dir }}/python3.14"
+      - "{{ dotfiles_repo_root }}/packages/dotfiles-python/assets/macos/logitech-platform.py"
+      - --product-id
+      - "{{ system_macos_logitech_keyboard.product_id }}"
+      - --product-name
+      - "{{ system_macos_logitech_keyboard.product_name }}"
+      - --platform
+      - "{{ system_macos_logitech_keyboard.platform }}"
+  become: true
+  register: system_logitech_platform
+  changed_when: >-
+    'updated current host platform' in system_logitech_platform.stdout
+  failed_when: false
+  tags:
+    - host
+    - kanata
+    - macos
+
+- name: Install Kanata launch daemon definition
+  ansible.builtin.template:
+    src: macos/kanata.plist.j2
+    dest: "/Library/LaunchDaemons/{{ system_macos_kanata.label }}.plist"
+    owner: root
+    group: wheel
+    mode: "0644"
+  become: true
+  register: system_kanata_plist
+  tags:
+    - host
+    - kanata
+    - macos
+
+- name: Ensure Kanata launch daemon is running
+  community.general.launchd:
+    name: "{{ system_macos_kanata.label }}"
+    enabled: true
+    state: >-
+      {{
+        'restarted'
+        if system_kanata_application is changed
+        or system_kanata_plist is changed
+        else 'started'
+      }}
   become: true
   tags:
     - host

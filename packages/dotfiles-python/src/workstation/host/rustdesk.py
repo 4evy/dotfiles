@@ -1,8 +1,6 @@
 import os
 from pathlib import Path
 
-from workstation.automation import automation_check_mode
-from workstation.automation_models import OperationResult
 from workstation.console import error_console
 from workstation.errors import DotfilesError
 from workstation.host.selinux import (
@@ -12,7 +10,7 @@ from workstation.host.selinux import (
     enabled as _selinux_enabled,
 )
 from workstation.lib.commands import run, which
-from workstation.lib.host import HostRunner
+from workstation.lib.host import HostRunner, require_root
 from workstation.lib.paths import asset_path
 
 
@@ -73,8 +71,7 @@ def _configure_rustdesk_selinux() -> None:
 
 def rustdesk_system() -> None:
     """Configure privileged RustDesk security and service state."""
-    if os.geteuid() != 0:
-        raise DotfilesError("rustdesk-system must run as root")
+    require_root("rustdesk-system")
     _configure_rustdesk_selinux()
     if run(("rpm", "-q", "rustdesk"), check=False, capture=True).returncode == 0:
         run(("systemctl", "restart", "rustdesk.service"))
@@ -128,17 +125,15 @@ def _prepare_rustdesk_wayland() -> None:
         )
 
 
-def rustdesk_tailscale() -> OperationResult:
+def rustdesk_tailscale(check: bool = False) -> None:
     """Configure native RustDesk for direct Tailscale access and Wayland capture."""
     if which("rustdesk") is None:
         error_console.print(
             "rustdesk-tailscale: rustdesk is not installed; add it to the Spectrum image"
         )
-        return OperationResult(msg="RustDesk is not installed")
-    if automation_check_mode():
-        return OperationResult(
-            changed=True, msg="Would reconcile RustDesk Tailscale integration"
-        )
+        return
+    if check:
+        return
     host = HostRunner()
     host.root_python("host", "apps", "rustdesk-system")
     _prepare_rustdesk_wayland()
@@ -153,6 +148,3 @@ def rustdesk_tailscale() -> OperationResult:
             "rustdesk-tailscale: tailscale is not installed; install the tailscale "
             "host tool before relying on direct IP access"
         )
-    return OperationResult(
-        changed=True, msg="Reconciled RustDesk Tailscale integration"
-    )

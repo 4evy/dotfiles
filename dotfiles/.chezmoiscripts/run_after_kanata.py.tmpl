@@ -7,7 +7,7 @@ import os
 import subprocess
 from pathlib import Path
 
-fingerprint = "{{ include "dot_config/kanata/kanata-macos.kbd" | sha256sum }}:{{ output "shasum" "-a" "256" (joinPath $repo "packages/dotfiles-python/src/workstation/macos/system.py") (joinPath $repo "packages/dotfiles-python/assets/macos/logitech-platform.py") (joinPath $repo "packages/dotfiles-python/assets/macos/templates/kanata-app-info.plist.in") (joinPath $repo "packages/dotfiles-python/assets/macos/templates/kanata-daemon.plist.in") (joinPath $repo "Formula/kanata-with-cmd.rb") | sha256sum }}"
+fingerprint = "{{ include "dot_config/kanata/kanata-macos.kbd" | sha256sum }}:{{ output "shasum" "-a" "256" (joinPath $repo "packages/dotfiles-python/src/workstation/macos/kanata.py") (joinPath $repo "packages/dotfiles-python/assets/macos/templates/kanata-app-info.plist.in") (joinPath $repo "Formula/kanata-with-cmd.rb") | sha256sum }}:{{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts") | sha256sum }}"
 marker = Path.home() / ".cache/dotfiles/kanata-reconcile.sha256"
 state = subprocess.run(
     ("/bin/launchctl", "print", "system/dev.4evy.kanata"),
@@ -25,8 +25,29 @@ if (
 
 command = Path.home() / ".local/bin/dotfiles-scripts"
 config = Path({{ joinPath .chezmoi.sourceDir "dot_config/kanata/kanata-macos.kbd" | quote }})
+kanata = Path("/opt/homebrew/bin/kanata")
 if not command.is_file() or not os.access(command, os.X_OK):
     raise SystemExit(f"kanata reconciliation failed: {command} is not executable")
+if not kanata.is_file() or not os.access(kanata, os.X_OK):
+    raise SystemExit(f"kanata reconciliation failed: {kanata} is not executable")
+
+help_result = subprocess.run(
+    (command, "macos", "kanata", "--help"),
+    check=False,
+    capture_output=True,
+    text=True,
+)
+if "--kanata-bin" in help_result.stdout:
+    argument = kanata
+    restart_required = True
+elif "--config" in help_result.stdout:
+    argument = config
+    restart_required = False
+else:
+    raise SystemExit(
+        "kanata reconciliation failed: could not identify the "
+        "dotfiles-scripts macos kanata interface"
+    )
 
 subprocess.run(
     (
@@ -35,10 +56,22 @@ subprocess.run(
         os.fspath(command),
         "macos",
         "kanata",
-        os.fspath(config),
+        os.fspath(argument),
     ),
     check=True,
 )
+if restart_required:
+    subprocess.run(
+        (
+            "/usr/bin/sudo",
+            "--",
+            "/bin/launchctl",
+            "kickstart",
+            "-k",
+            "system/dev.4evy.kanata",
+        ),
+        check=True,
+    )
 marker.parent.mkdir(parents=True, exist_ok=True)
 marker.write_text(f"{fingerprint}\n", encoding="utf-8")
 {{- end }}

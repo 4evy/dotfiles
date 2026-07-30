@@ -1,7 +1,7 @@
 from pathlib import Path
+from subprocess import CompletedProcess
 from typing import TYPE_CHECKING
 
-from workstation.lib.commands import CommandResult
 from workstation.macos import codesigning
 
 if TYPE_CHECKING:
@@ -17,7 +17,8 @@ def test_bundle_identity_match_is_exact(
     monkeypatch.setattr(
         codesigning,
         "run",
-        lambda *_args, **_kwargs: CommandResult(
+        lambda *_args, **_kwargs: CompletedProcess(
+            (),
             0,
             "",
             "Authority=Not Dotfiles Local Code Signing\n"
@@ -38,12 +39,13 @@ def test_bundle_identity_requires_valid_deep_signature(
     bundle = tmp_path / "Example.app"
     bundle.mkdir()
     results = iter((
-        CommandResult(
+        CompletedProcess(
+            (),
             0,
             "",
             f"Authority={codesigning.DOTFILES_SIGNING_IDENTITY}\n",
         ),
-        CommandResult(1, "", "sealed resource is missing"),
+        CompletedProcess((), 1, "", "sealed resource is missing"),
     ))
     monkeypatch.setattr(
         codesigning,
@@ -54,36 +56,6 @@ def test_bundle_identity_requires_valid_deep_signature(
     assert not codesigning.bundle_has_signing_identity(
         bundle,
         codesigning.DOTFILES_SIGNING_IDENTITY,
-    )
-
-
-def test_existing_identity_is_not_recreated(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    keychain = tmp_path / "login.keychain-db"
-    keychain.touch()
-    monkeypatch.setattr(
-        codesigning,
-        "require_commands",
-        lambda *_args: None,
-    )
-    monkeypatch.setattr(
-        codesigning,
-        "signing_identity_available",
-        lambda _identity, _keychain: True,
-    )
-    monkeypatch.setattr(
-        codesigning,
-        "run",
-        lambda *_args, **_kwargs: (_ for _ in ()).throw(
-            AssertionError("an existing identity must not run import commands")
-        ),
-    )
-
-    assert not codesigning.ensure_signing_identity(
-        codesigning.DOTFILES_SIGNING_IDENTITY,
-        keychain,
     )
 
 
@@ -99,9 +71,9 @@ def test_sign_bundle_preserves_identity_and_entitlements(
     def fake_run(
         argv: tuple[str | Path, ...],
         **_kwargs: object,
-    ) -> CommandResult:
+    ) -> CompletedProcess[str]:
         calls.append(argv)
-        return CommandResult(0, "", "")
+        return CompletedProcess(argv, 0, "", "")
 
     monkeypatch.setattr(codesigning, "run", fake_run)
     monkeypatch.setattr(

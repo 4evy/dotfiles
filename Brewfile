@@ -109,10 +109,7 @@ if OS.linux?
 end
 
 # Editors and terminals
-# Linux Helix tip is installed by the custom Ansible app script.
-if OS.mac?
-  brew "helix"
-end
+# Helix tip is built from the pinned source by the applications role.
 brew "yazi"
 
 # File management and archives
@@ -208,6 +205,7 @@ if OS.mac?
   cask "docker-desktop", args: { "no-binaries": true }, no_upgrade: true
   cask "firefox"
   cask "google-chrome"
+  brew "4evy/dotfiles/ghostty-patched"
   cask "helium-browser"
   cask "iina"
   cask "imhex"

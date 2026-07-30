@@ -10,22 +10,15 @@ requires-python = ">=3.14,<3.15"
 dependencies = [
   "astral>=3.2,<4",
   "cyclopts>=4.20,<5",
-  "defusedxml>=0.7,<1",
-  "filelock>=3.18,<4",
-  "githubkit>=0.15,<1",
-  "humanize>=4.13,<5",
   "httpx>=0.28,<1",
   "httpx-retries>=0.6,<1",
   "jinja2>=3.1,<4",
-  "jsonschema>=4.26,<5",
   "packaging>=24,<27",
   "platformdirs>=4.3,<5",
-  "plumbum>=2,<3",
   "psutil>=7,<8",
   "pydantic>=2.13,<3",
   "pydantic-settings>=2.14.2,<3",
   "pyobjc-framework-Cocoa>=12,<13; sys_platform == 'darwin'",
-  "questionary>=2.1,<3",
   "rich>=15,<16",
   "tenacity>=9.1,<10",
 ]
@@ -34,20 +27,11 @@ dependencies = [
 codex = "workstation.local.shims:codex_entrypoint"
 desktop-perf-audit = "workstation.local.desktop_audit:desktop_perf_audit_entrypoint"
 discord-equicord = "workstation.apps.discord:entrypoint"
-dotfiles-python = "workstation.local.shims:python_entrypoint"
-dotfiles-python3 = "workstation.local.shims:python3_entrypoint"
 dotfiles-scripts = "workstation.cli:entrypoint"
 gnome-catppuccin-accent = "workstation.local.gnome:gnome_catppuccin_accent_entrypoint"
-hyper-window-tiling-build = "workstation.local.hyper_window_tiling_build:entrypoint"
-install-ghidra-mcp = "workstation.apps.ghidra_mcp:entrypoint"
-install-yaml-language-server = "workstation.host.devtools:install_entrypoint"
 jj-get = "workstation.local.jj:jj_get_entrypoint"
 phone-mirror = "workstation.local.phone_mirror:entrypoint"
-spectrum-build = "spectrum_build.cli:entrypoint"
 system-runner = "workstation.local.system_runner:entrypoint"
-vscode-nixd = "workstation.local.shims:vscode_nixd_entrypoint"
-vscode-nixfmt = "workstation.local.shims:vscode_nixfmt_entrypoint"
-yaml-language-server = "workstation.host.devtools:yaml_language_server_entrypoint"
 
 [dependency-groups]
 dev = [
@@ -60,7 +44,7 @@ dev = [
 ]
 
 [tool.uv]
-required-version = ">=0.11.26,<0.12"
+required-version = ">=0.11.26,<0.13"
 required-environments = [
   "sys_platform == 'darwin' and platform_machine == 'arm64'",
   "sys_platform == 'linux' and platform_machine == 'x86_64'",
@@ -70,7 +54,7 @@ required-environments = [
 strict = true
 
 [tool.setuptools]
-package-dir = { workstation = "packages/dotfiles-python/src/workstation", spectrum_build = "spectrum/scripts/spectrum_build" }
+package-dir = { workstation = "packages/dotfiles-python/src/workstation" }
 packages = [
   "workstation",
   "workstation.apps",
@@ -79,38 +63,10 @@ packages = [
   "workstation.local",
   "workstation.local.jj",
   "workstation.macos",
-  "spectrum_build",
-  "spectrum_build.core",
-  "spectrum_build.image",
-  "spectrum_build.integrations",
-  "spectrum_build.manifests",
-  "spectrum_build.programs",
 ]
-
-[tool.setuptools.package-data]
-"spectrum_build.image" = ["*.sh", "*.zsh"]
 
 [tool.setuptools.data-files]
-"share/dotfiles-python/manifests" = [
-  "manifests/*.json",
-  "manifests/*.toml",
-  "manifests/*.txt",
-]
-"share/dotfiles-python/apps" = [
-  "packages/dotfiles-python/assets/apps/install-ghostty-tip-linux.container.py",
-]
-"share/dotfiles-python/apps/ghidra-mcp" = [
-  "packages/dotfiles-python/assets/apps/ghidra-mcp/bridge-auth-token.patch",
-  "packages/dotfiles-python/assets/apps/ghidra-mcp/required-ghidra-jars.txt",
-  "packages/dotfiles-python/assets/apps/ghidra-mcp/rewrite-pom.py",
-]
-"share/dotfiles-python/apps/ghidra-mcp/wrappers" = [
-  "packages/dotfiles-python/assets/apps/ghidra-mcp/wrappers/*.py.in",
-]
-"share/dotfiles-python/apps/ghostty/patches" = [
-  "patches/ghostty/*.patch",
-  "patches/ghostty/series",
-]
+"share/dotfiles-python/npins" = ["npins/sources.json"]
 "share/dotfiles-python/apps/helium" = [
   "browser/helium.toml",
   "browser/helium-profile-avatar.png",
@@ -141,11 +97,7 @@ packages = [
 filterwarnings = ["error"]
 minversion = "9.0"
 strict = true
-testpaths = [
-  "packages/dotfiles-python/tests",
-  "ansible/tests",
-  "spectrum/scripts/tests",
-]
+testpaths = ["packages/dotfiles-python/tests", "ansible/tests"]
 
 [tool.ruff]
 extend-exclude = ["packages/toshy/slices"]
@@ -223,37 +175,20 @@ allow-multiline = false
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
-known-first-party = ["workstation", "spectrum_build"]
+known-first-party = ["workstation"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
 
 [tool.ruff.lint.per-file-ignores]
-"ansible/library/dotfiles_operation.py" = [
-  "module-import-not-at-top-of-file",
-  "shebang-not-executable",
-]
 "**/test_*.py" = [
   "import-private-name",
   "magic-value-comparison",
   "assert",
   "private-member-access",
 ]
-"spectrum/scripts/spectrum_build/integrations/dnf.py" = ["any-type"]
-"packages/dotfiles-python/assets/apps/ghidra-mcp/rewrite-pom.py" = [
-  "suspicious-xml-etree-import",
-]
-"packages/dotfiles-python/assets/apps/install-ghostty-tip-linux.container.py" = [
-  "start-process-with-partial-path",
-]
-"packages/dotfiles-python/src/workstation/automation.py" = [
-  "import-outside-top-level",
-]
 "packages/dotfiles-python/src/workstation/macos/terminal.py" = [
   "get-attr-with-constant",
-]
-"packages/dotfiles-python/src/workstation/apps/ghostty.py" = [
-  "hardcoded-temp-file",
 ]
 "packages/dotfiles-python/src/workstation/lib/files.py" = [
   "tarfile-unsafe-members",
@@ -261,8 +196,6 @@ max-complexity = 10
 "packages/dotfiles-python/src/workstation/lib/templates.py" = [
   "jinja2-autoescape-false",
 ]
-"spectrum/scripts/build.py" = ["start-process-with-partial-path"]
-"spectrum/scripts/spectrum_build/image/cleanup.py" = ["hardcoded-temp-file"]
 
 [tool.ruff.lint.pylint]
 max-args = 8
@@ -278,15 +211,11 @@ docstring-code-format = true
 preview = true
 
 [tool.ty.environment]
-extra-paths = [
-  "./spectrum/scripts",
-  "./packages/dotfiles-python/src",
-  "./packages/toshy",
-]
+extra-paths = ["./", "./packages/dotfiles-python/src", "./packages/toshy"]
 
 [tool.ty.src]
 exclude = ["packages/toshy/slices"]
-include = ["ansible", "dotfiles", "packages", "spectrum"]
+include = ["ansible", "dotfiles", "packages"]
 
 [tool.ty.rules]
 all = "error"
@@ -296,12 +225,12 @@ error-on-warning = true
 
 [tool.vulture]
 min_confidence = 100
-paths = ["ansible", "dotfiles", "packages", "spectrum"]
+paths = ["ansible", "dotfiles", "packages"]
 sort_by_size = true
 
 [tool.deptry]
 extend_exclude = [".*tests/"]
-known_first_party = ["spectrum_build", "workstation"]
+known_first_party = ["workstation"]
 
 [tool.deptry.per_rule_ignores]
 # Ansible injects its module runtime; Toshy injects xwaykeyz into its slices.
@@ -312,4 +241,4 @@ DEP002 = ["pyobjc-framework-Cocoa"]
 [tool.complexipy]
 failed = true
 max-complexity-allowed = 15
-paths = ["ansible", "dotfiles", "packages", "spectrum"]
+paths = ["ansible", "dotfiles", "packages"]

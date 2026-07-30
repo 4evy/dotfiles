@@ -235,3 +235,46 @@
     label: "{{ item.item.package }}"
   tags:
     - nix
+
+- name: Read Nix profile before upgrade
+  ansible.builtin.command:
+    argv:
+      - "{{ tools_nix_command_bin }}"
+      - profile
+      - list
+      - --json
+  environment:
+    PATH: "{{ tools_nix_path }}"
+  register: tools_nix_profile_before_upgrade
+  changed_when: false
+  tags:
+    - nix
+
+- name: Upgrade Nix profile packages
+  ansible.builtin.command:
+    argv:
+      - "{{ tools_nix_command_bin }}"
+      - profile
+      - upgrade
+      - --all
+  environment:
+    PATH: "{{ tools_nix_path }}"
+  changed_when: false
+  tags:
+    - nix
+
+- name: Detect Nix profile upgrades
+  ansible.builtin.command:
+    argv:
+      - "{{ tools_nix_command_bin }}"
+      - profile
+      - list
+      - --json
+  environment:
+    PATH: "{{ tools_nix_path }}"
+  register: tools_nix_profile_after_upgrade
+  changed_when: >-
+    (tools_nix_profile_before_upgrade.stdout | from_json).elements
+    != (tools_nix_profile_after_upgrade.stdout | from_json).elements
+  tags:
+    - nix

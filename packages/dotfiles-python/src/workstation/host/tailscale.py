@@ -5,8 +5,6 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field, ValidationError
 
-from workstation.automation import automation_check_mode
-from workstation.automation_models import OperationResult
 from workstation.console import error_console
 from workstation.errors import DotfilesError
 from workstation.host.selinux import (
@@ -16,7 +14,7 @@ from workstation.host.selinux import (
     enabled as selinux_enabled,
 )
 from workstation.lib.commands import output, run, which
-from workstation.lib.host import HostRunner
+from workstation.lib.host import HostRunner, require_root
 from workstation.lib.paths import asset_path
 from workstation.lib.retry import wait_until
 
@@ -126,8 +124,7 @@ def _configure_selinux() -> None:
 
 def tailscale_system() -> None:
     """Configure the privileged Tailscale service state."""
-    if os.geteuid() != 0:
-        raise DotfilesError("tailscale-system must run as root")
+    require_root("tailscale-system")
     if which("tailscale") is None or which("tailscaled") is None:
         error_console.print(
             "tailscale-bluefin: Tailscale is not installed; add it to the "
@@ -168,22 +165,17 @@ def _validate_selinux(host: HostRunner) -> None:
     )
 
 
-def tailscale_bluefin() -> OperationResult:
+def tailscale_bluefin(check: bool = False) -> None:
     """Configure Tailscale and its SELinux domain on immutable Fedora hosts."""
-    if automation_check_mode():
-        return OperationResult(
-            changed=True, msg="Would reconcile Tailscale host integration"
-        )
+    if check:
+        return
     host = HostRunner()
     host.root_python("host", "apps", "tailscale-system")
     if which("tailscale") is None:
         error_console.print(
             "tailscale-bluefin: tailscale is not available; add it to the Spectrum image"
         )
-        return OperationResult(
-            changed=True,
-            msg="Reconciled host policy; Tailscale executable is unavailable",
-        )
+        return
     ready = wait_until(
         lambda: (
             run(("tailscale", "status"), check=False, capture=True).returncode == 0
@@ -214,4 +206,3 @@ def tailscale_bluefin() -> OperationResult:
             "run tailscale up on this host"
         )
     _validate_selinux(host)
-    return OperationResult(changed=True, msg="Reconciled Tailscale host integration")

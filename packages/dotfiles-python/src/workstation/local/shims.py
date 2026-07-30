@@ -6,6 +6,7 @@ from pathlib import Path
 
 from workstation.errors import DotfilesError
 from workstation.lib.commands import exec_process, which
+from workstation.lib.files import is_executable
 
 
 def _real_codex(home: Path, wrapper: Path) -> Path:
@@ -23,7 +24,7 @@ def _real_codex(home: Path, wrapper: Path) -> Path:
         if not candidate:
             continue
         path = Path(candidate)
-        if path != wrapper and path.is_file() and os.access(path, os.X_OK):
+        if path != wrapper and is_executable(path):
             return path
     raise DotfilesError("codex: real Codex binary not found")
 
@@ -41,33 +42,11 @@ def codex_entrypoint() -> None:
             if value != "--dangerously-bypass-approvals-and-sandbox"
         ]
     theme_runner = home / ".local/bin/terminal-theme-run"
-    if not (theme_runner.is_file() and os.access(theme_runner, os.X_OK)):
+    if not is_executable(theme_runner):
         theme_runner = which("terminal-theme-run") or theme_runner
-    if theme_runner.is_file() and os.access(theme_runner, os.X_OK):
+    if is_executable(theme_runner):
         environment = dict(os.environ)
         environment["TERMINAL_THEME_RUN_CODEX_BIN"] = os.fspath(real)
         environment["TERMINAL_THEME_RUN_CODEX_WRAPPER"] = os.fspath(wrapper)
         exec_process(theme_runner, ["codex", *themed_arguments], environment)
     exec_process(real, arguments)
-
-
-def _uv_python(executable: str) -> None:
-    environment = dict(os.environ)
-    environment.setdefault("UV_PYTHON_PREFERENCE", "only-managed")
-    exec_process("uv", ["run", executable, *sys.argv[1:]], environment)
-
-
-def python_entrypoint() -> None:
-    _uv_python("python")
-
-
-def python3_entrypoint() -> None:
-    _uv_python("python3")
-
-
-def vscode_nixd_entrypoint() -> None:
-    exec_process(os.environ.get("VSCODE_NIXD_PATH", "nixd"), sys.argv[1:])
-
-
-def vscode_nixfmt_entrypoint() -> None:
-    exec_process(os.environ.get("VSCODE_NIXFMT_PATH", "nixfmt"), sys.argv[1:] or ["-"])

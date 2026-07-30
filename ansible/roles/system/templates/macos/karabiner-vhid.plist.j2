@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+{% set daemon = system_macos_karabiner.install_root
+  ~ '/Applications/'
+  ~ system_macos_karabiner.executable
+  ~ '.app/Contents/MacOS/'
+  ~ system_macos_karabiner.executable
+%}
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>@LABEL@</string>
+  <string>{{ system_macos_karabiner.label }}</string>
   <key>ProgramArguments</key>
   <array>
-    <string>@DAEMON@</string>
+    <string>{{ daemon }}</string>
   </array>
   <key>UserName</key>
   <string>root</string>
@@ -17,8 +23,8 @@
   <key>ProcessType</key>
   <string>Interactive</string>
   <key>StandardOutPath</key>
-  <string>/var/log/karabiner/virtual_hid_device_service.log</string>
+  <string>{{ system_macos_karabiner.log_dir }}/virtual_hid_device_service.log</string>
   <key>StandardErrorPath</key>
-  <string>/var/log/karabiner/virtual_hid_device_service.log</string>
+  <string>{{ system_macos_karabiner.log_dir }}/virtual_hid_device_service.log</string>
 </dict>
 </plist>

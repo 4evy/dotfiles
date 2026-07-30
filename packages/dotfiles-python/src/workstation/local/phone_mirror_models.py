@@ -1,17 +1,14 @@
-"""Validated configuration and external data models for phone mirroring."""
+"""Validated configuration and Tailscale data for phone mirroring."""
 
-import datetime as dt
 import ipaddress
 from collections.abc import Sequence
+from subprocess import CompletedProcess
 from typing import Annotated, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from workstation.lib.commands import CommandResult
-
 DEFAULT_NAME = "samsung-s25"
-DEFAULT_STABLE_PORT = 5555
-DEFAULT_SCAN_PORTS = "30000-49999"
+DEFAULT_PORT = 5555
 PORT = Annotated[int, Field(ge=1, le=65535)]
 IPAddress = ipaddress.IPv4Address | ipaddress.IPv6Address
 
@@ -23,28 +20,16 @@ class RunCommand(Protocol):
         *,
         timeout: float,
         input_text: str | None = None,
-    ) -> CommandResult: ...
-
-
-class MdnsService(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
-    instance: str
-    service: str
-    host: str
-    port: PORT
+    ) -> CompletedProcess[str]: ...
 
 
 class Config(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    name: str = DEFAULT_NAME
-    ip: str | None = None
-    stable_port: PORT = DEFAULT_STABLE_PORT
-    scan_start: PORT = 30000
-    scan_end: PORT = 49999
+    name: str = Field(DEFAULT_NAME, min_length=1)
+    ip: IPAddress | None = None
+    port: PORT = DEFAULT_PORT
     connect_only: bool = False
-    keep_random_port: bool = False
     render_driver: str | None = "software"
     sdl_video_driver: str | None = "x11"
     scrcpy_args: tuple[str, ...] = ()
@@ -78,10 +63,8 @@ class TailscaleStatus(BaseModel):
         return (*own, *self.peers.values())
 
 
-class PortCache(BaseModel):
+class TargetCache(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    version: int = 1
-    host: str
-    port: PORT
-    updated_at: dt.datetime = Field(default_factory=lambda: dt.datetime.now(dt.UTC))
+    name: str
+    ip: IPAddress

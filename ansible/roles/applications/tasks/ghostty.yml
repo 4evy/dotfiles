@@ -1,169 +1,50 @@
 ---
-- name: Install native Ghostty tip build on Linux
-  dotfiles_operation:
-    executable: "{{ dotfiles_bin_dir }}/dotfiles-scripts"
-    command:
-      - apps
-      - install-ghostty-tip-linux
-      - "{{ dotfiles_cache_dir }}/ghostty"
-      - "{{ dotfiles_home_dir }}/.local"
-    context: "{{ dotfiles_automation_context }}"
-    chdir: "{{ dotfiles_repo_root }}"
-    environment:
-      PATH: "{{ dotfiles_bin_dir }}:{{ dotfiles_path }}"
+- name: Detect Ghostty
+  ansible.builtin.command:
+    argv:
+      - /bin/sh
+      - -c
+      - command -v ghostty
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  register: applications_ghostty
   when: platform_is_linux
-  tags:
-    - applications
-    - ghostty
 
-- name: Detect whether full Xcode is active
-  ansible.builtin.command:
-    argv:
-      - /usr/bin/xcodebuild
-      - -version
-  register: applications_xcode_active
-  check_mode: false
-  changed_when: false
-  failed_when: false
-  when: platform_is_macos
-  tags:
-    - applications
-    - ghostty
-    - xcode
-
-- name: Inspect the standard full Xcode application path
-  ansible.builtin.stat:
-    path: /Applications/Xcode.app/Contents/Developer
-  register: applications_xcode_app
+- name: Require Ghostty from the native Linux host or image
+  ansible.builtin.assert:
+    that:
+      - applications_ghostty.rc == 0
+    fail_msg: >-
+      Ghostty is not installed. Spectrum supplies the patched native build in
+      its BlueBuild image and NixOS supplies packages.ghostty-patched; this
+      role does not install GUI applications through Nix on other Linux hosts.
   when:
-    - platform_is_macos
-    - applications_xcode_active.rc != 0
-  tags:
-    - applications
-    - ghostty
-    - xcode
+    - platform_is_linux
 
-- name: Install full Xcode from the Mac App Store
-  ansible.builtin.command:
-    argv:
-      - "{{ platform_homebrew_prefix }}/bin/mas"
-      - get
-      - "497799835"
-  environment:
-    PATH: "{{ platform_homebrew_path }}"
-  become: true
-  changed_when: true
-  when:
-    - platform_is_macos
-    - applications_xcode_active.rc != 0
-    - not applications_xcode_app.stat.exists
-  tags:
-    - applications
-    - ghostty
-    - xcode
-
-- name: Select full Xcode for command-line builds
-  ansible.builtin.command:
-    argv:
-      - /usr/bin/xcode-select
-      - --switch
-      - /Applications/Xcode.app/Contents/Developer
-  become: true
-  changed_when: true
-  when:
-    - platform_is_macos
-    - applications_xcode_active.rc != 0
-  tags:
-    - applications
-    - ghostty
-    - xcode
-
-- name: Check whether Xcode first-launch setup is complete
-  ansible.builtin.command:
-    argv:
-      - /usr/bin/xcodebuild
-      - -checkFirstLaunchStatus
-  register: applications_xcode_first_launch
-  check_mode: false
-  changed_when: false
-  failed_when: false
-  when: platform_is_macos
-  tags:
-    - applications
-    - ghostty
-    - xcode
-
-- name: Complete Xcode first-launch setup
-  ansible.builtin.command:
-    argv:
-      - /usr/bin/xcodebuild
-      - -runFirstLaunch
-  become: true
-  changed_when: true
-  when:
-    - platform_is_macos
-    - applications_xcode_first_launch.rc != 0
-  tags:
-    - applications
-    - ghostty
-    - xcode
-
-- name: Inspect the Xcode Metal toolchain component
-  ansible.builtin.command:
-    argv:
-      - /usr/bin/xcodebuild
-      - -showComponent
-      - MetalToolchain
-      - -json
-  register: applications_xcode_metal_toolchain
-  check_mode: false
-  changed_when: false
-  when: platform_is_macos
-  tags:
-    - applications
-    - ghostty
-    - xcode
-
-- name: Install the Xcode Metal toolchain component
-  ansible.builtin.command:
-    argv:
-      - /usr/bin/xcodebuild
-      - -downloadComponent
-      - MetalToolchain
-  changed_when: true
-  when:
-    - platform_is_macos
-    - (applications_xcode_metal_toolchain.stdout | from_json).status != 'installed'
-  tags:
-    - applications
-    - ghostty
-    - xcode
-
-- name: Install patched native Ghostty tip build on macOS
-  dotfiles_operation:
-    executable: "{{ dotfiles_bin_dir }}/dotfiles-scripts"
-    command:
-      - apps
-      - install-ghostty-tip-macos
-      - "{{ dotfiles_cache_dir }}/ghostty-macos"
-      - "{{ dotfiles_data_home }}/ghostty-patched"
-      - "{{ platform_homebrew_prefix }}/opt/zig/bin/zig"
-    context: "{{ dotfiles_automation_context }}"
-    chdir: "{{ dotfiles_repo_root }}"
-    environment:
-      PATH: "{{ dotfiles_bin_dir }}:{{ dotfiles_path }}"
-  when: platform_is_macos
-  tags:
-    - applications
-    - ghostty
-
-- name: Link patched Ghostty application bundle on macOS
+- name: Link Homebrew's patched Ghostty application on macOS
   ansible.builtin.file:
-    src: "{{ dotfiles_data_home }}/ghostty-patched/Ghostty.app"
+    src: "{{ platform_homebrew_prefix }}/opt/ghostty-patched/Ghostty.app"
     dest: /Applications/Ghostty.app
     state: link
     force: true
   when: platform_is_macos
-  tags:
-    - applications
-    - ghostty
+
+- name: Keep Ghostty's macOS signing identity stable
+  ansible.builtin.command:
+    argv: >-
+      {{
+        [
+          dotfiles_bin_dir ~ '/dotfiles-scripts',
+          'macos',
+          'sign-ghostty',
+          '--app',
+          platform_homebrew_prefix ~ '/opt/ghostty-patched/Ghostty.app'
+        ]
+        + (['--check'] if ansible_check_mode else [])
+      }}
+  environment:
+    PATH: "{{ dotfiles_bin_dir }}:{{ dotfiles_path }}"
+  changed_when: false
+  check_mode: false
+  when: platform_is_macos

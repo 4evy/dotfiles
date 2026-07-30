@@ -2,7 +2,6 @@ import filecmp
 import os
 import shutil
 import stat
-import tarfile
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -21,24 +20,19 @@ def atomic_binary_writer(
     """Write a file beside its destination and atomically replace it on success."""
     destination_path = safe_path(destination)
     destination_path.parent.mkdir(parents=True, exist_ok=True)
-    temporary_path: Path | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="w+b",
-            prefix=f".{destination_path.name}-",
-            dir=destination_path.parent,
-            delete=False,
-        ) as temporary:
-            temporary_path = Path(temporary.name)
-            os.fchmod(temporary.fileno(), mode)
-            yield temporary
-            temporary.flush()
-            os.fsync(temporary.fileno())
-        temporary_path.replace(destination_path)
-    except BaseException:
-        if temporary_path is not None:
-            temporary_path.unlink(missing_ok=True)
-        raise
+    with tempfile.NamedTemporaryFile(
+        mode="w+b",
+        prefix=f".{destination_path.name}-",
+        dir=destination_path.parent,
+        delete_on_close=False,
+    ) as temporary:
+        os.fchmod(temporary.fileno(), mode)
+        # NamedTemporaryFile owns rollback cleanup if the body raises.
+        yield temporary  # ruff: ignore[fallible-context-manager]
+        temporary.flush()
+        os.fsync(temporary.fileno())
+        temporary.close()
+        Path(temporary.name).replace(destination_path)
 
 
 def require_file(path: str | Path) -> Path:
@@ -57,11 +51,17 @@ def require_directory(path: str | Path) -> Path:
 
 def require_executable(path: str | Path) -> Path:
     result = Path(path)
-    if not result.is_file() or not os.access(result, os.X_OK):
+    if not is_executable(result):
         raise DotfilesError(
             f"required executable does not exist or is not executable: {result}"
         )
     return result
+
+
+def is_executable(path: str | Path) -> bool:
+    """Return whether a path names an executable regular file."""
+    candidate = Path(path)
+    return candidate.is_file() and os.access(candidate, os.X_OK)
 
 
 def ensure_directory(path: str | Path, mode: int | str | None = None) -> Path:
@@ -87,11 +87,6 @@ def fresh_directory(path: str | Path, mode: int | str | None = None) -> Path:
     return ensure_directory(result, mode)
 
 
-def extract_tar_archive(archive: tarfile.TarFile, destination: str | Path) -> None:
-    """Extract an archive using Python 3.14's hardened data filter."""
-    archive.extractall(ensure_directory(destination), filter="data")
-
-
 def install_file_if_changed(
     source: str | Path,
     destination: str | Path,
@@ -100,13 +95,7 @@ def install_file_if_changed(
     source_path = require_file(source)
     destination_path = safe_path(destination)
     parsed_mode = octal_mode(mode, label="file mode")
-    content_matches = destination_path.is_file() and filecmp.cmp(
-        source_path, destination_path, shallow=False
-    )
-    mode_matches = (
-        content_matches and stat.S_IMODE(destination_path.stat().st_mode) == parsed_mode
-    )
-    if content_matches and mode_matches:
+    if files_match(source_path, destination_path, mode=parsed_mode):
         return False
 
     with (
@@ -115,6 +104,27 @@ def install_file_if_changed(
     ):
         shutil.copyfileobj(source_file, target)
     return True
+
+
+def files_match(
+    source: str | Path,
+    destination: str | Path,
+    *,
+    mode: int | str | None = None,
+) -> bool:
+    """Compare regular-file content and, when requested, destination mode."""
+    source_path = Path(source)
+    destination_path = Path(destination)
+    if (
+        not source_path.is_file()
+        or not destination_path.is_file()
+        or not filecmp.cmp(source_path, destination_path, shallow=False)
+    ):
+        return False
+    if mode is None:
+        return True
+    parsed_mode = octal_mode(mode, label="file mode")
+    return stat.S_IMODE(destination_path.stat().st_mode) == parsed_mode
 
 
 def write_if_changed(

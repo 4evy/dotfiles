@@ -16,7 +16,7 @@ bootstrap_permstrap_archive_checksum: >-
   sha256:54991233614cfca6e59bf8d0dfaa29ac33bd96f6e919a6f82149beeb608565df
 bootstrap_permstrap_app_path: /Applications/Permstrap.app
 bootstrap_permstrap_targets_path: >-
-  {{ dotfiles_repo_root }}/manifests/permstrap/PermissionTargets.json
+  {{ role_path }}/files/permstrap/PermissionTargets.json
 
 bootstrap_bootstrap_packages:
   apt:

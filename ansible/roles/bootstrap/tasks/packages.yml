@@ -1,52 +1,31 @@
 ---
-- name: Install apt bootstrap packages
-  ansible.builtin.apt:
-    name: "{{ bootstrap_bootstrap_packages.apt + bootstrap_build_toolchain_packages.apt }}"
-    state: present
-    update_cache: true
-    cache_valid_time: 3600
-  become: true
-  when:
-    - not platform_has_rpm_ostree
-    - ansible_facts.pkg_mgr == 'apt'
-  tags:
-    - bootstrap
-    - packages
-
-- name: Install dnf bootstrap packages
-  ansible.builtin.dnf:
-    name: "{{ bootstrap_bootstrap_packages.dnf + bootstrap_build_toolchain_packages.dnf }}"
+- name: Install bootstrap packages with the detected package manager
+  module_defaults:
+    ansible.builtin.apt:
+      update_cache: true
+      cache_valid_time: 3600
+    community.general.apk:
+      update_cache: true
+    community.general.pacman:
+      update_cache: true
+  ansible.builtin.package:
+    name: >-
+      {{
+        bootstrap_bootstrap_packages[bootstrap_package_key]
+        + bootstrap_build_toolchain_packages[bootstrap_package_key]
+      }}
     state: present
   become: true
   when:
     - not platform_has_rpm_ostree
-    - ansible_facts.pkg_mgr in ['dnf', 'dnf5']
-  tags:
-    - bootstrap
-    - packages
-
-- name: Install pacman bootstrap packages
-  community.general.pacman:
-    name: "{{ bootstrap_bootstrap_packages.pacman + bootstrap_build_toolchain_packages.pacman }}"
-    state: present
-    update_cache: true
-  become: true
-  when:
-    - not platform_has_rpm_ostree
-    - ansible_facts.pkg_mgr == 'pacman'
-  tags:
-    - bootstrap
-    - packages
-
-- name: Install apk bootstrap packages
-  community.general.apk:
-    name: "{{ bootstrap_bootstrap_packages.apk + bootstrap_build_toolchain_packages.apk }}"
-    state: present
-    update_cache: true
-  become: true
-  when:
-    - not platform_has_rpm_ostree
-    - ansible_facts.pkg_mgr == 'apk'
+    - bootstrap_package_key in bootstrap_bootstrap_packages
+  vars:
+    bootstrap_package_key: >-
+      {{
+        'dnf'
+        if ansible_facts.pkg_mgr in ['dnf', 'dnf5']
+        else ansible_facts.pkg_mgr
+      }}
   tags:
     - bootstrap
     - packages

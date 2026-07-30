@@ -1,8 +1,8 @@
 from pathlib import Path
+from subprocess import CompletedProcess
 from typing import TYPE_CHECKING
 
 from workstation.lib import host
-from workstation.lib.commands import CommandResult
 from workstation.lib.host import HostRunner
 
 if TYPE_CHECKING:
@@ -27,9 +27,10 @@ def test_root_runner_disables_privileged_bytecode_writes(
     def record(
         argv: Sequence[str | Path],
         **_kwargs: object,
-    ) -> CommandResult:
-        calls.append(tuple(map(str, argv)))
-        return CommandResult(0, "", "")
+    ) -> CompletedProcess[str]:
+        command = tuple(map(str, argv))
+        calls.append(command)
+        return CompletedProcess(command, 0, "", "")
 
     monkeypatch.setattr(host, "run", record)
 

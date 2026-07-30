@@ -1,11 +1,11 @@
 import sys
-from typing import TYPE_CHECKING
+from subprocess import CompletedProcess
 
+import pytest
+
+from workstation.errors import DotfilesError
 from workstation.lib import commands
 from workstation.lib.commands import run
-
-if TYPE_CHECKING:
-    import pytest
 
 
 def test_discard_output_keeps_stderr_diagnostics(
@@ -23,6 +23,39 @@ def test_discard_output_keeps_stderr_diagnostics(
     captured = capfd.readouterr()
     assert "discarded" not in captured.out
     assert "diagnostic" in captured.err
+
+
+def test_run_returns_completed_process_and_merges_environment() -> None:
+    result = run(
+        (
+            sys.executable,
+            "-c",
+            "import os; print(os.environ['DOTFILES_COMMAND_TEST'])",
+        ),
+        capture=True,
+        env={"DOTFILES_COMMAND_TEST": "inherited-plus-override"},
+    )
+
+    assert isinstance(result, CompletedProcess)
+    assert result.returncode == 0
+    assert result.stdout == "inherited-plus-override\n"
+    assert not result.stderr
+
+
+def test_run_reports_checked_failure_with_quoted_arguments() -> None:
+    with pytest.raises(
+        DotfilesError,
+        match=r"command failed \(7\): .*argument with spaces.*\nintentional failure",
+    ):
+        run(
+            (
+                sys.executable,
+                "-c",
+                "import sys; print('intentional failure', file=sys.stderr); sys.exit(7)",
+                "argument with spaces",
+            ),
+            capture=True,
+        )
 
 
 def test_exec_process_preserves_explicit_argv_zero(

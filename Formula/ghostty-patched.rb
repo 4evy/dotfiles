@@ -1,19 +1,18 @@
 require "json"
+require "base64"
 
 class GhosttyPatched < Formula
   tap_root = Pathname(__dir__).parent
-  sources = tap_root/"sources.json"
-  sources = tap_root/"manifests/sources.json" unless sources.exist?
-  ghostty_source = JSON.parse(
-    sources.read,
-  ).fetch("sources").fetch("ghostty")
-  ghostty_artifact = ghostty_source.fetch("artifacts").fetch("source")
+  pins = JSON.parse((tap_root/"npins/sources.json").read).fetch("pins")
+  ghostty = pins.fetch("ghostty")
+  archive = pins.fetch("ghostty_archive")
+  digest = Base64.strict_decode64(archive.fetch("hash").delete_prefix("sha256-")).unpack1("H*")
 
   desc "Fast, native terminal emulator with dotfiles scrollback patches"
   homepage "https://ghostty.org"
-  url ghostty_artifact.fetch("url")
-  version ghostty_source.fetch("version")
-  sha256 ghostty_artifact.fetch("sha256")
+  url archive.fetch("url")
+  version "1.3.2-dev.#{ghostty.fetch("revision")[0, 7]}"
+  sha256 digest
   license "MIT"
 
   depends_on "gettext" => :build

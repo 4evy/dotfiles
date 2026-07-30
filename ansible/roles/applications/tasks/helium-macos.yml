@@ -24,26 +24,31 @@
     - helium
 
 - name: Configure Helium on macOS
-  dotfiles_operation:
-    executable: "{{ dotfiles_bin_dir }}/dotfiles-scripts"
-    command:
-      - apps
-      - install-helium-macos
-      - "{{ dotfiles_cache_dir }}/helium-browser"
-      - "{{ dotfiles_bin_dir }}"
-      - "{{ dotfiles_cache_dir }}/helium-browser/installer-bin"
-      - "--flags={{ applications_helium_macos_flags }}"
-    context: "{{ dotfiles_automation_context }}"
-    chdir: "{{ dotfiles_repo_root }}"
-    environment:
-      PATH: "{{ platform_homebrew_path | default(dotfiles_path) }}"
-      DOTFILES_HELIUM_COOKIE_ALLOWLIST: >-
-        {{
-          applications_private_settings['chromium-cookie-allowed-for-urls']
-          | default([])
-          | to_json
-        }}
+  ansible.builtin.command:
+    argv: >-
+      {{
+        [
+          dotfiles_bin_dir ~ '/dotfiles-scripts',
+          'apps',
+          'configure-helium-macos',
+          dotfiles_cache_dir ~ '/helium',
+          dotfiles_bin_dir,
+          dotfiles_cache_dir ~ '/helium/configurer',
+          '--flags=' ~ applications_helium_macos_flags
+        ]
+        + (['--check'] if ansible_check_mode else [])
+      }}
+  environment:
+    PATH: "{{ dotfiles_bin_dir }}:{{ platform_homebrew_path | default(dotfiles_path) }}"
+    DOTFILES_HELIUM_COOKIE_ALLOWLIST: >-
+      {{
+        applications_private_settings['chromium-cookie-allowed-for-urls']
+        | default([])
+        | to_json
+      }}
   no_log: true
+  changed_when: false
+  check_mode: false
   vars:
     applications_helium_macos_flags: >-
       --no-first-run --no-default-browser-check --disable-search-engine-choice-screen

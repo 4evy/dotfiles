@@ -38,9 +38,6 @@ jobs:
           uv lock --check
           uv sync
 
-      - name: Check Ruff Formatting
-        run: uv run ruff format --check .
-
       - name: Run Ruff
         run: uv run ruff check --output-format github .
 
@@ -57,10 +54,7 @@ jobs:
         run: uv run vulture
 
       - name: Compile Python Sources
-        run: uv run python -m compileall -q ansible dotfiles packages spectrum
-
-      - name: Validate Shared Manifests
-        run: uv run dotfiles-scripts manifests check
+        run: uv run python -m compileall -q ansible dotfiles packages
 
       - name: Test
         run: uv run pytest

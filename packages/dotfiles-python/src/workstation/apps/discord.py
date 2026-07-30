@@ -6,12 +6,15 @@ from typing import Annotated
 
 from cyclopts import App, Parameter
 from packaging.version import InvalidVersion, Version
+from platformdirs import (
+    user_bin_path as user_bin_home,
+    user_config_path as user_config_home,
+)
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, ValidationError
 
 from workstation.errors import DotfilesError
 from workstation.lib.commands import run
-from workstation.lib.files import ensure_directory, write_if_changed
-from workstation.lib.host import user_config_home
+from workstation.lib.files import ensure_directory, is_executable, write_if_changed
 
 
 class ChromiumSwitches(BaseModel):
@@ -44,12 +47,7 @@ DISCORD_FLAGS = (
 def _flags_from_file(path: Path) -> list[str]:
     if not path.is_file():
         return []
-    result: list[str] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        stripped = line.strip()
-        if stripped and not stripped.startswith("#"):
-            result.extend(shlex.split(stripped))
-    return result
+    return shlex.split(path.read_text(encoding="utf-8"), comments=True)
 
 
 def _configure_gpu(discord_dir: Path) -> None:
@@ -71,7 +69,7 @@ def _configure_gpu(discord_dir: Path) -> None:
 
 
 def _patch_location(location: Path, equilotl: Path) -> None:
-    if not equilotl.is_file() or not os.access(equilotl, os.X_OK):
+    if not is_executable(equilotl):
         return
     asar = location / "resources/app.asar"
     build_info = location / "resources/build_info.json"
@@ -118,16 +116,14 @@ def _macos_equilotl(package_bin: Path) -> Path | None:
     configured = os.environ.get("DISCORD_EQUICORD_EQUILOTL")
     candidates = (
         Path(configured) if configured else None,
-        Path.home() / ".local/bin/EquilotlCli-darwin-arm64",
+        user_bin_home() / "EquilotlCli-darwin-arm64",
         package_bin / "EquilotlCli-darwin-arm64",
     )
     return next(
         (
             candidate
             for candidate in candidates
-            if candidate is not None
-            and candidate.is_file()
-            and os.access(candidate, os.X_OK)
+            if candidate is not None and is_executable(candidate)
         ),
         None,
     )
@@ -137,16 +133,14 @@ def _linux_equilotl(package_bin: Path) -> Path:
     configured = os.environ.get("DISCORD_EQUICORD_EQUILOTL")
     candidates = (
         Path(configured) if configured else None,
-        Path.home() / ".local/bin/EquilotlCli-linux",
+        user_bin_home() / "EquilotlCli-linux",
         package_bin / "EquilotlCli-linux",
     )
     return next(
         (
             candidate
             for candidate in candidates
-            if candidate is not None
-            and candidate.is_file()
-            and os.access(candidate, os.X_OK)
+            if candidate is not None and is_executable(candidate)
         ),
         package_bin / "EquilotlCli-linux",
     )
@@ -225,7 +219,7 @@ def main(
         raise DotfilesError(
             "discord-equicord: launching Discord is only supported on Linux"
         )
-    if not discord_host.is_file() or not os.access(discord_host, os.X_OK):
+    if not is_executable(discord_host):
         ensure_directory(discord_dir)
         bootstrap = next(
             (
@@ -235,7 +229,7 @@ def main(
                     Path("/opt/discord/updater_bootstrap"),
                     Path("/opt/Discord/updater_bootstrap"),
                 )
-                if path.is_file() and os.access(path, os.X_OK)
+                if is_executable(path)
             ),
             None,
         )

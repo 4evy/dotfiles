@@ -50,15 +50,6 @@ class ThemeModule(Protocol):
 
     def daylight_theme(self, now: dt.datetime | None = None) -> ThemeChoice: ...
 
-    def coordinate_from_env(
-        self,
-        name: str,
-        minimum: float,
-        maximum: float,
-    ) -> float | None: ...
-
-    def hex_to_rgb_csv(self, value: str) -> str: ...
-
 
 class RefreshModule(Protocol):
     subprocess: ModuleType
@@ -162,27 +153,6 @@ def test_astral_selects_sofia_day_and_night(
     assert choice.source.startswith("sun default-sofia")
 
 
-@pytest.mark.parametrize("value", ["123456", "#12345", "#12345g", "#1234567"])
-def test_hex_color_rejects_noncanonical_values(
-    theme_module: ThemeModule,
-    value: str,
-) -> None:
-    with pytest.raises(ValueError, match="invalid hex color"):
-        theme_module.hex_to_rgb_csv(value)
-
-
-@pytest.mark.parametrize("value", ["nan", "inf", "-inf", "91"])
-def test_coordinate_rejects_nonfinite_and_out_of_range_values(
-    theme_module: ThemeModule,
-    monkeypatch: pytest.MonkeyPatch,
-    value: str,
-) -> None:
-    monkeypatch.setenv("TEST_LATITUDE", value)
-
-    with pytest.raises(ValueError, match="TEST_LATITUDE must be between"):
-        theme_module.coordinate_from_env("TEST_LATITUDE", -90.0, 90.0)
-
-
 def test_refresh_tracks_occupied_ttys_until_they_can_restart(
     refresh_module: RefreshModule,
     tmp_path: Path,
@@ -225,21 +195,12 @@ def test_refresh_tracks_occupied_ttys_until_they_can_restart(
     assert calls == []
 
 
-@pytest.mark.parametrize(
-    "state_data",
-    [
-        "not-json",
-        "[]",
-        '{"config_sha256": "expected", "pending_ttys": "tty1"}',
-    ],
-)
-def test_refresh_recovers_from_invalid_state_shapes(
+def test_refresh_recovers_from_corrupt_state(
     refresh_module: RefreshModule,
     tmp_path: Path,
-    state_data: str,
 ) -> None:
     state = tmp_path / "state.json"
-    state.write_text(state_data, encoding="utf-8")
+    state.write_text("not-json", encoding="utf-8")
 
     assert refresh_module.load_pending(state, "expected") == {
         f"tty{number}" for number in range(1, 7)

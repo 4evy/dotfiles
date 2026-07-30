@@ -1,11 +1,11 @@
 ---
 dotfiles_repo_root: "{{ inventory_dir | dirname | dirname }}"
-dotfiles_sources: >-
+dotfiles_pins: >-
   {{
     (
-      lookup('file', dotfiles_repo_root ~ '/manifests/sources.json')
+      lookup('file', dotfiles_repo_root ~ '/npins/sources.json')
       | from_json
-    ).sources
+    ).pins
   }}
 dotfiles_home_dir: "{{ ansible_facts.get('env', {}).get('HOME', lookup('env', 'HOME')) }}"
 dotfiles_path: "{{ ansible_facts.get('env', {}).get('PATH', lookup('env', 'PATH')) }}"
@@ -15,11 +15,3 @@ dotfiles_data_home: "{{ ansible_facts.get('env', {}).get('XDG_DATA_HOME', dotfil
 dotfiles_cache_dir: "{{ dotfiles_cache_home }}/dotfiles/ansible"
 dotfiles_bin_dir: "{{ dotfiles_home_dir }}/.local/bin"
 dotfiles_data_dir: "{{ dotfiles_data_home }}/dotfiles"
-dotfiles_automation_context:
-  repo_root: "{{ dotfiles_repo_root }}"
-  home: "{{ dotfiles_home_dir }}"
-  cache_dir: "{{ dotfiles_cache_dir }}"
-  data_dir: "{{ dotfiles_data_dir }}"
-  bin_dir: "{{ dotfiles_bin_dir }}"
-  system: "{{ platform_system }}"
-  architecture: "{{ platform_architecture }}"

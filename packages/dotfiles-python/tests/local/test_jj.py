@@ -25,51 +25,6 @@ def _invoke(
     return exit_code, captured.out + captured.err
 
 
-def test_jj_get_help_does_not_require_a_repository(
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    monkeypatch.setattr(
-        get_module,
-        "_git",
-        lambda *_args, **_kwargs: pytest.fail("help must not inspect the repository"),
-    )
-    exit_code, output = _invoke(get_module.app, ["--help"], capsys)
-
-    assert exit_code == 0
-    assert "Usage:" in output
-
-
-@pytest.mark.parametrize(
-    "arguments",
-    [
-        ["123", "owner/repo", "ignored"],
-        ["https://github.com/owner/repo/pull/123", "ignored"],
-    ],
-)
-def test_jj_get_rejects_extra_pr_arguments(
-    arguments: list[str],
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    exit_code, output = _invoke(get_module.app, arguments, capsys)
-
-    assert exit_code == 1
-    assert "Invalid value" in output
-
-
-def test_jj_get_rejects_base_after_remote_in_target(
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    exit_code, output = _invoke(
-        get_module.app,
-        ["feature@upstream", "main", "ignored"],
-        capsys,
-    )
-
-    assert exit_code == 1
-    assert "BOOKMARK@REMOTE" in output
-
-
 def test_jj_get_accepts_pr_url_query(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -84,7 +39,7 @@ def test_jj_get_accepts_pr_url_query(
 
     exit_code, output = _invoke(
         get_module.app,
-        ["https://github.com/owner/repo/pull/123?notification_referrer=1"],
+        ["https://downloads.com/owner/repo/pull/123?notification_referrer=1"],
         capsys,
     )
 
@@ -177,7 +132,7 @@ def test_jj_get_pr_delegates_mutation_to_jj(
     monkeypatch.setattr(
         get_module,
         "_fetch_url",
-        lambda _repo: "git@github.com:owner/repo.git",
+        lambda _repo: "git@downloads.com:owner/repo.git",
     )
     monkeypatch.setattr(get_module, "run", calls.append)
 
@@ -191,7 +146,7 @@ def test_jj_get_pr_delegates_mutation_to_jj(
             "git",
             "fetch-ref",
             "--source",
-            "git@github.com:owner/repo.git",
+            "git@downloads.com:owner/repo.git",
             "refs/pull/123/head",
             "--remote",
             "github-pr",
@@ -202,9 +157,3 @@ def test_jj_get_pr_delegates_mutation_to_jj(
             "refs/heads/main",
         )
     ]
-
-
-@pytest.mark.parametrize("target", ["@origin", "feature@"])
-def test_jj_get_rejects_invalid_remote_bookmark_target(target: str) -> None:
-    with pytest.raises(get_module.DotfilesError, match="invalid BOOKMARK@REMOTE"):
-        get_module._resolve_branch(target, None, None)

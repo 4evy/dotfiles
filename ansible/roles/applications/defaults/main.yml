@@ -1,12 +1,13 @@
 ---
+applications_helium_linux_current: "{{ dotfiles_data_dir }}/helium/current"
 applications_helix_revision: >-
   {{
     lookup('env', 'HELIX_TIP_REVISION')
-    | default(dotfiles_sources.helix.revision, true)
+    | default(dotfiles_pins.helix.revision, true)
   }}
 applications_helix_repository: >-
-  https://github.com/{{ dotfiles_sources.helix.repository.owner }}/{{
-    dotfiles_sources.helix.repository.name
+  https://github.com/{{ dotfiles_pins.helix.repository.owner }}/{{
+    dotfiles_pins.helix.repository.repo
   }}.git
 applications_helix_cache_dir: "{{ dotfiles_cache_dir }}/helix"
 applications_helix_source_dir: "{{ applications_helix_cache_dir }}/source"

@@ -3,8 +3,8 @@ keyboard_kanata_staged_binary: >-
   {{ dotfiles_data_dir }}/host/bin-staging/kanata/root/bin/kanata
 keyboard_kanata_source_dir: "{{ dotfiles_cache_dir }}/sources/kanata"
 keyboard_kanata_repository: >-
-  https://github.com/{{ dotfiles_sources.kanata.repository.owner }}/{{
-    dotfiles_sources.kanata.repository.name
+  https://github.com/{{ dotfiles_pins.kanata.repository.owner }}/{{
+    dotfiles_pins.kanata.repository.repo
   }}.git
 keyboard_kanata_install_root: >-
   {{ dotfiles_data_dir }}/host/bin-staging/kanata/root

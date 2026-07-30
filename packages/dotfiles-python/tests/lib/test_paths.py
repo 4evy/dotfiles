@@ -2,20 +2,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from workstation.lib import paths
-from workstation.lib.paths import asset_path, assets_root, repository_root
 
 if TYPE_CHECKING:
     import pytest
-
-
-def test_repository_owned_paths_resolve_from_one_root() -> None:
-    root = repository_root()
-
-    assert (root / "pyproject.toml").is_file()
-    assert assets_root() == root / "packages/dotfiles-python/assets"
-    assert asset_path("apps", "ghidra-mcp").is_dir()
-    assert asset_path("apps", "ghostty", "patches") == root / "patches/ghostty"
-    assert asset_path("apps", "helium", "helium.toml") == root / "browser/helium.toml"
 
 
 def test_installed_assets_do_not_require_a_repository(
@@ -28,7 +17,7 @@ def test_installed_assets_do_not_require_a_repository(
     def no_repository() -> Path:
         raise FileNotFoundError
 
-    monkeypatch.setattr(paths, "_installed_asset_roots", lambda: (installed,))
+    monkeypatch.setattr(paths, "installed_data_roots", lambda: (installed,))
     monkeypatch.setattr(paths, "repository_root", no_repository)
     paths.assets_root.cache_clear()
 
@@ -36,3 +25,25 @@ def test_installed_assets_do_not_require_a_repository(
         assert paths.assets_root() == installed
     finally:
         paths.assets_root.cache_clear()
+
+
+def test_asset_path_accepts_domain_owned_development_source(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    installed = tmp_path / "installed"
+    repository = tmp_path / "repository"
+    installed.mkdir()
+    source = repository / "domain/source.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("source")
+    monkeypatch.setattr(paths, "assets_root", lambda: installed)
+    monkeypatch.setattr(paths, "repository_root", lambda: repository)
+
+    assert (
+        paths.asset_path(
+            "installed/source.txt",
+            development_source=("domain", "source.txt"),
+        )
+        == source
+    )

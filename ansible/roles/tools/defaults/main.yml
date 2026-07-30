@@ -13,8 +13,6 @@ tools_homebrew_commands:
 
 tools_python_tools:
   - dotfiles-scripts
-  - hyper-window-tiling-build
-  - install-ghidra-mcp
 
 tools_upstream_script_tools:
   - name: yt-dlp-script

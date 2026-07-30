@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>@LABEL@</string>
+  <string>{{ system_macos_kanata.label }}</string>
   <key>ProgramArguments</key>
   <array>
-    <string>@APP_BIN@</string>
+    <string>{{ system_macos_kanata.app_bin }}</string>
     <string>--no-wait</string>
     <string>--cfg</string>
-    <string>@CONFIG_PATH@</string>
+    <string>{{ system_macos_kanata.config }}</string>
   </array>
   <key>RunAtLoad</key>
   <true/>
@@ -23,8 +23,8 @@
   <key>ProcessType</key>
   <string>Interactive</string>
   <key>StandardOutPath</key>
-  <string>@LOG_PATH@</string>
+  <string>{{ system_macos_kanata.log_path }}</string>
   <key>StandardErrorPath</key>
-  <string>@LOG_PATH@</string>
+  <string>{{ system_macos_kanata.log_path }}</string>
 </dict>
 </plist>

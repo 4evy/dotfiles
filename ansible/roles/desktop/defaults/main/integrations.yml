@@ -43,16 +43,16 @@ desktop_sushi_profile: >-
 desktop_sushi_revision: >-
   {{
     lookup('env', 'SUSHI_PREVIEW_REV')
-    | default(dotfiles_sources.sushi.revision, true)
+    | default(dotfiles_pins.sushi.revision, true)
   }}
 desktop_sushi_repository: >-
   {{
     lookup('env', 'SUSHI_PREVIEW_REPO')
     | default(
         'https://github.com/'
-        ~ dotfiles_sources.sushi.repository.owner
+        ~ dotfiles_pins.sushi.repository.owner
         ~ '/'
-        ~ dotfiles_sources.sushi.repository.name
+        ~ dotfiles_pins.sushi.repository.repo
         ~ '.git',
         true
       )

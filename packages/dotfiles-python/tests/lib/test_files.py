@@ -5,7 +5,6 @@ import pytest
 from workstation.lib.files import (
     atomic_binary_writer,
     fresh_directory,
-    remove_path,
     replace_directory,
 )
 
@@ -31,25 +30,6 @@ def test_atomic_binary_writer_replaces_only_after_success(tmp_path: Path) -> Non
 
     assert destination.read_bytes() == b"complete"
     assert destination.stat().st_mode & 0o777 == 0o600
-
-
-def test_remove_path_handles_files_links_and_directories(tmp_path: Path) -> None:
-    target = tmp_path / "target"
-    target.mkdir()
-    (target / "nested").write_text("data")
-    link = tmp_path / "link"
-    link.symlink_to(target, target_is_directory=True)
-    file = tmp_path / "file"
-    file.write_text("data")
-
-    remove_path(link)
-    remove_path(file)
-    remove_path(target)
-    remove_path(tmp_path / "missing")
-
-    assert not link.exists()
-    assert not file.exists()
-    assert not target.exists()
 
 
 def test_fresh_directory_replaces_a_symlink(tmp_path: Path) -> None:

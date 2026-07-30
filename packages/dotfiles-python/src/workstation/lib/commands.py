@@ -1,27 +1,46 @@
 import os
+import shlex
 import shutil
 import subprocess
 import sys
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
-
-from plumbum import local
-from plumbum.commands.processes import (
-    CommandNotFound,
-    ProcessExecutionError,
-    ProcessTimedOut,
-)
+from typing import IO, Literal
 
 from workstation.errors import DotfilesError
+from workstation.lib.files import is_executable
+
+type ProcessStream = int | IO[str] | None
 
 
-@dataclass(frozen=True, slots=True)
-class CommandResult:
-    returncode: int
-    stdout: str
-    stderr: str
+def _process_streams(
+    *,
+    capture: bool,
+    output_mode: Literal["inherit", "stderr", "discard"],
+) -> tuple[ProcessStream, ProcessStream]:
+    if capture:
+        return subprocess.PIPE, subprocess.PIPE
+    if output_mode == "discard":
+        return subprocess.DEVNULL, None
+    if output_mode == "stderr":
+        return sys.stderr, None
+    return None, None
+
+
+def _process_error(
+    error: FileNotFoundError
+    | subprocess.TimeoutExpired
+    | subprocess.CalledProcessError,
+    arguments: list[str],
+) -> str:
+    command = shlex.join(arguments)
+    if isinstance(error, FileNotFoundError):
+        return f"command is not available: {arguments[0]}"
+    if isinstance(error, subprocess.TimeoutExpired):
+        return f"command timed out after {error.timeout} seconds: {command}"
+    details = (error.stderr or "").strip() or (error.stdout or "").strip()
+    message = f"command failed ({error.returncode}): {command}"
+    return f"{message}\n{details}" if details else message
 
 
 def exec_process(
@@ -43,38 +62,14 @@ def exec_process(
 def which(name: str, *, path: str | None = None) -> Path | None:
     if "/" in name:
         candidate = Path(name)
-        return (
-            candidate if candidate.is_file() and os.access(candidate, os.X_OK) else None
-        )
+        return candidate if is_executable(candidate) else None
     executable = shutil.which(name, path=path)
     return Path(executable) if executable is not None else None
 
 
 def require_commands(*names: str) -> None:
-    for name in names:
-        if which(name) is None:
-            raise DotfilesError(f"required command is not available: {name}")
-
-
-def _configure_output(
-    kwargs: dict[str, object],
-    *,
-    capture: bool,
-    output_mode: Literal["inherit", "stderr", "discard"],
-) -> None:
-    if output_mode == "discard":
-        kwargs.update(stdout=subprocess.DEVNULL, stderr=None)
-    elif not capture:
-        kwargs.update(
-            stdout=sys.stderr if output_mode == "stderr" else None,
-            stderr=None,
-        )
-
-
-def _process_error(error: ProcessExecutionError, arguments: list[str]) -> DotfilesError:
-    details = error.stderr.strip() or error.stdout.strip()
-    message = f"command failed ({error.retcode}): {' '.join(arguments)}"
-    return DotfilesError(f"{message}\n{details}" if details else message)
+    if missing := next((name for name in names if which(name) is None), None):
+        raise DotfilesError(f"required command is not available: {missing}")
 
 
 def run(
@@ -87,35 +82,33 @@ def run(
     input_text: str | None = None,
     timeout: float | None = None,
     output_mode: Literal["inherit", "stderr", "discard"] = "inherit",
-) -> CommandResult:
+) -> subprocess.CompletedProcess[str]:
     if not argv:
         raise DotfilesError("run requires a command")
     arguments = [os.fspath(argument) for argument in argv]
+    stdout, stderr = _process_streams(
+        capture=capture,
+        output_mode=output_mode,
+    )
     try:
-        command = local[arguments[0]][arguments[1:]]
-    except CommandNotFound as error:
-        raise DotfilesError(f"command is not available: {arguments[0]}") from error
-
-    command_env = dict(local.env)
-    if env:
-        command_env.update(env)
-    kwargs: dict[str, object] = {
-        "cwd": os.fspath(cwd) if cwd is not None else None,
-        "env": command_env,
-        "retcode": 0 if check else None,
-        "timeout": timeout,
-    }
-    runnable = command if input_text is None else command << input_text
-    _configure_output(kwargs, capture=capture, output_mode=output_mode)
-    try:
-        returncode, stdout, stderr = runnable.run((), **kwargs)
-    except ProcessTimedOut as error:
-        raise DotfilesError(
-            f"command timed out after {timeout} seconds: {' '.join(arguments)}"
-        ) from error
-    except ProcessExecutionError as error:
-        raise _process_error(error, arguments) from error
-    return CommandResult(returncode, stdout or "", stderr or "")
+        result = subprocess.run(
+            arguments,
+            check=check,
+            cwd=cwd,
+            env={**os.environ, **env} if env is not None else None,
+            input=input_text,
+            stdout=stdout,
+            stderr=stderr,
+            text=True,
+            timeout=timeout,
+        )
+    except (
+        FileNotFoundError,
+        subprocess.CalledProcessError,
+        subprocess.TimeoutExpired,
+    ) as error:
+        raise DotfilesError(_process_error(error, arguments)) from error
+    return result
 
 
 def output(

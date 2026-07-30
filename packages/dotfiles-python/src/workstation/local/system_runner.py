@@ -1,5 +1,4 @@
 import os
-import shutil
 import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -10,7 +9,8 @@ from cyclopts import App, Parameter
 from cyclopts.exceptions import CycloptsError, MissingArgumentError
 
 from workstation.errors import UsageError
-from workstation.lib.commands import exec_process
+from workstation.lib.commands import exec_process, which
+from workstation.lib.files import is_executable
 
 DEFAULT_RUNNER_PATH = ":".join((
     "/usr/sbin",
@@ -97,13 +97,13 @@ def parse_invocation(argv: Sequence[str]) -> Invocation | None:
     program, *arguments = command
     if "/" in program:
         candidate = Path(program)
-        if candidate.is_file() and not os.access(candidate, os.X_OK):
+        if candidate.info.is_file() and not is_executable(candidate):
             arguments.insert(0, program)
             program = "/bin/cat"
     else:
-        resolved = shutil.which(program, path=path_value)
+        resolved = which(program, path=path_value)
         if resolved is not None:
-            program = resolved
+            program = os.fspath(resolved)
 
     environment = dict(os.environ)
     environment.update(overrides)
