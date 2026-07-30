@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import json
+import sys
 from collections.abc import Sequence
 from pathlib import Path
 from subprocess import CompletedProcess
+from typing import TYPE_CHECKING
 
 from workstation.local.phone_mirror import (
     Config,
@@ -11,6 +15,9 @@ from workstation.local.phone_mirror import (
     _write_cached_ip,
     resolve_tailscale_ip,
 )
+
+if TYPE_CHECKING:
+    import pytest
 
 
 class FakeRunner:
@@ -84,7 +91,10 @@ def test_tailscale_address_cache_is_bound_to_name(tmp_path: Path) -> None:
     assert path.stat().st_mode & 0o777 == 0o600
 
 
-def test_scrcpy_owns_tcpip_connection_and_launch() -> None:
+def test_scrcpy_owns_tcpip_connection_and_launch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(sys, "platform", "linux")
     runner = FakeRunner({
         ("scrcpy", "--help"): CompletedProcess((), 0, "options: --keep-active", "")
     })
@@ -96,11 +106,16 @@ def test_scrcpy_owns_tcpip_connection_and_launch() -> None:
     assert mirror._scrcpy_arguments("100.64.0.9") == (
         "--tcpip=100.64.0.9:5555",
         "--keep-active",
+        "--render-driver",
+        "software",
         "--turn-screen-off",
     )
 
 
-def test_connect_only_still_uses_scrcpy_tcpip() -> None:
+def test_connect_only_still_uses_scrcpy_tcpip(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(sys, "platform", "linux")
     runner = FakeRunner({
         ("scrcpy", "--help"): CompletedProcess((), 0, "--stay-awake", "")
     })
@@ -109,6 +124,8 @@ def test_connect_only_still_uses_scrcpy_tcpip() -> None:
     assert mirror._scrcpy_arguments("100.64.0.9") == (
         "--tcpip=100.64.0.9:5555",
         "--stay-awake",
+        "--render-driver",
+        "software",
         "--no-video",
         "--no-audio",
         "--no-control",
