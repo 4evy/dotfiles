@@ -21,22 +21,45 @@ with Homebrew, Nix, Ansible, and chezmoi.
 </p>
 
 > [!IMPORTANT]
-> This is my personal setup.
+> This is my personal setup. It is public for reference, not a universal installer.
+
+## What's here
+
+- **Spectrum / Bluefin:** custom bootc image and desktop setup
+- **NixOS:** declarative system and user configuration
+- **macOS:** Homebrew and Ansible bootstrap
+- **Everywhere:** shared dotfiles managed by chezmoi
+
+## Shell composition
+
+```text
+.bashenv ─┐
+.zshenv ──┴─> environment.sh
+
+.bashrc ────> bashrc.d/*.bash ─┐
+                               ├─> interactive.common.sh
+.zshrc  ───>  zshrc.d/*.zsh   ─┘      └─> interactive.d/*.sh
+```
 
 ## Setup
 
-### Spectrum / Bluefin
-
-Start from a fresh Bluefin install:
+Clone the repository first:
 
 ```bash
 git clone https://github.com/4evy/dotfiles.git ~/dotfiles
 cd ~/dotfiles
+```
+
+### Spectrum / Bluefin
+
+From a fresh Bluefin install:
+
+```bash
 sudo bootc switch ghcr.io/4evy/spectrum:latest
 systemctl reboot
 ```
 
-After rebooting into Spectrum, finish the machine setup:
+After rebooting:
 
 ```bash
 cd ~/dotfiles
@@ -45,15 +68,9 @@ just setup
 
 ### NixOS
 
-The NixOS flake owns the declarative host, desktop, development, and package state.
-Ansible still performs platform detection, but skips the userland and host stages that
-NixOS owns
-
 From an installed NixOS system:
 
 ```bash
-git clone https://github.com/4evy/dotfiles.git ~/dotfiles
-cd ~/dotfiles
 sudo nixos-rebuild \
   --option extra-substituters https://install.determinate.systems \
   --option extra-trusted-public-keys cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= \
@@ -62,108 +79,45 @@ sudo nixos-rebuild \
 just setup
 ```
 
-The one-time extra cache options let an upstream Nix installation fetch Determinate Nix
-during the first switch. Subsequent rebuilds use the regular `nixos-rebuild` command.
+The extra cache options are only needed for the first rebuild. Later rebuilds
+can use:
 
-`just setup` runs the shared bootstrap orchestration and applies the chezmoi source. On
-NixOS, host and package changes belong in `hosts/linux` or `modules/nixos`, followed by
-another `nixos-rebuild`
-
-Spectrum's checked-in Bluetooth and systemd policy files are also the NixOS source of
-truth: the NixOS module links them into the system configuration without translating
-their contents into Nix. Shared source pins and Spectrum program definitions live in
-`manifests/sources.json` and `manifests/spectrum-programs.toml`
+```bash
+sudo nixos-rebuild switch --flake .#nixos
+```
 
 ### macOS
 
 ```bash
-git clone https://github.com/4evy/dotfiles.git ~/dotfiles
-cd ~/dotfiles
 ./ansible/bootstrap.sh --tags userland
 just setup
 ```
 
-Determinate Nix owns `/etc/nix/nix.conf` on macOS. The Ansible tools role manages
-host-specific overrides in `/etc/nix/nix.custom.conf`; this setup intentionally does
-not use nix-darwin.
+## Everyday commands
 
-## Commands
-
-Run `just` or `just --list` to see the public recipes available on the current platform.
-Optional arguments are shown in brackets below
-
-### Setup and system
+Run `just` or `just --list` for the complete recipe list.
 
 ```bash
-just setup             # Bootstrap userland, apply dotfiles, then apply host stages (alias: s)
-just update            # Refresh userland, dotfiles, and host stages (alias: up)
-just apply             # Apply only the chezmoi-managed dotfiles (alias: a)
-just nix               # Install Nix and add the repository's Nix profile tools (alias: nx)
-just doctor [profile]  # Check workflow dependencies; defaults to setup
-just status            # Show bootc status and image metadata on Linux
-just clean             # Reclaim disposable data on Linux after confirmation
-just reboot            # Reboot through systemd on Linux after confirmation (alias: r)
+just setup          # Bootstrap and apply everything
+just update         # Update userland, dotfiles, and host setup
+just apply          # Apply chezmoi dotfiles only
+just status         # Show Spectrum image status
+
+just spectrum-validate # Validate the BlueBuild recipe and base digest
+just spectrum-build    # Build Spectrum locally
+just spectrum-inspect  # Inspect and test the local image
+
+just fmt            # Format the repository
+just lint           # Run static checks
+just check          # Run the full validation suite
 ```
 
-Doctor profiles are `status`, `reboot`, `install`, `build`, `setup`, `apply`,
-`shell`, `spectrum`, `fmt`, `lint`, `c`, `ansible`, `bun`, `smoke`, `nix`,
-`watch`, `check`, and `all`.
-
-### Spectrum image
-
-These image lifecycle commands are Linux-only except for `spectrum-lint`.
-`target` defaults to `localhost/spectrum:local` for local operations and
-`ghcr.io/4evy/spectrum:latest` for `install`
+For direct Nix work:
 
 ```bash
-just install [target]               # Switch to the published image on next boot (alias: i)
-just build [target]                 # Build the local image with cached layers (alias: b)
-just build-clean [target]           # Rebuild the local image without cached layers
-just spectrum-dev [target]          # Compatibility name for the cached local build
-just switch [target]                # Build and switch to or stage the local image (alias: sw)
-just upgrade [target]               # Rebuild the image and stage a bootc upgrade (alias: u)
-just spectrum-lint                  # Validate build scripts without building an image
-just spectrum-boot-report [target]  # Report boot and kernel artifact sizes
-just spectrum-diff [target] [base]  # Compare Spectrum RPMs with its Bluefin base
-```
-
-Image defaults can be overridden with `SPECTRUM_IMAGE_NAME`,
-`SPECTRUM_LOCAL_TAG`, `SPECTRUM_REMOTE_REF`, and the
-`SPECTRUM_BLUEFIN_BASE_IMAGE*` variables. The base image reference must end in
-a SHA-256 digest. `PODMAN` and `COMPOSE` select alternative container commands.
-
-`just install`, `just switch`, and `just upgrade` handle bootc image updates;
-`just update` only refreshes userland, dotfiles, and host stages.
-
-### Development
-
-```bash
-just check                            # Run the complete validation suite (aliases: c, ck)
-just lint                             # Check formatting, lint, and validate (alias: l)
-just fmt                              # Format repository files (alias: f)
-just check-format                     # Check formatting without changes (alias: cf)
-just watch [recipe and arguments]     # Rerun a recipe on changes; defaults to check (alias: w)
-just manifest-check                   # Validate manifests and generated schemas
-just manifest-update-schemas          # Regenerate JSON Schemas from runtime models
-just python-dependencies              # Check dependencies against first-party imports
-just python-test [pytest arguments]   # Run tests with optional pytest arguments
-just python-typecheck [ty arguments]  # Type-check roots with optional ty arguments
-just python-dead-code                 # Scan configured Python roots for dead code
-just python-complexity                # Enforce the cognitive-complexity limit
-just smoke                            # Build and validate the Fedora smoke-test container
-just smoke-shell                      # Open a shell in the Fedora smoke-test container
-```
-
-### Nix and Ansible
-
-```bash
+nix develop
 nix flake check
 nix run .#ghidra-mcp
-sudo nixos-rebuild switch --flake .#nixos
-
-./ansible/bootstrap.sh --tags userland
-ansible-playbook ansible/site.yml --tags host
-ansible-playbook ansible/site.yml
 ```
 
 ## License
