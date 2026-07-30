@@ -102,10 +102,17 @@ packages/hyper-window-tiling/src/**/*.d.ts -linguist-vendored
 
 # These files are checked in generated/runtime artifacts built from package
 # sources, host discovery, encryption tools, or dependency resolvers.
-bun.lock linguist-generated
-flake.lock linguist-generated
-hosts/**/hardware-configuration.nix linguist-generated
+# Keep dependency locks out of Linguist statistics at every directory depth.
+# The patterns cover conventional locks, binary locks, lockfile extensions,
+# compound names such as packages.lock.json, and Meson's hidden wrap lock.
+*.lock linguist-generated
+*.lock.* linguist-generated
+*.lockb linguist-generated
+*.lockfile linguist-generated
+.wraplock linguist-generated
 package-lock.json linguist-generated
+pnpm-lock.yaml linguist-generated
+pnpm-lock.yml linguist-generated
+hosts/**/hardware-configuration.nix linguist-generated
 packages/**/dist/** linguist-generated
 secrets/*.yaml linguist-generated
-uv.lock linguist-generated
