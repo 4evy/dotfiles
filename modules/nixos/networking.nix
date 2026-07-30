@@ -4,8 +4,6 @@ _: {
     connection = {
       id = "ethernet";
       type = "ethernet";
-      master = "bond0";
-      slave-type = "bond";
     };
     ipv4.method = "auto";
   };

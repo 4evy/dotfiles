@@ -1,0 +1,229 @@
+{
+  "pins": {
+    "bluebuild-cli": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "blue-build",
+        "repo": "cli"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "280323ce305737107fd2fd4496417c6a896b2e8c",
+      "url": "https://github.com/blue-build/cli/archive/280323ce305737107fd2fd4496417c6a896b2e8c.tar.gz",
+      "hash": "sha256-f0c7IGdLBcm4iIdYpgdJZtMAII6mQ2bYB9XHoBHPCh8="
+    },
+    "ghidra_mcp": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "bethington",
+        "repo": "ghidra-mcp"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "b2d16d7dadb114094a2ca13fbf961e79b83f55b4",
+      "url": "https://github.com/bethington/ghidra-mcp/archive/b2d16d7dadb114094a2ca13fbf961e79b83f55b4.tar.gz",
+      "hash": "sha256-hMcavhXLQUxXyNnGpqwDRUNA0n67ZepLpuAUDkvX4t4=",
+      "frozen": true
+    },
+    "ghostty": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "ghostty-org",
+        "repo": "ghostty"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "739603b8a2b643b167031a99718127cc0ca311a5",
+      "url": "https://github.com/ghostty-org/ghostty/archive/739603b8a2b643b167031a99718127cc0ca311a5.tar.gz",
+      "hash": "sha256-gBrnaKO6d4KR1PJVgb+q84zL1+c4UC7kkGj2pw3DeXE=",
+      "frozen": true
+    },
+    "ghostty_archive": {
+      "type": "Url",
+      "url": "https://github.com/ghostty-org/ghostty/archive/739603b8a2b643b167031a99718127cc0ca311a5.tar.gz",
+      "unpack": false,
+      "hash": "sha256-t6FE3JQWIYb2MG7RY0yvxD9cLzGuzBfsngGiND8N21w=",
+      "frozen": true
+    },
+    "ghostty_zig_aarch64_linux": {
+      "type": "Url",
+      "url": "https://ziglang.org/download/0.16.0/zig-aarch64-linux-0.16.0.tar.xz",
+      "unpack": false,
+      "hash": "sha256-6ksJv7IuxvbGzqxXq2PvtrRuF6sI0h9p86SLOOFTTxc=",
+      "frozen": true
+    },
+    "ghostty_zig_x86_64_linux": {
+      "type": "Url",
+      "url": "https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz",
+      "unpack": false,
+      "hash": "sha256-cOSWZKdDdLSLUebz/fv0N/Y5XUJQkFBYi9SavlK6PQA=",
+      "frozen": true
+    },
+    "helix": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "helix-editor",
+        "repo": "helix"
+      },
+      "branch": "master",
+      "submodules": false,
+      "revision": "079a789e8cb08ead67f19e1971a1b7438b37354b",
+      "url": "https://github.com/helix-editor/helix/archive/079a789e8cb08ead67f19e1971a1b7438b37354b.tar.gz",
+      "hash": "sha256-IYDL6Vnf13Sa+wbeXZTAxvdLA4h8Ew5ha0spcJy/Yk0="
+    },
+    "kanata": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "jtroo",
+        "repo": "kanata"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "9356feb3ef53dadb626427b54241d510c0364e01",
+      "url": "https://github.com/jtroo/kanata/archive/9356feb3ef53dadb626427b54241d510c0364e01.tar.gz",
+      "hash": "sha256-l5YgB6+x2OPqu16PKtMn4w+Xo4wmmKMxOqJmDGsIx9k="
+    },
+    "kanata_homebrew": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "4evy",
+        "repo": "kanata"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "c8c720ded5a34bbc4bdfbfbe33c97b7bb2e60e77",
+      "url": "https://github.com/4evy/kanata/archive/c8c720ded5a34bbc4bdfbfbe33c97b7bb2e60e77.tar.gz",
+      "hash": "sha256-xnmoRf+xKRSlKPKnCRYsid4laL5+eCD1IP09RjuyjXY=",
+      "frozen": true
+    },
+    "kanata_homebrew_archive": {
+      "type": "Url",
+      "url": "https://github.com/4evy/kanata/archive/c8c720ded5a34bbc4bdfbfbe33c97b7bb2e60e77.tar.gz",
+      "unpack": false,
+      "hash": "sha256-sdvm490903+lDN1pqLBpP7yWemB3dtQM8Ht4TaCj068=",
+      "frozen": true
+    },
+    "karabiner_vhid_package": {
+      "type": "Url",
+      "url": "https://github.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/releases/download/v6.2.0/Karabiner-DriverKit-VirtualHIDDevice-6.2.0.pkg",
+      "unpack": false,
+      "hash": "sha256-noxGI58HSBYSQeQkRIV5ASJOXIL1tYoXMd9McL8HNqg=",
+      "frozen": true
+    },
+    "kmscon": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "kmscon",
+        "repo": "kmscon"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "c9d0e23336c6bb7645a1f5f48a4a82f1d5a589d9",
+      "url": "https://github.com/kmscon/kmscon/archive/c9d0e23336c6bb7645a1f5f48a4a82f1d5a589d9.tar.gz",
+      "hash": "sha256-vlSmiqTfEl9rQ9NBZt02bDBFih6t4euvcU1vTTPuVpg=",
+      "frozen": true
+    },
+    "libtsm": {
+      "type": "GitRelease",
+      "repository": {
+        "type": "GitHub",
+        "owner": "kmscon",
+        "repo": "libtsm"
+      },
+      "pre_releases": false,
+      "version_upper_bound": null,
+      "release_prefix": null,
+      "submodules": false,
+      "version": "v4.6.0",
+      "revision": "e1e4d296f0963d1641456f1f778f0ac090429a3e",
+      "url": "https://api.github.com/repos/kmscon/libtsm/tarball/refs/tags/v4.6.0",
+      "hash": "sha256-CN5ktki8fbvmiGiyDvDf4ayRKakpWRI51SdhRbFqNVM=",
+      "frozen": true
+    },
+    "python_astral": {
+      "type": "GitRelease",
+      "repository": {
+        "type": "GitHub",
+        "owner": "sffjunkie",
+        "repo": "astral"
+      },
+      "pre_releases": false,
+      "version_upper_bound": null,
+      "release_prefix": null,
+      "submodules": false,
+      "version": "3.2",
+      "revision": "0be1187d09aadfdadc1b7331b918082213764b5d",
+      "url": "https://api.github.com/repos/sffjunkie/astral/tarball/refs/tags/3.2",
+      "hash": "sha256-KdKbIMHKYqjmvPJ2TS34WEM06UdEwECXMF+WOfbR66o="
+    },
+    "sushi": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "GNOME",
+        "repo": "sushi"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "27886fee1c7f093dd7402f82e3ff3ff42fd1d606",
+      "url": "https://github.com/GNOME/sushi/archive/27886fee1c7f093dd7402f82e3ff3ff42fd1d606.tar.gz",
+      "hash": "sha256-6gTRy5x3ij61ZR3zSOseUyvHeIUUxxsQl/zyN7nBgJk="
+    },
+    "tomlc17": {
+      "type": "GitRelease",
+      "repository": {
+        "type": "GitHub",
+        "owner": "cktan",
+        "repo": "tomlc17"
+      },
+      "pre_releases": false,
+      "version_upper_bound": null,
+      "release_prefix": null,
+      "submodules": false,
+      "version": "R260618",
+      "revision": "7813bdd218b2b5f54940a9759ec0ffb3b60c1d1f",
+      "url": "https://api.github.com/repos/cktan/tomlc17/tarball/refs/tags/R260618",
+      "hash": "sha256-cR+ynVWTyPSfM+XOMY48+bhHcjmV5W0COygWiBPOfqY="
+    },
+    "toshy": {
+      "type": "GitRelease",
+      "repository": {
+        "type": "GitHub",
+        "owner": "RedBearAK",
+        "repo": "Toshy"
+      },
+      "pre_releases": false,
+      "version_upper_bound": null,
+      "release_prefix": null,
+      "submodules": false,
+      "version": "Toshy_v26.06.0",
+      "revision": "e29abe41c2e8e26dd5aead080cd1b1a6498e23fb",
+      "url": "https://api.github.com/repos/RedBearAK/Toshy/tarball/refs/tags/Toshy_v26.06.0",
+      "hash": "sha256-zFdS5YpGVxkMhhTtAi0iX6ilc+xRw8xWYGtceMjXx9w="
+    },
+    "uresourced": {
+      "type": "GitRelease",
+      "repository": {
+        "type": "Git",
+        "url": "https://gitlab.freedesktop.org/benzea/uresourced.git"
+      },
+      "pre_releases": false,
+      "version_upper_bound": null,
+      "release_prefix": null,
+      "submodules": false,
+      "version": "v0.5.4",
+      "revision": "68668042c91afd53cf3119bdfb62b0e1345e8ad6",
+      "url": null,
+      "hash": "sha256-WTTQYk8tADY9BIfeQ5kFuBbODbRWW8/YCw3vp6O032o=",
+      "frozen": true
+    }
+  },
+  "version": 8
+}

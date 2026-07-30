@@ -1,0 +1,196 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/recipe-v2.json
+version: 2
+base:
+  image:
+    registry: ghcr.io
+    repository: projectbluefin/bluefin-nvidia
+    tag: stable
+    digest: sha256:8e1376cf17f9d8a47e35bc22dbb80c14f66018cb8d857f236db03b4958bdcbdb
+metadata:
+  name: spectrum
+  description: Evy's Bluefin workstation image
+  labels:
+    org.opencontainers.image.source: https://github.com/4evy/dotfiles
+spec:
+  platforms:
+    - linux/amd64
+  tool-versions:
+    bluebuild: none
+
+stages:
+  - name: ghostty
+    from: registry.fedoraproject.org/fedora:44
+    modules:
+      - type: copy@v1
+        src: npins/sources.json
+        dest: /src/npins/sources.json
+      - type: copy@v1
+        src: patches/ghostty
+        dest: /src/patches/ghostty
+      - type: copy@v1
+        src: packages/ghostty/build.sh
+        dest: /src/build-ghostty.sh
+      - type: dnf@v1
+        source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+        install:
+          install-weak-deps: false
+          packages:
+            - blueprint-compiler
+            - dbus-devel
+            - fontconfig-devel
+            - freetype-devel
+            - gcc
+            - gcc-c++
+            - gettext
+            - git
+            - gtk4-devel
+            - gtk4-layer-shell-devel
+            - jq
+            - libadwaita-devel
+            - libdrm-devel
+            - libglvnd-devel
+            - libxkbcommon-devel
+            - libxml2-devel
+            - mesa-libgbm-devel
+            - ncurses-devel
+            - openssl
+            - pango-devel
+            - patch
+            - pkgconf-pkg-config
+            - tar
+            - xz
+      - type: script@v1
+        source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+        env:
+          SOURCE_LOCK: /src/npins/sources.json
+          SOURCE_PIN: ghostty_archive
+          REVISION_PIN: ghostty
+          ZIG_PIN: ghostty_zig_x86_64_linux
+          PATCHES: /src/patches/ghostty
+          PREFIX: /out/usr
+          ARTIFACT: /out/usr/bin/ghostty
+          VERSION_PREFIX: 1.3.2-dev
+          BUILD_ARGUMENTS: |-
+            -j1
+            -Doptimize=ReleaseFast
+            -Demit-test-exe=false
+        snippets:
+          - bash /src/build-ghostty.sh
+
+modules:
+  - type: copy@v1
+    from: ghostty
+    src: /out/usr
+    dest: /usr
+
+  - type: copy@v1
+    src: bluebuild/files/system
+    dest: /
+
+  - type: bling@v1
+    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    install:
+      - 1password
+
+  - type: copy@v1
+    src: bluebuild/files/dnf/vscode.repo
+    dest: /etc/yum.repos.d/vscode.repo
+
+  - type: dnf@v1
+    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    repos:
+      cleanup: true
+      keys:
+        - https://packages.microsoft.com/keys/microsoft.asc
+      nonfree: rpmfusion
+    install:
+      install-weak-deps: false
+      packages:
+        - blueprint-compiler
+        - bootc
+        - bubblewrap
+        - code
+        - curl
+        - file
+        - findutils
+        - fuse3
+        - git
+        - google-noto-color-emoji-fonts
+        - google-noto-emoji-fonts
+        - google-noto-sans-cjk-fonts
+        - google-noto-sans-mono-cjk-vf-fonts
+        - google-noto-sans-mono-vf-fonts
+        - google-noto-sans-symbols-2-fonts
+        - google-noto-sans-symbols-vf-fonts
+        - google-noto-sans-vf-fonts
+        - gsound
+        - gtk4-layer-shell
+        - just
+        - kmscon
+        - libgda
+        - libgda-sqlite
+        - liberation-mono-fonts
+        - liberation-sans-fonts
+        - liberation-serif-fonts
+        - libxdo
+        - ncurses
+        - opensc
+        - openssh-clients
+        - pinentry
+        - pinentry-gnome3
+        - pipewire-gstreamer
+        - podman
+        - podman-compose
+        - procps-ng
+        - python3
+        - solaar
+        - systemd-oomd-defaults
+        - tailscale
+        - telegram-desktop
+        - uresourced
+        - vim-enhanced
+        - vulkan-tools
+        - xdg-desktop-portal
+        - xdg-desktop-portal-gnome
+        - xdg-desktop-portal-gtk
+        # renovate: datasource=github-releases depName=getsops/sops
+        - https://github.com/getsops/sops/releases/download/v3.13.3/sops-3.13.3-1.x86_64.rpm
+        # renovate: datasource=github-releases depName=rustdesk/rustdesk
+        - https://github.com/rustdesk/rustdesk/releases/download/1.4.9/rustdesk-1.4.9-0.x86_64.rpm
+        - https://discord.com/api/download?platform=linux&format=rpm
+
+  - type: gnome-extensions@v1
+    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    install:
+      - 8834 # Copyous
+
+  - type: systemd@v1
+    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    system:
+      enabled:
+        - pcscd.socket
+        - podman.socket
+        - systemd-oomd.service
+        - systemd-oomd.socket
+        - tailscaled.service
+        - uresourced.service
+
+  - type: script@v1
+    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    snippets:
+      - install -d -m 0755 /nix /var/roothome
+      - touch /nix/.spectrum-mountpoint
+      - |
+        if authselect is-feature-enabled with-fingerprint >/dev/null 2>&1; then
+          authselect disable-feature with-fingerprint
+        fi
+      - rm -rf -- /boot/efi
+      - rm -f -- /etc/yum.repos.d/vscode.repo
+      - |
+        for directory in /run/rpm-ostree/lock /run/rpm-ostree /run/dnf; do
+          if test -d "$directory"; then
+            rmdir "$directory"
+          fi
+        done
+      - bootc container lint

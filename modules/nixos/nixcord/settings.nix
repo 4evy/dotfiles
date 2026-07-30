@@ -1,12 +1,6 @@
-{ inputs, lib, ... }:
+{ dotfilesEquicordSettings, ... }:
 let
   discordQuickCss = builtins.readFile ../../../packages/equicord/quickCss.css;
-  equicordSettings = import ../../equicord/settings.nix {
-    inherit lib;
-    parseRules = builtins.fromJSON (
-      builtins.readFile "${inputs.nixcord}/modules/plugins/parse-rules.json"
-    );
-  };
 in
 {
   programs.nixcord = {
@@ -16,5 +10,5 @@ in
     discord.krisp.enable = true;
     quickCss = discordQuickCss;
   };
-  programs.nixcord.config = equicordSettings.nixcordConfig;
+  programs.nixcord.config = dotfilesEquicordSettings.nixcordConfig;
 }

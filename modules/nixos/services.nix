@@ -1,4 +1,5 @@
 {
+  dotfilesPackages,
   lib,
   pkgs,
   ...
@@ -7,18 +8,15 @@ let
   # Import the rootfs once. Taking each local file as an independent Nix path
   # would create another single-file store object for every shared policy.
   rootfs = builtins.path {
-    path = ../../spectrum/image/rootfs;
+    path = ../../files/system;
     name = "spectrum-rootfs";
   };
 
-  # NixOS merges units from systemd.packages before adding its generated unit
-  # overrides. Keep Spectrum's checked-in drop-ins as real files so both
-  # operating systems consume the same policy rather than translating it into
-  # a second Nix representation.
+  # System and user units, native drop-ins, and their shared canonical policy
+  # files stay one tree consumed directly by both NixOS and BlueBuild.
   spectrumSystemdUnits = pkgs.runCommandLocal "spectrum-systemd-units" { } ''
     mkdir -p "$out/lib/systemd"
-    ln -s ${rootfs}/usr/lib/systemd/system "$out/lib/systemd/system"
-    ln -s ${rootfs}/usr/lib/systemd/user "$out/lib/systemd/user"
+    ln -s ${rootfs}/usr/lib/systemd/* "$out/lib/systemd/"
   '';
 in
 {
@@ -29,9 +27,9 @@ in
     "modprobe.d/60-spectrum-bluetooth.conf".source =
       rootfs + "/usr/lib/modprobe.d/60-spectrum-bluetooth.conf";
     "systemd/system.conf.d/60-spectrum-resource-accounting.conf".source =
-      rootfs + "/usr/lib/systemd/system.conf.d/60-spectrum-resource-accounting.conf";
+      spectrumSystemdUnits + "/lib/systemd/system.conf.d/60-spectrum-resource-accounting.conf";
     "systemd/user.conf.d/60-spectrum-resource-accounting.conf".source =
-      rootfs + "/usr/lib/systemd/user.conf.d/60-spectrum-resource-accounting.conf";
+      spectrumSystemdUnits + "/lib/systemd/user.conf.d/60-spectrum-resource-accounting.conf";
     "uresourced.conf".source = rootfs + "/etc/uresourced.conf";
   };
 
@@ -41,11 +39,12 @@ in
     # The system daemon still supplies ancestor allocations to whichever user
     # owns the active graphical session. Spectrum's shared user-unit drop-in
     # keeps the separate --user app-management daemon disabled by default.
-    dbus.packages = [ pkgs.uresourced ];
+    dbus.packages = [ dotfilesPackages.uresourced ];
     flatpak.enable = true;
 
     kmscon = {
       enable = true;
+      package = dotfilesPackages.kmscon;
       useXkbConfig = true;
       extraOptions = "--term xterm-256color";
       config.hwaccel = true;
@@ -66,7 +65,7 @@ in
   systemd = {
     oomd.enable = true;
     packages = [
-      pkgs.uresourced
+      dotfilesPackages.uresourced
       spectrumSystemdUnits
     ];
     services."user@".wants = [ "uresourced.service" ];

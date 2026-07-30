@@ -1,28 +1,22 @@
 {
-  fetchFromGitLab,
   glib,
   lib,
   meson,
   ninja,
   pipewire,
   pkg-config,
-  sourcePin,
+  source,
   stdenv,
   systemd,
+  version,
 }:
 
 stdenv.mkDerivation {
   pname = "uresourced";
-  inherit (sourcePin) version;
+  inherit version;
   strictDeps = true;
 
-  src = fetchFromGitLab {
-    domain = sourcePin.repository.host;
-    owner = sourcePin.repository.owner;
-    repo = sourcePin.repository.name;
-    rev = sourcePin.revision;
-    hash = sourcePin.hashes.nix_source;
-  };
+  src = source;
 
   nativeBuildInputs = [
     glib

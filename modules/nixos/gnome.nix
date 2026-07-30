@@ -1,7 +1,8 @@
 {
-  pkgs,
-  lib,
   config,
+  dotfilesPackages,
+  lib,
+  pkgs,
   ...
 }:
 let
@@ -41,7 +42,7 @@ let
 
   copyousExtension = pkgs.gnomeExtensions.copyous;
   copyousExtensionUuid = copyousExtension.extensionUuid;
-  hyperWindowTilingExtension = pkgs.hyper-window-tiling-gnome;
+  hyperWindowTilingExtension = dotfilesPackages.hyper-window-tiling-gnome;
   hyperWindowTilingExtensionUuid = hyperWindowTilingExtension.passthru.extensionUuid;
 
   gnomeShell = getExe' pkgs.gnome-shell "gnome-shell";

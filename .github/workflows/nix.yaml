@@ -1,0 +1,32 @@
+name: Nix
+
+on:
+  pull_request: null
+  push: null
+  workflow_dispatch: null
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+permissions:
+  contents: read # needed to checkout repository contents
+
+jobs:
+  checks:
+    name: Flake checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install Determinate Nix
+        uses: DeterminateSystems/determinate-nix-action@d96678350ffd6a456235832eb11e1c491589b7bb # v3.21.8
+
+      - name: Check Flake
+        run: >-
+          nix flake check
+          --keep-going --print-build-logs

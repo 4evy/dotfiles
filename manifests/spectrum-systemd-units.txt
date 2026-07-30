@@ -1,6 +1,0 @@
-pcscd.socket
-podman.socket
-systemd-oomd.service
-systemd-oomd.socket
-tailscaled.service
-uresourced.service

@@ -1,12 +1,17 @@
-{ inputs, ... }:
+{
+  inputs,
+  nixosModule,
+  ...
+}:
 {
   nixos = inputs.nixpkgs.lib.nixosSystem {
     specialArgs = { inherit inputs; };
     modules = [
       ./configuration.nix
-      ../../modules/nixos
+      nixosModule
       {
         local = {
+          user.name = "4evy";
           shell.enable = true;
           gnome.enable = true;
           dconf.enable = true;
@@ -15,17 +20,23 @@
         };
       }
       inputs.sops-nix.nixosModules.sops
-      {
-        sops = {
-          age.keyFile = "/home/4evy/.config/sops/age/keys.txt";
-          defaultSopsFile = ../../secrets/secrets.yaml;
-          validateSopsFiles = false;
-          secrets.github-token = {
-            mode = "0440";
-            group = "users";
+      (
+        { config, ... }:
+        let
+          inherit (config.local.user) group home;
+        in
+        {
+          sops = {
+            age.keyFile = "${home}/.config/sops/age/keys.txt";
+            defaultSopsFile = ../../secrets/secrets.yaml;
+            validateSopsFiles = false;
+            secrets.github-token = {
+              mode = "0440";
+              inherit group;
+            };
           };
-        };
-      }
+        }
+      )
     ];
   };
 }

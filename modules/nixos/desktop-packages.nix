@@ -11,8 +11,6 @@ let
   inherit (lib) getExe;
 
   desktopEnabled = config.local.gnome.enable || config.local.kde.enable;
-  heliumProfileDir = "/home/4evy/.config/net.imput.helium/Default";
-
   chromiumFeatures = [
     "ForceEnableWebGpuInterop"
     "ReduceOpsTaskSplitting"
@@ -41,44 +39,58 @@ let
     "--wayland-text-input-version=3"
   ];
 
-  heliumConfigSource = builtins.fromTOML (builtins.readFile ../../browser/helium.toml);
+  heliumConfigSource = fromTOML (builtins.readFile ../../browser/helium.toml);
   heliumConfig = heliumConfigSource // {
-    extension_settings = heliumConfigSource.extension_settings // {
-      files = map (path: ../../browser + "/${path}") heliumConfigSource.extension_settings.files;
-    };
-  };
-  extensionCatalog = heliumConfig.extensions;
-
-  externalExtensionFile = id: value: {
-    name = "xdg/net.imput.helium/External Extensions/${id}.json";
-    value.text = builtins.toJSON value;
-  };
-
-  chromeStoreExternalExtensionFile =
-    extension:
-    externalExtensionFile extension.id {
-      external_update_url = extensionCatalog.chrome_store_update_url;
-    };
-
-  updateUrlExternalExtensionFile =
-    extension:
-    externalExtensionFile extension.id {
-      external_update_url = extension.update_url;
-    };
-
-  crxExternalExtensionFile =
-    extension:
-    externalExtensionFile extension.id {
-      external_crx = pkgs.fetchurl {
-        inherit (extension) url;
-        name = "${extension.id}.crx";
-        hash = extension.sha256;
+    browser = heliumConfigSource.browser // {
+      linux = heliumConfigSource.browser.linux // {
+        wrapper_flags = commandLineArgs;
       };
-      external_version = extension.version;
     };
+    extension_settings = heliumConfigSource.extension_settings // {
+      files = map (
+        path: pkgs.writeText "helium-${baseNameOf path}" (builtins.readFile (../../browser + "/${path}"))
+      ) heliumConfigSource.extension_settings.files;
+    };
+  };
 
-  heliumBrowser = pkgs.eupkgs.helium-browser.override {
-    commandLineArgs = concatStringsSep " " commandLineArgs;
+  heliumBrowser = pkgs.eupkgs.helium-browser;
+  heliumAppDir = pkgs.linkFarm "helium-browser-app" {
+    "helium-wrapper" = "${heliumBrowser}/bin/helium-browser";
+    "helium.desktop" = "${heliumBrowser}/share/applications/helium.desktop";
+    "product_logo_256.png" = "${heliumBrowser}/share/icons/hicolor/256x256/apps/helium.png";
+  };
+
+  configureHelium = pkgs.writeShellApplication {
+    name = "configure-helium";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.gh
+      pkgs.jq
+    ];
+    text = ''
+      config_home="''${XDG_CONFIG_HOME:-$HOME/.config}"
+      cache_home="''${XDG_CACHE_HOME:-$HOME/.cache}"
+      profile_dir="$config_home/net.imput.helium/Default"
+
+      install -Dm0644 \
+        '${../../browser/helium-profile-avatar.png}' \
+        "$profile_dir/Custom Avatar Picture.png"
+
+      token="$(gh auth token 2>/dev/null || true)"
+      if [ -n "$token" ]; then
+        export GITHUB_TOKEN="$token"
+      fi
+      input="$(jq -nc --arg token "$token" \
+        '{extension_values: (if $token == "" then {} else {"refined-github-personal-token": $token} end)}')"
+
+      printf '%s' "$input" | ${getExe config.programs.browser.package} configure \
+        --config '${config.programs.browser.configFiles.helium}' \
+        --mode linux \
+        --root "$cache_home/helium-browser" \
+        --app-dir '${heliumAppDir}' \
+        --bin-dir "$HOME/.local/bin" \
+        --input -
+    '';
   };
 in
 {
@@ -101,40 +113,25 @@ in
         ;
     };
 
-    environment.etc = builtins.listToAttrs (
-      map chromeStoreExternalExtensionFile extensionCatalog.chrome_store
-      ++ map updateUrlExternalExtensionFile extensionCatalog.update_url
-      ++ map crxExternalExtensionFile extensionCatalog.crx
-    );
+    systemd.user.services.configure-helium = {
+      description = "Reconcile the declarative Helium browser configuration";
+      after = [ "graphical-session.target" ];
+      partOf = [ "graphical-session.target" ];
+      unitConfig.ConditionUser = config.local.user.name;
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = getExe configureHelium;
+      };
+    };
 
-    system.activationScripts.heliumProfileSettings = {
-      deps = [ "users" ];
-      text = ''
-        mkdir -p '${heliumProfileDir}'
-        install -m 0644 '${../../browser/helium-profile-avatar.png}' '${heliumProfileDir}/Custom Avatar Picture.png'
-        chown 4evy:users \
-          '/home/4evy/.config' \
-          '/home/4evy/.config/net.imput.helium' \
-          '${heliumProfileDir}' \
-          '${heliumProfileDir}/Custom Avatar Picture.png' \
-          2>/dev/null || true
-
-        if command -v runuser >/dev/null 2>&1; then
-          token="$(runuser -u 4evy -- ${pkgs.gh}/bin/gh auth token 2>/dev/null || true)"
-          input="$(${pkgs.jq}/bin/jq -nc --arg token "$token" \
-            '{extension_values: (if $token == "" then {} else {"refined-github-personal-token": $token} end)}')"
-          printf '%s' "$input" | runuser -u 4evy -- ${getExe config.programs.browser.package} apply-profile-settings \
-            --config '${config.programs.browser.configFiles.helium}' \
-            --profile-dir '${heliumProfileDir}' \
-            --input - || true
-        else
-          token="$(su -s /bin/sh 4evy -c '${pkgs.gh}/bin/gh auth token' 2>/dev/null || true)"
-          input="$(${pkgs.jq}/bin/jq -nc --arg token "$token" \
-            '{extension_values: (if $token == "" then {} else {"refined-github-personal-token": $token} end)}')"
-          printf '%s' "$input" | su -s /bin/sh 4evy -c \
-            '${getExe config.programs.browser.package} apply-profile-settings --config ${config.programs.browser.configFiles.helium} --profile-dir ${heliumProfileDir} --input -' || true
-        fi
-      '';
+    systemd.user.timers.configure-helium = {
+      description = "Reconcile Helium after the graphical session starts";
+      wantedBy = [ "graphical-session.target" ];
+      partOf = [ "graphical-session.target" ];
+      timerConfig = {
+        OnActiveSec = "1s";
+        Unit = "configure-helium.service";
+      };
     };
   };
 }

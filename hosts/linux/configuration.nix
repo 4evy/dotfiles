@@ -1,18 +1,21 @@
 {
   config,
+  dotfilesPackages,
   lib,
   pkgs,
   ...
 }:
 let
+  inherit (config.local.user) group home name;
+
   dotfilesFontconfig = pkgs.runCommand "dotfiles-fontconfig" { } ''
     mkdir -p "$out/etc/fonts/conf.d"
     ln -s ${../../dotfiles/dot_config/fontconfig/conf.d/45-interface-fonts.conf} "$out/etc/fonts/conf.d/45-interface-fonts.conf"
     ln -s ${../../dotfiles/dot_config/fontconfig/conf.d/50-code-monospace.conf} "$out/etc/fonts/conf.d/50-code-monospace.conf"
   '';
 
-  systemRunnerLink = "/home/4evy/.local/bin/system-runner";
-  systemRunnerNix = "${pkgs.system-runner}/bin/system-runner";
+  systemRunnerLink = "${home}/.local/bin/system-runner";
+  systemRunnerNix = "${dotfilesPackages.system-runner}/bin/system-runner";
 in
 {
   imports = [
@@ -23,7 +26,12 @@ in
     kernelPackages = pkgs.linuxPackages_latest;
     loader = {
       efi.canTouchEfiVariables = true;
-      systemd-boot.enable = true;
+      systemd-boot = {
+        enable = true;
+        bootCounting.enable = true;
+        configurationLimit = 10;
+        editor = false;
+      };
     };
   };
 
@@ -77,7 +85,6 @@ in
       noto-fonts-cjk-sans
       noto-fonts-cjk-serif
       noto-fonts-color-emoji
-      nerd-fonts.jetbrains-mono
       nerd-fonts.symbols-only
     ];
   };
@@ -154,11 +161,10 @@ in
   };
 
   programs = {
-    chromium.enable = true;
     _1password.enable = true;
     _1password-gui = {
       enable = true;
-      polkitPolicyOwners = [ "4evy" ];
+      polkitPolicyOwners = [ name ];
     };
   };
 
@@ -166,7 +172,7 @@ in
     rtkit.enable = true;
     sudo.extraRules = [
       {
-        users = [ "4evy" ];
+        users = [ name ];
         commands = [
           {
             command = systemRunnerNix;
@@ -229,28 +235,31 @@ in
   };
 
   sops.secrets = {
-    "networkmanager-environment".neededForUsers = true;
+    "networkmanager-environment" = { };
     "user-password-hash".neededForUsers = true;
   };
 
   system.stateVersion = "25.11";
 
-  systemd.tmpfiles.rules = [
-    "d /home/4evy/.local/bin 0755 4evy users - -"
-    "L+ ${systemRunnerLink} - - - - ${systemRunnerNix}"
-  ];
+  systemd.tmpfiles.settings.dotfiles = {
+    "${home}/.local/bin".d = {
+      mode = "0755";
+      user = name;
+      inherit group;
+    };
+    "${systemRunnerLink}"."L+".argument = systemRunnerNix;
+  };
 
   time.timeZone = "Europe/Sofia";
 
   users = {
     mutableUsers = false;
     groups.keys = {
-      members = [ "4evy" ];
+      members = [ name ];
     };
     users = {
-      "4evy" = {
+      ${name} = {
         isNormalUser = true;
-        home = "/home/4evy";
         extraGroups = [
           "wheel"
           "network"
@@ -260,7 +269,7 @@ in
         ];
         hashedPasswordFile = config.sops.secrets."user-password-hash".path;
         openssh.authorizedKeys.keys = [
-          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAc3DwiG6OJVICR7FQQE+I9R2447GFLrIRyF9+xP6aM5 4evy@nixos"
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAc3DwiG6OJVICR7FQQE+I9R2447GFLrIRyF9+xP6aM5"
         ];
       };
     };

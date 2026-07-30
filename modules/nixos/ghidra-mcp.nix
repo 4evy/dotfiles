@@ -1,7 +1,7 @@
 {
   config,
+  dotfilesPackages,
   lib,
-  pkgs,
   ...
 }:
 let
@@ -16,20 +16,22 @@ in
 
     package = mkOption {
       type = types.package;
-      default = pkgs.ghidra-mcp;
-      defaultText = lib.literalExpression "pkgs.ghidra-mcp";
+      default = dotfilesPackages.ghidra-mcp;
+      defaultText = lib.literalExpression "dotfilesPackages.ghidra-mcp";
       description = "Package that provides ghidra-mcp-serve, ghidra-mcp-httpd, and ghidra-mcp-bridge.";
     };
 
     user = mkOption {
       type = types.str;
-      default = "4evy";
+      default = config.local.user.name;
+      defaultText = lib.literalExpression "config.local.user.name";
       description = "User that runs the Ghidra MCP services.";
     };
 
     group = mkOption {
       type = types.str;
-      default = "users";
+      default = config.local.user.group;
+      defaultText = lib.literalExpression "config.local.user.group";
       description = "Group that owns the Ghidra MCP state directory.";
     };
 
@@ -55,7 +57,8 @@ in
 
     stateDir = mkOption {
       type = types.path;
-      default = "/home/${config.services.ghidra-mcp.user}/.local/state/ghidra-mcp-headless";
+      default = "${config.local.user.home}/.local/state/ghidra-mcp-headless";
+      defaultText = lib.literalExpression ''"''${config.local.user.home}/.local/state/ghidra-mcp-headless"'';
     };
 
     allowScripts = mkOption {
@@ -91,9 +94,13 @@ in
       package.launcher
     ];
 
-    systemd.tmpfiles.rules = [
-      "d ${stateDir} 0755 ${config.services.ghidra-mcp.user} ${config.services.ghidra-mcp.group} - -"
-    ];
+    systemd.tmpfiles.settings.ghidra-mcp = {
+      "${toString stateDir}".d = {
+        mode = "0755";
+        user = config.services.ghidra-mcp.user;
+        group = config.services.ghidra-mcp.group;
+      };
+    };
 
     environment.sessionVariables = {
       GHIDRA_MCP_ALLOW_SCRIPTS = if config.services.ghidra-mcp.allowScripts then "1" else "0";

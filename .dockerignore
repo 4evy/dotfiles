@@ -25,17 +25,22 @@
 !patches/
 !patches/**
 
+!bluebuild/
+!bluebuild/**
+
 !dotfiles/
 !dotfiles/**
 
 !manifests/
 !manifests/**
 
-!spectrum/
-!spectrum/**
+!npins/
+!npins/sources.json
 
 !packages/
 packages/*
+!packages/ghostty/
+!packages/ghostty/**
 !packages/dotfiles-python/
 !packages/dotfiles-python/src/
 !packages/dotfiles-python/src/workstation/

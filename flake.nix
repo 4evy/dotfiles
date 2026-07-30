@@ -2,47 +2,34 @@
   description = "My NixOS system flake";
 
   inputs = {
-    browser.inputs.nixpkgs.follows = "nixpkgs-unstable";
-    browser.url = "github:4evy/browser";
-
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
+    bun2nix.inputs.flake-parts.follows = "flake-parts";
+    bun2nix.inputs.nixpkgs.follows = "nixpkgs";
+    bun2nix.inputs.treefmt-nix.follows = "treefmt-nix";
+    bun2nix.url = "github:nix-community/bun2nix";
 
     eupkgs.inputs.nixpkgs.follows = "nixpkgs-unstable";
     eupkgs.url = "github:euvlok/pkgs";
 
+    flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+
+    nixcord.inputs.flake-parts.follows = "flake-parts";
     nixcord.inputs.nixpkgs.follows = "nixpkgs-unstable";
     nixcord.url = "github:4evy/nixcord";
 
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    sops-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
-    sops-nix.url = "github:Mic92/sops-nix";
+    treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
+    treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
   outputs =
     inputs:
-    let
-      overlays = import ./overlays { inherit inputs; };
-      flake = import ./lib/flake.nix { inherit inputs overlays; };
-    in
-    {
-      inherit (flake)
-        apps
-        checks
-        formatter
-        packages
-        ;
-
-      lib = {
-        equicordSettingsJson = flake.equicordSettings.jsonConfig;
-        supportedSystems = flake.systems;
-      };
-
-      inherit overlays;
-
-      nixosModules.default = import ./modules/nixos;
-
-      nixosConfigurations = import ./hosts/linux { inherit inputs; };
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [
+        inputs.flake-parts.flakeModules.partitions
+        ./lib/flake.nix
+      ];
     };
 }

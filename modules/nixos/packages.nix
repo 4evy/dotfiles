@@ -1,4 +1,5 @@
 {
+  dotfilesPackages,
   lib,
   pkgs,
   ...
@@ -11,48 +12,23 @@ let
     pkgs.unstable.zlib.dev
   ];
   codex = pkgs.eupkgs.codex;
-  helix = pkgs.unstable.helix.overrideAttrs {
-    doCheck = false;
-    doInstallCheck = false;
-  };
-  ghosttyVersion = pkgs.dotfilesSources.ghostty.version;
-  # The dependency expression is imported below during evaluation. An
-  # evaluator-side fixed-output fetch keeps that import host-independent, so a
-  # macOS workstation can evaluate the x86_64-linux NixOS configuration.
-  ghosttySource = builtins.fetchTarball {
-    inherit (pkgs.dotfilesSources.ghostty.artifacts.source) url;
-    sha256 = pkgs.dotfilesSources.ghostty.hashes.nix_source;
-  };
-  ghosttyPatchDirectory = ../../patches/ghostty;
-  ghosttyPatchNames = lib.filter (name: name != "") (
-    lib.splitString "\n" (builtins.readFile (ghosttyPatchDirectory + /series))
-  );
-  ghosttyPatched = pkgs.unstable.ghostty.overrideAttrs (
-    finalAttrs: _: {
-      version = ghosttyVersion;
-      src = ghosttySource;
-      deps = pkgs.callPackage (ghosttySource + "/build.zig.zon.nix") {
-        name = "ghostty-cache-${finalAttrs.version}";
-      };
-      patches = map (name: ghosttyPatchDirectory + "/${name}") ghosttyPatchNames;
-      doCheck = false;
-      doInstallCheck = false;
-    }
-  );
 in
 {
   _class = "nixos";
 
   config = {
+    programs.nh = {
+      enable = true;
+      package = pkgs.unstable.nh;
+    };
+
     environment.systemPackages = attrValues {
       inherit (pkgs)
         ansible
         ansible-lint
-        dotfiles-python
         yamllint
-        terminal-theme-tools
         ;
-      inherit helix;
+      inherit (dotfilesPackages) dotfiles-python terminal-theme-tools;
 
       # Host/session spine and editor dependencies.
       inherit (pkgs.unstable)
@@ -101,6 +77,7 @@ in
         gnumake
         gum
         hadolint
+        helix
         imagemagick
         jdk
         jj
@@ -184,10 +161,9 @@ in
         ;
 
       # Hardware and platform tools.
-      ghostty = ghosttyPatched;
+      inherit (dotfilesPackages) ghostty-patched;
       inherit (pkgs.unstable)
         chezmoi
-        nh
         pciutils
         podman-compose
         smartmontools

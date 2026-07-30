@@ -25,30 +25,38 @@ let
   packageDefinitions =
     final: prev:
     let
-      dotfilesSources = (builtins.fromJSON (builtins.readFile ../manifests/sources.json)).sources;
+      dotfilesSourcePins = import ../npins;
     in
     {
-      inherit dotfilesSources;
+      inherit dotfilesSourcePins;
+      bluebuild-v2 = final.callPackage ../packages/bluebuild-v2.nix {
+        src = dotfilesSourcePins.bluebuild-cli.outPath;
+        version =
+          let
+            manifest = fromTOML (builtins.readFile "${dotfilesSourcePins.bluebuild-cli.outPath}/Cargo.toml");
+          in
+          "${manifest.workspace.package.version}-unstable-${
+            lib.substring 0 8 dotfilesSourcePins.bluebuild-cli.revision
+          }";
+      };
+      bun2nix = inputs.bun2nix.packages.${final.stdenv.hostPlatform.system}.default;
       gh = final.unstable.gh;
       lldb-mcp-launcher = final.eupkgs.lldb-mcp-launcher;
       ghidra-mcp-headless = final.eupkgs.ghidra-mcp-headless;
       ghidra-mcp = final.callPackage ../packages/ghidra-mcp.nix {
         inherit (final) ghidra-mcp-headless;
       };
-      kanata = prev.kanata;
+      ghostty-patched = final.callPackage ../packages/ghostty-patched.nix {
+        inherit (final.unstable) ghostty;
+      };
       kanata-with-cmd = (final.kanata.override { withCmd = true; }).overrideAttrs {
         doCheck = false;
         doInstallCheck = false;
       };
       kmscon = prev.kmscon.overrideAttrs (
         _: previousAttrs: {
-          inherit (dotfilesSources.kmscon) version;
-          src = final.fetchFromGitHub {
-            owner = dotfilesSources.kmscon.repository.owner;
-            repo = dotfilesSources.kmscon.repository.name;
-            rev = dotfilesSources.kmscon.revision;
-            hash = dotfilesSources.kmscon.hashes.nix_source;
-          };
+          version = "10.0.1";
+          src = dotfilesSourcePins.kmscon.outPath;
           buildInputs = previousAttrs.buildInputs ++ [ final.dbus ];
           doCheck = false;
           doInstallCheck = false;
@@ -71,16 +79,12 @@ let
       # a standalone script loses the Python dependency environment.
       system-runner = final.dotfiles-python;
       tomlc17 = prev.tomlc17.overrideAttrs {
-        inherit (dotfilesSources.tomlc17) version;
-        src = final.fetchFromGitHub {
-          owner = dotfilesSources.tomlc17.repository.owner;
-          repo = dotfilesSources.tomlc17.repository.name;
-          rev = dotfilesSources.tomlc17.revision;
-          hash = dotfilesSources.tomlc17.hashes.nix_source;
-        };
+        version = dotfilesSourcePins.tomlc17.version;
+        src = dotfilesSourcePins.tomlc17.outPath;
       };
       uresourced = final.callPackage ../packages/uresourced.nix {
-        sourcePin = dotfilesSources.uresourced;
+        source = dotfilesSourcePins.uresourced.outPath;
+        version = lib.removePrefix "v" dotfilesSourcePins.uresourced.version;
       };
       terminal-theme-tools = final.callPackage ../packages/terminal-theme-tools { };
     };

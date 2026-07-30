@@ -1,10 +1,9 @@
 {
   inputs,
-  overlays,
+  lib,
+  ...
 }:
 let
-  lib = inputs.nixpkgs.lib;
-
   # Keep this list explicit: these are the systems used by this repository's
   # NixOS host and macOS workstation, and for which its custom packages are
   # intentionally supported.
@@ -13,15 +12,7 @@ let
     "x86_64-linux"
   ];
 
-  forAllSystems = lib.genAttrs systems;
-
-  mkPkgs =
-    system:
-    import inputs.nixpkgs {
-      inherit system;
-      config.allowUnfree = true;
-      overlays = [ overlays.default ];
-    };
+  overlays = import ../overlays { inherit inputs; };
 
   equicordParseRules = builtins.fromJSON (
     builtins.readFile "${inputs.nixcord}/modules/plugins/parse-rules.json"
@@ -45,39 +36,6 @@ let
         cp ${../packages/equicord/quickCss.css} "$out/quickCss.css"
       '';
 
-  mkFormatter =
-    pkgs:
-    pkgs.writeShellApplication {
-      name = "dotfiles-format";
-      meta.description = "Format the dotfiles repository";
-      runtimeInputs = [
-        pkgs.clang-tools
-        pkgs.git
-        pkgs.nixfmt-tree
-        pkgs.shfmt
-      ];
-      text = ''
-        set -euo pipefail
-
-        repo_dir="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-        cd "$repo_dir"
-
-        shell_files=()
-        while IFS= read -r -d "" file; do
-          shell_files+=("$file")
-        done < <(git ls-files --cached --others --exclude-standard -z -- '*.sh')
-        ((''${#shell_files[@]} == 0)) || shfmt -w -i 2 -bn "''${shell_files[@]}"
-
-        c_files=()
-        while IFS= read -r -d "" file; do
-          c_files+=("$file")
-        done < <(git ls-files --cached --others --exclude-standard -z -- '*.c' '*.h')
-        ((''${#c_files[@]} == 0)) || clang-format -i "''${c_files[@]}"
-
-        treefmt "$@"
-      '';
-    };
-
   mkPackages =
     pkgs:
     let
@@ -85,6 +43,7 @@ let
       ghidraMcpHeadless = pkgs.ghidra-mcp-headless;
     in
     {
+      bun2nix = pkgs.bun2nix;
       default = ghidraMcp;
       dotfiles-python = pkgs.dotfiles-python;
       equicord-settings = mkEquicordSettingsPackage pkgs;
@@ -94,10 +53,17 @@ let
       ghidra-mcp-httpd = ghidraMcpHeadless.httpd;
       ghidra-mcp-launcher = ghidraMcpHeadless.launcher;
       ghidra = ghidraMcpHeadless.ghidra;
+      kanata-with-cmd = pkgs.kanata-with-cmd;
+      system-runner = pkgs.system-runner;
+      tomlc17 = pkgs.tomlc17;
     }
     // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+      bluebuild-v2 = pkgs.bluebuild-v2;
+      check-jsonschema = pkgs.check-jsonschema;
+      ghostty-patched = pkgs.ghostty-patched;
       hyper-window-tiling-gnome = pkgs.hyper-window-tiling-gnome;
       hyper-window-tiling-kde = pkgs.hyper-window-tiling-kde;
+      kmscon = pkgs.kmscon;
       terminal-theme-tools = pkgs.terminal-theme-tools;
       uresourced = pkgs.uresourced;
     };
@@ -119,39 +85,82 @@ let
       default = appFor "${packages.ghidra-mcp}/bin/ghidra-mcp-serve" "Run the Ghidra MCP service";
     };
 
-  mkChecks =
-    pkgs: packages:
-    {
-      inherit (packages) dotfiles-python equicord-settings;
-    }
-    // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
-      inherit (packages) terminal-theme-tools;
-    };
-
-  perSystem = forAllSystems (
-    system:
-    let
-      pkgs = mkPkgs system;
-      packages = mkPackages pkgs;
-    in
-    {
-      inherit packages pkgs;
-      apps = mkApps packages;
-      checks = mkChecks pkgs packages;
-      formatter = mkFormatter pkgs;
-    }
-  );
-
-  transpose = attribute: lib.mapAttrs (_: systemConfig: systemConfig.${attribute}) perSystem;
 in
 {
-  inherit
-    equicordSettings
-    systems
-    ;
+  inherit systems;
 
-  apps = transpose "apps";
-  checks = transpose "checks";
-  formatter = transpose "formatter";
-  packages = transpose "packages";
+  partitionedAttrs = {
+    checks = "dev";
+    devShells = "dev";
+    formatter = "dev";
+    nixosConfigurations = "nixos";
+    nixosModules = "nixos";
+  };
+
+  partitions.dev = {
+    extraInputsFlake = ../nix/dev;
+    module = ../nix/dev/flake-module.nix;
+  };
+
+  partitions.nixos = {
+    extraInputsFlake = ../nix/nixos;
+    module =
+      {
+        inputs,
+        moduleWithSystem,
+        ...
+      }:
+      let
+        nixosModule = moduleWithSystem (
+          { config, ... }:
+          { ... }:
+          {
+            imports = [ ../modules/nixos ];
+
+            # Keep every locally packaged program used by NixOS identical to
+            # the corresponding packages.<system> flake output. Consumers of
+            # this module do not have to recreate our overlay or package
+            # selection.
+            _module.args.dotfilesPackages = config.packages;
+            _module.args.dotfilesEquicordSettings = equicordSettings;
+          }
+        );
+      in
+      {
+        flake = {
+          nixosModules.default = nixosModule;
+          nixosConfigurations = import ../hosts/linux {
+            inherit inputs;
+            inherit nixosModule;
+          };
+        };
+      };
+  };
+
+  flake = {
+    lib = {
+      equicordSettingsJson = equicordSettings.jsonConfig;
+      supportedSystems = systems;
+    };
+
+    inherit overlays;
+  };
+
+  perSystem =
+    {
+      config,
+      pkgs,
+      system,
+      ...
+    }:
+    {
+      _module.args.pkgs = import inputs.nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+        overlays = [ overlays.default ];
+      };
+
+      packages = mkPackages pkgs;
+      apps = mkApps config.packages;
+    };
 }

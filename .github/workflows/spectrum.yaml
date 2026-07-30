@@ -2,26 +2,25 @@ name: Spectrum Image
 
 on:
   pull_request:
-    branches:
-      - master
+    branches: [master]
     paths: &spectrum-paths
       - .github/workflows/spectrum.yaml
-      - .dockerignore
-      - packages/dotfiles-python/src/workstation/__init__.py
-      - packages/dotfiles-python/src/workstation/errors.py
-      - packages/dotfiles-python/src/workstation/lib/**
-      - manifests/**
-      - patches/**
-      - pyproject.toml
-      - spectrum/**
-      - uv.lock
+      - bluebuild/**
+      - flake.lock
+      - flake.nix
+      - lib/flake.nix
+      - nix/dev/flake-module.nix
+      - npins/sources.json
+      - overlays/default.nix
+      - packages/bluebuild-v2.nix
+      - packages/ghostty/**
+      - patches/ghostty/**
   push:
-    branches:
-      - master
+    branches: [master]
     paths: *spectrum-paths
   schedule:
     - cron: "42 4 * * *"
-  workflow_dispatch: null
+  workflow_dispatch:
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
@@ -30,9 +29,6 @@ concurrency:
 permissions: {}
 
 env:
-  BLUEFIN_BASE_IMAGE: ghcr.io/ublue-os/bluefin-nvidia-open:stable@sha256:167d18ed51092b17687fbfcf5405e9efbc13414ddcfc5e5c5217b87beb0f074b
-  BLUEFIN_BASE_IMAGE_NAME: bluefin-nvidia-open
-  BLUEFIN_BASE_IMAGE_TAG: stable
   IMAGE_NAME: spectrum
 
 jobs:
@@ -40,326 +36,142 @@ jobs:
     name: Build Bluefin Image
     runs-on: ubuntu-24.04
     timeout-minutes: 90
-    env:
-      PUBLISH: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
     permissions:
-      contents: read # needed to checkout repository contents
-      packages: write # needed to push images to GitHub Container Registry
-      id-token: write # needed for keyless cosign signing
-      attestations: write # needed to publish GitHub provenance attestations
-      artifact-metadata: write # needed to link attestations to the published image
+      contents: read
+      packages: write # publish the image to GHCR
+      id-token: write # keyless image signing and attestations
+      attestations: write # publish GitHub build provenance
+      artifact-metadata: write # attach package metadata to the image
     steps:
       - name: Checkout Repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
-      - name: Free Runner Disk Space
-        uses: ./.github/actions/free-disk-space
-
-      # Registry layer cache reuses complete RUN results. This second cache is
-      # intentionally different: it preserves the DNF and uv cache-mount data
-      # under /var/tmp/buildah-cache-* when a RUN really must execute again.
-      - name: Restore Buildah Package Caches
-        id: buildah-cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - name: Maximize Build Space
+        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
-          path: /var/tmp/buildah-cache-*
-          key: spectrum-buildah-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('spectrum/Containerfile', 'spectrum/image/packages/required.txt', 'pyproject.toml', 'uv.lock') }}
-          restore-keys: |
-            spectrum-buildah-${{ runner.os }}-${{ runner.arch }}-
+          skip-if-available: 80G
+
+      - name: Install Determinate Nix
+        uses: DeterminateSystems/determinate-nix-action@d96678350ffd6a456235832eb11e1c491589b7bb # v3.21.8
+
+      - name: Set Up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+        with:
+          cache-binary: true
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
-      - name: Verify Bluefin Base Image
+      - name: Verify Locked Bluefin Base
         env:
-          BLUEFIN_BASE_IMAGE: ${{ env.BLUEFIN_BASE_IMAGE }}
+          BASE_LOCK: bluebuild/recipes/spectrum.lock
         run: |
+          set -euo pipefail
+          locked_ref=$(tr -d '\n' <"$BASE_LOCK")
+          tagged_ref=${locked_ref%@*}
+          locked_digest=${locked_ref##*@}
+          resolved_digest=$(skopeo inspect "docker://$tagged_ref" | jq -r .Digest)
+          test "$resolved_digest" = "$locked_digest"
           cosign verify \
             --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
-            --certificate-identity=https://github.com/ublue-os/bluefin/.github/workflows/reusable-build.yml@refs/heads/main \
-            "${BLUEFIN_BASE_IMAGE}"
+            --certificate-identity-regexp='^https://github.com/projectbluefin/(bluefin|actions)/\.github/workflows/.*' \
+            "$locked_ref"
 
-      - name: Prepare Image Metadata
+      - name: Build Feature-Gated BlueBuild CLI
+        id: bluebuild
+        run: |
+          set -euo pipefail
+          path=$(nix build --no-link --print-out-paths .#bluebuild-v2)
+          validator=$(nix build --no-link --print-out-paths .#check-jsonschema)
+          "$path/bin/bluebuild" --version
+          echo "path=$path" >>"$GITHUB_OUTPUT"
+          echo "validator=$validator" >>"$GITHUB_OUTPUT"
+
+      - name: Generate and Validate Containerfile
+        env:
+          BLUEBUILD: ${{ steps.bluebuild.outputs.path }}/bin/bluebuild
+          CHECK_JSONSCHEMA: ${{ steps.bluebuild.outputs.validator }}/bin/check-jsonschema
+        run: |
+          set -euo pipefail
+          "$CHECK_JSONSCHEMA" \
+            --base-uri https://schema.blue-build.org/ \
+            --schemafile https://schema.blue-build.org/recipe-v2.json \
+            bluebuild/recipes/spectrum.yml
+          # Upstream's feature-gated v2 parser works, but its validate
+          # subcommand still hardcodes the v1 schema.
+          "$BLUEBUILD" generate \
+            --skip-validation \
+            --output /tmp/Containerfile \
+            bluebuild/recipes/spectrum.yml
+          expected=$(tr -d '\n' <bluebuild/recipes/spectrum.lock)
+          tagged=${expected%@*}
+          expected_arg="${tagged%:*}@${expected##*@}"
+          generated=$(sed -n 's/^ARG BASE_IMAGE="\\(.*\\)"/\\1/p' /tmp/Containerfile | head -n1)
+          test "$generated" = "$expected_arg"
+
+      - name: Build Spectrum with BlueBuild
+        env:
+          BLUEBUILD: ${{ steps.bluebuild.outputs.path }}/bin/bluebuild
+          GH_TOKEN: ${{ github.token }}
+          BB_BUILD_PUSH: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+          BB_PASSWORD: ${{ github.token }}
+          BB_USERNAME: ${{ github.repository_owner }}
+          BB_REGISTRY: ghcr.io
+          BB_REGISTRY_NAMESPACE: ${{ github.repository_owner }}
+          GH_PR_EVENT_NUMBER: ${{ github.event.number }}
+          BB_CACHE_LAYERS: "true"
+          RUST_LOG_STYLE: always
+          CLICOLOR_FORCE: "1"
+        run: |
+          set -euo pipefail
+          "$BLUEBUILD" build -v --skip-validation --no-sign bluebuild/recipes/spectrum.yml
+
+      - name: Validate Local Image
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          image=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -m1 "/spectrum:")
+          docker run --rm --privileged "$image" bootc container lint --fatal-warnings
+
+      - name: Resolve Published Digest
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: image
         env:
-          IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
+          IMAGE_REF: "ghcr.io/${{ github.repository_owner }}/spectrum"
         run: |
           set -euo pipefail
-          image_registry="${IMAGE_REGISTRY,,}"
-          image_name="${IMAGE_NAME,,}"
-          image_vendor="${GITHUB_REPOSITORY_OWNER,,}"
-          revision="$(git rev-parse HEAD)"
-          short_sha="$(git rev-parse --short HEAD)"
-          date_tag="$(date -u +%Y%m%d)"
-          created="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          version="${date_tag}-${short_sha}"
-          repository_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
-          raw_repository_url="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}"
+          image_ref=${IMAGE_REF,,}
+          digest=$(skopeo inspect "docker://$image_ref:latest" | jq -r .Digest)
+          echo "ref=$image_ref@$digest" >>"$GITHUB_OUTPUT"
+          echo "digest=$digest" >>"$GITHUB_OUTPUT"
 
-          {
-            echo "image_ref=${image_registry}/${image_name}"
-            echo "image_vendor=${image_vendor}"
-            echo "local_ref=${image_name}:latest"
-            echo "created=${created}"
-            echo "revision=${revision}"
-            echo "version=${version}"
-            echo "source=${repository_url}/blob/${revision}/spectrum/Containerfile"
-            echo "url=${repository_url}/tree/${revision}"
-            echo "documentation=${raw_repository_url}/${revision}/README.md"
-            echo "readme=${raw_repository_url}/${revision}/README.md"
-            echo "tags<<EOF"
-            echo "latest"
-            echo "${date_tag}"
-            echo "${version}"
-            echo "EOF"
-          } >>"$GITHUB_OUTPUT"
-
-      - name: Login to GitHub Container Registry
-        if: env.PUBLISH == 'true'
-        env:
-          GHCR_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-          GHCR_USERNAME: ${{ github.actor }}
-        run: |
-          printf '%s' "${GHCR_PASSWORD}" \
-            | sudo podman login ghcr.io \
-                --username "${GHCR_USERNAME}" \
-                --password-stdin
-
-      - name: Build Bluefin Image
-        env:
-          BLUEFIN_BASE_IMAGE: ${{ env.BLUEFIN_BASE_IMAGE }}
-          BLUEFIN_BASE_IMAGE_NAME: ${{ env.BLUEFIN_BASE_IMAGE_NAME }}
-          BLUEFIN_BASE_IMAGE_TAG: ${{ env.BLUEFIN_BASE_IMAGE_TAG }}
-          CACHE_REF: "${{ steps.image.outputs.image_ref }}-build-cache"
-          CREATED: "${{ steps.image.outputs.created }}"
-          GITHUB_TOKEN: ${{ github.token }}
-          IMAGE_REF: "${{ steps.image.outputs.image_ref }}"
-          IMAGE_VENDOR: "${{ steps.image.outputs.image_vendor }}"
-          LOCAL_REF: "${{ steps.image.outputs.local_ref }}"
-          REVISION: "${{ steps.image.outputs.revision }}"
-          VERSION: "${{ steps.image.outputs.version }}"
-          SOURCE: "${{ steps.image.outputs.source }}"
-          URL: "${{ steps.image.outputs.url }}"
-          DOCUMENTATION: "${{ steps.image.outputs.documentation }}"
-          README: "${{ steps.image.outputs.readme }}"
-          PUBLISH: ${{ env.PUBLISH }}
-        run: |
-          github_token_file=$(mktemp)
-          trap 'rm -f "${github_token_file}"' EXIT
-          printf '%s' "${GITHUB_TOKEN}" >"${github_token_file}"
-          chmod 600 "${github_token_file}"
-          base_image_ref="${BLUEFIN_BASE_IMAGE%@*}"
-          base_image_digest="${BLUEFIN_BASE_IMAGE##*@}"
-          if [[ "${base_image_digest}" == "${BLUEFIN_BASE_IMAGE}" ]]; then
-            printf '%s\n' 'BLUEFIN_BASE_IMAGE must be pinned by digest' >&2
-            exit 1
-          fi
-
-          cache_args=(--layers=true)
-          # Buildah's registry cache stores SHA-keyed intermediate images, so
-          # the repository may be readable without having a normal tagged
-          # manifest for `skopeo inspect`. Bluefin uses list-tags for this probe.
-          if sudo skopeo list-tags "docker://${CACHE_REF}" >/dev/null 2>&1; then
-            cache_args+=(--cache-from "${CACHE_REF}")
-          fi
-          if [[ "${PUBLISH}" == true ]]; then
-            cache_args+=(--cache-to "${CACHE_REF}")
-          fi
-
-          sudo podman build \
-            "${cache_args[@]}" \
-            --pull=newer \
-            --secret "id=github_token,src=${github_token_file}" \
-            --tag "${LOCAL_REF}" \
-            --build-arg "BLUEFIN_BASE_IMAGE=${BLUEFIN_BASE_IMAGE}" \
-            --build-arg "BLUEFIN_BASE_IMAGE_NAME=${BLUEFIN_BASE_IMAGE_NAME}" \
-            --build-arg "BLUEFIN_BASE_IMAGE_TAG=${BLUEFIN_BASE_IMAGE_TAG}" \
-            --build-arg "IMAGE_NAME=${IMAGE_NAME,,}" \
-            --build-arg "IMAGE_VENDOR=${IMAGE_VENDOR}" \
-            --build-arg "IMAGE_TAG=latest" \
-            --build-arg "IMAGE_REF=ostree-image:docker://${IMAGE_REF}" \
-            --build-arg "IMAGE_REVISION=${REVISION}" \
-            --build-arg "IMAGE_VERSION=${VERSION}" \
-            --build-arg "IMAGE_SOURCE=${SOURCE}" \
-            --build-arg "IMAGE_URL=${URL}" \
-            --build-arg "IMAGE_DOCUMENTATION=${DOCUMENTATION}" \
-            --build-arg "IMAGE_README=${README}" \
-            --label "org.opencontainers.image.created=${CREATED}" \
-            --label "org.opencontainers.image.base.name=${base_image_ref}" \
-            --label "org.opencontainers.image.base.digest=${base_image_digest}" \
-            --file spectrum/Containerfile \
-            .
-
-      - name: Make Buildah Package Caches Readable
-        if: always() && !cancelled() && env.PUBLISH == 'true'
-        run: |
-          if compgen -G '/var/tmp/buildah-cache-*' >/dev/null; then
-            sudo chmod --recursive a+rwX /var/tmp/buildah-cache-*
-          fi
-
-      - name: Save Buildah Package Caches
-        if: always() && !cancelled() && env.PUBLISH == 'true'
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      - name: Generate Syft SBOM
+        if: steps.image.outputs.ref != ''
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
-          path: /var/tmp/buildah-cache-*
-          key: ${{ steps.buildah-cache.outputs.cache-primary-key }}
+          image: ${{ steps.image.outputs.ref }}
+          format: spdx-json
+          output-file: spectrum.spdx.json
+          upload-artifact: true
 
-      - name: Validate OCI Metadata
+      - name: Sign Image and Attach SBOM
+        if: steps.image.outputs.ref != ''
         env:
-          BLUEFIN_BASE_IMAGE: ${{ env.BLUEFIN_BASE_IMAGE }}
-          EXPECTED_DOCUMENTATION: "${{ steps.image.outputs.documentation }}"
-          EXPECTED_README: "${{ steps.image.outputs.readme }}"
-          EXPECTED_REVISION: "${{ steps.image.outputs.revision }}"
-          EXPECTED_SOURCE: "${{ steps.image.outputs.source }}"
-          EXPECTED_URL: "${{ steps.image.outputs.url }}"
-          EXPECTED_VERSION: "${{ steps.image.outputs.version }}"
-          LOCAL_REF: "${{ steps.image.outputs.local_ref }}"
+          IMAGE_REF: ${{ steps.image.outputs.ref }}
         run: |
           set -euo pipefail
-          base_image_ref="${BLUEFIN_BASE_IMAGE%@*}"
-          base_image_digest="${BLUEFIN_BASE_IMAGE##*@}"
-          sudo podman image inspect "${LOCAL_REF}" \
-            | jq -e \
-              --arg base_digest "${base_image_digest}" \
-              --arg base_ref "${base_image_ref}" \
-              --arg documentation "${EXPECTED_DOCUMENTATION}" \
-              --arg readme "${EXPECTED_README}" \
-              --arg revision "${EXPECTED_REVISION}" \
-              --arg source "${EXPECTED_SOURCE}" \
-              --arg url "${EXPECTED_URL}" \
-              --arg version "${EXPECTED_VERSION}" \
-              '.[0].Config.Labels as $labels
-              | $labels["containers.bootc"] == "1"
-                and $labels["org.opencontainers.image.authors"] == "4evy <git@evy.pink>"
-                and $labels["org.opencontainers.image.base.digest"] == $base_digest
-                and $labels["org.opencontainers.image.base.name"] == $base_ref
-                and $labels["org.opencontainers.image.documentation"] == $documentation
-                and $labels["org.opencontainers.image.license"] == "MIT"
-                and $labels["org.opencontainers.image.licenses"] == "MIT"
-                and $labels["org.opencontainers.image.revision"] == $revision
-                and $labels["org.opencontainers.image.source"] == $source
-                and $labels["org.opencontainers.image.url"] == $url
-                and $labels["org.opencontainers.image.version"] == $version
-                and $labels["io.artifacthub.package.logo-url"] == "https://avatars.githubusercontent.com/u/57304299?v=4"
-                and $labels["io.artifacthub.package.readme-url"] == $readme
-                and ($labels["io.artifacthub.package.maintainers"] | fromjson | .[0])
-                  == {"name": "4evy", "email": "git@evy.pink"}'
+          cosign sign --yes "$IMAGE_REF"
+          cosign attest --yes \
+            --predicate spectrum.spdx.json \
+            --type spdxjson \
+            "$IMAGE_REF"
 
-      - name: Report Boot Artifacts
-        env:
-          LOCAL_REF: "${{ steps.image.outputs.local_ref }}"
-        run: |
-          sudo podman run \
-            --rm \
-            --entrypoint bash \
-            --volume "$PWD:/workspace:ro" \
-            "${LOCAL_REF}" \
-            -ceu '
-              mkdir -p /tmp/spectrum-workspace/packages/dotfiles-python/src
-              mkdir -p /tmp/spectrum-workspace/spectrum
-              cp /workspace/pyproject.toml /workspace/uv.lock /tmp/spectrum-workspace/
-              cp -a /workspace/packages/dotfiles-python/src/workstation \
-                /tmp/spectrum-workspace/packages/dotfiles-python/src/
-              cp -a /workspace/spectrum/scripts /tmp/spectrum-workspace/spectrum/
-              UV_PROJECT_ENVIRONMENT=/tmp/spectrum-boot-report-venv \
-                uv --cache-dir /tmp/spectrum-uv-cache \
-                  --directory /tmp/spectrum-workspace \
-                  run --locked python /tmp/spectrum-workspace/spectrum/scripts/boot_artifacts.py
-            '
-
-      - name: Push Image
-        id: push
-        if: env.PUBLISH == 'true'
-        env:
-          IMAGE_REF: "${{ steps.image.outputs.image_ref }}"
-          LOCAL_REF: "${{ steps.image.outputs.local_ref }}"
-          TAGS: "${{ steps.image.outputs.tags }}"
-        run: |
-          set -euo pipefail
-          # sudo podman writes the digest file, so create and clean it as root too.
-          digest_file=$(sudo mktemp)
-          trap 'sudo rm -f "$digest_file"' EXIT
-
-          pushed_default=false
-          while IFS= read -r tag; do
-            [ -n "$tag" ] || continue
-            sudo podman tag "${LOCAL_REF}" "${IMAGE_REF}:${tag}"
-            if [ "$pushed_default" = false ]; then
-              sudo podman push --digestfile "$digest_file" "${IMAGE_REF}:${tag}"
-              pushed_default=true
-            else
-              sudo podman push "${IMAGE_REF}:${tag}"
-            fi
-          done <<<"${TAGS}"
-
-          digest=$(sudo cat "$digest_file")
-          echo "digest=${digest}" >>"$GITHUB_OUTPUT"
-
-      - name: Download Syft
-        id: syft
-        if: env.PUBLISH == 'true'
-        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+      - name: Attest Build Provenance
+        if: steps.image.outputs.ref != ''
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v4.1.0
         with:
-          syft-version: v1.42.3
-
-      - name: Generate SPDX SBOM
-        if: env.PUBLISH == 'true'
-        env:
-          DIGEST: ${{ steps.push.outputs.digest }}
-          IMAGE_REF: "${{ steps.image.outputs.image_ref }}"
-          LOCAL_REF: "${{ steps.image.outputs.local_ref }}"
-          SYFT_CMD: "${{ steps.syft.outputs.cmd }}"
-          SYFT_FILE_METADATA_SELECTION: none
-          SYFT_RELATIONSHIPS_PACKAGE_FILE_OWNERSHIP: "false"
-        run: |
-          set -euo pipefail
-          mount_path=$(sudo podman image mount "${LOCAL_REF}")
-          trap 'sudo podman image unmount "${LOCAL_REF}" >/dev/null' EXIT
-          sudo \
-            --preserve-env=SYFT_FILE_METADATA_SELECTION,SYFT_RELATIONSHIPS_PACKAGE_FILE_OWNERSHIP \
-            "${SYFT_CMD}" scan \
-            "dir:${mount_path}" \
-            --source-name "${IMAGE_REF}@${DIGEST}" \
-            --output spdx-json=spectrum.spdx.json
-
-      - name: Upload SPDX SBOM
-        if: env.PUBLISH == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: spectrum.spdx.json
-          path: spectrum.spdx.json
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Sign Image
-        if: env.PUBLISH == 'true'
-        env:
-          DIGEST: ${{ steps.push.outputs.digest }}
-          GHCR_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-          GHCR_USERNAME: ${{ github.actor }}
-          IMAGE_REF: "${{ steps.image.outputs.image_ref }}"
-        run: |
-          printf '%s' "${GHCR_PASSWORD}" \
-            | cosign login ghcr.io \
-                --username "${GHCR_USERNAME}" \
-                --password-stdin
-          cosign sign --yes "${IMAGE_REF}@${DIGEST}"
-
-      - name: Attest Image
-        if: env.PUBLISH == 'true'
-        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1.1
-        with:
-          subject-name: ${{ steps.image.outputs.image_ref }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
-
-      - name: Attest Image SBOM
-        if: env.PUBLISH == 'true'
-        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1.1
-        with:
-          subject-name: ${{ steps.image.outputs.image_ref }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          sbom-path: spectrum.spdx.json
+          subject-name: ghcr.io/${{ github.repository_owner }}/spectrum
+          subject-digest: ${{ steps.image.outputs.digest }}
           push-to-registry: true

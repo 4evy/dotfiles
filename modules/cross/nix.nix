@@ -17,7 +17,7 @@ in
 
       settings = {
         trusted-users = [
-          "4evy"
+          config.local.user.name
         ];
         experimental-features = [
           "flakes"
@@ -39,10 +39,6 @@ in
           "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
           "flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs="
         ];
-        extra-sandbox-paths = [
-          "/nix/var/cache/ccache"
-          "/nix/var/cache/sccache"
-        ];
         nix-path = nixPathEntries;
       }
       // lib.attrsets.optionalAttrs config.nixpkgs.hostPlatform.isLinux { flake-registry = ""; };
@@ -58,9 +54,5 @@ in
       group = lib.modules.mkDefault (if config.nixpkgs.hostPlatform.isDarwin then "staff" else "root");
     };
 
-    system.activationScripts.postActivation.text = lib.modules.mkAfter ''
-      install -d -m 0770 -o root -g nixbld /nix/var/cache/ccache
-      install -d -m 0770 -o root -g nixbld /nix/var/cache/sccache
-    '';
   };
 }

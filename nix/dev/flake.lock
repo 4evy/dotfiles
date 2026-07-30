@@ -1,0 +1,30 @@
+{
+  "nodes": {
+    "git-hooks-nix": {
+      "inputs": {
+        "flake-compat": [],
+        "nixpkgs": []
+      },
+      "locked": {
+        "lastModified": 1784288435,
+        "narHash": "sha256-ReRHaLgr/uVqdD8afFSn+myXIfpHeOhP0yYe0TJqAA8=",
+        "owner": "cachix",
+        "repo": "git-hooks.nix",
+        "rev": "43b3c1ab9d40fb1dbb008f451988a91e375825e9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cachix",
+        "repo": "git-hooks.nix",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "git-hooks-nix": "git-hooks-nix"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

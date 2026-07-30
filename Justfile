@@ -5,14 +5,7 @@ set default-script
 set script-interpreter := ['bash', '-euo', 'pipefail']
 
 image_name := env("SPECTRUM_IMAGE_NAME", "spectrum")
-local_tag := env("SPECTRUM_LOCAL_TAG", "local")
-local_ref := "localhost/" + image_name + ":" + local_tag
-remote_ref := env("SPECTRUM_REMOTE_REF", "ghcr.io/4evy/" + image_name + ":latest")
-base_image := env("SPECTRUM_BLUEFIN_BASE_IMAGE", "ghcr.io/ublue-os/bluefin-nvidia-open:stable@sha256:167d18ed51092b17687fbfcf5405e9efbc13414ddcfc5e5c5217b87beb0f074b")
-base_image_digest := if base_image =~ '@sha256:[0-9a-f]{64}$' { replace_regex(base_image, '^.*@', '') } else { error('Spectrum base images must end in a sha256 digest') }
-base_image_ref := replace_regex(base_image, '@sha256:[0-9a-f]{64}$', '')
-base_image_name := env("SPECTRUM_BLUEFIN_BASE_IMAGE_NAME", "bluefin-nvidia-open")
-base_image_tag := env("SPECTRUM_BLUEFIN_BASE_IMAGE_TAG", "stable")
+local_ref := "localhost/" + image_name + ":latest_linux_amd64"
 compose := env("COMPOSE", "podman-compose")
 podman := env("PODMAN", "podman")
 determinate_nix_installer_url := "https://install.determinate.systems/nix"
@@ -32,9 +25,9 @@ nix_profile_tools := "deadnix:deadnix nh:nh nil:nil nix-instantiate:nix nom:nix-
 pi_extension_profile_tools := "pi-ssh-tools:github:euvlok/pkgs#pi-ssh-tools web-search-pi:github:euvlok/pkgs#web-search-pi"
 
 doctor_setup_commands := "bash curl git sudo"
-doctor_format_commands := "bun clang-format git jq nixfmt rumdl shfmt stylua taplo uv"
+doctor_format_commands := "git nix"
 doctor_ansible_commands := "ansible-doc ansible-galaxy ansible-lint ansible-playbook yamllint"
-doctor_lint_commands := "actionlint chezmoi deadnix hadolint lua luacheck meson ninja nix-instantiate pkg-config shellcheck zizmor " + doctor_format_commands + " " + doctor_ansible_commands
+doctor_lint_commands := "actionlint chezmoi deadnix hadolint jq lua luacheck meson ninja nix-instantiate pkg-config rumdl shellcheck taplo uv zizmor " + doctor_format_commands + " " + doctor_ansible_commands
 doctor_all_commands := doctor_lint_commands + " bash curl sudo watchexec"
 
 export PATH := homebrew_path + PATH_VAR_SEP + nix_bin_dir + PATH_VAR_SEP + nix_profile_bin_dir + PATH_VAR_SEP + nixos_profile_bin_dir + PATH_VAR_SEP + env("PATH", "")
@@ -43,18 +36,14 @@ export PATH := homebrew_path + PATH_VAR_SEP + nix_bin_dir + PATH_VAR_SEP + nix_p
 export UV_LOCKED := "1"
 
 alias a := apply
-alias b := build
 alias c := check
 alias cf := check-format
 alias ck := check
 alias f := fmt
-alias i := install
 alias l := lint
 alias nx := nix
 alias r := reboot
 alias s := setup
-alias sw := switch
-alias u := upgrade
 alias up := update
 alias w := watch
 
@@ -80,11 +69,10 @@ doctor profile="setup":
       status) linux_commands bootc ;;
       reboot) linux_commands systemctl ;;
       install) linux_commands bootc sudo ;;
-      build) commands=("${podman_command%% *}" sudo) ;;
+      build | spectrum) commands=(bluebuild check-jsonschema jq "${podman_command%% *}" skopeo) ;;
       setup) commands=({{ doctor_setup_commands }}) ;;
       apply) commands=(chezmoi) ;;
       shell) commands=(shellcheck shfmt) ;;
-      spectrum) commands=(uv) ;;
       fmt) commands=({{ doctor_format_commands }}) ;;
       lint | check) commands=({{ doctor_lint_commands }}) ;;
       c) commands=(meson ninja pkg-config) ;;
@@ -292,244 +280,56 @@ reboot: (doctor 'reboot')
 [macos]
 reboot: (_linux-only recipe_name())
 
-# Build the local Spectrum bootc image, reusing cached layers.
-[arg('target', help='Image reference to tag locally')]
+# Validate the recipe and enforce the Renovate-managed base digest lock.
 [group('spectrum')]
 [linux]
-build target=local_ref: (_build target 'false')
-
-[arg('target', help='Image reference to tag locally')]
-[group('spectrum')]
-[macos]
-build target=local_ref: (_linux-only recipe_name())
-
-# Rebuild the local Spectrum bootc image without using cached layers.
-[arg('target', help='Image reference to tag locally')]
-[group('spectrum')]
-[linux]
-build-clean target=local_ref: (_build target 'true')
-
-[arg('target', help='Image reference to tag locally')]
-[group('spectrum')]
-[macos]
-build-clean target=local_ref: (_linux-only recipe_name())
-
-[arg('no_cache', pattern='true|false')]
-[linux]
-[private]
-_build target no_cache: (doctor 'build')
-    target={{ quote(target) }}
-    no_cache={{ quote(no_cache) }}
-    base_image={{ quote(base_image) }}
-    base_image_name={{ quote(base_image_name) }}
-    base_image_tag={{ quote(base_image_tag) }}
-    image_name={{ quote(image_name) }}
-    local_tag={{ quote(local_tag) }}
-    read -r -a podman_command <<< {{ quote(podman) }}
-    image_created={{ quote(datetime_utc("%Y-%m-%dT%H:%M:%SZ")) }}
-    image_revision=$(git rev-parse HEAD 2>/dev/null || printf '%s' unknown)
-    image_version=$(git describe --tags --always --dirty 2>/dev/null || printf '%s' "$local_tag")
-    base_image_ref={{ quote(base_image_ref) }}
-    base_image_digest={{ quote(base_image_digest) }}
-
-    build_args=(
-      --layers=true \
-      --pull=newer \
-      --tag "$target" \
-      --build-arg "BLUEFIN_BASE_IMAGE=$base_image" \
-      --build-arg "BLUEFIN_BASE_IMAGE_NAME=$base_image_name" \
-      --build-arg "BLUEFIN_BASE_IMAGE_TAG=$base_image_tag" \
-      --build-arg "IMAGE_NAME=$image_name" \
-      --build-arg "IMAGE_TAG=$local_tag" \
-      --build-arg "IMAGE_REF=ostree-image:docker://$target" \
-      --build-arg "IMAGE_REVISION=$image_revision" \
-      --build-arg "IMAGE_VERSION=$image_version" \
-      --label "org.opencontainers.image.created=$image_created" \
-      --label "org.opencontainers.image.base.name=$base_image_ref" \
-      --label "org.opencontainers.image.base.digest=$base_image_digest" \
-      --file spectrum/Containerfile
-    )
-
-    if [[ "$image_revision" != unknown ]]; then
-      repository_url=https://github.com/4evy/dotfiles
-      raw_repository_url=https://raw.githubusercontent.com/4evy/dotfiles
-      build_args+=(
-        --build-arg "IMAGE_SOURCE=$repository_url/blob/$image_revision/spectrum/Containerfile"
-        --build-arg "IMAGE_URL=$repository_url/tree/$image_revision"
-        --build-arg "IMAGE_DOCUMENTATION=$raw_repository_url/$image_revision/README.md"
-        --build-arg "IMAGE_README=$raw_repository_url/$image_revision/README.md"
-      )
-    fi
-
-    if [[ $no_cache == true ]]; then
-      build_args+=(--no-cache)
-    fi
-
-    github_token_file=
-    sudo_keepalive_pid=
-    cleanup() {
-      if [[ -n "$sudo_keepalive_pid" ]]; then
-        kill "$sudo_keepalive_pid" 2>/dev/null || true
-        wait "$sudo_keepalive_pid" 2>/dev/null || true
-      fi
-      if [[ -n "$github_token_file" ]]; then
-        rm -f "$github_token_file"
-      fi
-    }
-    trap cleanup EXIT
-
-    if [[ -n "${GITHUB_TOKEN:-}" || -n "${GH_TOKEN:-}" ]]; then
-      github_token_file=$(mktemp)
-      printf '%s' "${GITHUB_TOKEN:-$GH_TOKEN}" >"$github_token_file"
-      chmod 600 "$github_token_file"
-      build_args+=(--secret "id=github_token,src=$github_token_file")
-    fi
-
-    # A Spectrum build can outlast sudo's credential timeout. Keep this
-    # terminal's timestamp fresh so a dependent switch/upgrade stays
-    # unattended after the single up-front authentication.
-    sudo -v
-    (
-      while sleep 60; do
-        sudo -n -v || exit
-      done
-    ) &
-    sudo_keepalive_pid=$!
-
-    sudo -n env \
-      -u XDG_RUNTIME_DIR \
-      -u DBUS_SESSION_BUS_ADDRESS \
-      -u WAYLAND_DISPLAY \
-      -u DISPLAY \
-      -u SSH_AUTH_SOCK \
-      "${podman_command[@]}" build "${build_args[@]}" .
-
-    sudo -n -v || {
-      printf '%s\n' 'sudo credential keepalive expired during the Spectrum build' >&2
+spectrum-validate: (doctor 'spectrum')
+    generated=$(mktemp)
+    trap 'rm -f "$generated"' EXIT
+    check-jsonschema \
+      --base-uri https://schema.blue-build.org/ \
+      --schemafile https://schema.blue-build.org/recipe-v2.json \
+      bluebuild/recipes/spectrum.yml
+    # BlueBuild's feature-gated v2 parser is ready, but its validate command
+    # still hardcodes the v1 schema. The official v2 schema is checked above.
+    bluebuild generate --skip-validation --output "$generated" bluebuild/recipes/spectrum.yml
+    locked=$(< bluebuild/recipes/spectrum.lock)
+    resolved=$(skopeo inspect "docker://${locked%@*}" | jq -r .Digest)
+    [[ "$locked" == *@$resolved ]] || {
+      printf 'base image lock mismatch: %s resolves to %s\n' "$locked" "$resolved" >&2
       exit 1
     }
+    tagged=${locked%@*}
+    expected_arg="${tagged%:*}@${locked##*@}"
+    grep -Fq "ARG BASE_IMAGE=\"$expected_arg\"" "$generated"
+    ! grep -qw akmods bluebuild/recipes/spectrum.yml "$generated"
 
-# Compatibility name for the cached local Spectrum build.
-[arg('target', help='Image reference to tag locally')]
-[group('spectrum')]
-[linux]
-spectrum-dev target=local_ref: (build target)
-
-[arg('target', help='Image reference to tag locally')]
 [group('spectrum')]
 [macos]
-spectrum-dev target=local_ref: (_linux-only recipe_name())
+spectrum-validate: (_linux-only recipe_name())
 
-# Validate Spectrum build scripts without building the image.
+# Build the local Spectrum image from the BlueBuild recipe v2 definition.
 [group('spectrum')]
-spectrum-lint: _check-spectrum
+[linux]
+spectrum-build: spectrum-validate
+    bluebuild build --skip-validation --no-sign bluebuild/recipes/spectrum.yml
 
-# Report boot and kernel artifact sizes from a built Spectrum image.
+[group('spectrum')]
+[macos]
+spectrum-build: (_linux-only recipe_name())
+
+# Inspect a built image with bootc's native container linter.
 [arg('target', help='Built image reference to inspect')]
 [group('spectrum')]
 [linux]
-spectrum-boot-report target=local_ref: (doctor 'build')
-    target={{ quote(target) }}
+spectrum-inspect target=local_ref: (doctor 'build')
     read -r -a podman_command <<< {{ quote(podman) }}
-    sudo "${podman_command[@]}" run \
-      --rm \
-      --entrypoint bash \
-      --security-opt label=disable \
-      --volume {{ quote(repo_dir + ":/workspace:ro") }} \
-      "$target" \
-      -ceu '
-        mkdir -p /tmp/spectrum-workspace/packages/dotfiles-python/src
-        mkdir -p /tmp/spectrum-workspace/spectrum
-        cp /workspace/pyproject.toml /workspace/uv.lock /tmp/spectrum-workspace/
-        cp -a /workspace/packages/dotfiles-python/src/workstation \
-          /tmp/spectrum-workspace/packages/dotfiles-python/src/
-        cp -a /workspace/spectrum/scripts /tmp/spectrum-workspace/spectrum/
-        UV_PROJECT_ENVIRONMENT=/tmp/spectrum-boot-report-venv \
-          uv --cache-dir /tmp/spectrum-uv-cache \
-            --directory /tmp/spectrum-workspace \
-            run --locked python /tmp/spectrum-workspace/spectrum/scripts/boot_artifacts.py
-      '
+    "${podman_command[@]}" run --rm {{ quote(target) }} bootc container lint
 
-# Show RPM package differences between the selected Bluefin base and Spectrum.
-[arg('base', help='Bluefin base image reference to compare against')]
-[arg('target', help='Built Spectrum image reference to inspect')]
-[group('spectrum')]
-[linux]
-spectrum-diff target=local_ref base=base_image: (doctor 'build')
-    target={{ quote(target) }}
-    base={{ quote(base) }}
-    read -r -a podman_command <<< {{ quote(podman) }}
-    work_dir=$(mktemp -d)
-    trap 'rm -rf "$work_dir"' EXIT
-
-    sudo "${podman_command[@]}" run --rm --entrypoint rpm "$base" \
-      -qa --qf '%{NAME}\n' | sort -u >"$work_dir/base"
-    sudo "${podman_command[@]}" run --rm --entrypoint rpm "$target" \
-      -qa --qf '%{NAME}\n' | sort -u >"$work_dir/target"
-
-    printf '%s\n' 'Only in Spectrum:'
-    comm -13 "$work_dir/base" "$work_dir/target" || true
-    printf '\n%s\n' 'Only in base image:'
-    comm -23 "$work_dir/base" "$work_dir/target" || true
-
-# Switch the host to the published Spectrum image on next boot.
-[arg('target', help='Published bootc image reference')]
-[confirm('Switch this host to published Spectrum image ' + target + '?')]
-[group('spectrum')]
-[linux]
-[shell]
-install target=remote_ref: (doctor 'install')
-    sudo bootc switch {{ quote(target) }}
-    @printf '%s\n' 'Run `just reboot`, then `just setup` after reboot.'
-
-[arg('target', help='Published bootc image reference')]
+[arg('target', help='Built image reference to inspect')]
 [group('spectrum')]
 [macos]
-install target=remote_ref: (_linux-only recipe_name())
-
-# Rebuild and switch the host to the local Spectrum image on next boot.
-[arg('target', help='Local containers-storage image reference')]
-[confirm('Switch this host to local Spectrum image ' + target + '?')]
-[group('spectrum')]
-[linux]
-switch target=local_ref: (doctor 'install') (build target)
-    target={{ quote(target) }}
-    switch_log=$(mktemp)
-    trap 'rm -f "$switch_log"' EXIT
-
-    if sudo -n bootc switch --transport containers-storage "$target" \
-      > >(tee "$switch_log") \
-      2> >(tee -a "$switch_log" >&2); then
-      switch_status=0
-    else
-      switch_status=$?
-    fi
-
-    if grep -Fxq 'Image specification is unchanged.' "$switch_log"; then
-      printf 'Already tracking %s; staging the latest local image with `bootc upgrade`.\n' "$target"
-      sudo -n bootc upgrade
-      exit 0
-    fi
-
-    exit "$switch_status"
-
-[arg('target', help='Local containers-storage image reference')]
-[group('spectrum')]
-[macos]
-switch target=local_ref: (_linux-only recipe_name())
-
-# Rebuild the local Spectrum image and stage it as an upgrade.
-[arg('target', help='Local image reference to rebuild before upgrade')]
-[confirm('Rebuild ' + target + ' and stage it as a bootc upgrade?')]
-[group('spectrum')]
-[linux]
-upgrade target=local_ref: (doctor 'install') (build target)
-    sudo -n bootc upgrade
-
-[arg('target', help='Local image reference to rebuild before upgrade')]
-[group('spectrum')]
-[macos]
-upgrade target=local_ref: (_linux-only recipe_name())
+spectrum-inspect target=local_ref: (_linux-only recipe_name())
 
 # Build the Fedora smoke-test image and run its default validation command.
 [group('containers')]
@@ -598,8 +398,10 @@ nix: (doctor 'nix') _ensure-nix
     if ((${#missing[@]})); then
       "$nix_bin" profile install "${missing[@]}"
     else
-      printf '%s\n' 'Nix profile tools already installed.'
+      printf '%s\n' 'Nix profile tools already installed; checking for upgrades.'
     fi
+
+    "$nix_bin" profile upgrade --all
 
 # Apply chezmoi-managed dotfiles.
 [group('setup')]
@@ -631,7 +433,7 @@ _userland:
 _host:
     ansible-playbook ansible/site.yml --tags host
 
-# Format files managed by this repo.
+# Format the repository through the flake's treefmt wrapper.
 [group('dev')]
 fmt: (doctor 'fmt') (_format 'write')
 
@@ -642,21 +444,20 @@ fmt: (doctor 'fmt') (_format 'write')
 watch +args='check': (doctor 'watch')
     watchexec --clear --restart -- {{ quote(just_executable()) }} --justfile {{ quote(justfile()) }} "$@"
 
-# Check repository formatting without rewriting files.
+# Run the same treefmt wrapper in CI mode without retaining rewrites.
 [group('dev')]
 check-format: (doctor 'fmt') (_format 'check')
 
+[private]
+_format mode:
+    case {{ quote(mode) }} in
+      write) nix fmt ;;
+      check) nix fmt -- --ci ;;
+    esac
+
 [parallel]
 [private]
-_format mode: (_run-files 'bun' ('run biome format ' + if mode == 'write' { '--write .' } else { '.' }) '') (_run-files 'clang-format' (if mode == 'write' { '-i' } else { '--dry-run --Werror' }) '*.c *.h') (_run-files 'jq' 'empty' '*.json flake.lock :(exclude).vscode/settings.json') (_format-just mode) (_run-files 'stylua' (if mode == 'check' { '--check' } else { '' }) '*.lua') (_run-files 'rumdl' ('fmt --respect-gitignore ' + if mode == 'check' { '--check .' } else { '.' }) '') (_run-files 'nixfmt' (if mode == 'check' { '--check' } else { '' }) '*.nix') (_run-files 'uv' ('run ruff format ' + if mode == 'check' { '--check .' } else { '.' }) '') (_shell-files (if mode == 'write' { 'format' } else { 'check-format' })) (_run-files 'taplo' (if mode == 'write' { 'fmt' } else { 'fmt --check' }) '*.toml')
-
-[private]
-_format-just mode:
-    {{ quote(just_executable()) }} --fmt {{ if mode == 'check' { '--check' } else { '' } }} --justfile {{ quote(justfile()) }}
-
-[parallel]
-[private]
-_lint-files: _check-worktree-paths (_run-files 'jq' 'empty' '*.json flake.lock :(exclude).vscode/settings.json') (_run-files 'hadolint' '' 'Dockerfile Containerfile') (_run-files 'luacheck' '--globals Command cx ya --' '*.lua') (_run-files 'rumdl' 'check --respect-gitignore .' '') _lint-nix (_run-files 'uv' 'run ruff check .' '') (_shell-files 'lint') _lint-templates (_run-files 'taplo' 'lint' '*.toml') _lint-xml
+_lint-files: _check-worktree-paths (_run-files 'jq' 'empty' '*.json flake.lock :(exclude).vscode/settings.json') (_run-files 'hadolint' '' 'Dockerfile Containerfile') (_run-files 'luacheck' '--globals Command cx ya --' '*.lua') (_run-files 'rumdl' 'check --respect-gitignore .' '') _lint-nix (_run-files 'uv' 'run ruff check .' '') _lint-shell-files _lint-shell-templates-portable _lint-templates (_run-files 'taplo' 'lint' '*.toml') _lint-xml
 
 [private]
 _check-worktree-paths:
@@ -697,14 +498,16 @@ _lint-xml:
 [private]
 _lint-templates:
     python_template_files=()
-    shell_template_files=()
+    bash_template_files=()
+    zsh_template_files=()
     python_input_template_files=()
     xml_input_template_files=()
     while IFS= read -r -d '' file; do
       [[ -f $file && ! -L $file ]] || continue
       case "$file" in
         dotfiles/.chezmoitemplates/*.py.tmpl) ;;
-        *.bash.tmpl | *.sh.tmpl) shell_template_files+=("$file") ;;
+        dotfiles/dot_bash*.tmpl | *.bash.tmpl | *.sh.tmpl) bash_template_files+=("$file") ;;
+        dotfiles/dot_zsh*.tmpl | *.zsh.tmpl) zsh_template_files+=("$file") ;;
         *.py.tmpl) python_template_files+=("$file") ;;
         *.py.in) python_input_template_files+=("$file") ;;
         *.plist.in | *.xml.in) xml_input_template_files+=("$file") ;;
@@ -721,7 +524,10 @@ _lint-templates:
       --no-tty \
       --refresh-externals=never >/dev/null
 
-    for file in "${python_template_files[@]}" "${shell_template_files[@]}"; do
+    for file in \
+      "${python_template_files[@]}" \
+      "${bash_template_files[@]}" \
+      "${zsh_template_files[@]}"; do
       rendered_file="$tmp_destination/rendered-templates/${file%.tmpl}"
       mkdir -p "${rendered_file%/*}"
       chezmoi --source {{ quote(repo_dir) }} execute-template < "$file" > "$rendered_file"
@@ -734,8 +540,18 @@ _lint-templates:
         uv run ruff check --stdin-filename "${file%.tmpl}" - < "$rendered_file"
       done
     fi
-    for file in "${shell_template_files[@]}"; do
-      bash -n "$tmp_destination/rendered-templates/${file%.tmpl}"
+    for file in "${bash_template_files[@]}"; do
+      rendered_file="$tmp_destination/rendered-templates/${file%.tmpl}"
+      bash -n "$rendered_file"
+      # Cached integrations are generated by their upstream tools. Syntax-check
+      # them, but reserve ShellCheck policy for shell code maintained here.
+      case "$file" in
+        dotfiles/dot_cache/*) continue ;;
+      esac
+      shellcheck -x --shell=bash "$rendered_file"
+    done
+    for file in "${zsh_template_files[@]}"; do
+      zsh -n "$tmp_destination/rendered-templates/${file%.tmpl}"
     done
     for file in "${python_input_template_files[@]}"; do
       rendered_file="$tmp_destination/rendered-input-templates/${file%.in}"
@@ -758,7 +574,55 @@ _lint-templates:
       "${rendered_xml_files[@]}"
 
 [private]
-_shell-files action:
+_lint-shell-templates-portable:
+    platform_overrides=(
+      '{"chezmoi":{"os":"darwin","arch":"arm64","osRelease":{}}}'
+      '{"chezmoi":{"os":"linux","arch":"amd64","osRelease":{"id":"fedora"}}}'
+      '{"chezmoi":{"os":"linux","arch":"amd64","osRelease":{"id":"nixos"}}}'
+    )
+    shell_template_files=()
+    while IFS= read -r -d '' file; do
+      [[ -f $file && ! -L $file ]] && shell_template_files+=("$file")
+    done < <(
+      git ls-files -z --cached --others --exclude-standard -- \
+        'dotfiles/dot_bash*.tmpl' \
+        'dotfiles/dot_zsh*.tmpl' \
+        'dotfiles/dot_config/shell/*.tmpl' \
+        'dotfiles/dot_config/shell/exact_bashrc.d/*.tmpl' \
+        'dotfiles/dot_config/shell/exact_interactive.d/*.tmpl' \
+        'dotfiles/dot_config/shell/exact_zshrc.d/*.tmpl'
+    )
+
+    tmp_destination=$(mktemp -d)
+    trap 'rm -rf "$tmp_destination"' EXIT
+    platform_index=0
+    for platform_override in "${platform_overrides[@]}"; do
+      platform_index=$((platform_index + 1))
+      for file in "${shell_template_files[@]}"; do
+        rendered_file="$tmp_destination/$platform_index/${file%.tmpl}"
+        mkdir -p "${rendered_file%/*}"
+        chezmoi --source {{ quote(repo_dir) }} \
+          --override-data "$platform_override" \
+          execute-template < "$file" > "$rendered_file"
+        case "$file" in
+          dotfiles/dot_bash*.tmpl | *.bash.tmpl)
+            bash -n "$rendered_file"
+            shellcheck -x --shell=bash "$rendered_file"
+            ;;
+          dotfiles/dot_zsh*.tmpl | *.zsh.tmpl)
+            zsh -n "$rendered_file"
+            ;;
+          *.sh.tmpl)
+            bash -n "$rendered_file"
+            zsh -n "$rendered_file"
+            shellcheck -x --shell=bash "$rendered_file"
+            ;;
+        esac
+      done
+    done
+
+[private]
+_lint-shell-files:
     shell_files=()
     while IFS= read -r -d '' file; do
       [[ -f $file && ! -L $file ]] || continue
@@ -771,11 +635,7 @@ _shell-files action:
       fi
     done < <(git ls-files -z --cached --others --exclude-standard --)
     ((${#shell_files[@]} == 0)) && exit
-    case {{ quote(action) }} in
-      format) shfmt -ci -w "${shell_files[@]}" ;;
-      check-format) shfmt -ci -d "${shell_files[@]}" ;;
-      lint) shellcheck -x "${shell_files[@]}" ;;
-    esac
+    shellcheck -x "${shell_files[@]}"
 
 [private]
 _run-files executable arguments patterns:
@@ -795,35 +655,19 @@ _run-files executable arguments patterns:
     ((${#files[@]} == 0)) || {{ quote(executable) }} "${argument_array[@]}" "${files[@]}"
 
 [private]
-_check-spectrum-build: (doctor 'spectrum')
-    uv run spectrum-build check
-
-[private]
-_check-spectrum: (doctor 'spectrum') _check-spectrum-build
-    bytecode_dir=$(mktemp -d)
-    trap 'rm -rf "$bytecode_dir"' EXIT
-    uv run ty check spectrum/scripts/boot_artifacts.py spectrum/scripts/spectrum_build
-    PYTHONPYCACHEPREFIX="$bytecode_dir" uv run python -m compileall -q spectrum/scripts
-
-[private]
-_check-python: manifest-check python-complexity python-dead-code python-dependencies python-typecheck python-test
+_check-python: python-complexity python-dead-code python-dependencies python-typecheck python-test
     uv lock --check
     uv sync --check
     bytecode_dir=$(mktemp -d)
     build_dir=$(mktemp -d)
     trap 'rm -rf "$bytecode_dir" "$build_dir"' EXIT
-    PYTHONPYCACHEPREFIX="$bytecode_dir" uv run python -m compileall -q ansible dotfiles packages spectrum
+    PYTHONPYCACHEPREFIX="$bytecode_dir" uv run python -m compileall -q ansible dotfiles packages
     uv build --out-dir "$build_dir" --no-build-logs
 
-# Validate shared manifest data and ensure generated schemas are current.
+# Update every non-frozen npins source.
 [group('dev')]
-manifest-check:
-    uv run dotfiles-scripts manifests check
-
-# Regenerate JSON Schemas from the strict runtime manifest models.
-[group('dev')]
-manifest-update-schemas:
-    uv run dotfiles-scripts manifests update-schemas
+source-update:
+    nix shell nixpkgs#npins --command npins update
 
 # Check declared dependencies against first-party imports.
 [group('dev')]
@@ -865,15 +709,10 @@ _check-c: (doctor 'c')
     meson test -C build/meson-release --print-errorlogs
 
 [private]
-_check-ansible: (doctor 'ansible') _deps _check-ansible-operation
+_check-ansible: (doctor 'ansible') _deps
     ansible-playbook --syntax-check ansible/site.yml
     ansible-lint ansible
     yamllint .
-
-[private]
-_check-ansible-operation:
-    ansible-doc -t module dotfiles_operation > /dev/null
-    ANSIBLE_BECOME_ASK_PASS=false ansible-playbook ansible/tests/integration/operation.yml
 
 [private]
 _check-github-actions:
@@ -883,7 +722,18 @@ _check-github-actions:
 [private]
 _check-bun: (doctor 'bun')
     bun install --frozen-lockfile
+    bun install --cwd packages/hyper-window-tiling --frozen-lockfile
     bun run check
+
+# Regenerate bun2nix's dependency expression for the independently packaged
+# Hyper Window Tiling extension after its Bun lockfile changes.
+[group('dev')]
+bun-nix-update:
+    nix run .#bun2nix -- \
+      --lock-file packages/hyper-window-tiling/bun.lock \
+      --copy-prefix packages/hyper-window-tiling \
+      --output-file packages/hyper-window-tiling/bun.nix
+    nix fmt -- packages/hyper-window-tiling/bun.nix
 
 [private]
 _check-lua:
@@ -902,7 +752,7 @@ lint: (doctor 'lint') check-format _lint-checks
 
 [parallel]
 [private]
-_lint-checks: _lint-files _check-python _check-spectrum-build _check-c _check-ansible _check-github-actions _check-bun _check-lua
+_lint-checks: _lint-files _check-python _check-c _check-ansible _check-github-actions _check-bun _check-lua
 
 # Run the repo validation suite.
 [group('dev')]
