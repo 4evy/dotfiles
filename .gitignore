@@ -70,3 +70,4 @@ lcov.info
 /packages/terminal-theme-tools/subprojects/*/
 !/packages/terminal-theme-tools/subprojects/packagefiles/
 !/packages/terminal-theme-tools/subprojects/packagefiles/**
+/.bluebuild-scripts_*
