@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths: &spectrum-paths
       - .dockerignore
+      - .github/actions/spectrum-build/**
       - .github/workflows/spectrum.yaml
       - bluebuild/**
       - flake.lock
@@ -29,12 +30,33 @@ concurrency:
 
 permissions: {}
 
-env:
-  IMAGE_NAME: spectrum
-
 jobs:
-  build:
-    name: Build Bluefin Image
+  validate:
+    name: Validate Pull Request
+    # Immutable GitHub bot IDs: Renovate, GitHub Actions, Dependabot.
+    if: >-
+      (github.event_name != 'pull_request' ||
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) ||
+      (github.event.pull_request.user.type == 'Bot' &&
+      contains(fromJSON('[29139614, 41898282, 49699333]'), github.event.pull_request.user.id))) &&
+      (github.event_name == 'pull_request' ||
+      github.ref != format('refs/heads/{0}', github.event.repository.default_branch))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Build and Validate
+        uses: ./.github/actions/spectrum-build
+
+  publish:
+    name: Build and Publish
+    if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     permissions:
@@ -49,147 +71,5 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Maximize Build Space
-        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
-        with:
-          skip-if-available: 80G
-          swapoff: false
-
-      - name: Install Determinate Nix
-        uses: DeterminateSystems/determinate-nix-action@d96678350ffd6a456235832eb11e1c491589b7bb # v3.21.8
-
-      - name: Set Up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
-        with:
-          cache-binary: true
-
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-
-      - name: Verify Locked Bluefin Base
-        env:
-          BASE_LOCK: bluebuild/recipes/spectrum.lock
-        run: |
-          set -euo pipefail
-          locked_ref=$(tr -d '\n' <"$BASE_LOCK")
-          tagged_ref=${locked_ref%@*}
-          locked_digest=${locked_ref##*@}
-          resolved_digest=$(skopeo inspect "docker://$tagged_ref" | jq -r .Digest)
-          test "$resolved_digest" = "$locked_digest"
-          cosign verify \
-            --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
-            --certificate-identity-regexp='^https://github.com/projectbluefin/(bluefin|actions)/\.github/workflows/.*' \
-            "$locked_ref"
-
-      - name: Build Feature-Gated BlueBuild CLI
-        id: bluebuild
-        run: |
-          set -euo pipefail
-          path=$(nix build --no-link --print-out-paths .#bluebuild-v2)
-          validator=$(nix build --no-link --print-out-paths .#check-jsonschema)
-          "$path/bin/bluebuild" --version
-          echo "path=$path" >>"$GITHUB_OUTPUT"
-          echo "validator=$validator" >>"$GITHUB_OUTPUT"
-
-      - name: Generate and Validate Containerfile
-        env:
-          BLUEBUILD: ${{ steps.bluebuild.outputs.path }}/bin/bluebuild
-          CHECK_JSONSCHEMA: ${{ steps.bluebuild.outputs.validator }}/bin/check-jsonschema
-        run: |
-          set -euo pipefail
-          "$CHECK_JSONSCHEMA" \
-            --base-uri https://schema.blue-build.org/ \
-            --schemafile https://schema.blue-build.org/recipe-v2.json \
-            bluebuild/recipes/spectrum.yml
-          # Upstream's feature-gated v2 parser works, but its validate
-          # subcommand still hardcodes the v1 schema.
-          "$BLUEBUILD" generate \
-            --skip-validation \
-            --output /tmp/Containerfile \
-            bluebuild/recipes/spectrum.yml
-          expected=$(tr -d '\n' <bluebuild/recipes/spectrum.lock)
-          tagged=${expected%@*}
-          expected_arg="${tagged%:*}@${expected##*@}"
-          generated=$(sed -n 's/^ARG BASE_IMAGE="\([^"]*\)".*/\1/p' /tmp/Containerfile | head -n1)
-          if [[ "$generated" != "$expected_arg" ]]; then
-            printf 'generated base %s does not match lock %s\n' "$generated" "$expected_arg" >&2
-            exit 1
-          fi
-
-      - name: Build Spectrum with BlueBuild
-        env:
-          BLUEBUILD: ${{ steps.bluebuild.outputs.path }}/bin/bluebuild
-          GH_TOKEN: ${{ github.token }}
-          BB_BUILD_PUSH: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
-          BB_PASSWORD: ${{ github.token }}
-          BB_USERNAME: ${{ github.repository_owner }}
-          BB_REGISTRY: ghcr.io
-          BB_REGISTRY_NAMESPACE: ${{ github.repository_owner }}
-          GH_PR_EVENT_NUMBER: ${{ github.event.number }}
-          BB_CACHE_LAYERS: "true"
-          RUST_LOG_STYLE: always
-          CLICOLOR_FORCE: "1"
-        run: |
-          set -euo pipefail
-          "$BLUEBUILD" build -v --skip-validation --no-sign bluebuild/recipes/spectrum.yml
-
-      - name: Validate Local Image
-        if: github.event_name == 'pull_request'
-        run: |
-          set -euo pipefail
-          image=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -m1 "/spectrum:")
-          docker run --rm --privileged "$image" bootc container lint --fatal-warnings
-
-      - name: Resolve Published Digest
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        id: image
-        env:
-          IMAGE_REF: "ghcr.io/${{ github.repository_owner }}/spectrum"
-        run: |
-          set -euo pipefail
-          image_ref=${IMAGE_REF,,}
-          digest=$(skopeo inspect "docker://$image_ref:latest" | jq -r .Digest)
-          echo "ref=$image_ref@$digest" >>"$GITHUB_OUTPUT"
-          echo "digest=$digest" >>"$GITHUB_OUTPUT"
-
-      - name: Generate Syft SBOM
-        id: sbom
-        if: steps.image.outputs.ref != ''
-        continue-on-error: true
-        env:
-          IMAGE_REF: ${{ steps.image.outputs.ref }}
-          SYFT_PARALLELISM: "1"
-        run: |
-          set -euo pipefail
-          syft_path=$(nix build --no-link --print-out-paths nixpkgs#syft)
-          timeout --signal=TERM --kill-after=30s 15m \
-            "$syft_path/bin/syft" scan "$IMAGE_REF" \
-            --output spdx-json=spectrum.spdx.json
-          echo "generated=true" >>"$GITHUB_OUTPUT"
-
-      - name: Sign Image
-        if: steps.image.outputs.ref != ''
-        env:
-          IMAGE_REF: ${{ steps.image.outputs.ref }}
-        run: |
-          set -euo pipefail
-          cosign sign --yes "$IMAGE_REF"
-
-      - name: Attach SBOM
-        if: steps.sbom.outputs.generated == 'true'
-        env:
-          IMAGE_REF: ${{ steps.image.outputs.ref }}
-        run: |
-          set -euo pipefail
-          cosign attest --yes \
-            --predicate spectrum.spdx.json \
-            --type spdxjson \
-            "$IMAGE_REF"
-
-      - name: Attest Build Provenance
-        if: steps.image.outputs.ref != ''
-        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
-        with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/spectrum
-          subject-digest: ${{ steps.image.outputs.digest }}
-          push-to-registry: true
+      - name: Build, Publish, and Attest
+        uses: ./.github/actions/spectrum-build
