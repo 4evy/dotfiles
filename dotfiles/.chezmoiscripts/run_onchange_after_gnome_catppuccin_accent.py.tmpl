@@ -2,7 +2,7 @@
 {{- $repo := joinPath .chezmoi.sourceDir ".." -}}
 #!/usr/bin/env python3.14
 # dotfiles-scripts fingerprint: {{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts") }}
-# helper source hash: {{ output "cat" (joinPath $repo "packages/dotfiles-python/src/workstation/chezmoi.py") (joinPath $repo "packages/dotfiles-python/src/workstation/local/user_commands.py") (joinPath $repo "internal/terminaltheme/catppuccin_palette.json") | sha256sum }}
+# helper source hash: {{ output "cat" (joinPath $repo "packages/dotfiles-python/src/workstation/chezmoi.py") (joinPath $repo "packages/dotfiles-python/src/workstation/chezmoi_desktop.py") (joinPath $repo "packages/dotfiles-python/src/workstation/local/gnome.py") (joinPath $repo "packages/dotfiles-python/assets/desktop/catppuccin_palette.json") (joinPath $repo "packages/dotfiles-python/assets/desktop/gtk-3-accent.css.in") (joinPath $repo "packages/dotfiles-python/assets/desktop/gtk-4-accent.css.in") | sha256sum }}
 {{ template "dotfiles_command_body.py.tmpl" (dict
   "mode" "path"
   "path" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts")
