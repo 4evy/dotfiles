@@ -108,8 +108,11 @@ jobs:
           expected=$(tr -d '\n' <bluebuild/recipes/spectrum.lock)
           tagged=${expected%@*}
           expected_arg="${tagged%:*}@${expected##*@}"
-          generated=$(sed -n 's/^ARG BASE_IMAGE="\\(.*\\)"/\\1/p' /tmp/Containerfile | head -n1)
-          test "$generated" = "$expected_arg"
+          generated=$(sed -n 's/^ARG BASE_IMAGE="\([^"]*\)".*/\1/p' /tmp/Containerfile | head -n1)
+          if [[ "$generated" != "$expected_arg" ]]; then
+            printf 'generated base %s does not match lock %s\n' "$generated" "$expected_arg" >&2
+            exit 1
+          fi
 
       - name: Build Spectrum with BlueBuild
         env:

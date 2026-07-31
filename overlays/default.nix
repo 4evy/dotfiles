@@ -47,7 +47,9 @@ let
         inherit (final) ghidra-mcp-headless;
       };
       ghostty-patched = final.callPackage ../packages/ghostty-patched.nix {
-        inherit (final.unstable) ghostty;
+        ghostty = final.unstable.ghostty.override {
+          zig_0_15 = final.unstable.zig;
+        };
       };
       kanata-with-cmd = (final.kanata.override { withCmd = true; }).overrideAttrs {
         doCheck = false;

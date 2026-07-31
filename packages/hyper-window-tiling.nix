@@ -30,6 +30,7 @@ let
 
   bunDeps = bun2nix.fetchBunDeps {
     bunNix = ./hyper-window-tiling/bun.nix;
+    autoPatchElf = stdenv.hostPlatform.isLinux;
   };
 
   buildPhaseFor = script: ''
