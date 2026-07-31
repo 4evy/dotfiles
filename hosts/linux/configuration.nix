@@ -8,11 +8,16 @@
 let
   inherit (config.local.user) group home name;
 
-  dotfilesFontconfig = pkgs.runCommand "dotfiles-fontconfig" { } ''
-    mkdir -p "$out/etc/fonts/conf.d"
-    ln -s ${../../dotfiles/dot_config/fontconfig/conf.d/45-interface-fonts.conf} "$out/etc/fonts/conf.d/45-interface-fonts.conf"
-    ln -s ${../../dotfiles/dot_config/fontconfig/conf.d/50-code-monospace.conf} "$out/etc/fonts/conf.d/50-code-monospace.conf"
-  '';
+  dotfilesFontconfig = pkgs.linkFarm "dotfiles-fontconfig" [
+    {
+      name = "etc/fonts/conf.d/45-interface-fonts.conf";
+      path = ../../dotfiles/dot_config/fontconfig/conf.d/45-interface-fonts.conf;
+    }
+    {
+      name = "etc/fonts/conf.d/50-code-monospace.conf";
+      path = ../../dotfiles/dot_config/fontconfig/conf.d/50-code-monospace.conf;
+    }
+  ];
 
   systemRunnerLink = "${home}/.local/bin/system-runner";
   systemRunnerNix = "${dotfilesPackages.system-runner}/bin/system-runner";
