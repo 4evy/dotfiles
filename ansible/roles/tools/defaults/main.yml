@@ -1,8 +1,7 @@
 ---
-tools_c_tools:
+tools_zig_tools:
   - name: terminal-theme-tools
     source_dir: packages/terminal-theme-tools
-    build_dir: build/terminal-theme-tools
     bins:
       - terminal-theme-run
     platforms:

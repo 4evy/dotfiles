@@ -41,7 +41,15 @@ __pycache__/
 node_modules/
 target/
 
+# Zig caches and build outputs
+.zig-cache/
+zig-cache/
+zig-pkg/
+zig-out/
+
 # Generated outputs
+*.o
+a.out
 build/
 build-*/
 builddir/

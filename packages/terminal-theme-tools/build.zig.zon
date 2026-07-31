@@ -1,0 +1,24 @@
+.{
+    .name = .terminal_theme_tools,
+    .version = "0.2.0",
+    .fingerprint = 0x2f47c58bee2fea05,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .ghostty = .{
+            // ghostty main at 4d605bf0d819df901a0332bbb320dc849fdd82e4.
+            .url = "https://github.com/ghostty-org/ghostty/archive/4d605bf0d819df901a0332bbb320dc849fdd82e4.tar.gz",
+            .hash = "ghostty-1.3.2-dev-5UdBCzYBJwVhapgS_mjCykGO5_bkhKpNwV5pfzcluN86",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "build_support.zig",
+        "config",
+        "include",
+        "README.md",
+        "src",
+        "tests",
+        "vendor",
+    },
+}

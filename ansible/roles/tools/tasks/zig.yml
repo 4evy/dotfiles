@@ -1,0 +1,20 @@
+---
+- name: Build and install repo-local Zig commands
+  ansible.builtin.command:
+    argv:
+      - zig
+      - build
+      - --release=small
+      - "--prefix={{ dotfiles_home_dir }}/.local"
+    chdir: "{{ dotfiles_repo_root }}/{{ item.source_dir }}"
+  environment:
+    PATH: "{{ platform_homebrew_path | default(dotfiles_path) }}"
+  register: tools_zig_build
+  changed_when: true
+  loop: "{{ tools_zig_tools }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: platform_system in item.platforms
+  tags:
+    - repo-tools
+    - zig

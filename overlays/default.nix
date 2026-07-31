@@ -80,10 +80,6 @@ let
       # every other repository automation command. Copying its module into
       # a standalone script loses the Python dependency environment.
       system-runner = final.dotfiles-python;
-      tomlc17 = prev.tomlc17.overrideAttrs {
-        version = dotfilesSourcePins.tomlc17.version;
-        src = dotfilesSourcePins.tomlc17.outPath;
-      };
       uresourced = final.callPackage ../packages/uresourced.nix {
         source = dotfilesSourcePins.uresourced.outPath;
         version = lib.removePrefix "v" dotfilesSourcePins.uresourced.version;

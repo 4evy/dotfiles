@@ -176,22 +176,6 @@
       "url": "https://github.com/GNOME/sushi/archive/27886fee1c7f093dd7402f82e3ff3ff42fd1d606.tar.gz",
       "hash": "sha256-6gTRy5x3ij61ZR3zSOseUyvHeIUUxxsQl/zyN7nBgJk="
     },
-    "tomlc17": {
-      "type": "GitRelease",
-      "repository": {
-        "type": "GitHub",
-        "owner": "cktan",
-        "repo": "tomlc17"
-      },
-      "pre_releases": false,
-      "version_upper_bound": null,
-      "release_prefix": null,
-      "submodules": false,
-      "version": "R260618",
-      "revision": "7813bdd218b2b5f54940a9759ec0ffb3b60c1d1f",
-      "url": "https://api.github.com/repos/cktan/tomlc17/tarball/refs/tags/R260618",
-      "hash": "sha256-cR+ynVWTyPSfM+XOMY48+bhHcjmV5W0COygWiBPOfqY="
-    },
     "toshy": {
       "type": "GitRelease",
       "repository": {

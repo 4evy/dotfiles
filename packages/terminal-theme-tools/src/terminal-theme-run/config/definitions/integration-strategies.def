@@ -1,8 +1,0 @@
-/*
- * enum suffix, manifest spelling, validation/preparation function stem
- *
- * This registry defines integration strategies. Consumers generate
- * the public enum, manifest validator table, and preparation dispatch from it.
- */
-TTR_INTEGRATION_STRATEGY(ARGUMENTS, "arguments", argument)
-TTR_INTEGRATION_STRATEGY(CONFIG, "config", config)

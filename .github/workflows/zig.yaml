@@ -1,0 +1,70 @@
+name: Zig
+
+on:
+  pull_request: null
+  push: null
+  workflow_dispatch: null
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container:
+      image: registry.fedoraproject.org/fedora:45@sha256:7791538bb091b82097f1aef71ec64b2154f886716f6f0b822dc839bb3c74c0aa
+    steps:
+      - name: Install Zig
+        run: dnf install -y --setopt=install_weak_deps=False binutils gcc git zig
+        working-directory: /
+
+      - name: Verify Zig version
+        run: test "$(zig version)" = 0.16.0
+        working-directory: /
+
+      - name: Checkout Repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Format
+        run: zig fmt --check build.zig packages/terminal-theme-tools/build.zig packages/terminal-theme-tools/build_support.zig packages/terminal-theme-tools/src/*.zig
+
+      - name: Test
+        run: zig build test
+
+      - name: Build ReleaseSmall
+        run: zig build --release=small
+
+      - name: Check Dynamic Dependencies
+        run: |
+          if readelf -d zig-out/bin/terminal-theme-run | grep -E 'NEEDED.*(glib|gio|vterm|ghostty|tomlc17)'; then
+            exit 1
+          fi
+
+      - name: Check C Interface
+        run: |
+          test -f zig-out/include/terminal_theme_tools.h
+          test -f zig-out/lib/libterminal_theme_tools.a
+          nm -g zig-out/lib/libterminal_theme_tools.a | grep terminal_theme_tools_parse_terminal_report
+          cc -std=c23 -pedantic-errors -Wall -Wextra -Werror \
+            -I zig-out/include \
+            packages/terminal-theme-tools/tests/c_api_test.c \
+            zig-out/lib/libterminal_theme_tools.a \
+            -o zig-out/bin/c-api-consumer
+          zig-out/bin/c-api-consumer
+
+      - name: Smoke Test
+        run: |
+          zig-out/bin/terminal-theme-run --version
+          zig-out/bin/terminal-theme-run --help
+          zig-out/bin/terminal-theme-run true

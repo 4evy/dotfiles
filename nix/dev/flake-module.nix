@@ -45,17 +45,8 @@
           ++ [ self'.packages.bun2nix ];
       };
 
-      cShell = pkgs.mkShell {
-        packages =
-          with pkgs;
-          lib.optionals isLinux [
-            clang-tools
-            glib
-            libvterm-neovim
-            meson
-            ninja
-            pkg-config
-          ];
+      zigShell = pkgs.mkShell {
+        packages = with pkgs; lib.optionals isLinux [ zig_0_16 ];
         inputsFrom = lib.optionals isLinux [ self'.packages.terminal-theme-tools ];
       };
 
@@ -103,14 +94,14 @@
       devShells = {
         python = pythonShell;
         javascript = javascriptShell;
-        c = cShell;
+        zig = zigShell;
         operations = operationsShell;
         default = pkgs.mkShell {
           inputsFrom = [
             config.pre-commit.devShell
             pythonShell
             javascriptShell
-            cShell
+            zigShell
             operationsShell
           ];
           packages = [

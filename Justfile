@@ -27,7 +27,7 @@ pi_extension_profile_tools := "pi-ssh-tools:github:euvlok/pkgs#pi-ssh-tools web-
 doctor_setup_commands := "bash curl git sudo"
 doctor_format_commands := "git nix"
 doctor_ansible_commands := "ansible-doc ansible-galaxy ansible-lint ansible-playbook yamllint"
-doctor_lint_commands := "actionlint chezmoi deadnix hadolint jq lua luacheck meson ninja nix-instantiate pkg-config rumdl shellcheck taplo uv zizmor " + doctor_format_commands + " " + doctor_ansible_commands
+doctor_lint_commands := "actionlint chezmoi deadnix hadolint jq lua luacheck nix-instantiate rumdl shellcheck taplo uv zig zizmor " + doctor_format_commands + " " + doctor_ansible_commands
 doctor_all_commands := doctor_lint_commands + " bash curl sudo watchexec"
 
 export PATH := homebrew_path + PATH_VAR_SEP + nix_bin_dir + PATH_VAR_SEP + nix_profile_bin_dir + PATH_VAR_SEP + nixos_profile_bin_dir + PATH_VAR_SEP + env("PATH", "")
@@ -48,7 +48,7 @@ alias up := update
 alias w := watch
 
 # Check commands required for a workflow profile.
-[arg('profile', pattern='status|reboot|install|build|setup|apply|shell|spectrum|fmt|lint|c|ansible|bun|smoke|nix|watch|check|all', help='status, reboot, install, build, setup, apply, shell, spectrum, fmt, lint, c, ansible, bun, smoke, nix, watch, check, or all')]
+[arg('profile', pattern='status|reboot|install|build|setup|apply|shell|spectrum|fmt|lint|zig|ansible|bun|smoke|nix|watch|check|all', help='status, reboot, install, build, setup, apply, shell, spectrum, fmt, lint, zig, ansible, bun, smoke, nix, watch, check, or all')]
 [group('system')]
 doctor profile="setup":
     profile={{ quote(profile) }}
@@ -75,7 +75,7 @@ doctor profile="setup":
       shell) commands=(shellcheck shfmt) ;;
       fmt) commands=({{ doctor_format_commands }}) ;;
       lint | check) commands=({{ doctor_lint_commands }}) ;;
-      c) commands=(meson ninja pkg-config) ;;
+      zig) commands=(zig) ;;
       ansible) commands=({{ doctor_ansible_commands }}) ;;
       bun) commands=(bun) ;;
       smoke) commands=("${compose_command%% *}") ;;
@@ -697,16 +697,10 @@ python-complexity:
     uv run complexipy --plain
 
 [private]
-_check-c: (doctor 'c')
-    meson setup build/meson . --wipe
-    meson compile -C build/meson
-    meson test -C build/meson --print-errorlogs
-    meson setup build/meson-sanitize . --wipe -Db_lundef=false -Db_sanitize=address,undefined
-    meson compile -C build/meson-sanitize
-    meson test -C build/meson-sanitize --print-errorlogs
-    meson setup build/meson-release . --wipe --buildtype=release -Db_lto=true
-    meson compile -C build/meson-release
-    meson test -C build/meson-release --print-errorlogs
+_check-zig: (doctor 'zig')
+    zig fmt --check build.zig packages/terminal-theme-tools/build.zig packages/terminal-theme-tools/build_support.zig packages/terminal-theme-tools/src/*.zig
+    zig build test
+    zig build --release=small
 
 [private]
 _check-ansible: (doctor 'ansible') _deps
@@ -752,7 +746,7 @@ lint: (doctor 'lint') check-format _lint-checks
 
 [parallel]
 [private]
-_lint-checks: _lint-files _check-python _check-c _check-ansible _check-github-actions _check-bun _check-lua
+_lint-checks: _lint-files _check-python _check-zig _check-ansible _check-github-actions _check-bun _check-lua
 
 # Run the repo validation suite.
 [group('dev')]

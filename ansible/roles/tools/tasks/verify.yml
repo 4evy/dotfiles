@@ -1,11 +1,11 @@
 ---
-- name: Verify repo-local C23 command binaries
+- name: Verify repo-local Zig command binaries
   ansible.builtin.command:
     argv:
       - "{{ dotfiles_bin_dir }}/{{ item.1 }}"
       - "--version"
   changed_when: false
-  loop: "{{ tools_c_tools | subelements('bins') }}"
+  loop: "{{ tools_zig_tools | subelements('bins') }}"
   when: platform_system in item.0.platforms
   tags:
     - repo-tools

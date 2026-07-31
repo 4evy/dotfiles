@@ -54,6 +54,9 @@
   "C_Cpp.default.compilerPath": "/usr/bin/clang",
   "C_Cpp.default.intelliSenseMode": "macos-clang-arm64",
   "C_Cpp.default.cStandard": "c23",
+  "C_Cpp.default.includePath": [
+    "${workspaceFolder}/packages/terminal-theme-tools/include"
+  ],
   // cpptools still misparses C23 constexpr declarations. Rely on clang-tidy
   // and Meson diagnostics until its C23 parser support catches up:
   // https://github.com/microsoft/vscode-cpptools/issues?q=is%3Aissue%20C23%20constexpr
@@ -63,6 +66,9 @@
     "--extra-arg=-isysroot",
     "--extra-arg=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
   ],
+  "C_Cpp.codeAnalysis.exclude": {
+    "**/vendor/tomlc17/tomlc17.{c,h}": true
+  },
   "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true,
   "C_Cpp.formatting": "clangFormat",
   "mesonbuild.buildFolder": "build/meson",

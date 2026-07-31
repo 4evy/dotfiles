@@ -59,22 +59,19 @@ bootstrap_build_toolchain_packages:
     - clang
     - cmake
     - libclang-dev
-    - libglib2.0-dev
     - libssl-dev
-    - libvterm-dev
     - lld
     - lldb
     - patch
     - perl
     - pkg-config
     - zlib1g-dev
+    - zig
   apk:
     - binutils
     - build-base
     - clang
     - cmake
-    - glib-dev
-    - libvterm-dev
     - linux-headers
     - lld
     - lldb
@@ -83,6 +80,7 @@ bootstrap_build_toolchain_packages:
     - perl
     - pkgconf
     - zlib-dev
+    - zig
   dnf:
     - binutils
     - clang
@@ -90,8 +88,6 @@ bootstrap_build_toolchain_packages:
     - gcc
     - gcc-c++
     - glibc-devel
-    - glib2-devel
-    - libvterm-devel
     - lld
     - lldb
     - make
@@ -100,13 +96,12 @@ bootstrap_build_toolchain_packages:
     - perl
     - pkgconf-pkg-config
     - zlib-devel
+    - zig
   pacman:
     - base-devel
     - binutils
     - clang
     - cmake
-    - glib2
-    - libvterm
     - lld
     - lldb
     - openssl
@@ -114,3 +109,4 @@ bootstrap_build_toolchain_packages:
     - perl
     - pkgconf
     - zlib
+    - zig

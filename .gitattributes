@@ -100,6 +100,9 @@ packages/terminal-theme-tools/subprojects/*.wrap linguist-language=INI linguist-
 # describe local extension runtimes and should count with the package sources.
 packages/hyper-window-tiling/src/**/*.d.ts -linguist-vendored
 
+# Exclude the bundled tomlc17 dependency from repository language statistics.
+packages/terminal-theme-tools/vendor/tomlc17/tomlc17.[ch] linguist-vendored
+
 # These files are checked in generated/runtime artifacts built from package
 # sources, host discovery, encryption tools, or dependency resolvers.
 # Keep dependency locks out of Linguist statistics at every directory depth.

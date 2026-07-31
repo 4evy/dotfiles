@@ -1,8 +1,0 @@
-/* Runner config member, TOML schema type, required */
-TTR_RUNNER_FIELD(name, STRING, true)
-TTR_RUNNER_FIELD(programs, STRING_ARRAY, false)
-TTR_RUNNER_FIELD(skip_env, STRING_ARRAY, false)
-TTR_RUNNER_FIELD(default_args, STRING_ARRAY, false)
-TTR_RUNNER_FIELD(env, ENVIRONMENT, false)
-TTR_RUNNER_FIELD(env_unset, STRING_ARRAY, false)
-TTR_RUNNER_FIELD(integration, STRING, false)

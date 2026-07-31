@@ -1,9 +1,9 @@
 ---
-- name: Build repo-local C23 commands
-  ansible.builtin.import_tasks: c.yml
+- name: Build repo-local Zig commands
+  ansible.builtin.import_tasks: zig.yml
   tags:
     - repo-tools
-    - c
+    - zig
 
 - name: Link uv-installed Python command aliases
   ansible.builtin.import_tasks: python.yml
