@@ -24,7 +24,15 @@ context_value = "trusted"
 context_path_flags = ["-C", "--cd"]
 context_path_prefixes = ["-C", "--cd="]
 context_argument_separator = "--"
-context_directory_commands = [["git", "-C", "{directory}", "rev-parse", "--show-toplevel"]]
+context_directory_commands = [
+  [
+    "git",
+    "-C",
+    "{directory}",
+    "rev-parse",
+    "--show-toplevel",
+  ],
+]
 
 [[integration]]
 name = "btop"

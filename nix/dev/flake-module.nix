@@ -155,7 +155,10 @@
           pass_filenames = false;
         };
         ruff.enable = true;
-        rumdl.enable = true;
+        rumdl = {
+          enable = true;
+          excludes = [ "packages/terminal-theme-tools/vendor/tomlc17/PROVENANCE.md" ];
+        };
         shellcheck.enable = true;
         treefmt.enable = true;
         yamllint.enable = true;
@@ -197,18 +200,21 @@
           taplo.enable = true;
         };
 
-        settings.formatter = {
-          shfmt = {
-            includes = lib.mkAfter [
-              "dotfiles/dot_local/bin/executable_*"
-              "bluebuild/files/system/usr/bin/*"
-            ];
-            excludes = [
-              "dotfiles/dot_local/bin/executable_ghostty-dreamy-swirl.ts"
-              "dotfiles/dot_local/bin/executable_helix-rumdl-lsp"
-              "bluebuild/files/system/usr/bin/open"
-            ];
-            options = lib.mkAfter [ "-ci" ];
+        settings = {
+          excludes = [ "packages/terminal-theme-tools/vendor/**" ];
+          formatter = {
+            shfmt = {
+              includes = lib.mkAfter [
+                "dotfiles/dot_local/bin/executable_*"
+                "bluebuild/files/system/usr/bin/*"
+              ];
+              excludes = [
+                "dotfiles/dot_local/bin/executable_ghostty-dreamy-swirl.ts"
+                "dotfiles/dot_local/bin/executable_helix-rumdl-lsp"
+                "bluebuild/files/system/usr/bin/open"
+              ];
+              options = lib.mkAfter [ "-ci" ];
+            };
           };
         };
       };
