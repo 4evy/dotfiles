@@ -13,7 +13,7 @@ set -euo pipefail
 : "${ARTIFACT:?}"
 : "${BUILD_ARGUMENTS:?}"
 
-mapfile -t build_arguments <<<"$BUILD_ARGUMENTS"
+read -r -a build_arguments <<<"$BUILD_ARGUMENTS"
 source_url=$(jq -er --arg pin "$SOURCE_PIN" '.pins[$pin].url' "$SOURCE_LOCK")
 source_hash=$(jq -er --arg pin "$SOURCE_PIN" '.pins[$pin].hash' "$SOURCE_LOCK")
 zig_url=$(jq -er --arg pin "$ZIG_PIN" '.pins[$pin].url' "$SOURCE_LOCK")

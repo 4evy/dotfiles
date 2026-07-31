@@ -71,7 +71,7 @@ stages:
           PREFIX: /out/usr
           ARTIFACT: /out/usr/bin/ghostty
           VERSION_PREFIX: 1.3.2-dev
-          BUILD_ARGUMENTS: |-
+          BUILD_ARGUMENTS: >-
             -j1
             -Doptimize=ReleaseFast
             -Demit-test-exe=false
