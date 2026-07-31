@@ -214,6 +214,8 @@ modules:
         - systemd-oomd.socket
         - tailscaled.service
         - uresourced.service
+      disabled:
+        - bootc-unified-storage.service
 
   - type: script@v1
     source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
@@ -232,6 +234,7 @@ modules:
             rmdir "$directory"
           fi
         done
+      - test "$(systemctl is-enabled bootc-unified-storage.service 2>/dev/null || true)" = disabled
       - >-
         PYTHONPATH=/usr/lib/dotfiles/python /usr/bin/python3.14 -c
         'import astral; assert astral.__version__ == "3.2"'
