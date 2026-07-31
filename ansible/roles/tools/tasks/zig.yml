@@ -5,7 +5,8 @@
       - zig
       - build
       - --release=small
-      - "--prefix={{ dotfiles_home_dir }}/.local"
+      - --prefix
+      - "{{ dotfiles_home_dir }}/.local"
     chdir: "{{ dotfiles_repo_root }}/{{ item.source_dir }}"
   environment:
     PATH: "{{ platform_homebrew_path | default(dotfiles_path) }}"
