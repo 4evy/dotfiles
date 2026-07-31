@@ -2,8 +2,6 @@
 Description=Kanata keyboard remapper
 Documentation=https://github.com/jtroo/kanata https://github.com/jtroo/kanata/blob/main/docs/setup-linux.md
 Conflicts=input-remapper.service
-Wants=systemd-udev-settle.service
-After=systemd-udev-settle.service
 StartLimitIntervalSec=0
 
 [Service]
