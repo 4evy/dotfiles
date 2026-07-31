@@ -1,8 +1,24 @@
 name: Python
 
 on:
-  pull_request: null
-  push: null
+  pull_request:
+    paths: &python-paths
+      - .github/workflows/python.yaml
+      - .python-version
+      - .tool-versions
+      - pyproject.toml
+      - uv.lock
+      - '**/*.py'
+      - ansible/roles/system/templates/macos/tailscale-ssh-helper.py.in
+      - browser/helium.toml
+      - browser/settings/**
+      - dotfiles/.chezmoitemplates/catppuccin_palette.json
+      - npins/sources.json
+      - packages/dotfiles-python/assets/**
+  push:
+    branches:
+      - master
+    paths: *python-paths
   workflow_dispatch: null
 
 concurrency:
@@ -15,6 +31,12 @@ permissions:
 jobs:
   quality:
     name: Astral Quality Gate
+    # Immutable GitHub bot IDs: Renovate, GitHub Actions, Dependabot.
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) ||
+      (github.event.pull_request.user.type == 'Bot' &&
+      contains(fromJSON('[29139614, 41898282, 49699333]'), github.event.pull_request.user.id))
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:

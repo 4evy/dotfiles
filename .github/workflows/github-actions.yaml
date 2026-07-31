@@ -21,6 +21,12 @@ permissions:
 jobs:
   validate:
     name: Validate Workflows
+    # Immutable GitHub bot IDs: Renovate, GitHub Actions, Dependabot.
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) ||
+      (github.event.pull_request.user.type == 'Bot' &&
+      contains(fromJSON('[29139614, 41898282, 49699333]'), github.event.pull_request.user.id))
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:

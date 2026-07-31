@@ -12,15 +12,21 @@ on:
       - Dockerfile
       - ansible.cfg
       - ansible/**
+      - '!ansible/tests/**'
       - browser/**
-      - compose.yaml
       - containers/**
       - dotfiles/**
-      - internal/**
-      - manifests/**
-      - packages/dotfiles-python/**
-      - packages/toshy/**
-      - patches/**
+      - npins/sources.json
+      - packages/dotfiles-python/assets/**
+      - packages/dotfiles-python/src/**
+      - packages/terminal-theme-tools/build.zig
+      - packages/terminal-theme-tools/build.zig.zon
+      - packages/terminal-theme-tools/build_support.zig
+      - packages/terminal-theme-tools/config/**
+      - packages/terminal-theme-tools/include/**
+      - packages/terminal-theme-tools/src/**
+      - packages/terminal-theme-tools/tests/**
+      - packages/terminal-theme-tools/vendor/**
       - pyproject.toml
       - uv.lock
   push:
@@ -39,6 +45,12 @@ permissions:
 jobs:
   smoke:
     name: Build Smoke Image
+    # Immutable GitHub bot IDs: Renovate, GitHub Actions, Dependabot.
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) ||
+      (github.event.pull_request.user.type == 'Bot' &&
+      contains(fromJSON('[29139614, 41898282, 49699333]'), github.event.pull_request.user.id))
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:

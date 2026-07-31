@@ -5,17 +5,31 @@ on:
     paths: &bun-paths
       - .tool-versions
       - .github/workflows/bun.yaml
+      - .gitignore
       - biome.jsonc
       - bun.lock
       - package.json
       - dotfiles/package.json
       - dotfiles/tsconfig.json
-      - dotfiles/**/*.js
-      - dotfiles/**/*.mjs
-      - dotfiles/**/*.cjs
-      - dotfiles/**/*.ts
-      - packages/hyper-window-tiling/**
+      - packages/hyper-window-tiling/.fallowrc.jsonc
+      - packages/hyper-window-tiling/bun.lock
+      - packages/hyper-window-tiling/package.json
+      - packages/hyper-window-tiling/tsconfig.json
+      - '**/*.cjs'
+      - '**/*.css'
+      - '**/*.gql'
+      - '**/*.graphql'
+      - '**/*.html'
+      - '**/*.js'
+      - '**/*.json'
+      - '**/*.jsonc'
+      - '**/*.jsx'
+      - '**/*.mjs'
+      - '**/*.ts'
+      - '**/*.tsx'
   push:
+    branches:
+      - master
     paths: *bun-paths
   workflow_dispatch: null
 
@@ -29,6 +43,12 @@ permissions:
 jobs:
   workspace:
     name: Check JavaScript and TypeScript
+    # Immutable GitHub bot IDs: Renovate, GitHub Actions, Dependabot.
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) ||
+      (github.event.pull_request.user.type == 'Bot' &&
+      contains(fromJSON('[29139614, 41898282, 49699333]'), github.event.pull_request.user.id))
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:

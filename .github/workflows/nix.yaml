@@ -1,8 +1,63 @@
 name: Nix
 
 on:
-  pull_request: null
-  push: null
+  pull_request:
+    paths: &nix-paths
+      # Workflow and repository-wide check configuration.
+      - .github/workflows/nix.yaml
+      - .ansible-lint
+      - .clang-format
+      - .gitignore
+      - .markdownlint.json
+      - .shellcheckrc
+      - .yamllint
+      - biome.jsonc
+      - pyproject.toml
+
+      # Inputs to the flake, NixOS configuration, and package checks that are
+      # not already covered by the formatter/linter extensions below.
+      - .dockerignore
+      - Dockerfile
+      - Justfile
+      - '**/flake.lock'
+      - '**/Containerfile'
+      - ansible/roles/system/templates/macos/tailscale-ssh-helper.py.in
+      - bluebuild/files/system/**
+      - dotfiles/dot_config/autostart/1password.desktop
+      - dotfiles/dot_config/fontconfig/conf.d/**
+      - dotfiles/dot_config/kanata/kanata.kbd
+      - dotfiles/dot_local/bin/executable_*
+      - packages/dotfiles-python/assets/**
+      - packages/hyper-window-tiling/bun.lock
+      - packages/hyper-window-tiling/gnome/schemas/**
+      - packages/terminal-theme-tools/**
+      - patches/ghostty/**
+
+      # `nix flake check` includes treefmt and pre-commit checks, so changes to
+      # any file type checked by those tools are genuine inputs to this job.
+      - '**/*.bash'
+      - '**/*.c'
+      - '**/*.cjs'
+      - '**/*.css'
+      - '**/*.h'
+      - '**/*.js'
+      - '**/*.json'
+      - '**/*.jsonc'
+      - '**/*.lua'
+      - '**/*.md'
+      - '**/*.mjs'
+      - '**/*.nix'
+      - '**/*.py'
+      - '**/*.sh'
+      - '**/*.toml'
+      - '**/*.ts'
+      - '**/*.yaml'
+      - '**/*.yml'
+      - '**/*.zsh'
+  push:
+    branches:
+      - master
+    paths: *nix-paths
   workflow_dispatch: null
 
 concurrency:
@@ -15,6 +70,12 @@ permissions:
 jobs:
   checks:
     name: Flake checks
+    # Immutable GitHub bot IDs: Renovate, GitHub Actions, Dependabot.
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) ||
+      (github.event.pull_request.user.type == 'Bot' &&
+      contains(fromJSON('[29139614, 41898282, 49699333]'), github.event.pull_request.user.id))
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
