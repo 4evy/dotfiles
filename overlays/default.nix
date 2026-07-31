@@ -6,7 +6,7 @@ let
     _: prev:
     let
       unstable = import inputs.nixpkgs-unstable {
-        inherit (prev.stdenvNoCC.hostPlatform) system;
+        localSystem = prev.stdenvNoCC.hostPlatform;
         inherit (prev) config;
       };
       eupkgsScope =
