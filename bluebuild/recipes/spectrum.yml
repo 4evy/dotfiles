@@ -19,6 +19,31 @@ spec:
     bluebuild: none
 
 stages:
+  - name: python-runtime
+    from: registry.fedoraproject.org/fedora:44
+    modules:
+      - type: dnf@v1
+        source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+        install:
+          install-weak-deps: false
+          packages:
+            - curl
+            - python3
+      - type: script@v1
+        source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+        env:
+          ASTRAL_URL: https://files.pythonhosted.org/packages/2d/80/d6edd9c3259913cfe39aff2bea4da65de5ad0235a578405e37aabace5f2c/astral-3.2-py3-none-any.whl
+          ASTRAL_SHA256: cb7b49a3f0d4c64ae666be131276d2a3226134c598db10e672028cf8ff855f83
+        snippets:
+          - |
+            workdir=$(mktemp -d)
+            trap 'rm -rf -- "$workdir"' EXIT
+            curl --fail --location --silent --show-error "$ASTRAL_URL" --output "$workdir/astral.whl"
+            printf '%s  %s\n' "$ASTRAL_SHA256" "$workdir/astral.whl" | sha256sum --check --strict
+            python3 -m zipfile -e "$workdir/astral.whl" "$workdir/unpacked"
+            install -d -m 0755 /out/usr/lib/dotfiles/python
+            cp -a "$workdir/unpacked"/. /out/usr/lib/dotfiles/python/
+
   - name: ghostty
     from: registry.fedoraproject.org/fedora:44
     modules:
@@ -79,6 +104,11 @@ stages:
           - bash /src/build-ghostty.sh
 
 modules:
+  - type: copy@v1
+    from: python-runtime
+    src: /out/usr
+    dest: /usr
+
   - type: copy@v1
     from: ghostty
     src: /out/usr
@@ -193,4 +223,7 @@ modules:
             rmdir "$directory"
           fi
         done
+      - >-
+        PYTHONPATH=/usr/lib/dotfiles/python /usr/bin/python3.14 -c
+        'import astral; assert astral.__version__ == "3.2"'
       - bootc container lint
