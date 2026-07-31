@@ -18,6 +18,7 @@ defaults:
 
 jobs:
   check:
+    name: Check
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
@@ -38,6 +39,19 @@ jobs:
 
       - name: Format
         run: zig fmt --check build.zig packages/terminal-theme-tools/build.zig packages/terminal-theme-tools/build_support.zig packages/terminal-theme-tools/src/*.zig
+
+      - name: Fetch Dependencies
+        run: |
+          for attempt in 1 2 3; do
+            if zig build --fetch=all; then
+              exit 0
+            fi
+            if [[ "${attempt}" -eq 3 ]]; then
+              exit 1
+            fi
+            printf 'Dependency fetch attempt %d failed; retrying...\n' "${attempt}" >&2
+            sleep "$((attempt * 5))"
+          done
 
       - name: Test
         run: zig build test
