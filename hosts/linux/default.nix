@@ -11,7 +11,7 @@
       nixosModule
       {
         local = {
-          user.name = "4evy";
+          user.name = "evy";
           shell.enable = true;
           gnome.enable = true;
           dconf.enable = true;

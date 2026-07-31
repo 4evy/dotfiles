@@ -254,12 +254,14 @@ in
 
   users = {
     mutableUsers = false;
-    groups.keys = {
-      members = [ name ];
+    groups = {
+      ${name} = { };
+      keys.members = [ name ];
     };
     users = {
       ${name} = {
         isNormalUser = true;
+        group = name;
         extraGroups = [
           "wheel"
           "network"
