@@ -153,7 +153,10 @@ jobs:
           echo "digest=$digest" >>"$GITHUB_OUTPUT"
 
       - name: Generate Syft SBOM
+        id: sbom
         if: steps.image.outputs.ref != ''
+        continue-on-error: true
+        timeout-minutes: 15
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         env:
           SYFT_PARALLELISM: "1"
@@ -163,13 +166,20 @@ jobs:
           output-file: spectrum.spdx.json
           upload-artifact: true
 
-      - name: Sign Image and Attach SBOM
+      - name: Sign Image
         if: steps.image.outputs.ref != ''
         env:
           IMAGE_REF: ${{ steps.image.outputs.ref }}
         run: |
           set -euo pipefail
           cosign sign --yes "$IMAGE_REF"
+
+      - name: Attach SBOM
+        if: steps.sbom.outcome == 'success'
+        env:
+          IMAGE_REF: ${{ steps.image.outputs.ref }}
+        run: |
+          set -euo pipefail
           cosign attest --yes \
             --predicate spectrum.spdx.json \
             --type spdxjson \
