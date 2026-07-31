@@ -73,6 +73,9 @@ let
     inherit version src bunDeps;
     strictDeps = true;
 
+    # autoPatchelf deliberately changes Fallow's published executable.
+    FALLOW_SKIP_BINARY_VERIFY = "1";
+
     postUnpack = ''
       sourceRoot="$sourceRoot/packages/hyper-window-tiling"
     '';
