@@ -53,6 +53,7 @@ jobs:
         uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
           skip-if-available: 80G
+          swapoff: false
 
       - name: Install Determinate Nix
         uses: DeterminateSystems/determinate-nix-action@d96678350ffd6a456235832eb11e1c491589b7bb # v3.21.8
@@ -154,6 +155,8 @@ jobs:
       - name: Generate Syft SBOM
         if: steps.image.outputs.ref != ''
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        env:
+          SYFT_PARALLELISM: "1"
         with:
           image: ${{ steps.image.outputs.ref }}
           format: spdx-json
