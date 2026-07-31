@@ -156,15 +156,16 @@ jobs:
         id: sbom
         if: steps.image.outputs.ref != ''
         continue-on-error: true
-        timeout-minutes: 15
-        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         env:
+          IMAGE_REF: ${{ steps.image.outputs.ref }}
           SYFT_PARALLELISM: "1"
-        with:
-          image: ${{ steps.image.outputs.ref }}
-          format: spdx-json
-          output-file: spectrum.spdx.json
-          upload-artifact: true
+        run: |
+          set -euo pipefail
+          syft_path=$(nix build --no-link --print-out-paths nixpkgs#syft)
+          timeout --signal=TERM --kill-after=30s 15m \
+            "$syft_path/bin/syft" scan "$IMAGE_REF" \
+            --output spdx-json=spectrum.spdx.json
+          echo "generated=true" >>"$GITHUB_OUTPUT"
 
       - name: Sign Image
         if: steps.image.outputs.ref != ''
@@ -175,7 +176,7 @@ jobs:
           cosign sign --yes "$IMAGE_REF"
 
       - name: Attach SBOM
-        if: steps.sbom.outcome == 'success'
+        if: steps.sbom.outputs.generated == 'true'
         env:
           IMAGE_REF: ${{ steps.image.outputs.ref }}
         run: |
