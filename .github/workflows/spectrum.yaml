@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [master]
     paths: &spectrum-paths
+      - .dockerignore
       - .github/workflows/spectrum.yaml
       - bluebuild/**
       - flake.lock
