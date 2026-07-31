@@ -1,7 +1,6 @@
 {
   stdenv,
   lib,
-  autoPatchelfHook,
   bun,
   bun2nix,
   glib,
@@ -15,30 +14,6 @@ let
   inherit (packageMetadata) version;
   extensionUuid = gnomeMetadata.uuid;
   pluginId = kdeMetadata.KPlugin.Id;
-  fallowPackage =
-    {
-      x86_64-linux = "@fallow-cli/linux-x64-gnu@3.9.1";
-      aarch64-linux = "@fallow-cli/linux-arm64-gnu@3.9.1";
-    }
-    .${stdenv.hostPlatform.system} or null;
-
-  patchFallow =
-    package:
-    stdenv.mkDerivation {
-      pname = "fallow-cli-patched";
-      version = "3.9.1";
-      dontUnpack = true;
-
-      nativeBuildInputs = [ autoPatchelfHook ];
-      buildInputs = [ stdenv.cc.cc.lib ];
-
-      installPhase = ''
-        runHook preInstall
-        cp -r ${package}/. "$out"
-        chmod -R u+w "$out"
-        runHook postInstall
-      '';
-    };
 
   src = lib.fileset.toSource {
     root = repositoryRoot;
@@ -55,9 +30,6 @@ let
 
   bunDeps = bun2nix.fetchBunDeps {
     bunNix = ./hyper-window-tiling/bun.nix;
-    overrides = lib.optionalAttrs (fallowPackage != null) {
-      "${fallowPackage}" = patchFallow;
-    };
   };
 
   buildPhaseFor = script: ''
@@ -73,9 +45,6 @@ let
     inherit version src bunDeps;
     strictDeps = true;
 
-    # autoPatchelf deliberately changes Fallow's published executable.
-    FALLOW_SKIP_BINARY_VERIFY = "1";
-
     postUnpack = ''
       sourceRoot="$sourceRoot/packages/hyper-window-tiling"
     '';
@@ -85,7 +54,16 @@ let
       bun2nix.hook
     ];
 
-    buildPhase = buildPhaseFor "check";
+    # Fallow's changed-file audit needs a Git checkout and runs in bun.yaml.
+    buildPhase = ''
+      runHook preBuild
+
+      bun run test
+      bun run build
+      bun run check:dist
+
+      runHook postBuild
+    '';
 
     installPhase = ''
       runHook preInstall
