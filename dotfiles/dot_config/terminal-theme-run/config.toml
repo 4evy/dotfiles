@@ -1,0 +1,70 @@
+[[interpreter]]
+name = "ecmascript"
+shebang_commands = ["/usr/bin/env"]
+shebang_arguments = ["node"]
+programs = [
+  "node",
+  "bun",
+  "/usr/bin/node",
+  "/bin/node",
+  "/run/current-system/sw/bin/node",
+  "~/.cache/.bun/bin/bun",
+  "~/.bun/bin/bun",
+]
+
+[[integration]]
+name = "codex"
+strategy = "arguments"
+dark_theme = "catppuccin-frappe-pink"
+light_theme = "catppuccin-latte-pink"
+arguments = ["-c", 'tui.theme="{theme}"', "-c", "{context}"]
+context_table = "projects"
+context_field = "trust_level"
+context_value = "trusted"
+context_path_flags = ["-C", "--cd"]
+context_path_prefixes = ["-C", "--cd="]
+context_argument_separator = "--"
+context_directory_commands = [["git", "-C", "{directory}", "rev-parse", "--show-toplevel"]]
+
+[[integration]]
+name = "btop"
+strategy = "config"
+dark_theme = "catppuccin_frappe_pink"
+light_theme = "catppuccin_latte_pink"
+default_config = ".config/btop/btop.conf"
+assignment = "color_theme"
+config_flags = ["--config", "-c"]
+config_output_flag = "--config"
+temporary_prefix = "terminal-theme-run-btop-XXXXXX"
+temporary_location = "cache"
+cache_subdirectory = "terminal-theme-run/btop"
+quote = '"'
+
+[[runner]]
+name = "codex"
+programs = [
+  "$TERMINAL_THEME_RUN_CODEX_BIN",
+  "$CODEX_TERMINAL_THEME_CODEX_BIN",
+  "~/.bun/bin/codex",
+  "~/.cache/.bun/bin/codex",
+  "~/.npm/bin/codex",
+  "codex",
+]
+default_args = ["--dangerously-bypass-approvals-and-sandbox"]
+skip_env = ["TERMINAL_THEME_RUN_CODEX_WRAPPER"]
+env_unset = ["NO_COLOR"]
+env = { COLORTERM = "truecolor" }
+integration = "codex"
+interpreter = "ecmascript"
+
+[[runner]]
+name = "btop"
+programs = ["btop"]
+env_unset = ["NO_COLOR"]
+env = { COLORTERM = "truecolor" }
+integration = "btop"
+
+[[runner]]
+name = "helix"
+aliases = ["hx"]
+programs = ["~/.local/share/dotfiles/helix-tip/bin/hx", "hx", "helix"]
