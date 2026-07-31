@@ -1,0 +1,14 @@
+[Unit]
+Description=Deferred Atomic Desktop AppStream cache refresh
+Documentation=https://gitlab.com/fedora/ostree/sig/-/work_items/103
+
+[Timer]
+# Keep the cache-refresh workaround, but move its CPU, memory, and I/O cost
+# out of the login path.
+OnBootSec=2min
+AccuracySec=15s
+RandomizedDelaySec=30s
+Unit=fedora-atomic-desktop-appstream-cache-refresh.service
+
+[Install]
+WantedBy=timers.target
