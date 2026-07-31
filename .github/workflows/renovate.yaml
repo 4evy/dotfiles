@@ -66,7 +66,7 @@ jobs:
         uses: DeterminateSystems/determinate-nix-action@d96678350ffd6a456235832eb11e1c491589b7bb # v3.21.8
 
       - name: Run Renovate
-        run: bun run --cwd .github/renovate renovate
+        run: .github/renovate/node_modules/.bin/renovate
         env:
           LOG_LEVEL: info
           RENOVATE_TOKEN: ${{ github.token }}
