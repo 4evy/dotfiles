@@ -53,13 +53,8 @@ in
       }
     );
 
-    etc =
-      (lib.attrsets.mapAttrs' (
-        name: value: lib.attrsets.nameValuePair "nix/path/${name}" { source = value.flake; }
-      ) config.nix.registry)
-      // {
-        "xdg/autostart/1password.desktop".source = ../../dotfiles/dot_config/autostart/1password.desktop;
-      };
+    etc."xdg/autostart/1password.desktop".source =
+      ../../dotfiles/dot_config/autostart/1password.desktop;
   };
 
   fonts = {
