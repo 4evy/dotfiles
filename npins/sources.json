@@ -84,7 +84,7 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "97c3b26bf36865cdc7193c42614cda65c5636f68",
+      "revision": "d627fe68d5059d86971c775365f2bdf0c98b46a7",
       "url": "https://github.com/jtroo/kanata/archive/9356feb3ef53dadb626427b54241d510c0364e01.tar.gz",
       "hash": "sha256-l5YgB6+x2OPqu16PKtMn4w+Xo4wmmKMxOqJmDGsIx9k="
     },
@@ -172,7 +172,7 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "3012ba0594c14396b82f06aa8aa5223d5a1c0310",
+      "revision": "4b61b52e068032271f0ef33e1f9ce3c0c5db451f",
       "url": "https://github.com/GNOME/sushi/archive/27886fee1c7f093dd7402f82e3ff3ff42fd1d606.tar.gz",
       "hash": "sha256-6gTRy5x3ij61ZR3zSOseUyvHeIUUxxsQl/zyN7nBgJk="
     },
