@@ -195,6 +195,15 @@ modules:
     install:
       - 8834 # Copyous
 
+  - type: kargs@v1
+    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    kargs:
+      - plymouth.enable=0
+      - rd.plymouth=0
+      - systemd.show_status=1
+      - rd.systemd.show_status=1
+      - loglevel=7
+
   - type: systemd@v1
     source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
     system:
