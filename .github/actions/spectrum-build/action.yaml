@@ -116,6 +116,7 @@ runs:
       continue-on-error: true
       env:
         IMAGE_REF: ${{ steps.image.outputs.ref }}
+        GOMEMLIMIT: 8GiB
         SYFT_PARALLELISM: "1"
       shell: bash
       run: |
