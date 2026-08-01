@@ -457,13 +457,17 @@ _format mode:
 
 [parallel]
 [private]
-_lint-files: _check-worktree-paths (_run-files 'jq' 'empty' '*.json flake.lock :(exclude).vscode/settings.json') (_run-files 'hadolint' '' 'Dockerfile Containerfile') (_run-files 'luacheck' '--globals Command cx ya --' '*.lua') (_run-files 'rumdl' 'check --respect-gitignore .' '') _lint-nix (_run-files 'uv' 'run ruff check .' '') _lint-shell-files _lint-shell-templates-portable _lint-templates (_run-files 'taplo' 'lint' '*.toml') _lint-xml
+_lint-files: _check-worktree-paths (_run-files 'jq' 'empty' '*.json flake.lock :(exclude).vscode/settings.json') (_run-files 'hadolint' '' 'Dockerfile Containerfile') (_run-files 'luacheck' '--globals Command cx ya --' '*.lua') (_run-files 'rumdl' 'check --respect-gitignore --exclude packages/terminal-theme-tools/vendor/** .' '') _lint-nix (_run-files 'uv' 'run ruff check .' '') _lint-shell-files _lint-shell-templates-portable _lint-templates (_run-files 'taplo' 'lint' '*.toml') _lint-xml
 
 [private]
 _check-worktree-paths:
     broken=0
     while IFS= read -r -d '' file; do
       if [[ -L $file && ! -e $file ]]; then
+        target=$(readlink "$file")
+        if [[ $file == bluebuild/files/system/* && $target == /* && -e bluebuild/files/system$target ]]; then
+          continue
+        fi
         printf 'broken symlink: %s\n' "$file" >&2
         broken=1
       elif [[ ! -e $file ]]; then
@@ -481,7 +485,10 @@ _lint-nix:
     deadnix_files=()
     for file in "${nix_files[@]}"; do
       nix-instantiate --parse "$file" >/dev/null
-      [[ $file == hosts/linux/hardware-configuration.nix ]] || deadnix_files+=("$file")
+      case $file in
+        hosts/linux/hardware-configuration.nix | packages/hyper-window-tiling/bun.nix) ;;
+        *) deadnix_files+=("$file") ;;
+      esac
     done
     ((${#deadnix_files[@]} == 0)) || deadnix --fail "${deadnix_files[@]}"
 
@@ -677,13 +684,13 @@ python-dependencies:
 # Run the Python test suite.
 [group('dev')]
 [positional-arguments]
-python-test +args='':
+python-test *args:
     uv run pytest "$@"
 
 # Type-check the Python source roots configured in pyproject.toml.
 [group('dev')]
 [positional-arguments]
-python-typecheck +args='':
+python-typecheck *args:
     uv run ty check "$@"
 
 # Scan the first-party Python source roots configured in pyproject.toml.

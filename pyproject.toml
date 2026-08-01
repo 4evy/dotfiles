@@ -36,6 +36,7 @@ system-runner = "workstation.local.system_runner:entrypoint"
 [dependency-groups]
 dev = [
   "complexipy>=6,<7",
+  "defusedxml>=0.7,<1",
   "deptry>=0.25.1,<0.26",
   "pytest>=9,<10",
   "ruff>=0.16,<0.17",
@@ -221,6 +222,7 @@ all = "error"
 error-on-warning = true
 
 [tool.vulture]
+exclude = ["packages/terminal-theme-tools/zig-pkg"]
 min_confidence = 100
 paths = ["ansible", "dotfiles", "packages"]
 sort_by_size = true
