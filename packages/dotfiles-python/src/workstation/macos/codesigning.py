@@ -150,6 +150,7 @@ def sign_bundle(bundle: Path, identity: str, keychain: Path) -> None:
         raise DotfilesError(f"application bundle does not exist: {bundle}")
     run((
         "/usr/bin/codesign",
+        "--deep",
         "--force",
         "--keychain",
         keychain,

@@ -90,6 +90,7 @@ def test_sign_bundle_preserves_identity_and_entitlements(
 
     assert calls[0] == (
         "/usr/bin/codesign",
+        "--deep",
         "--force",
         "--keychain",
         keychain,
