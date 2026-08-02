@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**"]
+    "includes": ["**", "!!bluebuild/files/system/usr/lib/systemd"]
   },
   "formatter": {
     "enabled": true,

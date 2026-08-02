@@ -17,7 +17,5 @@
     "types": ["bun"],
     "verbatimModuleSyntax": true
   },
-  "files": [
-    "dot_local/bin/executable_ghostty-dreamy-swirl.ts",
-  ]
+  "files": ["dot_local/bin/executable_ghostty-dreamy-swirl.ts"]
 }
