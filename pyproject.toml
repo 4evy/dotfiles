@@ -31,7 +31,6 @@ dotfiles-scripts = "workstation.cli:entrypoint"
 gnome-catppuccin-accent = "workstation.local.gnome:gnome_catppuccin_accent_entrypoint"
 jj-get = "workstation.local.jj:jj_get_entrypoint"
 phone-mirror = "workstation.local.phone_mirror:entrypoint"
-system-runner = "workstation.local.system_runner:entrypoint"
 
 [dependency-groups]
 dev = [

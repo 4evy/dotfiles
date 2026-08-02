@@ -76,10 +76,6 @@ let
       dotfiles-python = final.callPackage ../packages/dotfiles-python.nix {
         inherit (final.unstable) python314Packages;
       };
-      # Keep the privileged command on the same packaged entry point as
-      # every other repository automation command. Copying its module into
-      # a standalone script loses the Python dependency environment.
-      system-runner = final.dotfiles-python;
       uresourced = final.callPackage ../packages/uresourced.nix {
         source = dotfilesSourcePins.uresourced.outPath;
         version = lib.removePrefix "v" dotfilesSourcePins.uresourced.version;

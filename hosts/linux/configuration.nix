@@ -1,6 +1,5 @@
 {
   config,
-  dotfilesPackages,
   lib,
   pkgs,
   ...
@@ -19,8 +18,6 @@ let
     }
   ];
 
-  systemRunnerLink = "${home}/.local/bin/system-runner";
-  systemRunnerNix = "${dotfilesPackages.system-runner}/bin/system-runner";
 in
 {
   imports = [
@@ -168,30 +165,7 @@ in
     };
   };
 
-  security = {
-    rtkit.enable = true;
-    sudo.extraRules = [
-      {
-        users = [ name ];
-        commands = [
-          {
-            command = systemRunnerNix;
-            options = [
-              "NOPASSWD"
-              "SETENV"
-            ];
-          }
-          {
-            command = systemRunnerLink;
-            options = [
-              "NOPASSWD"
-              "SETENV"
-            ];
-          }
-        ];
-      }
-    ];
-  };
+  security.rtkit.enable = true;
 
   services = {
     xserver.enable = true;
@@ -247,7 +221,6 @@ in
       user = name;
       inherit group;
     };
-    "${systemRunnerLink}"."L+".argument = systemRunnerNix;
   };
 
   time.timeZone = "Europe/Sofia";

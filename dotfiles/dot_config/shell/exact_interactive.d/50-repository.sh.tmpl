@@ -68,7 +68,7 @@ check() {
 }
 
 micfix() {
-	free killall coreaudiod "$@"
+	sudo killall coreaudiod "$@"
 }
 {{- else }}
 update() {
@@ -86,7 +86,7 @@ update() {
 rebuild() {
 	(
 		cd "$_dotfiles_repo_path" &&
-			free env \
+			sudo env \
 				-u XDG_RUNTIME_DIR \
 				-u DBUS_SESSION_BUS_ADDRESS \
 				-u WAYLAND_DISPLAY \
@@ -98,7 +98,7 @@ rebuild() {
 				--file spectrum/Containerfile \
 				.
 	) || return
-	free bootc switch --transport containers-storage localhost/spectrum:local "$@"
+	sudo bootc switch --transport containers-storage localhost/spectrum:local "$@"
 }
 
 check() {

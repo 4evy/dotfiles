@@ -4,11 +4,8 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from subprocess import CompletedProcess
 
-from platformdirs import user_bin_path
-
 from workstation.errors import DotfilesError
 from workstation.lib.commands import require_commands, run
-from workstation.lib.files import require_executable
 
 
 def in_container() -> bool:
@@ -23,9 +20,6 @@ def require_root(command: str) -> None:
 
 class HostRunner:
     """Run user and privileged host commands without embedding shell programs."""
-
-    def __init__(self, system_runner: Path | None = None) -> None:
-        self.system_runner = system_runner or user_bin_path() / "system-runner"
 
     def user(
         self,
@@ -54,16 +48,13 @@ class HostRunner:
         if os.geteuid() == 0:
             return run(argv, check=check, capture=capture, env=env, cwd=cwd)
         require_commands("sudo")
-        runner = require_executable(self.system_runner)
         command: list[str | os.PathLike[str]] = [
             "sudo",
-            "-n",
             "/usr/bin/env",
             "PYTHONDONTWRITEBYTECODE=1",
-            runner,
         ]
         for key, value in (env or {}).items():
-            command.extend(("--env", f"{key}={value}"))
+            command.append(f"{key}={value}")
         command.extend(("--", *argv))
         return run(command, check=check, capture=capture, cwd=cwd)
 

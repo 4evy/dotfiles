@@ -36,7 +36,6 @@
     - bootstrap
     - repo-tools
     - scripts
-    - system-runner
 
 - name: Install Rust
   ansible.builtin.import_tasks: rust.yml

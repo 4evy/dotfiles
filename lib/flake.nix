@@ -54,7 +54,6 @@ let
       ghidra-mcp-launcher = ghidraMcpHeadless.launcher;
       ghidra = ghidraMcpHeadless.ghidra;
       kanata-with-cmd = pkgs.kanata-with-cmd;
-      system-runner = pkgs.system-runner;
     }
     // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
       bluebuild-v2 = pkgs.bluebuild-v2;

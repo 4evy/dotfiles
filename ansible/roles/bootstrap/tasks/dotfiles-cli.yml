@@ -12,7 +12,6 @@
     - repo-tools
     - python
     - scripts
-    - system-runner
 
 - name: Install repository Python tool when its locked metadata changes
   when: >-
@@ -30,7 +29,6 @@
     - repo-tools
     - python
     - scripts
-    - system-runner
   block:
     - name: Export locked Python runtime constraints
       ansible.builtin.command:
@@ -76,18 +74,3 @@
         content: "{{ bootstrap_dotfiles_python_tool_metadata }}"
         dest: "{{ dotfiles_cache_dir }}/dotfiles-python-tool.sha256"
         mode: "0644"
-
-- name: Verify system-runner bootstrap command
-  ansible.builtin.command:
-    argv:
-      - "{{ dotfiles_bin_dir }}/system-runner"
-      - --version
-  environment:
-    PATH: "{{ bootstrap_homebrew_path | default(dotfiles_path) }}"
-    UV_TOOL_BIN_DIR: "{{ dotfiles_bin_dir }}"
-  changed_when: false
-  tags:
-    - bootstrap
-    - repo-tools
-    - scripts
-    - system-runner

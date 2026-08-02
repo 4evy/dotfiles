@@ -1,55 +1,5 @@
 # shellcheck disable=SC2154
-# B1 / host runner
-# Run host commands through system-runner with non-interactive sudo.
-
-_dotfiles_system_runner() {
-	local runner="$HOME/.local/bin/system-runner"
-	local env_args=(
-		--env "PATH=$PATH"
-		--env "HOME=$HOME"
-	)
-
-	if [[ ! -x "$runner" ]]; then
-		printf '%s\n' "system-runner is not installed" >&2
-		return 127
-	fi
-
-	[[ -z ${XDG_CONFIG_HOME-} ]] || env_args+=(--env "XDG_CONFIG_HOME=$XDG_CONFIG_HOME")
-	[[ -z ${XDG_DATA_HOME-} ]] || env_args+=(--env "XDG_DATA_HOME=$XDG_DATA_HOME")
-	[[ -z ${XDG_CACHE_HOME-} ]] || env_args+=(--env "XDG_CACHE_HOME=$XDG_CACHE_HOME")
-	[[ -z ${XDG_STATE_HOME-} ]] || env_args+=(--env "XDG_STATE_HOME=$XDG_STATE_HOME")
-	[[ -z ${TERM-} ]] || env_args+=(--env "TERM=$TERM")
-	[[ -z ${COLORTERM-} ]] || env_args+=(--env "COLORTERM=$COLORTERM")
-
-	sudo -n "$runner" "${env_args[@]}" -- "$@"
-}
-
-free() {
-	_dotfiles_system_runner "$@"
-}
-
-f_usage() {
-	printf '%s\n' "usage: f COMMAND [ARG...]"
-}
-
-f() {
-	if (($# == 0)); then
-		f_usage >&2
-		return 2
-	fi
-
-	case "$1" in
-		cza)
-			shift
-			free chezmoi apply --force "$@"
-			;;
-		*)
-			free "$@"
-			;;
-	esac
-}
-
-# B2 / Codex wrapper
+# B1 / Codex wrapper
 # Reset focus reporting around the themed Codex session and optional debuggers.
 
 cx() {

@@ -50,37 +50,6 @@
   tags:
     - nix
 
-- name: Detect system-runner sudo access for Nix install
-  ansible.builtin.command:
-    argv:
-      - sudo
-      - -n
-      - "{{ dotfiles_bin_dir }}/system-runner"
-      - id
-      - -u
-  changed_when: false
-  failed_when: false
-  register: tools_nix_system_runner_sudo
-  when:
-    - platform_is_linux
-    - tools_nix_command.rc != 0
-  tags:
-    - nix
-
-- name: Require system-runner sudo access for Nix install
-  ansible.builtin.fail:
-    msg: >-
-      Installing Determinate Nix requires passwordless sudo access to
-      {{ dotfiles_bin_dir }}/system-runner. Run the bootstrap/setup path that
-      installs the system-runner sudoers entry, then rerun this playbook as your
-      normal user.
-  when:
-    - platform_is_linux
-    - tools_nix_command.rc != 0
-    - tools_nix_system_runner_sudo.rc | default(1) != 0
-  tags:
-    - nix
-
 - name: Ensure Nix installer cache directory exists
   ansible.builtin.file:
     path: "{{ dotfiles_cache_dir }}/installers"
@@ -103,12 +72,6 @@
 - name: Install Determinate Nix on Linux
   ansible.builtin.command:
     argv:
-      - sudo
-      - -n
-      - "{{ dotfiles_bin_dir }}/system-runner"
-      - --env
-      - NIX_INSTALLER_NO_CONFIRM=true
-      - --
       - /bin/sh
       - "{{ dotfiles_cache_dir }}/installers/nix-installer.sh"
       - install
@@ -117,6 +80,9 @@
       - --no-modify-profile
   args:
     creates: "{{ tools_nix_bin }}"
+  become: true
+  environment:
+    NIX_INSTALLER_NO_CONFIRM: "true"
   when:
     - platform_is_linux
     - tools_nix_command.rc != 0
