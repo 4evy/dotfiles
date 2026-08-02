@@ -4,3 +4,4 @@
 0004-gtk-edit-scrollback-in-a-temporary-surface.patch
 0005-macos-edit-scrollback-in-a-temporary-surface.patch
 0006-core-prioritize-modified-link-clicks-over-mouse-capt.patch
+0007-build-disable-the-nested-package-manifest-sandbox.patch

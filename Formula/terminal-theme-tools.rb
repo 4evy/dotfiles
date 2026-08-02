@@ -34,14 +34,30 @@ class TerminalThemeTools < Formula
     inreplace ".deps/ghostty/build.zig.zon" do |s|
       s.gsub!(/\.uucode = \.\{.*?^\s*\},/m, '.uucode = .{ .path = "../uucode" },')
     end
+    inreplace ".deps/ghostty/src/build/Config.zig" do |s|
+      old_default = <<~ZIG.chomp
+        ) orelse emit_xcfw: {
+                if (!builtin.target.os.tag.isDarwin()
+      ZIG
+      dependency_default = <<~ZIG.chomp
+        ) orelse emit_xcfw: {
+                if (is_dep) break :emit_xcfw false;
+                if (!builtin.target.os.tag.isDarwin()
+      ZIG
+      replaced = s.sub!(
+        old_default,
+        dependency_default,
+      )
+      odie "Ghostty dependency-mode default changed upstream" unless replaced
+    end
 
     system "zig", "build", "--release=small", "--prefix", prefix
     (pkgshare/"source.sha256").write("#{SOURCE_SHA256}\n")
   end
 
   test do
-    assert_predicate include/"terminal_theme_tools.h", :exist?
-    assert_predicate lib/"libterminal_theme_tools.a", :exist?
+    assert_path_exists include/"terminal_theme_tools.h"
+    assert_path_exists lib/"libterminal_theme_tools.a"
     assert_match version.to_s, shell_output("#{bin}/terminal-theme-run --version")
     assert_match "Usage: terminal-theme-run", shell_output("#{bin}/terminal-theme-run --help")
     system bin/"terminal-theme-run", "true"

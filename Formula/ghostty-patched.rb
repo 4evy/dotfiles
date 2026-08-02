@@ -34,6 +34,7 @@ class GhosttyPatched < Formula
     system formula_opt_bin("zig")/"zig", "build",
            "-Doptimize=ReleaseFast",
            "-Demit-test-exe=false",
+           "-Dxcframework-target=native",
            "-Dversion-string=#{version}"
 
     prefix.install "zig-out/Ghostty.app"
