@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: 4evy <git@evy.pink>
 Date: Thu, 1 Jan 1970 00:00:00 +0000
-Subject: [PATCH 6/7] rewrite: share metadata-preserving reparenting
+Subject: [PATCH 4/6] rewrite: share metadata-preserving reparenting
 
 Move descendant reparenting into a shared helper that retains complete
 author and committer metadata. Recreate a signature when the original
@@ -17,7 +17,7 @@ share the same semantics.
  create mode 100644 cli/src/rewrite_util.rs
 
 diff --git a/cli/src/commands/git/push.rs b/cli/src/commands/git/push.rs
-index 6cdb89e06..120b3ff34 100644
+index 86187ec2..83d15460 100644
 --- a/cli/src/commands/git/push.rs
 +++ b/cli/src/commands/git/push.rs
 @@ -56,7 +56,6 @@ use jj_lib::revset::RevsetEvaluationError;
@@ -122,10 +122,10 @@ index 6cdb89e06..120b3ff34 100644
      }
  
 diff --git a/cli/src/lib.rs b/cli/src/lib.rs
-index f9c02c6a0..2a524a4ab 100644
+index eff94476..2ca2057b 100644
 --- a/cli/src/lib.rs
 +++ b/cli/src/lib.rs
-@@ -49,6 +49,7 @@ pub mod movement_util;
+@@ -34,6 +34,7 @@ pub mod movement_util;
  pub mod operation_templater;
  mod progress;
  pub mod revset_util;

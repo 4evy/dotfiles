@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: 4evy <git@evy.pink>
 Date: Thu, 1 Jan 1970 00:00:00 +0000
-Subject: [PATCH 2/7] git push: apply the local signing timestamp policy
+Subject: [PATCH 2/6] git push: apply the local signing timestamp policy
 
 Sign every unsigned commit in the outgoing range. Set the committer
 timestamp to the author timestamp when the author matches either the jj
@@ -15,7 +15,7 @@ ancestry.
  1 file changed, 42 insertions(+), 8 deletions(-)
 
 diff --git a/cli/src/commands/git/push.rs b/cli/src/commands/git/push.rs
-index 2d3fd0d28..0c848280c 100644
+index 8b599716..da4b35a1 100644
 --- a/cli/src/commands/git/push.rs
 +++ b/cli/src/commands/git/push.rs
 @@ -805,16 +805,29 @@ async fn sign_commits_before_push(

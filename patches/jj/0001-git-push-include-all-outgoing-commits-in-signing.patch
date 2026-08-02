@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: 4evy <git@evy.pink>
 Date: Thu, 1 Jan 1970 00:00:00 +0000
-Subject: [PATCH 1/7] git push: include all outgoing commits in signing
+Subject: [PATCH 1/6] git push: include all outgoing commits in signing
 
 Use remote bookmarks and tags as the lower boundary for the outgoing
 range. Keep only the synthetic root immutable so explicitly pushed
@@ -11,7 +11,7 @@ immutable commits, including tag targets, can be rewritten and signed.
  1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/cli/src/commands/git/push.rs b/cli/src/commands/git/push.rs
-index c4e91c84e..2d3fd0d28 100644
+index 676cf0c4..8b599716 100644
 --- a/cli/src/commands/git/push.rs
 +++ b/cli/src/commands/git/push.rs
 @@ -786,11 +786,12 @@ fn ready_to_push_revset_expression(

@@ -1,9 +1,9 @@
 class JjPatched < Formula
   desc "Jujutsu build with native signing, redate, and shallow workflow patches"
   homepage "https://github.com/jj-vcs/jj"
-  url "https://github.com/jj-vcs/jj/archive/5b48bec5eb0e08539e2f0b50395af63972788b23.tar.gz"
-  version "0.43.0-head-5b48bec5"
-  sha256 "c752aeae21e8acabfb69fcd85ca752e8659c0dc551b1ec7897a77df50801ff8a"
+  url "https://github.com/4evy/jj/archive/09339986bac59ef81e7d0bb511e504d329277d63.tar.gz"
+  version "0.43.0-head-09339986"
+  sha256 "6b1aed823aadf2d6a8f35ef2a64bba8a3d68a9e6f837c419b3e44aaa1d86b14d"
   license "Apache-2.0"
   compatibility_version 1
 

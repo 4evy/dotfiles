@@ -97,17 +97,16 @@ def test_jj_get_shallow_branch_delegates_mutation_to_jj(
             "-R",
             workspace_root,
             "git",
-            "fetch-ref",
-            "--source",
-            "origin",
-            "refs/heads/feature",
+            "ref",
+            "fetch",
             "--remote",
             "origin",
             "--bookmark",
             "feature",
-            "--track",
+            "--replace",
             "--shallow-exclude",
             "refs/heads/main",
+            "refs/heads/feature",
         )
     ]
 
@@ -134,6 +133,15 @@ def test_jj_get_pr_delegates_mutation_to_jj(
         "_fetch_url",
         lambda _repo: "git@downloads.com:owner/repo.git",
     )
+    monkeypatch.setattr(
+        get_module,
+        "_git",
+        lambda *args, **_kwargs: (
+            ""
+            if args == ("remote",)
+            else pytest.fail(f"unexpected git arguments: {args}")
+        ),
+    )
     monkeypatch.setattr(get_module, "run", calls.append)
 
     get_module._resolve_pr("123", "owner/repo")
@@ -144,16 +152,79 @@ def test_jj_get_pr_delegates_mutation_to_jj(
             "-R",
             workspace_root,
             "git",
-            "fetch-ref",
-            "--source",
+            "remote",
+            "add",
+            "github-pr",
             "git@downloads.com:owner/repo.git",
-            "refs/pull/123/head",
+        ),
+        (
+            "jj",
+            "-R",
+            workspace_root,
+            "git",
+            "ref",
+            "fetch",
             "--remote",
             "github-pr",
             "--bookmark",
             "contributor/push-changeid",
-            "--track",
+            "--replace",
             "--shallow-exclude",
             "refs/heads/main",
-        )
+            "refs/pull/123/head",
+        ),
     ]
+
+
+@pytest.mark.parametrize(
+    ("remotes", "current_url", "expected"),
+    [
+        (
+            "",
+            "",
+            (
+                "jj",
+                "git",
+                "remote",
+                "add",
+                "github-pr",
+                "git@example.com:new/repo.git",
+            ),
+        ),
+        ("github-pr", "git@example.com:new/repo.git", None),
+        (
+            "github-pr",
+            "git@example.com:old/repo.git",
+            (
+                "jj",
+                "git",
+                "remote",
+                "set-url",
+                "github-pr",
+                "git@example.com:new/repo.git",
+            ),
+        ),
+    ],
+)
+def test_configure_remote(
+    monkeypatch: pytest.MonkeyPatch,
+    remotes: str,
+    current_url: str,
+    expected: tuple[str, ...] | None,
+) -> None:
+    calls: list[tuple[str, ...]] = []
+
+    def fake_git(*args: str, **_kwargs: object) -> str:
+        if args == ("remote",):
+            return remotes
+        if args == ("remote", "get-url", "github-pr"):
+            return current_url
+        return pytest.fail(f"unexpected git arguments: {args}")
+
+    monkeypatch.setattr(get_module, "_git", fake_git)
+    monkeypatch.setattr(get_module, "_jj", lambda: ("jj",))
+    monkeypatch.setattr(get_module, "run", calls.append)
+
+    get_module._configure_remote("github-pr", "git@example.com:new/repo.git")
+
+    assert calls == ([expected] if expected else [])

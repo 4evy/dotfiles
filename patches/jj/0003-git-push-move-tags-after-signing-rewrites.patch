@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: 4evy <git@evy.pink>
 Date: Thu, 1 Jan 1970 00:00:00 +0000
-Subject: [PATCH 3/7] git push: move tags after signing rewrites
+Subject: [PATCH 3/6] git push: move tags after signing rewrites
 
 Remap every local tag that points into the rewritten commit graph. This
 keeps explicitly pushed tags and tags on rebased descendants attached to
@@ -11,7 +11,7 @@ the signed replacement instead of the obsolete unsigned commit.
  1 file changed, 21 insertions(+)
 
 diff --git a/cli/src/commands/git/push.rs b/cli/src/commands/git/push.rs
-index 0c848280c..6cdb89e06 100644
+index da4b35a1..86187ec2 100644
 --- a/cli/src/commands/git/push.rs
 +++ b/cli/src/commands/git/push.rs
 @@ -37,6 +37,7 @@ use jj_lib::git::GitPushRefTargets;

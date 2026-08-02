@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: 4evy <git@evy.pink>
 Date: Thu, 1 Jan 1970 00:00:00 +0000
-Subject: [PATCH] redate: add a native interactive timestamp rewrite
+Subject: [PATCH 6/6] redate: add a native interactive timestamp rewrite
 
 ---
  Cargo.lock                    |   1 +
@@ -18,7 +18,7 @@ Subject: [PATCH] redate: add a native interactive timestamp rewrite
  create mode 100644 cli/src/commands/redate.rs
 
 diff --git a/Cargo.lock b/Cargo.lock
-index 4b2207935..8dcf5ae41 100644
+index c639a985..e300e3b1 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
 @@ -2620,6 +2620,7 @@ dependencies = [
@@ -30,19 +30,19 @@ index 4b2207935..8dcf5ae41 100644
   "testutils",
   "textwrap",
 diff --git a/Cargo.toml b/Cargo.toml
-index 507b9768b..207d38aa1 100644
+index ebbdfbc2..c7d2fa14 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
 @@ -117,6 +117,7 @@ smallvec = { version = "1.15.1", features = [
  strsim = "0.11.1"
- syn = "2.0.111"
+ syn = "3.0.3"
  tempfile = "3.27.0"
 +termwiz = "0.23.3"
  test-case = "3.3.1"
  textwrap = "0.16.2"
  thiserror = "2.0.17"
 diff --git a/cli/Cargo.toml b/cli/Cargo.toml
-index a825b4f86..9e0cde88a 100644
+index a825b4f8..9e0cde88 100644
 --- a/cli/Cargo.toml
 +++ b/cli/Cargo.toml
 @@ -103,6 +103,7 @@ serde_json = { workspace = true }
@@ -54,7 +54,7 @@ index a825b4f86..9e0cde88a 100644
  tokio = { workspace = true }
  thiserror = { workspace = true }
 diff --git a/cli/src/commands/metaedit.rs b/cli/src/commands/metaedit.rs
-index 03edfdbd7..58fe9c3d5 100644
+index 03edfdbd..58fe9c3d 100644
 --- a/cli/src/commands/metaedit.rs
 +++ b/cli/src/commands/metaedit.rs
 @@ -19,6 +19,7 @@ use futures::TryStreamExt as _;
@@ -187,7 +187,7 @@ index 03edfdbd7..58fe9c3d5 100644
              }
              Ok(())
 diff --git a/cli/src/commands/mod.rs b/cli/src/commands/mod.rs
-index db93b7714..87fb61412 100644
+index db93b771..87fb6141 100644
 --- a/cli/src/commands/mod.rs
 +++ b/cli/src/commands/mod.rs
 @@ -44,6 +44,7 @@ mod operation;
@@ -569,10 +569,10 @@ index 000000000..4c1b15b07
 +    NaiveTime::parse_from_str(&normalized, "%H:%M:%S").map_err(|error| error.to_string())
 +}
 diff --git a/cli/src/config-schema.json b/cli/src/config-schema.json
-index 54f585508..d599190f7 100644
+index ce73a05c..f55f03d0 100644
 --- a/cli/src/config-schema.json
 +++ b/cli/src/config-schema.json
-@@ -731,6 +731,11 @@
+@@ -741,6 +741,11 @@
                      "description": "Default set of revisions to run a command on when no explicit revset is given for jj run",
                      "default": "reachable(@, mutable())"
                  },
@@ -584,7 +584,7 @@ index 54f585508..d599190f7 100644
                  "simplify-parents": {
                      "type": "string",
                      "description": "Default set of revisions to simplify when no explicit revset is given for jj simplify-parents",
-@@ -884,6 +889,17 @@
+@@ -894,6 +899,17 @@
                  }
              }
          },
@@ -602,7 +602,7 @@ index 54f585508..d599190f7 100644
          "experimental-advance-branches": {
              "type": "object",
              "description": "Settings controlling the 'advance-branches' feature which moves bookmarks forward when new commits are created.",
-@@ -1064,6 +1080,10 @@
+@@ -1074,6 +1090,10 @@
                      "type": "string",
                      "description": "`jj arrange``'s template for commits in the main view"
                  },
@@ -614,7 +614,7 @@ index 54f585508..d599190f7 100644
                      "type": "string",
                      "description": "`jj bookmark list`'s output"
 diff --git a/cli/src/config/colors.toml b/cli/src/config/colors.toml
-index 76e553428..2c549cedc 100644
+index 76e55342..2c549ced 100644
 --- a/cli/src/config/colors.toml
 +++ b/cli/src/config/colors.toml
 @@ -118,3 +118,7 @@
@@ -626,7 +626,7 @@ index 76e553428..2c549cedc 100644
 +"redate commit empty" = { fg = "bright black", italic = true }
 +"redate commit timestamp" = "bright black"
 diff --git a/cli/src/config/revsets.toml b/cli/src/config/revsets.toml
-index 8dc0f0ded..4ded007ae 100644
+index 8dc0f0de..4ded007a 100644
 --- a/cli/src/config/revsets.toml
 +++ b/cli/src/config/revsets.toml
 @@ -6,6 +6,7 @@ arrange = "reachable(@, mutable())"
@@ -638,7 +638,7 @@ index 8dc0f0ded..4ded007ae 100644
  # evaluate, lengthy warning messages would be printed. Use present(expr) if
  # symbols in expr might not always exist.
 diff --git a/cli/src/config/templates.toml b/cli/src/config/templates.toml
-index afdb50828..e994c88f7 100644
+index afdb5082..e994c88f 100644
 --- a/cli/src/config/templates.toml
 +++ b/cli/src/config/templates.toml
 @@ -3,6 +3,14 @@ bookmark_list = 'format_commit_ref(self, "bookmark") ++ "\n"'
@@ -656,6 +656,3 @@ index afdb50828..e994c88f7 100644
  
  file_annotate = '''
  join(" ",
--- 
-2.55.0
-

@@ -84,28 +84,34 @@ def _fetch_url(repo: str) -> str:
 
 
 def _fetch_ref(
-    source: str,
-    source_ref: str,
     remote: str,
+    source_ref: str,
     bookmark: str,
     shallow_exclude: str | None,
 ) -> None:
     args = [
         *_jj(),
         "git",
-        "fetch-ref",
-        "--source",
-        source,
-        source_ref,
+        "ref",
+        "fetch",
         "--remote",
         remote,
         "--bookmark",
         bookmark,
-        "--track",
+        "--replace",
     ]
     if shallow_exclude:
         args.extend(("--shallow-exclude", shallow_exclude))
+    args.append(source_ref)
     run(tuple(args))
+
+
+def _configure_remote(remote: str, url: str) -> None:
+    remotes = _git("remote").splitlines()
+    if remote not in remotes:
+        run((*_jj(), "git", "remote", "add", remote, url))
+    elif _git("remote", "get-url", remote, check=False) != url:
+        run((*_jj(), "git", "remote", "set-url", remote, url))
 
 
 def _resolve_pr(number: str, repo_arg: str | None) -> None:
@@ -122,10 +128,11 @@ def _resolve_pr(number: str, repo_arg: str | None) -> None:
         "--json",
         "baseRefName,headRefName",
     )
+    remote = _settings().jj_get_pr_remote
+    _configure_remote(remote, _fetch_url(repo))
     _fetch_ref(
-        _fetch_url(repo),
+        remote,
         f"refs/pull/{number}/head",
-        _settings().jj_get_pr_remote,
         info.head_ref_name,
         f"refs/heads/{info.base_ref_name}" if _shallow() else None,
     )
@@ -168,7 +175,6 @@ def _resolve_branch(bookmark: str, remote: str | None, base: str | None) -> None
     _fetch_ref(
         remote,
         f"refs/heads/{bookmark}",
-        remote,
         bookmark,
         shallow_exclude,
     )

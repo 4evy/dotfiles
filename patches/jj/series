@@ -1,8 +1,6 @@
 0001-git-push-include-all-outgoing-commits-in-signing.patch
 0002-git-push-apply-the-local-signing-timestamp-policy.patch
 0003-git-push-move-tags-after-signing-rewrites.patch
-0004-git-fetch-refresh-state-after-shallow-boundary-changes.patch
-0005-git-fetch-add-native-raw-ref-and-stack-fetching.patch
 0006-rewrite-share-metadata-preserving-reparenting.patch
 0007-metaedit-share-the-commit-edit-transaction.patch
 0008-redate-add-a-native-interactive-timestamp-rewrite.patch
