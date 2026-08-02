@@ -39,7 +39,7 @@ def test_jj_get_accepts_pr_url_query(
 
     exit_code, output = _invoke(
         get_module.app,
-        ["https://downloads.com/owner/repo/pull/123?notification_referrer=1"],
+        ["https://github.com/owner/repo/pull/123?notification_referrer=1"],
         capsys,
     )
 
@@ -131,7 +131,7 @@ def test_jj_get_pr_delegates_mutation_to_jj(
     monkeypatch.setattr(
         get_module,
         "_fetch_url",
-        lambda _repo: "git@downloads.com:owner/repo.git",
+        lambda _repo: "git@github.com:owner/repo.git",
     )
     monkeypatch.setattr(
         get_module,
@@ -155,7 +155,7 @@ def test_jj_get_pr_delegates_mutation_to_jj(
             "remote",
             "add",
             "github-pr",
-            "git@downloads.com:owner/repo.git",
+            "git@github.com:owner/repo.git",
         ),
         (
             "jj",
