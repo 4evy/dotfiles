@@ -1,4 +1,3 @@
-.pi/agent/extensions/catppuccin-system-theme.ts
 .config/ghostty/config
 .ssh/github_key
 {{- if eq .chezmoi.os "darwin" }}

@@ -22,7 +22,6 @@ nix_bin := nix_bin_dir / "nix"
 nix_profile_bin_dir := home_directory() / ".nix-profile/bin"
 nixos_profile_bin_dir := "/run/current-system/sw/bin"
 nix_profile_tools := "deadnix:deadnix nh:nh nil:nil nix-instantiate:nix nom:nix-output-monitor nix-tree:nix-tree nixd:nixd nixfmt:nixfmt"
-pi_extension_profile_tools := "pi-ssh-tools:github:euvlok/pkgs#pi-ssh-tools web-search-pi:github:euvlok/pkgs#web-search-pi"
 
 doctor_setup_commands := "bash curl git sudo"
 doctor_format_commands := "git nix"
@@ -382,7 +381,7 @@ nix: (doctor 'nix') _ensure-nix
     fi
 
     missing=()
-    for spec in {{ nix_profile_tools }} {{ pi_extension_profile_tools }}; do
+    for spec in {{ nix_profile_tools }}; do
       bin=${spec%%:*}
       source=${spec#*:}
       if ! command -v "$bin" >/dev/null 2>&1 &&

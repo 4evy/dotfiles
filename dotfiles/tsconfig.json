@@ -19,6 +19,5 @@
   },
   "files": [
     "dot_local/bin/executable_ghostty-dreamy-swirl.ts",
-    "dot_pi/agent/extensions/system-runner.ts"
   ]
 }

@@ -24,8 +24,6 @@ tools_upstream_script_tools:
 tools_bun_global_packages:
   - package: "@openai/codex"
     bin: codex
-  - package: "@earendil-works/pi-coding-agent"
-    bin: pi
   - package: opencode-ai
     bin: opencode
 
@@ -56,9 +54,3 @@ tools_nix_profile_packages:
     bin: nixd
   - package: nixfmt
     bin: nixfmt
-  - package: pi-ssh-tools
-    bin: pi-ssh-tools
-    source: "{{ tools_eupkgs_flake }}#pi-ssh-tools"
-  - package: web-search-pi
-    bin: web-search-pi
-    source: "{{ tools_eupkgs_flake }}#web-search-pi"

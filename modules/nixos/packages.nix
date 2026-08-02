@@ -155,8 +155,6 @@ in
       inherit (pkgs.unstable.luaPackages) luacheck;
 
       inherit (pkgs.eupkgs)
-        pi-ssh-tools
-        web-search-pi
         yt-dlp-script
         ;
 

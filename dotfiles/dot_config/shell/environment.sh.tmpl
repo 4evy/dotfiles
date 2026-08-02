@@ -81,7 +81,6 @@ fi
 {{- if not $isNixOS }}
 _dotfiles_path_append_once \
 	"$HOME/.local/bin" \
-	"$HOME/.pi/agent/bin" \
 	"$HOME/.local/share/dotfiles/helix-tip/bin"
 {{- if eq .chezmoi.os "darwin" }}
 {{- if eq .chezmoi.arch "arm64" }}
