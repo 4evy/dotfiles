@@ -1,4 +1,10 @@
 ---
+- name: Apply managed application licenses on macOS
+  ansible.builtin.import_tasks: licenses-macos.yml
+  tags:
+    - alt-tab
+    - shottr
+
 - name: Configure RustDesk on macOS
   ansible.builtin.import_tasks: rustdesk-macos.yml
   tags:

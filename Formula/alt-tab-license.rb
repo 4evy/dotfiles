@@ -21,10 +21,6 @@ class AltTabLicense < Formula
     bin.install_symlink (libexec/"alt-tab-license.rb") => "alt-tab-license"
   end
 
-  def post_install
-    system bin/"alt-tab-license", "install"
-  end
-
   test do
     assert_predicate libexec/"alt-tab-license.rb", :executable?
     assert_match "Usage:", shell_output("#{bin}/alt-tab-license --help")

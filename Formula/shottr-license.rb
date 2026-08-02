@@ -8,7 +8,10 @@ class ShottrLicense < Formula
   ACTIVATION_SCRIPT_SOURCE = (
     REPOSITORY_ROOT/"libexec/activate-shottr-license.applescript"
   ).freeze
-  SECRETS_SOURCE = (REPOSITORY_ROOT/"secrets/secrets.yaml").freeze
+  SECRETS_SOURCE = begin
+    tap_source = REPOSITORY_ROOT/"secrets/secrets.yaml"
+    tap_source.file? ? tap_source : REPOSITORY_ROOT/"libexec/secrets.yaml"
+  end.freeze
 
   desc "Dotfiles-managed Shottr license activation"
   homepage "https://shottr.cc/"
@@ -42,10 +45,6 @@ class ShottrLicense < Formula
     chmod 0755, libexec/"shottr-license.rb"
     chmod 0600, libexec/"secrets.yaml"
     bin.install_symlink (libexec/"shottr-license.rb") => "shottr-license"
-  end
-
-  def post_install
-    system bin/"shottr-license", "install"
   end
 
   test do

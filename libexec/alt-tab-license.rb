@@ -54,7 +54,31 @@ module AltTabLicense
     end
   end
 
-  def install
+  def installed?
+    keychain_items_present = KEYCHAIN_VALUES.each_key.all? do |account|
+      _, succeeded = execute(
+        SECURITY,
+        "find-generic-password",
+        "-s",
+        SERVICE,
+        "-a",
+        account,
+        allow_failure: true,
+      )
+      succeeded
+    end
+    defaults_present = DEFAULT_VALUES.each_key.all? do |key|
+      _, succeeded = execute(DEFAULTS, "read", SERVICE, key, allow_failure: true)
+      succeeded
+    end
+    keychain_items_present && defaults_present
+  end
+
+  def install(force: false)
+    if installed? && !force
+      warn "alt-tab-license: AltTab already has license state; leaving it in place"
+      return
+    end
     remove_keychain_items
     KEYCHAIN_VALUES.each do |account, value|
       execute(
@@ -116,7 +140,7 @@ module AltTabLicense
       Usage: alt-tab-license <command>
 
       Commands:
-        install  Install or refresh the local AltTab license state
+        install [--force]  Install or refresh the local AltTab license state
         remove   Remove the local AltTab license state
         status   Show the installed AltTab license state
     TEXT
@@ -128,7 +152,10 @@ module AltTabLicense
 
     case command
     when "install"
-      install
+      force = arguments.delete("--force")
+      raise Error, "unexpected arguments: #{arguments.join(" ")}" unless arguments.empty?
+
+      install(force: !force.nil?)
     when "remove"
       remove
     when "status"

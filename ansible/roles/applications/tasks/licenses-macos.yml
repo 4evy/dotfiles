@@ -1,0 +1,24 @@
+---
+- name: Apply the managed AltTab license state
+  ansible.builtin.command:
+    argv:
+      - "{{ platform_homebrew_prefix }}/bin/alt-tab-license"
+      - install
+  register: applications_alt_tab_license
+  changed_when: >-
+    'license installed' in applications_alt_tab_license.stderr
+  tags:
+    - alt-tab
+
+- name: Apply the managed Shottr license state
+  ansible.builtin.command:
+    argv:
+      - "{{ platform_homebrew_prefix }}/bin/shottr-license"
+      - install
+  environment:
+    PATH: "{{ platform_homebrew_path | default(dotfiles_path) }}"
+  register: applications_shottr_license
+  changed_when: >-
+    'submitted license key' in applications_shottr_license.stderr
+  tags:
+    - shottr
