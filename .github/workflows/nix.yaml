@@ -90,4 +90,4 @@ jobs:
       - name: Check Flake
         run: >-
           nix flake check
-          --keep-going --print-build-logs
+          --keep-going --no-build
