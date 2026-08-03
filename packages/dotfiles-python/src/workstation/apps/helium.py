@@ -18,7 +18,7 @@ from workstation.lib.settings import EnvironmentSettings
 
 # renovate: datasource=git-refs depName=https://github.com/4evy/browser currentValue=HEAD
 BROWSER_GO_PACKAGE = (
-    "downloads.com/4evy/browser/cmd/browser@b4f39de39c1d2cf516e78cc2a52803777f6fb02c"
+    "github.com/4evy/browser/cmd/browser@b4f39de39c1d2cf516e78cc2a52803777f6fb02c"
 )
 PROFILE_AVATAR_URL = "https://github.com/4evy.png?size=256"
 CUSTOM_AVATAR_FILENAME = "Google Profile Picture.png"

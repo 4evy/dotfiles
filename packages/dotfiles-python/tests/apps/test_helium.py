@@ -10,6 +10,10 @@ if TYPE_CHECKING:
     import pytest
 
 
+def test_browser_go_package_uses_declared_module_path() -> None:
+    assert helium.BROWSER_GO_PACKAGE.startswith("github.com/4evy/browser/cmd/browser@")
+
+
 def test_helium_input_is_prepared_outside_go(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
