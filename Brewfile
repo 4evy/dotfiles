@@ -212,6 +212,7 @@ if OS.mac?
   cask "itsycal"
   cask "libreoffice"
   cask "prismlauncher"
+  brew "4evy/dotfiles/raycast-beta"
   cask "rustdesk"
   cask "shottr"
   brew "4evy/dotfiles/shottr-license"
