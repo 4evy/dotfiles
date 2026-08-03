@@ -9,7 +9,7 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "280323ce305737107fd2fd4496417c6a896b2e8c",
+      "revision": "c1b9cee83bd3fe88d1b38c20ca595aa1dd63e0bd",
       "url": "https://github.com/blue-build/cli/archive/280323ce305737107fd2fd4496417c6a896b2e8c.tar.gz",
       "hash": "sha256-f0c7IGdLBcm4iIdYpgdJZtMAII6mQ2bYB9XHoBHPCh8="
     },
@@ -172,7 +172,7 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "0eae81e3de5a9ff046e779be156401832a07028c",
+      "revision": "0e60b24fa0cac3206a8f74ba3481432eb4f3846a",
       "url": "https://github.com/GNOME/sushi/archive/27886fee1c7f093dd7402f82e3ff3ff42fd1d606.tar.gz",
       "hash": "sha256-6gTRy5x3ij61ZR3zSOseUyvHeIUUxxsQl/zyN7nBgJk="
     },
