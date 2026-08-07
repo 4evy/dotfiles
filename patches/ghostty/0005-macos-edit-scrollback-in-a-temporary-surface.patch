@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: 4evy <git@evy.pink>
 Date: Thu, 1 Jan 1970 00:00:00 +0000
-Subject: [PATCH 5/6] macos: edit scrollback in a temporary surface
+Subject: [PATCH 5/7] macos: edit scrollback in a temporary surface
 
 Open terminal scrollback text in a themed Helix surface that temporarily
 replaces the current pane. Restore the original surface and remove
@@ -12,31 +12,31 @@ the exported file directory when the editor exits.
  2 files changed, 103 insertions(+), 1 deletion(-)
 
 diff --git a/macos/Sources/Ghostty/Ghostty.Action.swift b/macos/Sources/Ghostty/Ghostty.Action.swift
-index f3842fc5628dd51415fe98e31d0e759f77f5cba2..11153ca9d19a7e7d1fad9d1c1785e0f092601f62 100644
+index f1df63133..b24b4f34d 100644
 --- a/macos/Sources/Ghostty/Ghostty.Action.swift
 +++ b/macos/Sources/Ghostty/Ghostty.Action.swift
-@@ -46,6 +46,7 @@ extension Ghostty.Action {
-             case unknown
+@@ -47,6 +47,7 @@ extension Ghostty.Action {
              case text
              case html
+             case osc8
 +            case terminalText
  
              init(_ c: ghostty_action_open_url_kind_e) {
                  switch c {
-@@ -53,6 +54,8 @@ extension Ghostty.Action {
-                     self = .text
-                 case GHOSTTY_ACTION_OPEN_URL_KIND_HTML:
+@@ -56,6 +57,8 @@ extension Ghostty.Action {
                      self = .html
+                 case GHOSTTY_ACTION_OPEN_URL_KIND_OSC8:
+                     self = .osc8
 +                case GHOSTTY_ACTION_OPEN_URL_KIND_TERMINAL_TEXT:
 +                    self = .terminalText
                  default:
                      self = .unknown
                  }
 diff --git a/macos/Sources/Ghostty/Ghostty.App.swift b/macos/Sources/Ghostty/Ghostty.App.swift
-index 58335707798034fb548bf4600615349f80d8d070..f6e88c2f9ea190c470d309f5a283ffe24d0a3f21 100644
+index 1e02c8c57..c22f2966c 100644
 --- a/macos/Sources/Ghostty/Ghostty.App.swift
 +++ b/macos/Sources/Ghostty/Ghostty.App.swift
-@@ -324,6 +324,27 @@ extension Ghostty {
+@@ -329,6 +329,27 @@ extension Ghostty {
  
          static func closeSurface(_ userdata: UnsafeMutableRawPointer?, processAlive: Bool) {
              let surface = self.surfaceUserdata(from: userdata)
@@ -64,7 +64,7 @@ index 58335707798034fb548bf4600615349f80d8d070..f6e88c2f9ea190c470d309f5a283ffe2
              NotificationCenter.default.post(name: Notification.ghosttyCloseSurface, object: surface, userInfo: [
                  "process_alive": processAlive,
              ])
-@@ -630,7 +651,7 @@ extension Ghostty {
+@@ -638,7 +659,7 @@ extension Ghostty {
                  checkForUpdates(app)
  
              case GHOSTTY_ACTION_OPEN_URL:
@@ -73,7 +73,7 @@ index 58335707798034fb548bf4600615349f80d8d070..f6e88c2f9ea190c470d309f5a283ffe2
  
              case GHOSTTY_ACTION_UNDO:
                  return undo(app, target: target)
-@@ -707,7 +728,31 @@ extension Ghostty {
+@@ -709,7 +730,31 @@ extension Ghostty {
              }
          }
  
@@ -105,7 +105,7 @@ index 58335707798034fb548bf4600615349f80d8d070..f6e88c2f9ea190c470d309f5a283ffe2
              _ v: ghostty_action_open_url_s
          ) -> Bool {
              let action = Ghostty.Action.OpenURL(c: v)
-@@ -727,6 +772,12 @@ extension Ghostty {
+@@ -736,6 +781,12 @@ extension Ghostty {
              }
  
              switch action.kind {
@@ -118,7 +118,7 @@ index 58335707798034fb548bf4600615349f80d8d070..f6e88c2f9ea190c470d309f5a283ffe2
              case .text:
                  // Open with the default editor for `*.ghostty` file or just system text editor
                  let editor = NSWorkspace.shared.defaultApplicationURL(forExtension: url.pathExtension) ?? NSWorkspace.shared.defaultTextEditor
-@@ -748,6 +799,54 @@ extension Ghostty {
+@@ -785,6 +836,54 @@ extension Ghostty {
              return true
          }
  
@@ -173,5 +173,3 @@ index 58335707798034fb548bf4600615349f80d8d070..f6e88c2f9ea190c470d309f5a283ffe2
          private static func undo(_ app: ghostty_app_t, target: ghostty_target_s) -> Bool {
              let undoManager: UndoManager?
              switch target.tag {
--- 
-2.54.0

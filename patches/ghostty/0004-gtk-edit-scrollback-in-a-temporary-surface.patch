@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: 4evy <git@evy.pink>
 Date: Thu, 1 Jan 1970 00:00:00 +0000
-Subject: [PATCH 4/6] gtk: edit scrollback in a temporary surface
+Subject: [PATCH 4/7] gtk: edit scrollback in a temporary surface
 
 Add a configurable terminal editor for scrollback files. Replace the
 current pane while the editor runs, restore the original surface on
@@ -14,10 +14,10 @@ exit, and clean up the temporary export directory.
  4 files changed, 249 insertions(+), 2 deletions(-)
 
 diff --git a/src/apprt/gtk/class/application.zig b/src/apprt/gtk/class/application.zig
-index 8243d8e3903300461ca3e207eb24bad9847321b2..c0da13cd55e9c190263d8127e5c667a6b6849952 100644
+index 8cc5918eb..6f4cea0a7 100644
 --- a/src/apprt/gtk/class/application.zig
 +++ b/src/apprt/gtk/class/application.zig
-@@ -727,7 +727,7 @@ pub const Application = extern struct {
+@@ -740,7 +740,7 @@ pub const Application = extern struct {
  
              .open_config => return Action.openConfig(self),
  
@@ -26,7 +26,7 @@ index 8243d8e3903300461ca3e207eb24bad9847321b2..c0da13cd55e9c190263d8127e5c667a6
  
              .pwd => Action.pwd(target, value),
  
-@@ -2354,14 +2354,21 @@ const Action = struct {
+@@ -2594,14 +2594,21 @@ const Action = struct {
  
          // Open it using openURL. "path" isn't actually a URL but
          // at the time of writing that works just fine for GTK.
@@ -49,7 +49,7 @@ index 8243d8e3903300461ca3e207eb24bad9847321b2..c0da13cd55e9c190263d8127e5c667a6
          if (std.mem.startsWith(u8, value.url, "/")) {
              self.openUrlFallback(value.kind, value.url);
              return;
-@@ -2378,6 +2385,158 @@ const Action = struct {
+@@ -2618,6 +2625,158 @@ const Action = struct {
          };
      }
  
@@ -209,11 +209,11 @@ index 8243d8e3903300461ca3e207eb24bad9847321b2..c0da13cd55e9c190263d8127e5c667a6
          target: apprt.Target,
          value: apprt.action.Pwd,
 diff --git a/src/apprt/gtk/class/split_tree.zig b/src/apprt/gtk/class/split_tree.zig
-index 7a6b66def85cd147005d6bf0ed5bda9bb8cbf8ce..56bd185ae028705a1ab0a702ef5edfae1ecbbcbc 100644
+index 473ae3daf..d7e890e82 100644
 --- a/src/apprt/gtk/class/split_tree.zig
 +++ b/src/apprt/gtk/class/split_tree.zig
-@@ -387,6 +387,32 @@ pub const SplitTree = extern struct {
-         return true;
+@@ -455,6 +455,32 @@ pub const SplitTree = extern struct {
+         }
      }
  
 +    /// Replace a surface without changing its position in the split tree.
@@ -246,10 +246,10 @@ index 7a6b66def85cd147005d6bf0ed5bda9bb8cbf8ce..56bd185ae028705a1ab0a702ef5edfae
          const tree = self.getTree() orelse return;
          var it = tree.iterator();
 diff --git a/src/config/Config.zig b/src/config/Config.zig
-index 90ccfc3197fe3303a4eb7632b5a517bf4328f350..bf2eb5f269768eb80e2d1d2e95bc4abc17cb735d 100644
+index 7fa282437..f9e9f27e0 100644
 --- a/src/config/Config.zig
 +++ b/src/config/Config.zig
-@@ -1405,6 +1405,22 @@ input: RepeatableReadableIO = .{},
+@@ -1431,6 +1431,22 @@ input: RepeatableReadableIO = .{},
  /// already compressed remain compressed until their contents are accessed.
  @"scrollback-compression": bool = true,
  
@@ -273,7 +273,7 @@ index 90ccfc3197fe3303a4eb7632b5a517bf4328f350..bf2eb5f269768eb80e2d1d2e95bc4abc
  ///
  /// The default value is `system`.
 diff --git a/src/datastruct/split_tree.zig b/src/datastruct/split_tree.zig
-index 1dc924ca70f7cc1a9ef5484d62a7d28cc81f5406..353e3941a64358d1d83838ec106323bee26559ee 100644
+index 012f107f3..51f71bf99 100644
 --- a/src/datastruct/split_tree.zig
 +++ b/src/datastruct/split_tree.zig
 @@ -164,6 +164,28 @@ pub fn SplitTree(comptime V: type) type {
@@ -305,7 +305,7 @@ index 1dc924ca70f7cc1a9ef5484d62a7d28cc81f5406..353e3941a64358d1d83838ec106323be
          /// Returns true if this is an empty tree.
          pub fn isEmpty(self: *const Self) bool {
              // An empty tree has no nodes.
-@@ -1440,6 +1462,30 @@ test "SplitTree: single node" {
+@@ -1452,6 +1474,30 @@ test "SplitTree: single node" {
      );
  }
  
@@ -336,5 +336,3 @@ index 1dc924ca70f7cc1a9ef5484d62a7d28cc81f5406..353e3941a64358d1d83838ec106323be
  test "SplitTree: split horizontal" {
      const testing = std.testing;
      const alloc = testing.allocator;
--- 
-2.54.0

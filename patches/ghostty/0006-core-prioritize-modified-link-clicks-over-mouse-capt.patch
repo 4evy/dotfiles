@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: 4evy <git@evy.pink>
 Date: Thu, 1 Jan 1970 00:00:00 +0000
-Subject: [PATCH 6/6] core: prioritize modified link clicks over mouse capture
+Subject: [PATCH 6/7] core: prioritize modified link clicks over mouse capture
 
 Recognize Shift as an optional addition to configured link modifiers so
 Ctrl+Shift-click works consistently. When mouse reporting is active,
@@ -16,10 +16,10 @@ release.
  4 files changed, 86 insertions(+), 21 deletions(-)
 
 diff --git a/src/Surface.zig b/src/Surface.zig
-index 52ac1a2c631cbff4021543fa6661ae2c8e9b0968..caaf1575da5e72e999b02c106ad5d66d8282f647 100644
+index 8a69b4f5e..eb9d79a0e 100644
 --- a/src/Surface.zig
 +++ b/src/Surface.zig
-@@ -244,6 +244,10 @@ const Mouse = struct {
+@@ -248,6 +248,10 @@ const Mouse = struct {
      /// True if the mouse position is currently over a link.
      over_link: bool = false,
  
@@ -30,7 +30,7 @@ index 52ac1a2c631cbff4021543fa6661ae2c8e9b0968..caaf1575da5e72e999b02c106ad5d66d
      /// The last x/y in the cursor position for links. We use this to
      /// only process link hover events when the mouse actually moves cells.
      link_point: ?terminal.point.Coordinate = null,
-@@ -2734,11 +2738,10 @@ pub fn keyCallback(
+@@ -2744,11 +2748,10 @@ pub fn keyCallback(
          // Update our modifiers, this will update mouse mods too
          self.modsChanged(event.mods);
  
@@ -45,7 +45,7 @@ index 52ac1a2c631cbff4021543fa6661ae2c8e9b0968..caaf1575da5e72e999b02c106ad5d66d
              (self.mouse.mods.shift and !self.mouseShiftCapture(false)))
          {
              // Refresh our link state
-@@ -3794,6 +3797,20 @@ pub fn mouseButtonCallback(
+@@ -3829,6 +3832,20 @@ pub fn mouseButtonCallback(
      // bottleneck.
      const shift_capture = self.mouseShiftCapture(true);
  
@@ -66,7 +66,7 @@ index 52ac1a2c631cbff4021543fa6661ae2c8e9b0968..caaf1575da5e72e999b02c106ad5d66d
      // Shift-click continues the previous mouse state if we have a selection.
      // cursorPosCallback will also do a mouse report so we don't need to do any
      // of the logic below.
-@@ -3827,6 +3844,9 @@ pub fn mouseButtonCallback(
+@@ -3862,6 +3879,9 @@ pub fn mouseButtonCallback(
      }
  
      if (button == .left and action == .release) {
@@ -76,7 +76,7 @@ index 52ac1a2c631cbff4021543fa6661ae2c8e9b0968..caaf1575da5e72e999b02c106ad5d66d
          self.renderer_state.mutex.lockUncancelable(global.io());
          defer self.renderer_state.mutex.unlock(global.io());
  
-@@ -3880,7 +3900,9 @@ pub fn mouseButtonCallback(
+@@ -3915,7 +3935,9 @@ pub fn mouseButtonCallback(
          // Handle link clicking. We want to do this before we do mouse
          // reporting or any other mouse handling because a successfully
          // clicked link will swallow the event.
@@ -87,7 +87,7 @@ index 52ac1a2c631cbff4021543fa6661ae2c8e9b0968..caaf1575da5e72e999b02c106ad5d66d
              // We are holding the renderer lock, but this should just be
              // a cached value.
              const pos = release_pos orelse try self.rt_surface.getCursorPos();
-@@ -3891,6 +3913,11 @@ pub fn mouseButtonCallback(
+@@ -3926,6 +3948,11 @@ pub fn mouseButtonCallback(
              }
          }
  
@@ -99,7 +99,7 @@ index 52ac1a2c631cbff4021543fa6661ae2c8e9b0968..caaf1575da5e72e999b02c106ad5d66d
          // Handle prompt clicking. If we released our mouse on a prompt
          // and we support some kind of click events, then we need to
          // move to it.
-@@ -3906,6 +3933,10 @@ pub fn mouseButtonCallback(
+@@ -3941,6 +3968,10 @@ pub fn mouseButtonCallback(
          self.renderer_state.mutex.lockUncancelable(global.io());
          defer self.renderer_state.mutex.unlock(global.io());
          if (self.isMouseReporting()) report: {
@@ -110,19 +110,19 @@ index 52ac1a2c631cbff4021543fa6661ae2c8e9b0968..caaf1575da5e72e999b02c106ad5d66d
              // If we have shift-pressed and we aren't allowed to capture it,
              // then we do not do a mouse report.
              if (mods.shift and !shift_capture) break :report;
-@@ -4297,7 +4328,10 @@ fn linkAtPos(
-     const mouse_mods = self.mouseModsWithCapture(self.mouse.mods);
+@@ -4333,7 +4364,10 @@ fn linkAtPos(
  
      // If we have the proper modifiers set then we can check for OSC8 links.
--    if (mouse_mods.equal(input.ctrlOrSuper(.{}))) hyperlink: {
-+    if (input.Link.Highlight.matchMods(
-+        input.ctrlOrSuper(.{}),
-+        mouse_mods,
-+    )) hyperlink: {
+     if (self.config.link_osc8 and
+-        mouse_mods.equal(input.ctrlOrSuper(.{})))
++        input.Link.Highlight.matchMods(
++            input.ctrlOrSuper(.{}),
++            mouse_mods,
++        ))
+     hyperlink: {
          const rac = mouse_pin.rowAndCell();
          const cell = rac.cell;
-         if (!cell.hyperlink) break :hyperlink;
-@@ -4341,10 +4375,7 @@ fn linkAtPin(
+@@ -4378,10 +4412,7 @@ fn linkAtPin(
  
      for (self.config.links) |link| {
          // Skip highlight/mods check when mouse_mods is null (double-click mode)
@@ -134,7 +134,7 @@ index 52ac1a2c631cbff4021543fa6661ae2c8e9b0968..caaf1575da5e72e999b02c106ad5d66d
  
          var it = strmap.searchIterator(link.regex);
          while (true) {
-@@ -4595,14 +4626,13 @@ pub fn cursorPosCallback(
+@@ -4632,14 +4663,13 @@ pub fn cursorPosCallback(
      // OR
      // 2. the cursor position has changed (either we have no previous state, or the state has
      //    changed)
@@ -152,7 +152,7 @@ index 52ac1a2c631cbff4021543fa6661ae2c8e9b0968..caaf1575da5e72e999b02c106ad5d66d
              (self.mouse.mods.shift and !self.mouseShiftCapture(false))))
      {
          // If we were previously over a link, we always update. We do this so that if the text
-@@ -4612,6 +4642,10 @@ pub fn cursorPosCallback(
+@@ -4649,6 +4679,10 @@ pub fn cursorPosCallback(
  
      // Do a mouse report
      if (self.isMouseReporting()) report: {
@@ -164,7 +164,7 @@ index 52ac1a2c631cbff4021543fa6661ae2c8e9b0968..caaf1575da5e72e999b02c106ad5d66d
          // This only applies if there is a mouse button pressed so that
          // movement reports are not affected.
 diff --git a/src/input/Link.zig b/src/input/Link.zig
-index 37b45dbd1e84f86eaebf3532f6a0f43ec6018e03..730fedf350428012cacff8a5b841b344c50f59cc 100644
+index 37b45dbd1..730fedf35 100644
 --- a/src/input/Link.zig
 +++ b/src/input/Link.zig
 @@ -49,8 +49,41 @@ pub const Highlight = union(enum) {
@@ -210,10 +210,10 @@ index 37b45dbd1e84f86eaebf3532f6a0f43ec6018e03..730fedf350428012cacff8a5b841b344
  pub fn oniRegex(self: *const Link) !oni.Regex {
      return try oni.Regex.init(
 diff --git a/src/renderer/generic.zig b/src/renderer/generic.zig
-index e0760fce17eb540eb86cf22823002b7adbee43e0..7a439b923ff295bafb777913d978a83b611dfc4d 100644
+index 2882c9c8e..5141ce784 100644
 --- a/src/renderer/generic.zig
 +++ b/src/renderer/generic.zig
-@@ -1254,7 +1254,10 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
+@@ -1272,7 +1272,10 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
                      const vp = state.mouse.point orelse break :osc8 .empty;
  
                      // If the right mods aren't pressed, then we can't match.
@@ -226,7 +226,7 @@ index e0760fce17eb540eb86cf22823002b7adbee43e0..7a439b923ff295bafb777913d978a83b
  
                      break :osc8 self.terminal_state.linkCells(
 diff --git a/src/renderer/link.zig b/src/renderer/link.zig
-index dfc6fe67197f78871ec2ad46a1aa709956e51cf7..6dc047966d16589584dc313e364f05fb6703fdd5 100644
+index dfc6fe671..6dc047966 100644
 --- a/src/renderer/link.zig
 +++ b/src/renderer/link.zig
 @@ -28,12 +28,7 @@ pub const Link = struct {
@@ -243,5 +243,3 @@ index dfc6fe67197f78871ec2ad46a1aa709956e51cf7..6dc047966d16589584dc313e364f05fb
      }
  };
  
--- 
-2.54.0

@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: 4evy <git@evy.pink>
 Date: Thu, 1 Jan 1970 00:00:00 +0000
-Subject: [PATCH] build: disable the nested package manifest sandbox
+Subject: [PATCH 7/7] build: disable the nested package manifest sandbox
 
 Homebrew already runs formula builds inside its own macOS sandbox. SwiftPM's
 package-manifest sandbox cannot be nested inside it, so disable only that inner manifest

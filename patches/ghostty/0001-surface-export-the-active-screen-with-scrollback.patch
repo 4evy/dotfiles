@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: 4evy <git@evy.pink>
 Date: Thu, 1 Jan 1970 00:00:00 +0000
-Subject: [PATCH 1/6] surface: export the active screen with scrollback
+Subject: [PATCH 1/7] surface: export the active screen with scrollback
 
 Include visible rows when writing scrollback so the exported file
 matches what the user can inspect in the terminal. Alternate screens
@@ -11,10 +11,10 @@ have no history, so export their active screen instead.
  1 file changed, 7 insertions(+), 8 deletions(-)
 
 diff --git a/src/Surface.zig b/src/Surface.zig
-index 32e91bfa72d0c57de7bfc134cae16e79dd8f6172..218bf2fdb0aaefb806c6b3ebbc589b70eacbfd09 100644
+index 3002e9f58..9535f7d95 100644
 --- a/src/Surface.zig
 +++ b/src/Surface.zig
-@@ -5700,15 +5700,14 @@ fn writeScreenFile(
+@@ -5744,15 +5744,14 @@ fn writeScreenFile(
          const pages = &self.io.terminal.screens.active.pages;
          const sel_: ?terminal.Selection = switch (loc) {
              .history => history: {
@@ -37,5 +37,3 @@ index 32e91bfa72d0c57de7bfc134cae16e79dd8f6172..218bf2fdb0aaefb806c6b3ebbc589b70
                          break :history null,
                      false,
                  );
--- 
-2.54.0
