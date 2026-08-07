@@ -1,5 +1,4 @@
 require "json"
-require "base64"
 
 class KanataWithCmd < Formula
   tap_root = Pathname(__dir__).parent
@@ -7,7 +6,7 @@ class KanataWithCmd < Formula
   upstream = pins.fetch("kanata")
   homebrew = pins.fetch("kanata_homebrew")
   archive = pins.fetch("kanata_homebrew_archive")
-  digest = Base64.strict_decode64(archive.fetch("hash").delete_prefix("sha256-")).unpack1("H*")
+  digest = archive.fetch("hash").delete_prefix("sha256-").unpack1("m0").unpack1("H*")
 
   desc "Cross-platform keyboard remapper with command actions enabled"
   homepage "https://github.com/#{upstream.dig("repository", "owner")}/#{upstream.dig("repository", "repo")}"
@@ -15,7 +14,7 @@ class KanataWithCmd < Formula
   version "git-#{homebrew.fetch("revision")[0, 7]}"
   sha256 digest
   license "LGPL-3.0-only"
-  head "https://github.com/#{homebrew.dig("repository", "owner")}/#{homebrew.dig("repository", "repo")}.git", branch: "main"
+  head "https://github.com/#{homebrew.dig("repository", "owner")}/#{homebrew.dig("repository", "repo")}.git", branch: homebrew.fetch("branch")
 
   depends_on "rust" => :build
 
