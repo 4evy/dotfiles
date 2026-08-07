@@ -84,9 +84,9 @@
       },
       "branch": "4evy/push-vmowpyplsmyt",
       "submodules": false,
-      "revision": "b66da90e76392370cc801a0abd2cf77321c2b8a1",
-      "url": "https://github.com/4evy/kanata/archive/b66da90e76392370cc801a0abd2cf77321c2b8a1.tar.gz",
-      "hash": "sha256-OId1XyV2BqnGUQ09eRm3+5kEl3iprm6pRPXvO4nPDTQ="
+      "revision": "a20e0e2f7fd4dfae66db4f5c2130732de0fe28c5",
+      "url": "https://github.com/4evy/kanata/archive/a20e0e2f7fd4dfae66db4f5c2130732de0fe28c5.tar.gz",
+      "hash": "sha256-8BdW7SuWbYTLcYTbJjHI/kyaF7rWBojb9h/pqrutIaU="
     },
     "kanata_homebrew": {
       "type": "Git",
@@ -97,16 +97,16 @@
       },
       "branch": "4evy/push-vmowpyplsmyt",
       "submodules": false,
-      "revision": "b66da90e76392370cc801a0abd2cf77321c2b8a1",
-      "url": "https://github.com/4evy/kanata/archive/b66da90e76392370cc801a0abd2cf77321c2b8a1.tar.gz",
-      "hash": "sha256-OId1XyV2BqnGUQ09eRm3+5kEl3iprm6pRPXvO4nPDTQ=",
+      "revision": "a20e0e2f7fd4dfae66db4f5c2130732de0fe28c5",
+      "url": "https://github.com/4evy/kanata/archive/a20e0e2f7fd4dfae66db4f5c2130732de0fe28c5.tar.gz",
+      "hash": "sha256-8BdW7SuWbYTLcYTbJjHI/kyaF7rWBojb9h/pqrutIaU=",
       "frozen": true
     },
     "kanata_homebrew_archive": {
       "type": "Url",
-      "url": "https://github.com/4evy/kanata/archive/b66da90e76392370cc801a0abd2cf77321c2b8a1.tar.gz",
+      "url": "https://github.com/4evy/kanata/archive/a20e0e2f7fd4dfae66db4f5c2130732de0fe28c5.tar.gz",
       "unpack": false,
-      "hash": "sha256-YnOMUWw8S6ImsHo73nL0JqQpA2bOW1SrQSkenhSClmQ=",
+      "hash": "sha256-5Ru5io2lLTlMYusSwchcZ+c8rl48k3NH1rBFR9VFuZ8=",
       "frozen": true
     },
     "karabiner_vhid_package": {
