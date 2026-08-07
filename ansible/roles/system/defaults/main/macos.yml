@@ -126,13 +126,13 @@ system_macos_defaults:
     value: 1
 
 system_macos_karabiner:
-  version: 6.2.0
+  version: 8.2.0
   package_url: >-
-    https://github.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/releases/download/v6.2.0/Karabiner-DriverKit-VirtualHIDDevice-6.2.0.pkg
+    https://github.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/releases/download/v8.2.0/Karabiner-DriverKit-VirtualHIDDevice-8.2.0.pkg
   package_checksum: >-
-    sha256:9e8c46239f0748161241e42444857901224e5c82f5b58a1731df4c70bf0736a8
+    sha256:7faf4c33046c2274726da9e29da795fb2d2ad81796557db0fcc1686c611eeafc
   package_path: >-
-    {{ dotfiles_cache_dir }}/Karabiner-DriverKit-VirtualHIDDevice-6.2.0.pkg
+    {{ dotfiles_cache_dir }}/Karabiner-DriverKit-VirtualHIDDevice-8.2.0.pkg
   label: org.pqrs.service.daemon.Karabiner-VirtualHIDDevice-Daemon
   manager: >-
     /Applications/.Karabiner-VirtualHIDDevice-Manager.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Manager
