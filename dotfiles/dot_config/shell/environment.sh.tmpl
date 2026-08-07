@@ -120,11 +120,9 @@ _dotfiles_path_append_once \
 	"$HOME/.cargo/bin" \
 	"$HOME/.go/bin" \
 	"$HOME/.yarn/bin"
-{{- if eq .chezmoi.os "linux" }}
 _dotfiles_path_append_once \
 	"$HOME/.nix-profile/bin" \
 	/nix/var/nix/profiles/default/bin
-{{- end }}
 {{- end }}
 {{- if eq .chezmoi.os "linux" }}
 _dotfiles_path_append_once /usr/local/bin /usr/bin /bin /usr/sbin /sbin
