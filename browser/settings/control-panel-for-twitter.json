@@ -6,7 +6,7 @@
         "addAddMutedWordMenuItem": true,
         "addFocusedTweetAccountLocation": true,
         "addUserHoverCardAccountLocation": true,
-        "alwaysUseLatestTweets": true,
+        "alwaysUseLatestTweets": false,
         "bypassAgeVerification": true,
         "customCss": "",
         "darkModeTheme": "lightsOut",
