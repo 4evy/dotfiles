@@ -32,14 +32,6 @@ python314Packages.buildPythonApplication {
     python314Packages.pytestCheckHook
   ];
 
-  # These releases are compatible, but currently trail the lower bounds in
-  # the project metadata. Relax only their wheel requirements and leave the
-  # source metadata untouched.
-  pythonRelaxDeps = [
-    "pydantic-settings"
-    "pyobjc-framework-Cocoa"
-  ];
-
   dependencies =
     (with python314Packages; [
       cyclopts

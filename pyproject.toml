@@ -13,8 +13,8 @@ dependencies = [
   "platformdirs>=4.3,<5",
   "psutil>=7,<8",
   "pydantic>=2.13,<3",
-  "pydantic-settings>=2.14.2,<3",
-  "pyobjc-framework-Cocoa>=12,<13; sys_platform == 'darwin'",
+  "pydantic-settings>=2.12,<3",
+  "pyobjc-framework-Cocoa>=11.1,<13; sys_platform == 'darwin'",
   "rich>=15,<16",
 ]
 
