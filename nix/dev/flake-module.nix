@@ -78,6 +78,33 @@
             ]
           );
       };
+
+      standaloneNixosModule = inputs.nixpkgs.lib.nixosSystem {
+        system = null;
+        modules = [
+          self.nixosModules.default
+          {
+            boot.isContainer = true;
+            nixpkgs.hostPlatform = system;
+            local = {
+              kde.enable = true;
+              user.name = "module-test";
+            };
+            system.stateVersion = "26.05";
+            users = {
+              groups.module-test = { };
+              users.module-test = {
+                group = "module-test";
+                isNormalUser = true;
+              };
+            };
+          }
+        ];
+      };
+
+      standaloneNixosModuleCheck =
+        builtins.deepSeq standaloneNixosModule.config.system.build.toplevel.drvPath
+          (pkgs.runCommandLocal "nixos-module-evaluation" { } "touch $out");
     in
     {
       checks = {
@@ -89,6 +116,7 @@
       }
       // lib.optionalAttrs (system == "x86_64-linux") {
         nixos = self.nixosConfigurations.nixos.config.system.build.toplevel;
+        nixos-module = standaloneNixosModuleCheck;
       };
 
       devShells = {

@@ -230,12 +230,18 @@ in
           { config, ... }:
           { ... }:
           {
-            imports = [ ../modules/nixos ];
+            imports = [
+              ../modules/nixos
+              inputs.browser.nixosModules.default
+              inputs.determinate.nixosModules.default
+              inputs.nixcord.nixosModules.nixcord
+            ];
 
             # Keep every locally packaged program used by NixOS identical to
             # the corresponding packages.<system> flake output. Consumers of
             # this module do not have to recreate our overlay or package
             # selection.
+            _module.args.inputs = inputs;
             _module.args.dotfilesPackages = config.packages;
             _module.args.dotfilesEquicordSettings = equicordSettings;
           }
