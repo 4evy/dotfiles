@@ -172,7 +172,7 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "930b1805da7149f31affedbfb4a597319a936517",
+      "revision": "613bd872da062add9e033500697425afcf759064",
       "url": "https://github.com/GNOME/sushi/archive/930b1805da7149f31affedbfb4a597319a936517.tar.gz",
       "hash": "sha256-fdqs+YC741SQQhMATYuasuhWOaclg6K02fvUyj8Z1+s="
     },
