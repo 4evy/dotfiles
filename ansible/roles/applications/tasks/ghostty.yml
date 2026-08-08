@@ -31,20 +31,11 @@
   when: platform_is_macos
 
 - name: Keep Ghostty's macOS signing identity stable
-  ansible.builtin.command:
-    argv: >-
-      {{
-        [
-          dotfiles_bin_dir ~ '/dotfiles-scripts',
-          'macos',
-          'sign-ghostty',
-          '--app',
-          platform_homebrew_prefix ~ '/opt/ghostty-patched/Ghostty.app'
-        ]
-        + (['--check'] if ansible_check_mode else [])
-      }}
+  dotfiles_codesign:
+    bundle: "{{ platform_homebrew_prefix }}/opt/ghostty-patched/Ghostty.app"
+    identity: Kanata Local Code Signing
+    keychain: /Library/Keychains/System.keychain
+  become: true
   environment:
-    PATH: "{{ dotfiles_bin_dir }}:{{ dotfiles_path }}"
-  changed_when: false
-  check_mode: false
+    PATH: "{{ platform_homebrew_path | default(dotfiles_path) }}"
   when: platform_is_macos

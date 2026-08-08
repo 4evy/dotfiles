@@ -14,11 +14,14 @@
     - host
     - macos
 
-- name: Register Homebrew Zsh as a macOS login shell
+- name: Register Homebrew shells as macOS login shells
   ansible.builtin.lineinfile:
     path: /etc/shells
-    line: "{{ platform_homebrew_prefix }}/bin/zsh"
+    line: "{{ platform_homebrew_prefix }}/bin/{{ item }}"
     state: present
+  loop:
+    - bash
+    - zsh
   become: true
   tags:
     - host
@@ -249,23 +252,75 @@
     - macos
 
 - name: Install and sign Kanata on macOS
-  ansible.builtin.command:
-    argv: >-
-      {{
-        [
-          dotfiles_bin_dir ~ '/dotfiles-scripts',
-          'macos',
-          'kanata',
-          platform_homebrew_prefix ~ '/bin/kanata'
-        ]
-        + (['--check'] if ansible_check_mode else [])
-      }}
+  ansible.builtin.file:
+    path: "{{ system_macos_kanata.app_bin | dirname }}"
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+  become: true
+  tags:
+    - host
+    - kanata
+    - macos
+
+- name: Install the Kanata application executable
+  ansible.builtin.copy:
+    src: "{{ platform_homebrew_prefix }}/bin/kanata"
+    dest: "{{ system_macos_kanata.app_bin }}"
+    remote_src: true
+    owner: root
+    group: wheel
+    mode: "0755"
+  become: true
+  register: system_kanata_executable
+  tags:
+    - host
+    - kanata
+    - macos
+
+- name: Install the Kanata application metadata
+  ansible.builtin.template:
+    src: macos/kanata-app-info.plist.j2
+    dest: /Applications/Kanata.app/Contents/Info.plist
+    owner: root
+    group: wheel
+    mode: "0644"
+  become: true
+  register: system_kanata_metadata
+  tags:
+    - host
+    - kanata
+    - macos
+
+- name: Keep Kanata's macOS signing identity stable
+  dotfiles_codesign:
+    bundle: /Applications/Kanata.app
+    identity: Kanata Local Code Signing
+    keychain: /Library/Keychains/System.keychain
+    administrator_trust: true
+  become: true
   environment:
     PATH: "{{ platform_homebrew_path }}"
-  become: true
   register: system_kanata_application
-  changed_when: false
-  check_mode: false
+  tags:
+    - host
+    - kanata
+    - macos
+
+- name: Register the Kanata application with Launch Services
+  ansible.builtin.command:
+    argv:
+      - >-
+        /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+      - -f
+      - /Applications/Kanata.app
+  become: true
+  changed_when: true
+  when: >-
+    system_kanata_executable is changed
+    or system_kanata_metadata is changed
+    or system_kanata_application is changed
   tags:
     - host
     - kanata
@@ -275,7 +330,7 @@
   ansible.builtin.command:
     argv:
       - "{{ dotfiles_bin_dir }}/python3.14"
-      - "{{ dotfiles_repo_root }}/packages/dotfiles-python/assets/macos/logitech-platform.py"
+      - "{{ role_path }}/files/macos/logitech-platform.py"
       - --product-id
       - "{{ system_macos_logitech_keyboard.product_id }}"
       - --product-name
