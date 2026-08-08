@@ -5,88 +5,79 @@
   ...
 }:
 let
-  inherit (lib.options) mkOption;
+  inherit (lib.options) mkOption mkPackageOption;
+  inherit (lib.types)
+    bool
+    externalPath
+    nonEmptyStr
+    port
+    ;
 
-  types = lib.types;
-  stateDir = config.services.ghidra-mcp.stateDir;
+  cfg = config.services.ghidra-mcp;
 in
 {
   options.services.ghidra-mcp = {
     enable = lib.options.mkEnableOption "Ghidra MCP on-demand tools for cxg";
 
-    package = mkOption {
-      type = types.package;
-      default = dotfilesPackages.ghidra-mcp;
-      defaultText = lib.literalExpression "dotfilesPackages.ghidra-mcp";
-      description = "Package that provides ghidra-mcp-serve, ghidra-mcp-httpd, and ghidra-mcp-bridge.";
+    package = mkPackageOption dotfilesPackages "ghidra-mcp" {
+      pkgsText = "dotfilesPackages";
+      extraDescription = "It must provide the server, HTTP daemon, bridge, launcher, and Ghidra passthru attributes.";
     };
 
     user = mkOption {
-      type = types.str;
+      type = nonEmptyStr;
       default = config.local.user.name;
       defaultText = lib.literalExpression "config.local.user.name";
-      description = "User that runs the Ghidra MCP services.";
+      description = "User that owns the Ghidra MCP state and runs its on-demand tools.";
     };
 
     group = mkOption {
-      type = types.str;
+      type = nonEmptyStr;
       default = config.local.user.group;
       defaultText = lib.literalExpression "config.local.user.group";
       description = "Group that owns the Ghidra MCP state directory.";
     };
 
     httpHost = mkOption {
-      type = types.str;
+      type = nonEmptyStr;
       default = "127.0.0.1";
+      description = "Address on which the Ghidra MCP HTTP server listens.";
     };
 
     httpPort = mkOption {
-      type = types.port;
+      type = port;
       default = 8089;
+      description = "Port on which the Ghidra MCP HTTP server listens.";
     };
 
     mcpHost = mkOption {
-      type = types.str;
+      type = nonEmptyStr;
       default = "127.0.0.1";
+      description = "Address on which the headless Ghidra MCP bridge listens.";
     };
 
     mcpPort = mkOption {
-      type = types.port;
+      type = port;
       default = 8090;
+      description = "Port on which the headless Ghidra MCP bridge listens.";
     };
 
     stateDir = mkOption {
-      type = types.path;
+      type = externalPath;
       default = "${config.local.user.home}/.local/state/ghidra-mcp-headless";
       defaultText = lib.literalExpression ''"''${config.local.user.home}/.local/state/ghidra-mcp-headless"'';
+      description = "Mutable state directory used by the headless Ghidra backend.";
     };
 
     allowScripts = mkOption {
-      type = types.bool;
+      type = bool;
       default = true;
       description = "Enable Ghidra MCP script endpoints in the local headless backend.";
     };
-
-    environmentFiles = mkOption {
-      type = types.listOf types.path;
-      default = [ ];
-      example = [ "/run/keys/ghidra-mcp.env" ];
-      description = ''
-        Environment files to use with a manually defined Ghidra MCP service.
-        The stock module installs the on-demand cxg helper package and does not
-        start a system service.
-      '';
-    };
-
-    extraEnvironment = mkOption {
-      type = types.attrsOf types.str;
-      default = { };
-      description = "Extra environment variables reserved for local Ghidra MCP service overrides.";
-    };
   };
 
-  config = lib.modules.mkIf config.services.ghidra-mcp.enable {
-    environment.systemPackages = with config.services.ghidra-mcp; [
+  config = lib.modules.mkIf cfg.enable {
+    environment.systemPackages = with cfg; [
       package
       package.ghidra
       package.httpd
@@ -95,22 +86,21 @@ in
     ];
 
     systemd.tmpfiles.settings.ghidra-mcp = {
-      "${toString stateDir}".d = {
+      "${toString cfg.stateDir}".d = {
         mode = "0755";
-        user = config.services.ghidra-mcp.user;
-        group = config.services.ghidra-mcp.group;
+        inherit (cfg) group user;
       };
     };
 
     environment.sessionVariables = {
-      GHIDRA_MCP_ALLOW_SCRIPTS = if config.services.ghidra-mcp.allowScripts then "1" else "0";
-      GHIDRA_MCP_BIND = config.services.ghidra-mcp.httpHost;
-      GHIDRA_MCP_BRIDGE_HOST = config.services.ghidra-mcp.mcpHost;
-      GHIDRA_MCP_BRIDGE_PORT = toString config.services.ghidra-mcp.mcpPort;
+      GHIDRA_MCP_ALLOW_SCRIPTS = if cfg.allowScripts then "1" else "0";
+      GHIDRA_MCP_BIND = cfg.httpHost;
+      GHIDRA_MCP_BRIDGE_HOST = cfg.mcpHost;
+      GHIDRA_MCP_BRIDGE_PORT = toString cfg.mcpPort;
       GHIDRA_MCP_BRIDGE_TRANSPORT = "streamable-http";
-      GHIDRA_MCP_PORT = toString config.services.ghidra-mcp.httpPort;
-      GHIDRA_MCP_STATE = toString stateDir;
-      GHIDRA_MCP_URL = "http://${config.services.ghidra-mcp.httpHost}:${toString config.services.ghidra-mcp.httpPort}";
+      GHIDRA_MCP_PORT = toString cfg.httpPort;
+      GHIDRA_MCP_STATE = toString cfg.stateDir;
+      GHIDRA_MCP_URL = "http://${cfg.httpHost}:${toString cfg.httpPort}";
     };
   };
 }
