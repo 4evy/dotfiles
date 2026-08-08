@@ -71,6 +71,9 @@ dotfiles/.chezmoiremove linguist-language=Ignore-List linguist-detectable
 *.cfg linguist-language=INI linguist-detectable
 *.cnf.in linguist-language=INI linguist-detectable
 *.conf linguist-language=INI linguist-detectable
+# Linguist has no AppArmor language entry; Text keeps policy sources visible
+# without misclassifying them as the syntactically different SELinux DSL.
+*.apparmor linguist-language=Text linguist-detectable
 *.fc linguist-language=sepolicy linguist-detectable
 *.if linguist-language=sepolicy linguist-detectable
 *.path linguist-language=INI linguist-detectable
@@ -78,6 +81,7 @@ dotfiles/.chezmoiremove linguist-language=Ignore-List linguist-detectable
 *.repo linguist-language=INI linguist-detectable
 *.rules linguist-language=INI linguist-detectable
 *.service linguist-language=INI linguist-detectable
+*.timer linguist-language=INI linguist-detectable
 *.desktop linguist-detectable
 *.te linguist-detectable
 *.theme linguist-language=INI linguist-detectable
@@ -86,14 +90,29 @@ Containerfile linguist-language=Dockerfile linguist-detectable
 # Linguist does not have a Kanata language entry; Kanata config uses
 # s-expression syntax, so Scheme is the closest supported highlighter.
 dotfiles/dot_config/kanata/*.kbd linguist-language=Scheme
-meson.options linguist-language=Meson
 **/*.patch -whitespace linguist-language=Diff linguist-detectable
 
-# GitHub and VS Code configuration are repo-owned source here, but Linguist
-# treats these directories as vendored by default.
-.github/workflows/*.yaml -linguist-vendored linguist-detectable
-.github/workflows/*.yml -linguist-vendored linguist-detectable
+# Hidden GitHub/VS Code configuration and test fixtures are repo-owned source,
+# but Linguist treats these paths as vendored by default. Generated attributes
+# below still take precedence for lockfiles inside these directories.
+.github/** -linguist-vendored
 .vscode/*.json -linguist-vendored linguist-detectable
+ansible/tests/fixtures/** -linguist-vendored
+
+# Plain-text files below are executable repository configuration or managed
+# data rather than documentation, so include them without inventing a DSL.
+.chezmoiroot linguist-language=Text linguist-detectable
+.python-version linguist-language=Text linguist-detectable
+.tool-versions linguist-language=Text linguist-detectable
+containers/*.txt linguist-language=Text linguist-detectable
+dotfiles/.chezmoiversion linguist-language=Text linguist-detectable
+dotfiles/dot_config/Code/User/vscode-extensions.txt linguist-language=Text linguist-detectable
+dotfiles/dot_config/fastfetch/*.txt linguist-language=Text linguist-detectable
+dotfiles/dot_local/bin/symlink_* linguist-language=Text linguist-detectable
+dotfiles/dot_ssh/allowed_signers linguist-language=Text linguist-detectable
+dotfiles/dot_ssh/known_hosts.d/* linguist-language=Text linguist-detectable
+dotfiles/dot_zprofile linguist-language=Shell linguist-detectable
+patches/*/series linguist-language=Text linguist-detectable
 
 # Linguist vendors TypeScript declaration files globally. These declarations
 # describe local extension runtimes and should count with the package sources.
@@ -103,7 +122,7 @@ packages/hyper-window-tiling/src/**/*.d.ts -linguist-vendored
 packages/terminal-theme-tools/vendor/tomlc17/tomlc17.[ch] linguist-vendored
 
 # These files are checked in generated/runtime artifacts built from package
-# sources, host discovery, encryption tools, or dependency resolvers.
+# sources, host discovery, encryption tools, dependency resolvers, or schemas.
 # Keep dependency locks out of Linguist statistics at every directory depth.
 # The patterns cover conventional locks, binary locks, lockfile extensions,
 # compound names such as packages.lock.json, and Meson's hidden wrap lock.
@@ -116,5 +135,8 @@ package-lock.json linguist-generated
 pnpm-lock.yaml linguist-generated
 pnpm-lock.yml linguist-generated
 hosts/**/hardware-configuration.nix linguist-generated
+npins/** linguist-generated
+packages/hyper-window-tiling/bun.nix linguist-generated
 packages/**/dist/** linguist-generated
+rumdl.schema.json linguist-generated
 secrets/*.yaml linguist-generated
