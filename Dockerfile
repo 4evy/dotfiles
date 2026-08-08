@@ -47,7 +47,7 @@ WORKDIR /workspace/dotfiles
 
 COPY --chown=${TEST_USER}:${TEST_USER} . .
 
-USER root
+USER 0
 RUN chown -R "${TEST_UID}:${TEST_GID}" "${TEST_HOME}" /workspace/dotfiles
 USER ${TEST_USER}
 
@@ -58,7 +58,7 @@ RUN set -eu; \
     ansible-lint ansible; \
     yamllint .
 
-USER root
+USER 0
 RUN chown -R "${TEST_UID}:${TEST_GID}" "${TEST_HOME}" /workspace/dotfiles
 USER ${TEST_USER}
 
