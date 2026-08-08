@@ -1,4 +1,22 @@
 ---
+- name: Ensure isolated Bun global install directory exists
+  ansible.builtin.file:
+    path: "{{ dotfiles_home_dir }}/.cache/.bun/install/global"
+    state: directory
+    mode: "0755"
+  tags:
+    - bun
+
+- name: Initialize isolated Bun global package manifest
+  ansible.builtin.copy:
+    content: |
+      {"dependencies": {}}
+    dest: "{{ dotfiles_home_dir }}/.cache/.bun/install/global/package.json"
+    mode: "0644"
+    force: false
+  tags:
+    - bun
+
 - name: Inspect Bun global tool commands
   ansible.builtin.stat:
     path: "{{ dotfiles_home_dir }}/.cache/.bun/bin/{{ item.bin }}"
