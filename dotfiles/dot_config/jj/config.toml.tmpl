@@ -13,8 +13,8 @@ default-command = "log"
 # The local jj patch signs every unsigned outgoing commit and applies the
 # configured-author committer timestamp policy inside the push transaction.
 sign-on-push = true
-# Preserve the former shallow-fetch behavior: one requested commit plus its
-# parent, so the requested commit retains a real diff base.
+# Preserve the custom branch's shallow-fetch behavior: one requested commit
+# plus its parent, so the requested commit retains a real diff base.
 fetch-depth = 2
 
 {{ if lookPath "watchman" -}}

@@ -5,16 +5,13 @@ class JjPatched < Formula
   version "0.43.0-head-09339986"
   sha256 "6b1aed823aadf2d6a8f35ef2a64bba8a3d68a9e6f837c419b3e44aaa1d86b14d"
   license "Apache-2.0"
-  compatibility_version 1
-
   depends_on "rust" => :build
 
   conflicts_with "jj", because: "both install a jj binary"
 
   def install
     tap_root = Pathname(__dir__).parent
-    patch_dir = tap_root/"Patches/jj"
-    patch_dir = tap_root/"patches/jj" unless patch_dir.exist?
+    patch_dir = tap_root/"patches/jj"
     patches = (patch_dir/"series").readlines(chomp: true)
               .map(&:strip)
               .reject { |line| line.empty? || line.start_with?("#") }
