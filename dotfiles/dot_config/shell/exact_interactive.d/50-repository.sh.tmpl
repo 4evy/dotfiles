@@ -83,23 +83,22 @@ update() {
 	)
 }
 
+{{- if eq .chezmoi.osRelease.id "nixos" }}
 rebuild() {
 	(
 		cd "$_dotfiles_repo_path" &&
-			sudo env \
-				-u XDG_RUNTIME_DIR \
-				-u DBUS_SESSION_BUS_ADDRESS \
-				-u WAYLAND_DISPLAY \
-				-u DISPLAY \
-				-u SSH_AUTH_SOCK \
-				podman build \
-				--pull=newer \
-				--tag localhost/spectrum:local \
-				--file spectrum/Containerfile \
-				.
-	) || return
-	sudo bootc switch --transport containers-storage localhost/spectrum:local "$@"
+			sudo nixos-rebuild switch --flake .#nixos "$@"
+	)
 }
+{{- else }}
+rebuild() {
+	(
+		cd "$_dotfiles_repo_path" &&
+			just spectrum-validate &&
+			bluebuild switch --skip-validation "$@" bluebuild/recipes/spectrum.yml
+	)
+}
+{{- end }}
 
 check() {
 	(
