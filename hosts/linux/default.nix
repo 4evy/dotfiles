@@ -5,7 +5,6 @@
 }:
 {
   nixos = inputs.nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
     modules = [
       ./configuration.nix
       nixosModule
@@ -26,6 +25,8 @@
           inherit (config.local.user) group home;
         in
         {
+          local.nix.githubTokenFile = config.sops.secrets.github-token.path;
+
           sops = {
             age.keyFile = "${home}/.config/sops/age/keys.txt";
             defaultSopsFile = ../../secrets/secrets.yaml;

@@ -7,13 +7,23 @@
 let
   flakeInputs = lib.attrsets.filterAttrs (_: input: (input._type or null) == "flake") inputs;
   nixPathEntries = lib.attrsets.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+  githubTokenFile = config.local.nix.githubTokenFile;
 in
 {
+  options.local.nix.githubTokenFile = lib.options.mkOption {
+    type = lib.types.nullOr lib.types.externalPath;
+    default = null;
+    example = "/run/secrets/github-token";
+    description = ''
+      Optional Nix configuration fragment containing GitHub access-token
+      settings. The file is included at runtime and must not be copied into
+      the Nix store.
+    '';
+  };
+
   config = {
     nix = {
-      extraOptions = ''
-        !include ${config.sops.secrets.github-token.path}
-      '';
+      extraOptions = lib.modules.mkIf (githubTokenFile != null) "!include ${toString githubTokenFile}";
 
       settings = {
         trusted-users = [
@@ -48,11 +58,5 @@ in
       registry = lib.attrsets.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
       nixPath = nixPathEntries;
     };
-
-    sops.secrets.github-token = {
-      mode = lib.modules.mkDefault "0440";
-      group = lib.modules.mkDefault (if config.nixpkgs.hostPlatform.isDarwin then "staff" else "root");
-    };
-
   };
 }
