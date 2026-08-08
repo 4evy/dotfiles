@@ -5,7 +5,7 @@
     checksum_algorithm: sha256
   loop:
     - "{{ dotfiles_cache_dir }}/dotfiles-python-tool.sha256"
-    - "{{ dotfiles_bin_dir }}/dotfiles-scripts"
+    - "{{ dotfiles_bin_dir }}/phone-mirror"
   register: bootstrap_dotfiles_python_tool_state
   tags:
     - bootstrap

@@ -5,14 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dotfiles-python"
 version = "0.1.0"
-description = "Python tooling for dotfiles."
+description = "Personal workstation commands for Linux and macOS."
 requires-python = ">=3.14,<3.15"
 dependencies = [
-  "astral>=3.2,<4",
   "cyclopts>=4.20,<5",
-  "httpx>=0.28,<1",
-  "httpx-retries>=0.6,<1",
-  "jinja2>=3.1,<4",
   "packaging>=24,<27",
   "platformdirs>=4.3,<5",
   "psutil>=7,<8",
@@ -20,20 +16,20 @@ dependencies = [
   "pydantic-settings>=2.14.2,<3",
   "pyobjc-framework-Cocoa>=12,<13; sys_platform == 'darwin'",
   "rich>=15,<16",
-  "tenacity>=9.1,<10",
 ]
 
 [project.scripts]
 codex = "workstation.local.shims:codex_entrypoint"
 desktop-perf-audit = "workstation.local.desktop_audit:desktop_perf_audit_entrypoint"
 discord-equicord = "workstation.apps.discord:entrypoint"
-dotfiles-scripts = "workstation.cli:entrypoint"
 gnome-black-rose-doll-accent = "workstation.local.gnome:gnome_black_rose_doll_accent_entrypoint"
 jj-get = "workstation.local.jj:jj_get_entrypoint"
 phone-mirror = "workstation.local.phone_mirror:entrypoint"
+terminal-black-rose-doll = "workstation.macos.terminal:terminal_profile"
 
 [dependency-groups]
 dev = [
+  "astral>=3.2,<4",
   "complexipy>=6,<7",
   "defusedxml>=0.7,<1",
   "deptry>=0.25.1,<0.26",
@@ -58,7 +54,6 @@ package-dir = { workstation = "packages/dotfiles-python/src/workstation" }
 packages = [
   "workstation",
   "workstation.apps",
-  "workstation.host",
   "workstation.lib",
   "workstation.local",
   "workstation.local.jj",
@@ -66,28 +61,9 @@ packages = [
 ]
 
 [tool.setuptools.data-files]
-"share/dotfiles-python/npins" = ["npins/sources.json"]
-"share/dotfiles-python/apps/helium" = ["browser/helium.toml"]
-"share/dotfiles-python/apps/helium/settings" = ["browser/settings/*.json"]
-"share/dotfiles-python/host/apps" = [
-  "packages/dotfiles-python/assets/host/apps/rustdesk.desktop",
-]
-"share/dotfiles-python/host/apps/rustdesk-selinux" = [
-  "packages/dotfiles-python/assets/host/apps/rustdesk-selinux/*",
-]
-"share/dotfiles-python/host/apps/tailscale-selinux" = [
-  "packages/dotfiles-python/assets/host/apps/tailscale-selinux/*",
-]
 "share/dotfiles-python/desktop" = [
   "packages/dotfiles-python/assets/desktop/*.json",
   "packages/dotfiles-python/assets/desktop/*.in",
-]
-"share/dotfiles-python/macos" = [
-  "packages/dotfiles-python/assets/macos/*.applescript",
-  "packages/dotfiles-python/assets/macos/logitech-platform.py",
-]
-"share/dotfiles-python/macos/templates" = [
-  "packages/dotfiles-python/assets/macos/templates/*.in",
 ]
 
 [tool.pytest.ini_options]
@@ -187,12 +163,6 @@ max-complexity = 10
 "packages/dotfiles-python/src/workstation/macos/terminal.py" = [
   "get-attr-with-constant",
 ]
-"packages/dotfiles-python/src/workstation/lib/files.py" = [
-  "tarfile-unsafe-members",
-]
-"packages/dotfiles-python/src/workstation/lib/templates.py" = [
-  "jinja2-autoescape-false",
-]
 
 [tool.ruff.lint.pylint]
 max-args = 8
@@ -235,6 +205,8 @@ known_first_party = ["workstation"]
 DEP001 = ["ansible", "xwaykeyz"]
 # Cocoa is macOS-only and loaded dynamically through importlib.
 DEP002 = ["pyobjc-framework-Cocoa"]
+# Astral belongs to the separately deployed KMSCON role helper, not this wheel.
+DEP004 = ["astral"]
 
 [tool.complexipy]
 failed = true

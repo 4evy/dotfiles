@@ -13,20 +13,6 @@ def cache_path(*parts: str) -> Path:
     return _DIRECTORIES.user_cache_path.joinpath(*parts)
 
 
-def data_path(*parts: str) -> Path:
-    return _DIRECTORIES.user_data_path.joinpath(*parts)
-
-
-def state_path(*parts: str) -> Path:
-    return _DIRECTORIES.user_state_path.joinpath(*parts)
-
-
-def state_path_for_home(home: Path, *parts: str) -> Path:
-    configured = os.environ.get("XDG_STATE_HOME")
-    root = Path(configured).expanduser() if configured else home / ".local/state"
-    return root.joinpath("dotfiles", *parts)
-
-
 def find_repo_root(start: str | Path) -> Path:
     current = Path(start).expanduser().resolve()
     if current.is_file():

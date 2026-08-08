@@ -11,7 +11,7 @@ tools_homebrew_commands:
   - terminal-theme-run
 
 tools_python_tools:
-  - dotfiles-scripts
+  - phone-mirror
 
 tools_upstream_script_tools:
   - name: yt-dlp-script

@@ -3,15 +3,8 @@ import pytest
 from workstation.errors import DotfilesError
 from workstation.lib.validation import (
     octal_mode,
-    path_component,
     safe_path,
 )
-
-
-@pytest.mark.parametrize("value", ["", "..", "nested/name"])
-def test_path_component_rejects_traversal_and_nested_paths(value: str) -> None:
-    with pytest.raises(DotfilesError, match="single path component"):
-        path_component(value)
 
 
 @pytest.mark.parametrize("value", ["/", "nested/.."])

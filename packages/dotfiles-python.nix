@@ -12,18 +12,14 @@ python314Packages.buildPythonApplication {
   src = lib.fileset.toSource {
     root = ../.;
     fileset = lib.fileset.unions [
-      ../.dockerignore
-      ../Justfile
       ../ansible/plugins/filter/dotfiles.py
+      ../ansible/library/dotfiles_codesign.py
+      ../ansible/library/dotfiles_selinux_service.py
       ../ansible/roles/system/files/kmscon/kmscon-refresh.py
       ../ansible/roles/system/files/kmscon/kmscon-theme-config.py
-      ../ansible/roles/system/templates/macos/tailscale-ssh-helper.py.in
       ../pyproject.toml
-      ../browser/helium.toml
-      ../browser/settings
       ../ansible/tests
       ../dotfiles/.chezmoitemplates/black_rose_doll_palette.json
-      ../npins/sources.json
       ../packages/dotfiles-python/assets
       ../packages/dotfiles-python/src/workstation
       ../packages/dotfiles-python/tests
@@ -31,33 +27,28 @@ python314Packages.buildPythonApplication {
   };
 
   build-system = [ python314Packages.setuptools ];
-  nativeCheckInputs = [ python314Packages.pytestCheckHook ];
+  nativeCheckInputs = [
+    python314Packages.astral
+    python314Packages.pytestCheckHook
+  ];
 
   # These releases are compatible, but currently trail the lower bounds in
   # the project metadata. Relax only their wheel requirements and leave the
   # source metadata untouched.
   pythonRelaxDeps = [
-    "plumbum"
     "pydantic-settings"
     "pyobjc-framework-Cocoa"
   ];
 
   dependencies =
     (with python314Packages; [
-      astral
-      boltons
       cyclopts
-      httpx
-      httpx-retries
-      jinja2
       packaging
       platformdirs
-      plumbum
       psutil
       pydantic
       pydantic-settings
       rich
-      tenacity
     ])
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
       python314Packages.pyobjc-framework-Cocoa
@@ -73,8 +64,8 @@ python314Packages.buildPythonApplication {
   doInstallCheck = false;
 
   meta = {
-    description = "Automation commands used by the dotfiles Ansible and chezmoi workflows";
-    mainProgram = "dotfiles-scripts";
+    description = "Personal workstation utilities shared across Linux and macOS";
+    mainProgram = "phone-mirror";
     platforms = lib.platforms.unix;
   };
 }

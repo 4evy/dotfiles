@@ -13,7 +13,6 @@ on:
       - browser/helium.toml
       - browser/settings/**
       - dotfiles/.chezmoitemplates/black_rose_doll_palette.json
-      - npins/sources.json
       - packages/dotfiles-python/assets/**
   push:
     branches:

@@ -29,8 +29,8 @@
     - permissions
     - permstrap
 
-- name: Install the dotfiles CLI early
-  ansible.builtin.import_tasks: dotfiles-cli.yml
+- name: Install repository Python commands early
+  ansible.builtin.import_tasks: python-tool.yml
   when: platform_system in ['Darwin', 'Linux']
   tags:
     - bootstrap
