@@ -1,4 +1,4 @@
-policy_module(rustdesk, 0.2.0)
+policy_module(rustdesk, 0.3.0)
 
 ########################################
 #
@@ -15,7 +15,12 @@ init_daemon_domain(rustdesk_t, rustdesk_exec_t)
 # same Fedora packaging problem by labeling the real executable bin_t so it
 # transitions into unconfined_service_t (rustdesk/rustdesk#10293).
 #
-# Use a dedicated unconfined service domain instead: SELinux remains globally
+# On ostree/bootc hosts, /usr is a read-only composefs mount and cannot be
+# relabeled after deployment. The role therefore copies the small RustDesk ELF
+# loader to /var/lib/rustdesk/dotfiles and points its systemd unit there while
+# linking the packaged libraries from /usr beside it.
+#
+# Use a dedicated unconfined service domain: SELinux remains globally
 # enforcing, RustDesk gets the cross-session access its architecture requires,
 # and its processes remain attributable to rustdesk_t. Do not make the domain
 # permissive; that would also bypass constraints not granted by this policy.

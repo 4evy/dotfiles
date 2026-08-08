@@ -1,3 +1,4 @@
 /usr/bin/rustdesk                              -l gen_context(system_u:object_r:rustdesk_exec_t,s0)
 /usr/lib/rustdesk/rustdesk                    -- gen_context(system_u:object_r:rustdesk_exec_t,s0)
 /usr/share/rustdesk/rustdesk                  -- gen_context(system_u:object_r:rustdesk_exec_t,s0)
+/var/lib/rustdesk/dotfiles/rustdesk           -- gen_context(system_u:object_r:rustdesk_exec_t,s0)

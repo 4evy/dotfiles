@@ -9,5 +9,5 @@ system_rustdesk_wayland_session: "{{ system_rustdesk_wayland_environment }}"
 system_rustdesk_runtime_dir: >-
   {{
     lookup('env', 'XDG_RUNTIME_DIR')
-    | default('/run/user/' ~ ansible_user_uid, true)
+    | default('/run/user/' ~ ansible_facts.user_uid, true)
   }}

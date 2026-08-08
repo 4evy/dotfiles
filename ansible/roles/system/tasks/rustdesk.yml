@@ -30,7 +30,7 @@
     argv:
       - loginctl
       - show-user
-      - "{{ ansible_user_uid }}"
+      - "{{ ansible_facts.user_uid }}"
       - --property=Display
       - --value
   register: system_rustdesk_display_session
@@ -136,6 +136,78 @@
         value: '"Y"'
       - option: direct-access-port
         value: '"21118"'
+      - option: stop-service
+        value: '""'
+
+- name: Resolve the native RustDesk executable
+  ansible.builtin.command:
+    argv:
+      - readlink
+      - -f
+      - "{{ system_rustdesk_command.stdout }}"
+  register: system_rustdesk_executable
+  changed_when: false
+  when: system_rustdesk_command.rc == 0
+
+- name: Ensure the mutable RustDesk loader directory exists
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+  loop:
+    - /var/lib/rustdesk
+    - /var/lib/rustdesk/dotfiles
+  when: system_rustdesk_command.rc == 0
+
+- name: Install the mutable RustDesk service loader
+  ansible.builtin.copy:
+    src: "{{ system_rustdesk_executable.stdout }}"
+    dest: /var/lib/rustdesk/dotfiles/rustdesk
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+  register: system_rustdesk_loader
+  when: system_rustdesk_command.rc == 0
+
+- name: Link the native RustDesk libraries beside the mutable loader
+  ansible.builtin.file:
+    src: "{{ system_rustdesk_executable.stdout | dirname }}/lib"
+    dest: /var/lib/rustdesk/dotfiles/lib
+    state: link
+    owner: root
+    group: root
+    force: true
+  become: true
+  when: system_rustdesk_command.rc == 0
+
+- name: Ensure the RustDesk systemd drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/systemd/system/rustdesk.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+  when: system_rustdesk_command.rc == 0
+
+- name: Run the RustDesk service from the mutable loader
+  ansible.builtin.copy:
+    content: |
+      [Service]
+      ExecStart=
+      ExecStart=/var/lib/rustdesk/dotfiles/rustdesk --service
+    dest: /etc/systemd/system/rustdesk.service.d/20-dotfiles-executable.conf
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  register: system_rustdesk_service_dropin
+  when: system_rustdesk_command.rc == 0
 
 - name: Ensure the user application directory exists
   ansible.builtin.file:
@@ -192,13 +264,24 @@
     service: rustdesk
     domain: rustdesk_t
     restore_targets:
-      - path: /usr/bin/rustdesk
-        recursive: true
-      - path: /usr/lib/rustdesk/rustdesk
-        recursive: true
-      - path: /usr/share/rustdesk/rustdesk
+      - path: /var/lib/rustdesk
         recursive: true
   become: true
+  when:
+    - system_rustdesk_command.rc == 0
+    - lookup('env', 'DOTFILES_RUSTDESK_SELINUX') | default('1', true) != '0'
+
+- name: Restore RustDesk mutable loader labels
+  ansible.builtin.command:
+    argv:
+      - restorecon
+      - -R
+      - -F
+      - -v
+      - /var/lib/rustdesk
+  become: true
+  register: system_rustdesk_restorecon
+  changed_when: system_rustdesk_restorecon.stdout | length > 0
   when:
     - system_rustdesk_command.rc == 0
     - lookup('env', 'DOTFILES_RUSTDESK_SELINUX') | default('1', true) != '0'
@@ -207,7 +290,13 @@
   ansible.builtin.systemd_service:
     name: rustdesk.service
     enabled: true
-    state: started
+    state: >-
+      {{
+        'restarted'
+        if system_rustdesk_loader is changed
+        or system_rustdesk_service_dropin is changed
+        else 'started'
+      }}
     daemon_reload: true
   become: true
   when:

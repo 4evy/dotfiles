@@ -17,6 +17,9 @@ python314Packages.buildPythonApplication {
       ../ansible/library/dotfiles_selinux_service.py
       ../ansible/roles/system/files/kmscon/kmscon-refresh.py
       ../ansible/roles/system/files/kmscon/kmscon-theme-config.py
+      ../ansible/roles/system/files/rustdesk-selinux/rustdesk.fc
+      ../ansible/roles/system/files/rustdesk-selinux/rustdesk.te
+      ../bluebuild/recipes/spectrum.yml
       ../pyproject.toml
       ../ansible/tests
       ../dotfiles/.chezmoitemplates/black_rose_doll_palette.json
