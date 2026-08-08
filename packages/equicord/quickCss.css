@@ -84,8 +84,7 @@
   --chat-input-container-background: var(--brd-composer);
 }
 
-/* Discord's current composer has its own native surface outside the variables
- * used by older releases. Cover both generations of its CSS-module names. */
+/* Discord's composer has a native surface outside these variables. */
 .visual-refresh.theme-dark div[class*="channelTextArea_"],
 .visual-refresh .theme-dark div[class*="channelTextArea_"],
 .visual-refresh.theme-light div[class*="channelTextArea_"],
@@ -94,20 +93,6 @@
   --chat-input-container-background: var(--brd-composer);
 }
 
-.visual-refresh.theme-dark
-  div[class*="channelTextArea_"]
-  div[class*="scrollableContainer_"],
-.visual-refresh
-  .theme-dark
-  div[class*="channelTextArea_"]
-  div[class*="scrollableContainer_"],
-.visual-refresh.theme-light
-  div[class*="channelTextArea_"]
-  div[class*="scrollableContainer_"],
-.visual-refresh
-  .theme-light
-  div[class*="channelTextArea_"]
-  div[class*="scrollableContainer_"],
 .visual-refresh.theme-dark
   div[class*="channelTextArea_"]
   div[class*="themedBackground_"],
