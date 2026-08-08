@@ -1,2 +1,13 @@
 ---
 system_rustdesk_apparmor_enabled: true
+system_rustdesk_wayland_environment: >-
+  {{
+    lookup('env', 'XDG_SESSION_TYPE') == 'wayland'
+    or (lookup('env', 'WAYLAND_DISPLAY') | length > 0)
+  }}
+system_rustdesk_wayland_session: "{{ system_rustdesk_wayland_environment }}"
+system_rustdesk_runtime_dir: >-
+  {{
+    lookup('env', 'XDG_RUNTIME_DIR')
+    | default('/run/user/' ~ ansible_user_uid, true)
+  }}

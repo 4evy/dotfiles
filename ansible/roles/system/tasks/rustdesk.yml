@@ -19,8 +19,47 @@
   failed_when: false
   loop:
     - apparmor_parser
+    - gdbus
+    - gst-inspect-1.0
     - update-desktop-database
   register: system_rustdesk_tools
+  when: system_rustdesk_command.rc == 0
+
+- name: Detect the active local desktop session
+  ansible.builtin.command:
+    argv:
+      - loginctl
+      - show-user
+      - "{{ ansible_user_uid }}"
+      - --property=Display
+      - --value
+  register: system_rustdesk_display_session
+  changed_when: false
+  failed_when: false
+  when: system_rustdesk_command.rc == 0
+
+- name: Detect the active local desktop protocol
+  ansible.builtin.command:
+    argv:
+      - loginctl
+      - show-session
+      - "{{ system_rustdesk_display_session.stdout }}"
+      - --property=Type
+      - --value
+  register: system_rustdesk_display_protocol
+  changed_when: false
+  failed_when: false
+  when:
+    - system_rustdesk_command.rc == 0
+    - system_rustdesk_display_session.stdout | default('') | length > 0
+
+- name: Resolve the RustDesk Wayland session state
+  ansible.builtin.set_fact:
+    system_rustdesk_wayland_session: >-
+      {{
+        system_rustdesk_wayland_environment
+        or system_rustdesk_display_protocol.stdout | default('') == 'wayland'
+      }}
   when: system_rustdesk_command.rc == 0
 
 - name: Inspect the AppArmor host state
@@ -107,7 +146,7 @@
 
 - name: Install the RustDesk desktop entry
   ansible.builtin.copy:
-    src: "{{ dotfiles_repo_root }}/packages/dotfiles-python/assets/host/apps/rustdesk.desktop"
+    src: rustdesk.desktop
     dest: "{{ dotfiles_data_home }}/applications/rustdesk.desktop"
     mode: "0644"
   register: system_rustdesk_desktop
@@ -126,8 +165,7 @@
         (
           lookup(
             'ansible.builtin.file',
-            dotfiles_repo_root
-            ~ '/packages/dotfiles-python/assets/host/apps/rustdesk.desktop'
+            role_path ~ '/files/rustdesk.desktop'
           ) | trim
         )
         ~ '\nX-GNOME-Autostart-enabled=true\n'
@@ -144,22 +182,230 @@
   changed_when: true
   when:
     - system_rustdesk_desktop is changed
-    - system_rustdesk_tools.results[1].rc == 0
+    - system_rustdesk_tools.results[3].rc == 0
 
 - name: Reconcile RustDesk host policy
+  dotfiles_selinux_service:
+    policy_module: rustdesk
+    policy_directory: "{{ role_path }}/files/rustdesk-selinux"
+    hash_file: /var/lib/rustdesk/dotfiles-selinux-policy.sha256
+    service: rustdesk
+    domain: rustdesk_t
+    restore_targets:
+      - path: /usr/bin/rustdesk
+        recursive: true
+      - path: /usr/lib/rustdesk/rustdesk
+        recursive: true
+      - path: /usr/share/rustdesk/rustdesk
+        recursive: true
+  become: true
+  when:
+    - system_rustdesk_command.rc == 0
+    - lookup('env', 'DOTFILES_RUSTDESK_SELINUX') | default('1', true) != '0'
+
+- name: Enable and start the native RustDesk service
+  ansible.builtin.systemd_service:
+    name: rustdesk.service
+    enabled: true
+    state: started
+    daemon_reload: true
+  become: true
+  when:
+    - system_rustdesk_command.rc == 0
+    - not ansible_check_mode
+
+- name: Reset failed RustDesk Wayland dependencies
   ansible.builtin.command:
-    argv: >-
-      {{
-        [
-          dotfiles_bin_dir ~ '/dotfiles-scripts',
-          'host',
-          'apps',
-          'rustdesk-tailscale'
-        ]
-        + (['--check'] if ansible_check_mode else [])
-      }}
-  environment:
-    PATH: "{{ dotfiles_bin_dir }}:{{ dotfiles_path }}"
+    argv:
+      - systemctl
+      - --user
+      - reset-failed
+      - xdg-desktop-portal.service
+      - xdg-desktop-portal-gnome.service
+      - xdg-desktop-portal-gtk.service
+      - pipewire.service
+      - wireplumber.service
   changed_when: false
-  check_mode: false
-  when: system_rustdesk_command.rc == 0
+  failed_when: false
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: >-
+      unix:path={{ system_rustdesk_runtime_dir }}/bus
+    XDG_RUNTIME_DIR: "{{ system_rustdesk_runtime_dir }}"
+  when:
+    - system_rustdesk_command.rc == 0
+    - system_rustdesk_wayland_session
+    - not ansible_check_mode
+
+- name: Start RustDesk Wayland dependencies
+  ansible.builtin.command:
+    argv:
+      - systemctl
+      - --user
+      - start
+      - xdg-desktop-portal.service
+      - pipewire.service
+      - wireplumber.service
+  changed_when: false
+  failed_when: false
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: >-
+      unix:path={{ system_rustdesk_runtime_dir }}/bus
+    XDG_RUNTIME_DIR: "{{ system_rustdesk_runtime_dir }}"
+  when:
+    - system_rustdesk_command.rc == 0
+    - system_rustdesk_wayland_session
+    - not ansible_check_mode
+
+- name: Inspect RustDesk portal interfaces
+  ansible.builtin.command:
+    argv:
+      - gdbus
+      - introspect
+      - --session
+      - --dest
+      - org.freedesktop.portal.Desktop
+      - --object-path
+      - /org/freedesktop/portal/desktop
+  register: system_rustdesk_portal
+  changed_when: false
+  failed_when: false
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: >-
+      unix:path={{ system_rustdesk_runtime_dir }}/bus
+    XDG_RUNTIME_DIR: "{{ system_rustdesk_runtime_dir }}"
+  when:
+    - system_rustdesk_command.rc == 0
+    - system_rustdesk_wayland_session
+    - system_rustdesk_tools.results[1].rc == 0
+    - not ansible_check_mode
+
+- name: Report unavailable RustDesk portal interfaces
+  ansible.builtin.debug:
+    msg: >-
+      The desktop portal does not expose both ScreenCast and RemoteDesktop;
+      RustDesk Wayland capture or input will fail. Check
+      xdg-desktop-portal and the desktop-specific portal backend.
+  when:
+    - system_rustdesk_command.rc == 0
+    - system_rustdesk_wayland_session
+    - not ansible_check_mode
+    - >-
+      system_rustdesk_portal.rc | default(1) != 0
+      or 'org.freedesktop.portal.ScreenCast'
+      not in system_rustdesk_portal.stdout | default('')
+      or 'org.freedesktop.portal.RemoteDesktop'
+      not in system_rustdesk_portal.stdout | default('')
+
+- name: Inspect the RustDesk PipeWire GStreamer source
+  ansible.builtin.command:
+    argv:
+      - gst-inspect-1.0
+      - pipewiresrc
+  register: system_rustdesk_pipewire_plugin
+  changed_when: false
+  failed_when: false
+  when:
+    - system_rustdesk_command.rc == 0
+    - system_rustdesk_wayland_session
+    - system_rustdesk_tools.results[2].rc == 0
+    - not ansible_check_mode
+
+- name: Report an unavailable RustDesk PipeWire source
+  ansible.builtin.debug:
+    msg: >-
+      GStreamer's pipewiresrc plugin is unavailable; install pipewire-gstreamer
+      before using RustDesk as a Wayland controlled side.
+  when:
+    - system_rustdesk_command.rc == 0
+    - system_rustdesk_wayland_session
+    - not ansible_check_mode
+    - system_rustdesk_pipewire_plugin.rc | default(1) != 0
+
+- name: Inspect RustDesk Wayland session interfaces
+  ansible.builtin.stat:
+    path: "{{ item.path }}"
+  loop:
+    - path: >-
+        {{ system_rustdesk_runtime_dir }}/bus
+      socket: true
+      message: >-
+        Wayland session bus is unavailable; RustDesk portal capture will fail
+        until the user session is healthy.
+    - path: >-
+        {{ system_rustdesk_runtime_dir }}/pipewire-0
+      socket: true
+      message: >-
+        PipeWire socket is unavailable; RustDesk Wayland capture will fail.
+    - path: /dev/uinput
+      socket: false
+      message: >-
+        /dev/uinput is unavailable; RustDesk's Wayland input fallback will fail.
+  register: system_rustdesk_wayland_interfaces
+  when:
+    - system_rustdesk_command.rc == 0
+    - system_rustdesk_wayland_session
+
+- name: Report unavailable RustDesk Wayland interfaces
+  ansible.builtin.debug:
+    msg: "{{ item.item.message }}"
+  loop: "{{ system_rustdesk_wayland_interfaces.results | default([]) }}"
+  when:
+    - system_rustdesk_wayland_session
+    - >-
+      not item.stat.exists | default(false)
+      or item.item.socket and not item.stat.issock | default(false)
+
+- name: Inspect the active Wayland compositor socket
+  ansible.builtin.command:
+    argv:
+      - find
+      - "{{ system_rustdesk_runtime_dir }}"
+      - -maxdepth
+      - "1"
+      - -type
+      - s
+      - -name
+      - wayland-*
+      - -print
+      - -quit
+  register: system_rustdesk_wayland_socket
+  changed_when: false
+  failed_when: false
+  when:
+    - system_rustdesk_command.rc == 0
+    - system_rustdesk_wayland_session
+
+- name: Report an unavailable Wayland compositor socket
+  ansible.builtin.debug:
+    msg: >-
+      No Wayland compositor socket is available; RustDesk cannot inspect the
+      active display layout.
+  when:
+    - system_rustdesk_command.rc == 0
+    - system_rustdesk_wayland_session
+    - system_rustdesk_wayland_socket.stdout | default('') | length == 0
+
+- name: Inspect Tailscale authentication for RustDesk direct access
+  ansible.builtin.command:
+    argv:
+      - tailscale
+      - status
+  register: system_rustdesk_tailscale_status
+  changed_when: false
+  failed_when: false
+  when:
+    - system_rustdesk_command.rc == 0
+    - system_tailscale_command.rc | default(1) == 0
+    - not ansible_check_mode
+
+- name: Report unavailable RustDesk direct Tailscale access
+  ansible.builtin.debug:
+    msg: >-
+      Tailscale is unavailable or unauthenticated; RustDesk direct IP access
+      will not be available until `tailscale up` succeeds.
+  when:
+    - system_rustdesk_command.rc == 0
+    - not ansible_check_mode
+    - >-
+      system_tailscale_command.rc | default(1) != 0
+      or system_rustdesk_tailscale_status.rc | default(1) != 0

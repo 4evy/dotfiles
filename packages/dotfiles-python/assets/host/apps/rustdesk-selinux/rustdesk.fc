@@ -1,7 +1,0 @@
-/usr/bin/rustdesk                              -l gen_context(system_u:object_r:rustdesk_exec_t,s0)
-/usr/share/rustdesk/rustdesk                  -- gen_context(system_u:object_r:rustdesk_exec_t,s0)
-/etc/systemd/system/rustdesk[.]service        -- gen_context(system_u:object_r:rustdesk_unit_file_t,s0)
-/usr/lib/systemd/system/rustdesk[.]service    -- gen_context(system_u:object_r:rustdesk_unit_file_t,s0)
-/var/lib/rustdesk(/.*)?                          gen_context(system_u:object_r:rustdesk_var_lib_t,s0)
-/run/rustdesk[.]pid                           -- gen_context(system_u:object_r:rustdesk_var_run_t,s0)
-/var/run/rustdesk[.]pid                       -- gen_context(system_u:object_r:rustdesk_var_run_t,s0)

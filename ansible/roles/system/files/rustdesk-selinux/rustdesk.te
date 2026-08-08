@@ -1,0 +1,22 @@
+policy_module(rustdesk, 0.2.0)
+
+########################################
+#
+# Declarations
+#
+
+type rustdesk_t;
+type rustdesk_exec_t;
+init_daemon_domain(rustdesk_t, rustdesk_exec_t)
+
+# RustDesk's root service discovers the active desktop through logind and
+# /proc, then starts a per-user --server child that talks to that session's
+# portal, PipeWire instance, compositor, and /dev/uinput. Upstream solves the
+# same Fedora packaging problem by labeling the real executable bin_t so it
+# transitions into unconfined_service_t (rustdesk/rustdesk#10293).
+#
+# Use a dedicated unconfined service domain instead: SELinux remains globally
+# enforcing, RustDesk gets the cross-session access its architecture requires,
+# and its processes remain attributable to rustdesk_t. Do not make the domain
+# permissive; that would also bypass constraints not granted by this policy.
+unconfined_domain(rustdesk_t)

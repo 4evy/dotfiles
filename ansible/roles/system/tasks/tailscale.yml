@@ -18,19 +18,107 @@
   when: system_tailscale_command.rc == 0
 
 - name: Reconcile Tailscale host policy
-  ansible.builtin.command:
-    argv: >-
-      {{
-        [
-          dotfiles_bin_dir ~ '/dotfiles-scripts',
-          'host',
-          'apps',
-          'tailscale-bluefin'
-        ]
-        + (['--check'] if ansible_check_mode else [])
-      }}
-  environment:
-    PATH: "{{ dotfiles_bin_dir }}:{{ dotfiles_path }}"
-  changed_when: false
-  check_mode: false
+  dotfiles_selinux_service:
+    policy_module: tailscaled
+    policy_directory: "{{ role_path }}/files/tailscale-selinux"
+    hash_file: /var/lib/tailscale/dotfiles-selinux-policy.sha256
+    service: tailscaled
+    domain: tailscaled_t
+    defer_child_pattern: tailscaled be-child ssh
+    allow_reload: >-
+      {{ lookup('env', 'DOTFILES_TAILSCALE_ALLOW_LIVE_RELOAD') == '1' }}
+    restore_targets:
+      - path: /usr/bin/tailscaled
+      - path: /usr/sbin/tailscaled
+      - path: /usr/lib/systemd/system/tailscaled.service
+      - path: /etc/systemd/system/tailscaled.service
+      - path: /var/lib/tailscale
+        recursive: true
+      - path: /var/cache/tailscale
+        recursive: true
+      - path: /run/tailscale
+        recursive: true
+      - path: /var/run/tailscale
+        recursive: true
+  become: true
+  register: system_tailscale_selinux
   when: system_tailscale_command.rc == 0
+
+- name: Report deferred Tailscale confinement changes
+  ansible.builtin.debug:
+    msg: >-
+      Active Tailscale SSH session detected; deferring SELinux changes. Rerun
+      locally after disconnecting, or set
+      DOTFILES_TAILSCALE_ALLOW_LIVE_RELOAD=1 to force the restart.
+  when: system_tailscale_selinux.deferred | default(false)
+
+- name: Inspect user-visible Tailscale state
+  ansible.builtin.command:
+    argv:
+      - tailscale
+      - status
+  register: system_tailscale_user_status
+  changed_when: false
+  failed_when: false
+  when:
+    - system_tailscale_command.rc == 0
+    - not ansible_check_mode
+
+- name: Inspect privileged Tailscale state
+  ansible.builtin.command:
+    argv:
+      - tailscale
+      - status
+  become: true
+  register: system_tailscale_root_status
+  changed_when: false
+  failed_when: false
+  retries: 10
+  delay: 1
+  until: system_tailscale_root_status.rc == 0
+  when:
+    - system_tailscale_command.rc == 0
+    - not ansible_check_mode
+    - system_tailscale_user_status.rc | default(1) != 0
+
+- name: Disable Tailscale's self-updater for image-managed hosts
+  ansible.builtin.command:
+    argv:
+      - tailscale
+      - set
+      - --auto-update=false
+  register: system_tailscale_user_update
+  changed_when: false
+  failed_when: false
+  when:
+    - system_tailscale_command.rc == 0
+    - not ansible_check_mode
+    - >-
+      system_tailscale_user_status.rc | default(1) == 0
+      or system_tailscale_root_status.rc | default(1) == 0
+
+- name: Disable Tailscale's self-updater with host privileges
+  ansible.builtin.command:
+    argv:
+      - tailscale
+      - set
+      - --auto-update=false
+  become: true
+  changed_when: false
+  failed_when: false
+  when:
+    - system_tailscale_command.rc == 0
+    - not ansible_check_mode
+    - system_tailscale_user_update.rc | default(1) != 0
+    - >-
+      system_tailscale_user_status.rc | default(1) == 0
+      or system_tailscale_root_status.rc | default(1) == 0
+
+- name: Report an unauthenticated Tailscale installation
+  ansible.builtin.debug:
+    msg: Tailscale is installed but not authenticated; run `tailscale up`.
+  when:
+    - system_tailscale_command.rc == 0
+    - not ansible_check_mode
+    - system_tailscale_user_status.rc | default(1) != 0
+    - system_tailscale_root_status.rc | default(1) != 0
