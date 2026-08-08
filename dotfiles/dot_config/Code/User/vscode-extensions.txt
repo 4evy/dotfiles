@@ -1,7 +1,6 @@
 astral-sh.ty
 biomejs.biome
 bradlc.vscode-tailwindcss
-catppuccin.catppuccin-vsc-icons
 charliermarsh.ruff
 christian-kohler.path-intellisense
 csstools.postcss

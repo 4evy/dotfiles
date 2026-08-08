@@ -152,10 +152,6 @@ id = "aeblfdkhhhdcdjpifhhbdiojplfjncoa"
 name = "1Password"
 
 [[extensions.chrome_store]]
-id = "lnjaiaapbakfhlbjenjkhffcdpoompki"
-name = "Catppuccin for Web File Explorer Icons"
-
-[[extensions.chrome_store]]
 id = "ponfpcnoihfmfllpaingbgckeeldkhle"
 name = "Enhancer for YouTube"
 
