@@ -4,7 +4,6 @@
   "gitAuthor": "4evy <git@evy.pink>",
   "gitIgnoredAuthors": ["41898282+github-actions[bot]@users.noreply.github.com"],
   "dependencyDashboard": false,
-  "configMigration": false,
   "automerge": true,
   "automergeType": "branch",
   "ignoreTests": true,

@@ -13,8 +13,8 @@ on:
       - .github/renovate/package.json
       - .github/workflows/renovate.yaml
       - .github/workflows/validate-renovate.yaml
+      - ansible/roles/applications/defaults/main.yml
       - ansible/roles/system/defaults/main/macos.yml
-      - packages/dotfiles-python/src/workstation/apps/helium.py
       - pyproject.toml
       - npins/sources.json
       - bluebuild/recipes/spectrum.yml
