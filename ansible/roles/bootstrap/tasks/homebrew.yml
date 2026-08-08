@@ -25,8 +25,8 @@
 - name: Require supported macOS architecture
   ansible.builtin.assert:
     that:
-      - platform_architecture in ['arm64', 'x86_64']
-    fail_msg: "This macOS profile requires Apple Silicon or Intel x86_64."
+      - platform_architecture == 'arm64'
+    fail_msg: "This macOS profile supports Apple Silicon only."
   when: platform_is_macos
   tags:
     - bootstrap

@@ -3,7 +3,7 @@ bootstrap_homebrew_installer_url: https://raw.githubusercontent.com/Homebrew/ins
 bootstrap_homebrew_repository: >-
   {{
     bootstrap_homebrew_prefix
-    if platform_is_macos and platform_architecture == 'arm64'
+    if platform_is_macos
     else bootstrap_homebrew_prefix ~ '/Homebrew'
   }}
 bootstrap_homebrew_local_tap_dir: >-

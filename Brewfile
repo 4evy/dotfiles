@@ -4,6 +4,7 @@ end
 
 # Bootstrap shell and provisioning tools
 brew "bash"
+brew "bash-completion@2"
 brew "chezmoi"
 brew "uv"
 brew "bun"

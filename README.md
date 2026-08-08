@@ -27,7 +27,7 @@ with Homebrew, Nix, Ansible, and chezmoi.
 
 - **Spectrum / Bluefin:** custom bootc image and desktop setup
 - **NixOS:** declarative system and user configuration
-- **macOS:** Homebrew and Ansible bootstrap
+- **Apple Silicon macOS:** Homebrew and Ansible bootstrap
 - **Everywhere:** shared dotfiles managed by chezmoi
 
 ## Shell composition
@@ -35,6 +35,9 @@ with Homebrew, Nix, Ansible, and chezmoi.
 ```text
 .bashenv ─┐
 .zshenv ──┴─> environment.sh
+
+.bash_profile ─> .bashrc
+.zprofile ────> environment.sh (again after macOS path_helper)
 
 .bashrc ────> bashrc.d/*.bash ─┐
                                ├─> interactive.common.sh
@@ -86,7 +89,7 @@ can use:
 sudo nixos-rebuild switch --flake .#nixos
 ```
 
-### macOS
+### Apple Silicon macOS
 
 ```bash
 ./ansible/bootstrap.sh --tags userland

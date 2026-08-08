@@ -9,10 +9,23 @@ OSH_THEME=""
 # shellcheck disable=SC2034
 plugins=(git)
 
-# Completion list; gh joins only when present.
-completions=(git ssh system)
-if _dotfiles_command_path gh >/dev/null; then
-	completions+=(gh)
+# Load Homebrew's supported Bash completion framework before Oh My Bash adds
+# its Git and SSH definitions. Fall back to Oh My Bash's system/gh modules on
+# hosts where Homebrew Bash completion is unavailable.
+_dotfiles_homebrew_bash_completion_loaded=0
+if [[ -n "${HOMEBREW_PREFIX:-}" && \
+	-r "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh" ]]; then
+	# shellcheck source=/dev/null
+	source "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh"
+	_dotfiles_homebrew_bash_completion_loaded=1
+fi
+
+completions=(git ssh)
+if ((!_dotfiles_homebrew_bash_completion_loaded)); then
+	completions+=(system)
+	if _dotfiles_command_path gh >/dev/null; then
+		completions+=(gh)
+	fi
 fi
 
 # Shared commands come later, after framework setup.
@@ -23,3 +36,5 @@ if [[ -r "$OSH/oh-my-bash.sh" ]]; then
 	# shellcheck source=/dev/null
 	source "$OSH/oh-my-bash.sh"
 fi
+
+unset _dotfiles_homebrew_bash_completion_loaded

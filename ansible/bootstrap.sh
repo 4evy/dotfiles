@@ -24,17 +24,14 @@ readonly HOMEBREW_INSTALLER_CHECKSUM="${HOMEBREW_INSTALLER_CHECKSUM:-}"
 # model records without delimiter parsing and still work with macOS's Bash.
 readonly -a HOMEBREW_PLATFORM_KERNELS=(
 	'Darwin'
-	'Darwin'
 	'Linux'
 )
 readonly -a HOMEBREW_PLATFORM_ARCHITECTURES=(
 	'arm64'
-	'x86_64'
 	'*'
 )
 readonly -a HOMEBREW_PLATFORM_PREFIXES=(
 	'/opt/homebrew'
-	'/usr/local'
 	'/home/linuxbrew/.linuxbrew'
 )
 

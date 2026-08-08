@@ -164,7 +164,7 @@
     "{{- if lookPath `ruff` -}}{{ lookPath `ruff` }}{{- else -}}ruff{{- end -}}"
   ],
   "ruff.nativeServer": "on",
-  "C_Cpp.codeAnalysis.clangTidy.path": "{{- if lookPath `clang-tidy` -}}{{ lookPath `clang-tidy` }}{{- else if stat `/opt/homebrew/opt/llvm/bin/clang-tidy` -}}/opt/homebrew/opt/llvm/bin/clang-tidy{{- else if stat `/usr/local/opt/llvm/bin/clang-tidy` -}}/usr/local/opt/llvm/bin/clang-tidy{{- else -}}clang-tidy{{- end -}}",
+  "C_Cpp.codeAnalysis.clangTidy.path": "{{- if lookPath `clang-tidy` -}}{{ lookPath `clang-tidy` }}{{- else if stat `/opt/homebrew/opt/llvm/bin/clang-tidy` -}}/opt/homebrew/opt/llvm/bin/clang-tidy{{- else -}}clang-tidy{{- end -}}",
   "path-intellisense.autoSlashAfterDirectory": true,
   "path-intellisense.autoTriggerNextSuggestion": true,
   "markdownlint.run": "onSave",

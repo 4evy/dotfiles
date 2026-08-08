@@ -32,11 +32,7 @@
   vars:
     platform_homebrew_prefix_value: >-
       {{
-        (
-          '/opt/homebrew'
-          if platform_architecture == 'arm64'
-          else '/usr/local'
-        )
+        '/opt/homebrew'
         if platform_is_macos
         else '/home/linuxbrew/.linuxbrew'
       }}

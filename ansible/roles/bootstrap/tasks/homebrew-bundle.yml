@@ -349,6 +349,19 @@
     - bootstrap
     - homebrew
 
+- name: Register Homebrew OpenJDK with macOS
+  ansible.builtin.file:
+    src: "{{ bootstrap_homebrew_prefix }}/opt/openjdk/libexec/openjdk.jdk"
+    dest: /Library/Java/JavaVirtualMachines/openjdk.jdk
+    state: link
+    force: true
+  become: true
+  when: platform_is_macos
+  tags:
+    - bootstrap
+    - homebrew
+    - java
+
 - name: Read terminal theme tools source archive checksum
   ansible.builtin.stat:
     path: "{{ bootstrap_homebrew_local_tap_dir }}/Sources/terminal-theme-tools-0.3.0.tar"

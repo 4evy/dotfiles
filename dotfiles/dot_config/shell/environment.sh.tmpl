@@ -14,31 +14,34 @@ fi
 {{- $isNixOS = eq .chezmoi.osRelease.id "nixos" }}
 {{- end }}
 
-# 01 / Homebrew metadata
+# 01 / package-manager environment
+
+# Determinate Nix's system hooks run at different points in Bash and Zsh.
+# Source the idempotent upstream hook here so every managed shell receives the
+# same Nix metadata, then let the PATH builder below apply our precedence.
+{{- if and (or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux")) (not $isNixOS) }}
+if [[ -r /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]]; then
+	# shellcheck source=/dev/null
+	source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+fi
+{{- end }}
+
+# Homebrew metadata mirrors `brew shellenv` without spawning Homebrew during
+# every shell startup.
 
 _dotfiles_homebrew_prefix=
 {{- if eq .chezmoi.os "linux" }}
 {{- if not $isNixOS }}
-if [[ -d /home/linuxbrew/.linuxbrew ]]; then
+if [[ -x /home/linuxbrew/.linuxbrew/bin/brew ]]; then
 	_dotfiles_homebrew_prefix=/home/linuxbrew/.linuxbrew
-elif [[ -d "$HOME/.linuxbrew" ]]; then
+elif [[ -x "$HOME/.linuxbrew/bin/brew" ]]; then
 	_dotfiles_homebrew_prefix="$HOME/.linuxbrew"
 fi
 {{- end }}
 {{- else if eq .chezmoi.os "darwin" }}
-{{- if eq .chezmoi.arch "arm64" }}
-if [[ -d /opt/homebrew ]]; then
-	_dotfiles_homebrew_prefix=/opt/homebrew
-elif [[ -d /usr/local/Homebrew ]]; then
-	_dotfiles_homebrew_prefix=/usr/local
-fi
-{{- else }}
-if [[ -d /usr/local/Homebrew ]]; then
-	_dotfiles_homebrew_prefix=/usr/local
-elif [[ -d /opt/homebrew ]]; then
+if [[ -x /opt/homebrew/bin/brew ]]; then
 	_dotfiles_homebrew_prefix=/opt/homebrew
 fi
-{{- end }}
 {{- end }}
 
 if [[ -n "$_dotfiles_homebrew_prefix" ]]; then
@@ -50,9 +53,26 @@ if [[ -n "$_dotfiles_homebrew_prefix" ]]; then
 		export HOMEBREW_REPOSITORY="$HOMEBREW_PREFIX/Homebrew"
 	fi
 	[[ -z "${MANPATH-}" ]] || export MANPATH=":${MANPATH#:}"
-	export INFOPATH="$HOMEBREW_PREFIX/share/info:${INFOPATH:-}"
+	case ":${INFOPATH:-}:" in
+		*":$HOMEBREW_PREFIX/share/info:"*) ;;
+		*) export INFOPATH="$HOMEBREW_PREFIX/share/info:${INFOPATH:-}" ;;
+	esac
 fi
 unset _dotfiles_homebrew_prefix
+
+# Use Homebrew OpenJDK as the default while preserving an explicitly selected
+# JDK. Its bin directory is added from JAVA_HOME below.
+if [[ -z "${JAVA_HOME:-}" && -n "${HOMEBREW_PREFIX:-}" ]]; then
+{{- if eq .chezmoi.os "darwin" }}
+	_dotfiles_java_home="$HOMEBREW_PREFIX/opt/openjdk/libexec/openjdk.jdk/Contents/Home"
+{{- else }}
+	_dotfiles_java_home="$HOMEBREW_PREFIX/opt/openjdk/libexec"
+{{- end }}
+	if [[ -x "$_dotfiles_java_home/bin/java" ]]; then
+		export JAVA_HOME="$_dotfiles_java_home"
+	fi
+	unset _dotfiles_java_home
+fi
 
 # 02 / PATH
 # Build a unique preferred prefix, then append the inherited PATH in its
@@ -82,34 +102,31 @@ fi
 _dotfiles_path_append_once \
 	"$HOME/.local/bin" \
 	"$HOME/.local/share/dotfiles/helix-tip/bin"
-{{- if eq .chezmoi.os "darwin" }}
-{{- if eq .chezmoi.arch "arm64" }}
-_dotfiles_path_append_once \
-	/opt/homebrew/opt/coreutils/libexec/gnubin \
-	/opt/homebrew/opt/findutils/libexec/gnubin \
-	/opt/homebrew/opt/gnu-sed/libexec/gnubin \
-	/opt/homebrew/opt/grep/libexec/gnubin \
-	/opt/homebrew/opt/gawk/libexec/gnubin \
-	/opt/homebrew/opt/gnu-tar/libexec/gnubin \
-	/opt/homebrew/opt/gnu-which/libexec/gnubin \
-	/opt/homebrew/opt/diffutils/libexec/gnubin \
-	/opt/homebrew/opt/make/libexec/gnubin \
-	/opt/homebrew/opt/gnu-getopt/bin
-{{- else }}
-_dotfiles_path_append_once \
-	/usr/local/opt/coreutils/libexec/gnubin \
-	/usr/local/opt/findutils/libexec/gnubin \
-	/usr/local/opt/gnu-sed/libexec/gnubin \
-	/usr/local/opt/grep/libexec/gnubin \
-	/usr/local/opt/gawk/libexec/gnubin \
-	/usr/local/opt/gnu-tar/libexec/gnubin \
-	/usr/local/opt/gnu-which/libexec/gnubin \
-	/usr/local/opt/diffutils/libexec/gnubin \
-	/usr/local/opt/make/libexec/gnubin \
-	/usr/local/opt/gnu-getopt/bin
-{{- end }}
-{{- end }}
+if [[ -n "${JAVA_HOME:-}" && -x "$JAVA_HOME/bin/java" ]]; then
+	_dotfiles_path_append_once "$JAVA_HOME/bin"
+fi
 if [[ -n "${HOMEBREW_PREFIX:-}" ]]; then
+	# Formulae that Homebrew intentionally does not link into its main prefix.
+	# Keep this list aligned with the developer-facing keg-only tools in Brewfile.
+{{- if eq .chezmoi.os "darwin" }}
+	_dotfiles_path_append_once \
+		"$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin" \
+		"$HOMEBREW_PREFIX/opt/findutils/libexec/gnubin" \
+		"$HOMEBREW_PREFIX/opt/gnu-sed/libexec/gnubin" \
+		"$HOMEBREW_PREFIX/opt/grep/libexec/gnubin" \
+		"$HOMEBREW_PREFIX/opt/gawk/libexec/gnubin" \
+		"$HOMEBREW_PREFIX/opt/gnu-tar/libexec/gnubin" \
+		"$HOMEBREW_PREFIX/opt/gnu-which/libexec/gnubin" \
+		"$HOMEBREW_PREFIX/opt/diffutils/libexec/gnubin" \
+		"$HOMEBREW_PREFIX/opt/make/libexec/gnubin" \
+		"$HOMEBREW_PREFIX/opt/gnu-getopt/bin" \
+		"$HOMEBREW_PREFIX/opt/curl/bin" \
+		"$HOMEBREW_PREFIX/opt/file-formula/bin" \
+		"$HOMEBREW_PREFIX/opt/lsof/bin" \
+		"$HOMEBREW_PREFIX/opt/unzip/bin" \
+		"$HOMEBREW_PREFIX/opt/zip/bin"
+{{- end }}
+	_dotfiles_path_append_once "$HOMEBREW_PREFIX/opt/rustup/bin"
 	_dotfiles_path_append_once "$HOMEBREW_PREFIX/bin" "$HOMEBREW_PREFIX/sbin"
 fi
 _dotfiles_path_append_once \
@@ -126,7 +143,7 @@ _dotfiles_path_append_once \
 {{- end }}
 {{- if eq .chezmoi.os "linux" }}
 _dotfiles_path_append_once /usr/local/bin /usr/bin /bin /usr/sbin /sbin
-{{- else if and (eq .chezmoi.os "darwin") (eq .chezmoi.arch "arm64") }}
+{{- else if eq .chezmoi.os "darwin" }}
 _dotfiles_path_append_once /usr/local/bin /usr/local/sbin
 {{- end }}
 
@@ -136,6 +153,14 @@ while [[ "$_dotfiles_path_remainder" == *:* ]]; do
 	_dotfiles_path_remainder="${_dotfiles_path_remainder#*:}"
 	_dotfiles_path_append_once "$_dotfiles_path_entry"
 done
+
+{{- if eq .chezmoi.os "darwin" }}
+# Expose Homebrew binutils commands that macOS lacks without replacing Apple's
+# linker and other native toolchain commands that appeared earlier in PATH.
+if [[ -n "${HOMEBREW_PREFIX:-}" ]]; then
+	_dotfiles_path_append_once "$HOMEBREW_PREFIX/opt/binutils/bin"
+fi
+{{- end }}
 
 PATH=$_dotfiles_new_path
 export PATH
