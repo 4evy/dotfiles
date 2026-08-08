@@ -25,7 +25,7 @@ let
   packageDefinitions =
     final: prev:
     let
-      dotfilesSourcePins = import ../npins;
+      dotfilesSourcePins = (import ../npins) { };
     in
     {
       inherit dotfilesSourcePins;
@@ -63,8 +63,8 @@ let
           buildInputs = previousAttrs.buildInputs ++ [ final.dbus ];
           mesonFlags = (previousAttrs.mesonFlags or [ ]) ++ [ "-Dtests=false" ];
           doCheck = false;
-          # 10.0.1 installs kmscon itself as an ELF binary; nixpkgs'
-          # 10.0.0 fixup still tries to rewrite it as a shell script.
+          # The pinned source installs kmscon itself as an ELF binary; only
+          # the launcher script contains a command path that needs rewriting.
           postFixup = ''
             substituteInPlace $out/bin/kmscon-launch-gui \
               --replace-fail "inotifywait" "${final.lib.getExe' final.inotify-tools "inotifywait"}"
