@@ -419,9 +419,12 @@ update: _userland apply _host
 [private]
 _deps:
     install_args=(collection install -r ansible/requirements.yml -p .ansible/collections)
-    if [[ ! -f .ansible/collections/ansible_collections/community/general/MANIFEST.json ]]; then
-      install_args+=(--force)
-    fi
+    for collection in community/general community/sops; do
+      if [[ ! -f .ansible/collections/ansible_collections/$collection/MANIFEST.json ]]; then
+        install_args+=(--force)
+        break
+      fi
+    done
     ansible-galaxy "${install_args[@]}"
 
 [private]
