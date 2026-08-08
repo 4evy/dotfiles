@@ -7,6 +7,6 @@
     "validate": "renovate-config-validator ../renovate.json"
   },
   "devDependencies": {
-    "renovate": "44.5.3"
+    "renovate": "44.13.2"
   }
 }
