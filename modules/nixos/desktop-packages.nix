@@ -107,7 +107,6 @@ in
 
       inherit (pkgs.unstable)
         networkmanagerapplet
-        nufraw-thumbnailer
         pavucontrol
         playerctl
         telegram-desktop
