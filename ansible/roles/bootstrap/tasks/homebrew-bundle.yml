@@ -5,8 +5,8 @@
     mode: "0755"
   loop:
     - "{{ bootstrap_homebrew_local_tap_dir }}/Formula"
-    - "{{ bootstrap_homebrew_local_tap_dir }}/Patches/ghostty"
-    - "{{ bootstrap_homebrew_local_tap_dir }}/Patches/jj"
+    - "{{ bootstrap_homebrew_local_tap_dir }}/patches/ghostty"
+    - "{{ bootstrap_homebrew_local_tap_dir }}/patches/jj"
     - "{{ bootstrap_homebrew_local_tap_dir }}/npins"
     - "{{ bootstrap_homebrew_local_tap_dir }}/Sources"
     - "{{ bootstrap_homebrew_local_tap_dir }}/libexec"
@@ -50,7 +50,7 @@
     label: "{{ item.path | basename }}"
   when:
     - bootstrap_homebrew_enabled | default(false)
-    - item.path | basename not in ['Formula', 'Patches', 'Sources', 'libexec', 'npins', 'secrets']
+    - item.path | basename not in ['Formula', 'Sources', 'libexec', 'npins', 'patches', 'secrets']
   tags:
     - alt-tab
     - bootstrap
@@ -139,7 +139,7 @@
 - name: Sync patched Ghostty patch series into local Homebrew tap
   ansible.builtin.copy:
     src: "{{ dotfiles_repo_root }}/patches/ghostty/"
-    dest: "{{ bootstrap_homebrew_local_tap_dir }}/Patches/ghostty/"
+    dest: "{{ bootstrap_homebrew_local_tap_dir }}/patches/ghostty/"
     mode: "0644"
     directory_mode: "0755"
   when: platform_is_macos
@@ -151,7 +151,7 @@
 - name: Sync patched jj patch series into local Homebrew tap
   ansible.builtin.copy:
     src: "{{ dotfiles_repo_root }}/patches/jj/"
-    dest: "{{ bootstrap_homebrew_local_tap_dir }}/Patches/jj/"
+    dest: "{{ bootstrap_homebrew_local_tap_dir }}/patches/jj/"
     mode: "0644"
     directory_mode: "0755"
   when: bootstrap_homebrew_enabled | default(false)
