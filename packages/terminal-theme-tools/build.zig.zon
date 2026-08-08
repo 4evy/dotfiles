@@ -5,9 +5,9 @@
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
         .ghostty = .{
-            // ghostty main at 4d605bf0d819df901a0332bbb320dc849fdd82e4.
-            .url = "https://github.com/ghostty-org/ghostty/archive/4d605bf0d819df901a0332bbb320dc849fdd82e4.tar.gz",
-            .hash = "ghostty-1.3.2-dev-5UdBCzYBJwVhapgS_mjCykGO5_bkhKpNwV5pfzcluN86",
+            // ghostty main at 7e567c3f03e914140f0b6beb8b03c20efcc03188.
+            .url = "https://github.com/ghostty-org/ghostty/archive/7e567c3f03e914140f0b6beb8b03c20efcc03188.tar.gz",
+            .hash = "ghostty-1.3.2-dev-5UdBCwo6PQXGxeZf0loHjWTIYEzRytZCkVPgVZnzBB_U",
         },
     },
     .paths = .{

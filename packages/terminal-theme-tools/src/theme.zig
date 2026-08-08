@@ -148,9 +148,9 @@ fn detectTerminal(allocator: std.mem.Allocator, runtime: *const config.Runtime, 
     if (probeTerminal(allocator, fd, query, runtime.theme_probe_timeout_ms)) |mode| return mode;
 
     // Kitty's color-scheme query reports the user's appearance preference and
-    // is therefore preferable to inferring it from a background color. Older
-    // releases and intermediate multiplexers may not forward that query even
-    // when TERM_PROGRAM/TERM identify Kitty or Ghostty, so retry with the
+    // is therefore preferable to inferring it from a background color. Some
+    // multiplexers do not forward that query even when TERM_PROGRAM/TERM
+    // identify Kitty or Ghostty, so retry with the
     // widely supported OSC 11 query before falling back to the desktop.
     if (std.mem.eql(u8, query, constants.protocol.color_scheme_query)) {
         return probeTerminal(allocator, fd, constants.protocol.background_query, runtime.theme_probe_timeout_ms);
