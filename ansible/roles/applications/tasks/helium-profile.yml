@@ -1,0 +1,141 @@
+---
+- name: Require the Helium application directory
+  ansible.builtin.stat:
+    path: "{{ applications_helium_app_dir }}"
+    follow: true
+  register: applications_helium_app
+
+- name: Verify the Helium application directory
+  ansible.builtin.assert:
+    that:
+      - applications_helium_app.stat.isdir | default(false)
+    fail_msg: >-
+      Helium application does not exist: {{ applications_helium_app_dir }}
+
+- name: Create Helium profile configuration directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ applications_helium_root }}"
+    - "{{ applications_helium_bin_dir }}"
+    - "{{ applications_helium_installer_bin }}"
+    - "{{ applications_helium_profile_dir }}"
+
+- name: Inspect the installed Helium profile avatar
+  ansible.builtin.stat:
+    path: >-
+      {{ applications_helium_profile_dir }}/Custom Avatar Picture.png
+  register: applications_helium_profile_avatar
+
+- name: Download the GitHub avatar for the Helium profile
+  ansible.builtin.get_url:
+    url: https://github.com/4evy.png?size=256
+    dest: "{{ applications_helium_root }}/github-profile-avatar"
+    mode: "0644"
+  register: applications_helium_profile_avatar_download
+
+- name: Install the Helium profile avatar as a real PNG
+  ansible.builtin.command:
+    argv:
+      - magick
+      - "{{ applications_helium_root }}/github-profile-avatar"
+      - -auto-orient
+      - -strip
+      - -resize
+      - 256x256^
+      - -gravity
+      - center
+      - -extent
+      - 256x256
+      - >-
+        PNG:{{ applications_helium_profile_dir }}/Custom Avatar Picture.png
+  environment:
+    PATH: "{{ applications_helium_path }}"
+  changed_when: true
+  when: >-
+    applications_helium_profile_avatar_download.changed
+    or not applications_helium_profile_avatar.stat.exists
+
+- name: Read the Refined GitHub token for the Helium profile
+  ansible.builtin.command:
+    argv:
+      - op
+      - read
+      - op://Private/Refined GitHub/token
+  register: applications_helium_refined_github_token
+  changed_when: false
+  failed_when: false
+  no_log: true
+  environment:
+    PATH: "{{ applications_helium_path }}"
+  when: lookup('env', 'OP_ACCOUNT') | length > 0
+
+- name: Install the pinned Helium profile configurer
+  ansible.builtin.command:
+    argv:
+      - go
+      - install
+      - "{{ applications_helium_browser_go_package }}"
+    chdir: "{{ dotfiles_repo_root }}/browser"
+  environment:
+    PATH: "{{ applications_helium_path }}"
+    GOBIN: "{{ applications_helium_installer_bin }}"
+    CGO_ENABLED: "{{ '0' if applications_helium_platform == 'linux' else '1' }}"
+  changed_when: false
+
+- name: Configure the Helium profile
+  ansible.builtin.command:
+    argv:
+      - "{{ applications_helium_installer_bin }}/browser"
+      - configure
+      - --config
+      - "{{ dotfiles_repo_root }}/browser/helium.toml"
+      - --mode
+      - "{{ applications_helium_platform }}"
+      - --root
+      - "{{ applications_helium_root }}"
+      - --app-dir
+      - "{{ applications_helium_app_dir }}"
+      - --bin-dir
+      - "{{ applications_helium_bin_dir }}"
+      - --input
+      - "-"
+      - "--flags={{ applications_helium_flags }}"
+    chdir: "{{ dotfiles_repo_root }}/browser"
+    stdin: "{{ applications_helium_apply_input | to_json }}"
+  environment:
+    PATH: "{{ applications_helium_path }}"
+  changed_when: false
+  no_log: true
+  vars:
+    applications_helium_cookie_allowlist: >-
+      {{
+        applications_private_settings['chromium-cookie-allowed-for-urls']
+        | default([])
+      }}
+    applications_helium_extension_values: >-
+      {{
+        {
+          'refined-github-personal-token':
+            applications_helium_refined_github_token.stdout | trim
+        }
+        if applications_helium_refined_github_token.rc | default(1) == 0
+        and applications_helium_refined_github_token.stdout | default('') | trim
+        else {}
+      }}
+    applications_helium_apply_input: >-
+      {{
+        {}
+        | combine(
+            {'cookie_allowlist': applications_helium_cookie_allowlist}
+            if applications_helium_cookie_allowlist | length > 0
+            else {}
+          )
+        | combine(
+            {'extension_values': applications_helium_extension_values}
+            if applications_helium_extension_values | length > 0
+            else {}
+          )
+      }}

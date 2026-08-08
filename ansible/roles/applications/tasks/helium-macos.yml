@@ -24,33 +24,19 @@
     - helium
 
 - name: Configure Helium on macOS
-  ansible.builtin.command:
-    argv: >-
-      {{
-        [
-          dotfiles_bin_dir ~ '/dotfiles-scripts',
-          'apps',
-          'configure-helium-macos',
-          dotfiles_cache_dir ~ '/helium',
-          dotfiles_bin_dir,
-          dotfiles_cache_dir ~ '/helium/configurer',
-          '--flags=' ~ applications_helium_macos_flags
-        ]
-        + (['--check'] if ansible_check_mode else [])
-      }}
-  environment:
-    PATH: "{{ dotfiles_bin_dir }}:{{ platform_homebrew_path | default(dotfiles_path) }}"
-    DOTFILES_HELIUM_COOKIE_ALLOWLIST: >-
-      {{
-        applications_private_settings['chromium-cookie-allowed-for-urls']
-        | default([])
-        | to_json
-      }}
-  no_log: true
-  changed_when: false
-  check_mode: false
+  ansible.builtin.import_tasks: helium-profile.yml
   vars:
-    applications_helium_macos_flags: >-
+    applications_helium_platform: macos
+    applications_helium_root: "{{ dotfiles_cache_dir }}/helium"
+    applications_helium_app_dir: /Applications/Helium.app
+    applications_helium_bin_dir: "{{ dotfiles_bin_dir }}"
+    applications_helium_installer_bin: >-
+      {{ dotfiles_cache_dir }}/helium/configurer
+    applications_helium_path: >-
+      {{ dotfiles_bin_dir }}:{{ platform_homebrew_path | default(dotfiles_path) }}
+    applications_helium_profile_dir: >-
+      {{ dotfiles_home_dir }}/Library/Application Support/net.imput.helium/Default
+    applications_helium_flags: >-
       --no-first-run --no-default-browser-check --disable-search-engine-choice-screen
       --extension-mime-request-handling=always-prompt-for-install
       --omnibox-autocomplete-filtering=search

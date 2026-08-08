@@ -43,7 +43,7 @@
       "customType": "regex",
       "description": "Track the pinned Go Helium profile configurer",
       "managerFilePatterns": [
-        "/^packages\\/dotfiles-python\\/src\\/workstation\\/apps\\/helium\\.py$/"
+        "/^ansible\\/roles\\/applications\\/defaults\\/main\\.yml$/"
       ],
       "matchStrings": ["browser@(?<currentDigest>[a-f0-9]{40})"],
       "depNameTemplate": "4evy/browser",
