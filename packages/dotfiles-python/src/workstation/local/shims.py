@@ -34,6 +34,8 @@ def codex_entrypoint() -> None:
     wrapper = Path(sys.argv[0]).resolve()
     real = _real_codex(home, wrapper)
     arguments = list(sys.argv[1:])
+    if os.environ.get("TERMINAL_THEME_RUN_ACTIVE"):
+        exec_process(real, arguments)
     themed_arguments = arguments.copy()
     if not os.environ.get("TERMINAL_THEME_RUN_CODEX_BIN"):
         themed_arguments = [

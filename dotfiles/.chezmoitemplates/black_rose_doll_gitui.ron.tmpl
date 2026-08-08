@@ -1,0 +1,29 @@
+{{- $variant := . -}}
+{{- $brd := include ".chezmoitemplates/black_rose_doll_palette.json" | fromJson -}}
+{{- $p := index $brd $variant -}}
+(
+    selected_tab: Some("Reset"),
+    command_fg: Some("{{ index $p "text" }}"),
+    selection_bg: Some("{{ index $p "surface2" }}"),
+    selection_fg: Some("{{ index $p "text" }}"),
+    use_selection_fg: Some(true),
+    cmdbar_bg: Some("{{ index $p "mantle" }}"),
+    disabled_fg: Some("{{ index $p "overlay1" }}"),
+    diff_line_add: Some("{{ index $p "green" }}"),
+    diff_line_delete: Some("{{ index $p "red" }}"),
+    diff_file_added: Some("{{ index $p "green" }}"),
+    diff_file_removed: Some("{{ index $p "maroon" }}"),
+    diff_file_moved: Some("{{ index $p "mauve" }}"),
+    diff_file_modified: Some("{{ index $p "peach" }}"),
+    commit_hash: Some("{{ index $p "lavender" }}"),
+    commit_time: Some("{{ index $p "subtext1" }}"),
+    commit_author: Some("{{ index $p "sapphire" }}"),
+    danger_fg: Some("{{ index $p "red" }}"),
+    push_gauge_bg: Some("{{ index $p "blue" }}"),
+    push_gauge_fg: Some("{{ index $p "base" }}"),
+    tag_fg: Some("{{ index $p "rosewater" }}"),
+    branch_fg: Some("{{ index $p "teal" }}"),
+    line_break: Some("¶"),
+    block_title_focused: Some("{{ index $p "pink" }}"),
+    syntax: Some("base16-ocean.{{ $variant }}")
+)

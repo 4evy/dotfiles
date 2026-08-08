@@ -1,11 +1,11 @@
-{{- $ctp := include ".chezmoitemplates/catppuccin_palette.json" | fromJson -}}
-{{- $latte := index $ctp "latte" -}}
-{{- $frappe := index $ctp "frappe" -}}
-{{- $derived := index $ctp "_derived" -}}
-{{- $latteDiffAddedBg := index $derived "latteDiffAddedBg" -}}
-{{- $latteDiffRemovedBg := index $derived "latteDiffRemovedBg" -}}
-{{- $frappeDiffAddedBg := index $derived "frappeDiffAddedBg" -}}
-{{- $frappeDiffRemovedBg := index $derived "frappeDiffRemovedBg" -}}
+{{- $brd := include ".chezmoitemplates/black_rose_doll_palette.json" | fromJson -}}
+{{- $light := index $brd "light" -}}
+{{- $dark := index $brd "dark" -}}
+{{- $derived := index $brd "_derived" -}}
+{{- $lightDiffAddedBg := index $derived "lightDiffAddedBg" -}}
+{{- $lightDiffRemovedBg := index $derived "lightDiffRemovedBg" -}}
+{{- $darkDiffAddedBg := index $derived "darkDiffAddedBg" -}}
+{{- $darkDiffRemovedBg := index $derived "darkDiffRemovedBg" -}}
 model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
 approval_policy = "never"
@@ -33,7 +33,7 @@ dangerously_allow_all_unix_sockets = true
 [tui]
 notification_condition = "always"
 show_tooltips = false
-theme = "catppuccin-frappe-pink"
+theme = "black-rose-doll-dark"
 terminal_resize_reflow_max_rows = 0
 status_line = [
   "model-with-reasoning",
@@ -291,38 +291,38 @@ hide_full_access_warning = true
 hide_world_writable_warning = true
 
 [desktop]
-appearanceLightCodeThemeId = "catppuccin"
-appearanceDarkCodeThemeId = "catppuccin"
+appearanceLightCodeThemeId = "codex"
+appearanceDarkCodeThemeId = "codex"
 followUpQueueMode = "queue"
 
 [desktop.appearanceLightChromeTheme]
-accent = "{{ index $latte "pink" }}"
+accent = "{{ index $light "pink" }}"
 contrast = 45
-ink = "{{ index $latte "text" }}"
+ink = "{{ index $light "text" }}"
 opaqueWindows = false
-surface = "{{ index $latte "base" }}"
+surface = "{{ index $light "base" }}"
 
 [desktop.appearanceLightChromeTheme.fonts]
 
 [desktop.appearanceLightChromeTheme.semanticColors]
-diffAdded = "{{ index $latte "green" }}"
-diffAddedBg = "{{ $latteDiffAddedBg }}"
-diffRemoved = "{{ index $latte "red" }}"
-diffRemovedBg = "{{ $latteDiffRemovedBg }}"
-skill = "{{ index $latte "mauve" }}"
+diffAdded = "{{ index $light "green" }}"
+diffAddedBg = "{{ $lightDiffAddedBg }}"
+diffRemoved = "{{ index $light "red" }}"
+diffRemovedBg = "{{ $lightDiffRemovedBg }}"
+skill = "{{ index $light "mauve" }}"
 
 [desktop.appearanceDarkChromeTheme]
-accent = "{{ index $frappe "pink" }}"
+accent = "{{ index $dark "pink" }}"
 contrast = 60
-ink = "{{ index $frappe "text" }}"
+ink = "{{ index $dark "text" }}"
 opaqueWindows = false
-surface = "{{ index $frappe "base" }}"
+surface = "{{ index $dark "base" }}"
 
 [desktop.appearanceDarkChromeTheme.fonts]
 
 [desktop.appearanceDarkChromeTheme.semanticColors]
-diffAdded = "{{ index $frappe "green" }}"
-diffAddedBg = "{{ $frappeDiffAddedBg }}"
-diffRemoved = "{{ index $frappe "red" }}"
-diffRemovedBg = "{{ $frappeDiffRemovedBg }}"
-skill = "{{ index $frappe "mauve" }}"
+diffAdded = "{{ index $dark "green" }}"
+diffAddedBg = "{{ $darkDiffAddedBg }}"
+diffRemoved = "{{ index $dark "red" }}"
+diffRemovedBg = "{{ $darkDiffRemovedBg }}"
+skill = "{{ index $dark "mauve" }}"

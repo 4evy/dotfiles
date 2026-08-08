@@ -1,0 +1,157 @@
+{{- $variant := . -}}
+{{- $brd := include ".chezmoitemplates/black_rose_doll_palette.json" | fromJson -}}
+{{- $p := index $brd $variant -}}
+{{- $derived := index $brd "_derived" -}}
+{{- $diffAddedBg := index $derived (printf "%sDiffAddedBg" $variant) -}}
+{{- $diffRemovedBg := index $derived (printf "%sDiffRemovedBg" $variant) -}}
+{{- $themeName := "Black Rose Doll Dark" -}}
+{{- $semanticClass := "theme.dark.black-rose-doll-dark" -}}
+{{- if eq $variant "light" -}}
+{{- $themeName = "Black Rose Doll Light" -}}
+{{- $semanticClass = "theme.light.black-rose-doll-light" -}}
+{{- end -}}
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>name</key>
+    <string>{{ $themeName }}</string>
+    <key>semanticClass</key>
+    <string>{{ $semanticClass }}</string>
+    <key>author</key>
+    <string>Black Rose Doll, gothic lolita palette</string>
+    <key>colorSpaceName</key>
+    <string>sRGB</string>
+    <key>settings</key>
+    <array>
+      <dict>
+        <key>settings</key>
+        <dict>
+          <key>background</key>
+          <string>{{ index $p "base" }}</string>
+          <key>foreground</key>
+          <string>{{ index $p "text" }}</string>
+          <key>caret</key>
+          <string>{{ index $p "pink" }}</string>
+          <key>lineHighlight</key>
+          <string>{{ index $p "surface0" }}</string>
+          <key>misspelling</key>
+          <string>{{ index $p "red" }}</string>
+          <key>accent</key>
+          <string>{{ index $p "pink" }}</string>
+          <key>selection</key>
+          <string>{{ index $p "overlay2" }}</string>
+          <key>activeGuide</key>
+          <string>{{ index $p "surface1" }}</string>
+          <key>findHighlight</key>
+          <string>{{ index $p "surface2" }}</string>
+          <key>gutterForeground</key>
+          <string>{{ index $p "overlay1" }}</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Text</string>
+        <key>scope</key>
+        <string>text, source, variable.other.readwrite, punctuation.definition.variable</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>{{ index $p "text" }}</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Muted punctuation and comments</string>
+        <key>scope</key>
+        <string>punctuation, comment, punctuation.definition.comment</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>{{ index $p "overlay2" }}</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Strings</string>
+        <key>scope</key>
+        <string>string, punctuation.definition.string</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>{{ index $p "green" }}</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Rose accent scopes</string>
+        <key>scope</key>
+        <string>keyword, keyword.operator.word, keyword.operator.new, variable.language.super, support.type.primitive, storage.type, storage.modifier, constant.character.escape, punctuation.definition.keyword</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>{{ index $p "pink" }}</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Functions</string>
+        <key>scope</key>
+        <string>entity.name.function, meta.function-call.method, support.function, support.function.misc, variable.function</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>{{ index $p "blue" }}</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Types and classes</string>
+        <key>scope</key>
+        <string>entity.name.class, entity.other.inherited-class, support.class, meta.function-call.constructor, entity.name.struct, meta.type, meta.type-alias, entity.name.type</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>{{ index $p "yellow" }}</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Constants and numbers</string>
+        <key>scope</key>
+        <string>constant.numeric, variable.other.constant, entity.name.constant, constant.language.boolean, constant.language.false, constant.language.true</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>{{ index $p "peach" }}</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Markup inserted</string>
+        <key>scope</key>
+        <string>markup.inserted, markup.inserted.diff, diff.inserted</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>{{ index $p "green" }}</string>
+          <key>background</key>
+          <string>{{ $diffAddedBg }}</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Markup deleted</string>
+        <key>scope</key>
+        <string>markup.deleted, markup.deleted.diff, diff.deleted</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>{{ index $p "red" }}</string>
+          <key>background</key>
+          <string>{{ $diffRemovedBg }}</string>
+        </dict>
+      </dict>
+    </array>
+  </dict>
+</plist>

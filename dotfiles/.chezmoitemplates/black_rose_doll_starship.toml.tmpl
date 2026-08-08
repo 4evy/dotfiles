@@ -1,0 +1,66 @@
+{{- $variant := . -}}
+{{- $brd := include ".chezmoitemplates/black_rose_doll_palette.json" | fromJson -}}
+{{- $p := index $brd $variant -}}
+add_newline = true
+command_timeout = 5000
+format = "$directory$line_break$sudo$character$command_timeout"
+palette = "black_rose_doll_{{ $variant }}"
+right_format = "$cmd_duration$time"
+
+[character]
+error_symbol = "[💔 ❯](bold love)"
+success_symbol = "[💖 ❯](bold rose)"
+
+[cmd_duration]
+format = "[took $duration]($style) "
+min_time = 2000
+style = "subtle"
+
+[directory]
+fish_style_pwd_dir_length = 1
+format = "[🎀 $path]($style) "
+style = "bold rosewater"
+truncate_to_repo = false
+truncation_symbol = "../"
+
+[palettes.black_rose_doll_{{ $variant }}]
+base = "{{ index $p "base" }}"
+blue = "{{ index $p "blue" }}"
+crust = "{{ index $p "crust" }}"
+flamingo = "{{ index $p "flamingo" }}"
+green = "{{ index $p "green" }}"
+lavender = "{{ index $p "lavender" }}"
+love = "{{ index $p "love" }}"
+mantle = "{{ index $p "mantle" }}"
+maroon = "{{ index $p "maroon" }}"
+mauve = "{{ index $p "mauve" }}"
+overlay0 = "{{ index $p "overlay0" }}"
+overlay1 = "{{ index $p "overlay1" }}"
+overlay2 = "{{ index $p "overlay2" }}"
+peach = "{{ index $p "peach" }}"
+pink = "{{ index $p "pink" }}"
+red = "{{ index $p "red" }}"
+rose = "{{ index $p "rose" }}"
+rosewater = "{{ index $p "rosewater" }}"
+sapphire = "{{ index $p "sapphire" }}"
+sky = "{{ index $p "sky" }}"
+subtle = "{{ index $p "subtle" }}"
+subtext0 = "{{ index $p "subtext0" }}"
+subtext1 = "{{ index $p "subtext1" }}"
+surface0 = "{{ index $p "surface0" }}"
+surface1 = "{{ index $p "surface1" }}"
+surface2 = "{{ index $p "surface2" }}"
+teal = "{{ index $p "teal" }}"
+text = "{{ index $p "text" }}"
+yellow = "{{ index $p "yellow" }}"
+
+[sudo]
+disabled = false
+style = "bold love"
+symbol = "🗝️  "
+
+[time]
+disabled = false
+format = "[🕯️ $time]($style)"
+style = "subtle"
+time_format = "%H:%M:%S"

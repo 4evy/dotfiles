@@ -26,11 +26,18 @@ Release packages use `--release=small`, which also strips the binary
 ## CLI
 
 ```text
-terminal-theme-run [--help|--version] [--] COMMAND [ARG...]
+terminal-theme-run [--help|--version|--print-theme|--print-theme-no-terminal] [--] COMMAND [ARG...]
 ```
 
 Launcher options stop at `COMMAND`. A command matching a runner name or alias receives
 its configured integration; every other command replaces the launcher unchanged
+
+`--print-theme` performs the same environment, Kitty color-scheme, OSC 11, and desktop
+fallback detection used for launched applications and prints `dark` or `light`. Shell
+startup can export that result as `TERMINAL_THEME`, allowing every subsequent launcher
+invocation to reuse one consumed terminal response instead of issuing another query.
+`--print-theme-no-terminal` skips terminal I/O and is intended for prompt startup,
+where a delayed terminal reply could otherwise become editable shell input.
 
 Generic runtime defaults are embedded from the typed manifest in
 `config/defaults.toml`. Application profiles come from
@@ -38,7 +45,8 @@ Generic runtime defaults are embedded from the typed manifest in
 `TERMINAL_THEME_RUN_CONFIG`.
 
 The manifest owns all application-specific behavior. `[[runner]]` declares command
-resolution and environment policy, `[[integration]]` declares theme injection, and
+resolution and static environment policy, `[[integration]]` declares theme injection
+through arguments, a temporary patched config, or rendered environment variables, and
 `[[interpreter]]` declares optional shebang matching and interpreter candidates. The Zig
 code contains no application-name branches.
 

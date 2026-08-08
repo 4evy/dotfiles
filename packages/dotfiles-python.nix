@@ -22,7 +22,7 @@ python314Packages.buildPythonApplication {
       ../browser/helium.toml
       ../browser/settings
       ../ansible/tests
-      ../dotfiles/.chezmoitemplates/catppuccin_palette.json
+      ../dotfiles/.chezmoitemplates/black_rose_doll_palette.json
       ../npins/sources.json
       ../packages/dotfiles-python/assets
       ../packages/dotfiles-python/src/workstation

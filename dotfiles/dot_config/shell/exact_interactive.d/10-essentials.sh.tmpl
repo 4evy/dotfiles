@@ -35,15 +35,20 @@ alias vim="hx"
 
 unalias afind egrep fgrep grep 2>/dev/null || true
 
-alias ls="eza --icons=auto --group-directories-first"
-alias l="eza --icons=auto --group-directories-first"
-alias la="eza -a --icons=auto --group-directories-first"
-alias ll="eza -la --icons=auto --group-directories-first --git"
-alias lt="eza --tree --icons=auto --group-directories-first"
+alias ls="terminal-theme-run eza --icons=auto --group-directories-first"
+alias l="terminal-theme-run eza --icons=auto --group-directories-first"
+alias la="terminal-theme-run eza -a --icons=auto --group-directories-first"
+alias ll="terminal-theme-run eza -la --icons=auto --group-directories-first --git"
+alias lt="terminal-theme-run eza --tree --icons=auto --group-directories-first"
 
 alias btop="terminal-theme-run btop"
 alias htop="terminal-theme-run btop"
 alias top="terminal-theme-run btop"
+
+alias bat="terminal-theme-run bat"
+alias delta="terminal-theme-run delta"
+alias gitui="terminal-theme-run gitui"
+alias glow="terminal-theme-run glow"
 
 unalias pfetch neofetch 2>/dev/null || true
 

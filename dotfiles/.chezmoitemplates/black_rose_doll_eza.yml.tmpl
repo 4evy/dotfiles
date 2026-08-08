@@ -1,0 +1,106 @@
+{{- $brd := include ".chezmoitemplates/black_rose_doll_palette.json" | fromJson -}}
+{{- $p := index $brd . -}}
+colourful: true
+
+filekinds:
+  normal: {foreground: "{{ index $p "text" }}"}
+  directory: {foreground: "{{ index $p "pink" }}"}
+  symlink: {foreground: "{{ index $p "blue" }}"}
+  pipe: {foreground: "{{ index $p "subtext1" }}"}
+  block_device: {foreground: "{{ index $p "maroon" }}"}
+  char_device: {foreground: "{{ index $p "maroon" }}"}
+  socket: {foreground: "{{ index $p "subtext1" }}"}
+  special: {foreground: "{{ index $p "mauve" }}"}
+  executable: {foreground: "{{ index $p "green" }}"}
+  mount_point: {foreground: "{{ index $p "teal" }}"}
+
+perms:
+  user_read: {foreground: "{{ index $p "red" }}", is_bold: true}
+  user_write: {foreground: "{{ index $p "yellow" }}", is_bold: true}
+  user_execute_file: {foreground: "{{ index $p "green" }}", is_bold: true}
+  user_execute_other: {foreground: "{{ index $p "green" }}", is_bold: true}
+  group_read: {foreground: "{{ index $p "red" }}"}
+  group_write: {foreground: "{{ index $p "yellow" }}"}
+  group_execute: {foreground: "{{ index $p "green" }}"}
+  other_read: {foreground: "{{ index $p "red" }}"}
+  other_write: {foreground: "{{ index $p "yellow" }}"}
+  other_execute: {foreground: "{{ index $p "green" }}"}
+  special_user_file: {foreground: "{{ index $p "mauve" }}"}
+  special_other: {foreground: "{{ index $p "overlay1" }}"}
+  attribute: {foreground: "{{ index $p "overlay2" }}"}
+
+size:
+  major: {foreground: "{{ index $p "subtext0" }}"}
+  minor: {foreground: "{{ index $p "sky" }}"}
+  number_byte: {foreground: "{{ index $p "subtext1" }}"}
+  number_kilo: {foreground: "{{ index $p "subtext0" }}"}
+  number_mega: {foreground: "{{ index $p "blue" }}"}
+  number_giga: {foreground: "{{ index $p "mauve" }}"}
+  number_huge: {foreground: "{{ index $p "mauve" }}"}
+  unit_byte: {foreground: "{{ index $p "subtext0" }}"}
+  unit_kilo: {foreground: "{{ index $p "sky" }}"}
+  unit_mega: {foreground: "{{ index $p "mauve" }}"}
+  unit_giga: {foreground: "{{ index $p "mauve" }}"}
+  unit_huge: {foreground: "{{ index $p "teal" }}"}
+
+users:
+  user_you: {foreground: "{{ index $p "text" }}"}
+  user_root: {foreground: "{{ index $p "red" }}"}
+  user_other: {foreground: "{{ index $p "maroon" }}"}
+  group_yours: {foreground: "{{ index $p "subtext0" }}"}
+  group_other: {foreground: "{{ index $p "overlay2" }}"}
+  group_root: {foreground: "{{ index $p "red" }}"}
+
+links:
+  normal: {foreground: "{{ index $p "blue" }}"}
+  multi_link_file: {foreground: "{{ index $p "blue" }}"}
+
+git:
+  new: {foreground: "{{ index $p "green" }}"}
+  modified: {foreground: "{{ index $p "yellow" }}"}
+  deleted: {foreground: "{{ index $p "maroon" }}"}
+  renamed: {foreground: "{{ index $p "teal" }}"}
+  typechange: {foreground: "{{ index $p "pink" }}"}
+  ignored: {foreground: "{{ index $p "overlay1" }}"}
+  conflicted: {foreground: "{{ index $p "peach" }}"}
+
+git_repo:
+  branch_main: {foreground: "{{ index $p "subtext0" }}"}
+  branch_other: {foreground: "{{ index $p "mauve" }}"}
+  git_clean: {foreground: "{{ index $p "green" }}"}
+  git_dirty: {foreground: "{{ index $p "maroon" }}"}
+
+security_context:
+  none: {foreground: "{{ index $p "overlay1" }}"}
+  selinux:
+    colon: {foreground: "{{ index $p "overlay0" }}"}
+    user: {foreground: "{{ index $p "overlay1" }}"}
+    role: {foreground: "{{ index $p "mauve" }}"}
+    typ: {foreground: "{{ index $p "surface2" }}"}
+    range: {foreground: "{{ index $p "mauve" }}"}
+
+file_type:
+  image: {foreground: "{{ index $p "yellow" }}"}
+  video: {foreground: "{{ index $p "red" }}"}
+  music: {foreground: "{{ index $p "green" }}"}
+  lossless: {foreground: "{{ index $p "teal" }}"}
+  crypto: {foreground: "{{ index $p "overlay1" }}"}
+  document: {foreground: "{{ index $p "text" }}"}
+  compressed: {foreground: "{{ index $p "pink" }}"}
+  temp: {foreground: "{{ index $p "maroon" }}"}
+  compiled: {foreground: "{{ index $p "sapphire" }}"}
+  build: {foreground: "{{ index $p "yellow" }}"}
+  source: {foreground: "{{ index $p "blue" }}"}
+
+punctuation: {foreground: "{{ index $p "overlay0" }}"}
+date: {foreground: "{{ index $p "yellow" }}"}
+inode: {foreground: "{{ index $p "subtext0" }}"}
+blocks: {foreground: "{{ index $p "overlay0" }}"}
+header: {foreground: "{{ index $p "text" }}"}
+octal: {foreground: "{{ index $p "teal" }}"}
+flags: {foreground: "{{ index $p "mauve" }}"}
+
+symlink_path: {foreground: "{{ index $p "sky" }}"}
+control_char: {foreground: "{{ index $p "sapphire" }}"}
+broken_symlink: {foreground: "{{ index $p "red" }}"}
+broken_path_overlay: {foreground: "{{ index $p "surface2" }}"}

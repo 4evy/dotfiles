@@ -82,8 +82,20 @@
     dest: "{{ dotfiles_home_dir }}/.config/Equicord/settings/settings.json"
     mode: "0644"
 
+- name: Render Equicord QuickCSS from the Black Rose Doll palette
+  ansible.builtin.command:
+    argv:
+      - nix
+      - eval
+      - --json
+      - path:.#lib.equicordQuickCss
+  args:
+    chdir: "{{ dotfiles_repo_root }}"
+  register: applications_equicord_quick_css
+  changed_when: false
+
 - name: Install Equicord QuickCSS
   ansible.builtin.copy:
-    src: "{{ dotfiles_repo_root }}/packages/equicord/quickCss.css"
+    content: "{{ applications_equicord_quick_css.stdout | from_json }}"
     dest: "{{ dotfiles_home_dir }}/.config/Equicord/settings/quickCss.css"
     mode: "0644"

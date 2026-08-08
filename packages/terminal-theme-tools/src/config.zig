@@ -7,7 +7,7 @@ pub const max_file_bytes = constants.filesystem.max_file_bytes;
 
 pub const Pair = struct { key: []const u8, value: []const u8 };
 pub const Command = []const []const u8;
-pub const IntegrationStrategy = enum { arguments, config };
+pub const IntegrationStrategy = enum { arguments, config, environment };
 
 pub const Runner = struct {
     name: []const u8,
@@ -35,6 +35,7 @@ pub const Integration = struct {
     dark_theme: []const u8,
     light_theme: []const u8,
     arguments: []const []const u8 = &.{},
+    env: []const Pair = &.{},
     context_table: ?[]const u8 = null,
     context_field: ?[]const u8 = null,
     context_value: ?[]const u8 = null,
@@ -412,7 +413,14 @@ fn parseIntegration(allocator: std.mem.Allocator, table: c.toml_datum_t) !Integr
     try rejectUnknown(table, constants.toml.integration_fields);
     const name = try requiredString(allocator, table, constants.toml.field.name);
     const strategy_text = try requiredString(allocator, table, constants.toml.field.strategy);
-    const strategy: IntegrationStrategy = if (std.mem.eql(u8, strategy_text, constants.toml.arguments_strategy)) .arguments else if (std.mem.eql(u8, strategy_text, constants.toml.config_strategy)) .config else return error.UnsupportedStrategy;
+    const strategy: IntegrationStrategy = if (std.mem.eql(u8, strategy_text, constants.toml.arguments_strategy))
+        .arguments
+    else if (std.mem.eql(u8, strategy_text, constants.toml.config_strategy))
+        .config
+    else if (std.mem.eql(u8, strategy_text, constants.toml.environment_strategy))
+        .environment
+    else
+        return error.UnsupportedStrategy;
     const display_name = (try optionalString(allocator, table, constants.toml.field.display_name)) orelse name;
     const quote_text = try optionalString(allocator, table, constants.toml.field.quote);
     const location_text = try optionalString(allocator, table, constants.toml.field.temporary_location);
@@ -424,6 +432,7 @@ fn parseIntegration(allocator: std.mem.Allocator, table: c.toml_datum_t) !Integr
         .dark_theme = try requiredString(allocator, table, constants.toml.field.dark_theme),
         .light_theme = try requiredString(allocator, table, constants.toml.field.light_theme),
         .arguments = try stringArray(allocator, table, constants.toml.field.arguments, false),
+        .env = try environment(allocator, table),
         .context_table = try optionalString(allocator, table, constants.toml.field.context_table),
         .context_field = try optionalString(allocator, table, constants.toml.field.context_field),
         .context_value = try optionalString(allocator, table, constants.toml.field.context_value),
@@ -444,6 +453,7 @@ fn parseIntegration(allocator: std.mem.Allocator, table: c.toml_datum_t) !Integr
     }
     if (location_text) |location| result.temporary_location = if (std.mem.eql(u8, location, constants.toml.system_location)) .system else if (std.mem.eql(u8, location, constants.toml.cache_location)) .cache else return error.InvalidTemporaryLocation;
     if (validation_text) |validation| result.validation = if (std.mem.eql(u8, validation, constants.toml.toml_validation)) .toml else return error.InvalidValidation;
+    for (result.env) |pair| try validateEnvName(pair.key);
     try validateIntegration(result);
     return result;
 }
@@ -473,6 +483,14 @@ fn validateIntegration(value: Integration) !void {
             if (value.default_config == null or value.assignment == null or value.config_flags.len == 0 or value.config_output_flag == null or value.temporary_prefix == null or value.temporary_location == null or value.quote == null) return error.InvalidConfigIntegration;
             if (!std.mem.endsWith(u8, value.temporary_prefix.?, constants.toml.temporary_suffix) or std.fs.path.basename(value.temporary_prefix.?).len != value.temporary_prefix.?.len) return error.InvalidTemporaryPrefix;
             if (value.temporary_location.? == .cache and value.cache_subdirectory == null) return error.InvalidConfigIntegration;
+        },
+        .environment => {
+            if (value.env.len == 0) return error.InvalidEnvironmentIntegration;
+            var has_theme = false;
+            for (value.env) |pair| if (std.mem.indexOf(u8, pair.value, constants.template.theme) != null) {
+                has_theme = true;
+            };
+            if (!has_theme) return error.InvalidEnvironmentIntegration;
         },
     }
 }

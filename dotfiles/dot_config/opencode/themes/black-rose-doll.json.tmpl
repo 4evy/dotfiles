@@ -1,0 +1,275 @@
+{{- $brd := include ".chezmoitemplates/black_rose_doll_palette.json" | fromJson -}}
+{{- $light := index $brd "light" -}}
+{{- $dark := index $brd "dark" -}}
+{
+  "$schema": "https://opencode.ai/theme.json",
+  "defs": {
+    "dark_rosewater": "{{ index $dark "rosewater" }}",
+    "dark_flamingo": "{{ index $dark "flamingo" }}",
+    "dark_pink": "{{ index $dark "pink" }}",
+    "dark_mauve": "{{ index $dark "mauve" }}",
+    "dark_red": "{{ index $dark "red" }}",
+    "dark_maroon": "{{ index $dark "maroon" }}",
+    "dark_peach": "{{ index $dark "peach" }}",
+    "dark_yellow": "{{ index $dark "yellow" }}",
+    "dark_green": "{{ index $dark "green" }}",
+    "dark_teal": "{{ index $dark "teal" }}",
+    "dark_sky": "{{ index $dark "sky" }}",
+    "dark_sapphire": "{{ index $dark "sapphire" }}",
+    "dark_blue": "{{ index $dark "blue" }}",
+    "dark_lavender": "{{ index $dark "lavender" }}",
+    "dark_text": "{{ index $dark "text" }}",
+    "dark_subtext1": "{{ index $dark "subtext1" }}",
+    "dark_subtext0": "{{ index $dark "subtext0" }}",
+    "dark_subtext": "{{ index $dark "subtext0" }}",
+    "dark_overlay2": "{{ index $dark "overlay2" }}",
+    "dark_overlay1": "{{ index $dark "overlay1" }}",
+    "dark_overlay0": "{{ index $dark "overlay0" }}",
+    "dark_overlay": "{{ index $dark "overlay0" }}",
+    "dark_surface2": "{{ index $dark "surface2" }}",
+    "dark_surface1": "{{ index $dark "surface1" }}",
+    "dark_surface0": "{{ index $dark "surface0" }}",
+    "dark_base": "{{ index $dark "base" }}",
+    "dark_mantle": "{{ index $dark "mantle" }}",
+    "dark_crust": "{{ index $dark "crust" }}",
+    "light_rosewater": "{{ index $light "rosewater" }}",
+    "light_flamingo": "{{ index $light "flamingo" }}",
+    "light_pink": "{{ index $light "pink" }}",
+    "light_mauve": "{{ index $light "mauve" }}",
+    "light_red": "{{ index $light "red" }}",
+    "light_maroon": "{{ index $light "maroon" }}",
+    "light_peach": "{{ index $light "peach" }}",
+    "light_yellow": "{{ index $light "yellow" }}",
+    "light_green": "{{ index $light "green" }}",
+    "light_teal": "{{ index $light "teal" }}",
+    "light_sky": "{{ index $light "sky" }}",
+    "light_sapphire": "{{ index $light "sapphire" }}",
+    "light_blue": "{{ index $light "blue" }}",
+    "light_lavender": "{{ index $light "lavender" }}",
+    "light_text": "{{ index $light "text" }}",
+    "light_subtext1": "{{ index $light "subtext1" }}",
+    "light_subtext0": "{{ index $light "subtext0" }}",
+    "light_subtext": "{{ index $light "subtext0" }}",
+    "light_overlay2": "{{ index $light "overlay2" }}",
+    "light_overlay1": "{{ index $light "overlay1" }}",
+    "light_overlay0": "{{ index $light "overlay0" }}",
+    "light_overlay": "{{ index $light "overlay0" }}",
+    "light_surface2": "{{ index $light "surface2" }}",
+    "light_surface1": "{{ index $light "surface1" }}",
+    "light_surface0": "{{ index $light "surface0" }}",
+    "light_base": "{{ index $light "base" }}",
+    "light_mantle": "{{ index $light "mantle" }}",
+    "light_crust": "{{ index $light "crust" }}"
+  },
+  "theme": {
+    "primary": {
+      "dark": "dark_pink",
+      "light": "light_pink"
+    },
+    "secondary": {
+      "dark": "dark_mauve",
+      "light": "light_mauve"
+    },
+    "accent": {
+      "dark": "dark_pink",
+      "light": "light_pink"
+    },
+    "error": {
+      "dark": "dark_red",
+      "light": "light_red"
+    },
+    "warning": {
+      "dark": "dark_yellow",
+      "light": "light_yellow"
+    },
+    "success": {
+      "dark": "dark_green",
+      "light": "light_green"
+    },
+    "info": {
+      "dark": "dark_teal",
+      "light": "light_teal"
+    },
+    "text": {
+      "dark": "dark_text",
+      "light": "light_text"
+    },
+    "textMuted": {
+      "dark": "dark_subtext",
+      "light": "light_subtext"
+    },
+    "selectedListItemText": {
+      "dark": "dark_base",
+      "light": "light_base"
+    },
+    "background": {
+      "dark": "dark_base",
+      "light": "light_base"
+    },
+    "backgroundPanel": {
+      "dark": "dark_mantle",
+      "light": "light_mantle"
+    },
+    "backgroundElement": {
+      "dark": "dark_surface0",
+      "light": "light_surface0"
+    },
+    "backgroundMenu": {
+      "dark": "dark_surface0",
+      "light": "light_surface0"
+    },
+    "border": {
+      "dark": "dark_surface1",
+      "light": "light_surface1"
+    },
+    "borderActive": {
+      "dark": "dark_pink",
+      "light": "light_pink"
+    },
+    "borderSubtle": {
+      "dark": "dark_surface2",
+      "light": "light_surface2"
+    },
+    "diffAdded": {
+      "dark": "dark_green",
+      "light": "light_green"
+    },
+    "diffRemoved": {
+      "dark": "dark_red",
+      "light": "light_red"
+    },
+    "diffContext": {
+      "dark": "dark_overlay",
+      "light": "light_overlay"
+    },
+    "diffHunkHeader": {
+      "dark": "dark_peach",
+      "light": "light_peach"
+    },
+    "diffHighlightAdded": {
+      "dark": "dark_green",
+      "light": "light_green"
+    },
+    "diffHighlightRemoved": {
+      "dark": "dark_red",
+      "light": "light_red"
+    },
+    "diffAddedBg": {
+      "dark": "dark_surface0",
+      "light": "light_surface0"
+    },
+    "diffRemovedBg": {
+      "dark": "dark_surface0",
+      "light": "light_surface0"
+    },
+    "diffContextBg": {
+      "dark": "dark_surface0",
+      "light": "light_surface0"
+    },
+    "diffLineNumber": {
+      "dark": "dark_subtext",
+      "light": "light_subtext"
+    },
+    "diffAddedLineNumberBg": {
+      "dark": "dark_surface0",
+      "light": "light_surface0"
+    },
+    "diffRemovedLineNumberBg": {
+      "dark": "dark_surface0",
+      "light": "light_surface0"
+    },
+    "markdownText": {
+      "dark": "dark_text",
+      "light": "light_text"
+    },
+    "markdownHeading": {
+      "dark": "dark_mauve",
+      "light": "light_mauve"
+    },
+    "markdownLink": {
+      "dark": "dark_blue",
+      "light": "light_blue"
+    },
+    "markdownLinkText": {
+      "dark": "dark_sky",
+      "light": "light_sky"
+    },
+    "markdownCode": {
+      "dark": "dark_green",
+      "light": "light_green"
+    },
+    "markdownBlockQuote": {
+      "dark": "dark_yellow",
+      "light": "light_yellow"
+    },
+    "markdownEmph": {
+      "dark": "dark_yellow",
+      "light": "light_yellow"
+    },
+    "markdownStrong": {
+      "dark": "dark_peach",
+      "light": "light_peach"
+    },
+    "markdownHorizontalRule": {
+      "dark": "dark_surface2",
+      "light": "light_surface2"
+    },
+    "markdownListItem": {
+      "dark": "dark_blue",
+      "light": "light_blue"
+    },
+    "markdownListEnumeration": {
+      "dark": "dark_sky",
+      "light": "light_sky"
+    },
+    "markdownImage": {
+      "dark": "dark_blue",
+      "light": "light_blue"
+    },
+    "markdownImageText": {
+      "dark": "dark_sky",
+      "light": "light_sky"
+    },
+    "markdownCodeBlock": {
+      "dark": "dark_text",
+      "light": "light_text"
+    },
+    "syntaxComment": {
+      "dark": "dark_overlay",
+      "light": "light_overlay"
+    },
+    "syntaxKeyword": {
+      "dark": "dark_mauve",
+      "light": "light_mauve"
+    },
+    "syntaxFunction": {
+      "dark": "dark_blue",
+      "light": "light_blue"
+    },
+    "syntaxVariable": {
+      "dark": "dark_red",
+      "light": "light_red"
+    },
+    "syntaxString": {
+      "dark": "dark_green",
+      "light": "light_green"
+    },
+    "syntaxNumber": {
+      "dark": "dark_peach",
+      "light": "light_peach"
+    },
+    "syntaxType": {
+      "dark": "dark_yellow",
+      "light": "light_yellow"
+    },
+    "syntaxOperator": {
+      "dark": "dark_sky",
+      "light": "light_sky"
+    },
+    "syntaxPunctuation": {
+      "dark": "dark_text",
+      "light": "light_text"
+    },
+    "thinkingOpacity": 0.65
+  }
+}

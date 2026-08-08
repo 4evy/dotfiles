@@ -1,0 +1,15 @@
+{{- $brd := include ".chezmoitemplates/black_rose_doll_palette.json" | fromJson -}}
+{{- $p := index $brd . -}}
+--height=40%
+--layout=reverse
+--border
+--color=bg:{{ index $p "base" }},list-bg:{{ index $p "base" }},preview-bg:{{ index $p "mantle" }},input-bg:{{ index $p "surface0" }}
+--color=header-bg:{{ index $p "base" }},footer-bg:{{ index $p "base" }},bg+:{{ index $p "surface0" }},selected-bg:{{ index $p "surface1" }}
+--color=fg:{{ index $p "text" }},fg+:{{ index $p "text" }},query:{{ index $p "text" }},ghost:{{ index $p "overlay1" }},disabled:{{ index $p "overlay0" }}
+--color=hl:{{ index $p "red" }},hl+:{{ index $p "red" }},selected-hl:{{ index $p "rosewater" }},nth:dim
+--color=spinner:{{ index $p "pink" }},info:{{ index $p "pink" }},pointer:{{ index $p "pink" }},marker:{{ index $p "lavender" }},prompt:{{ index $p "pink" }}
+--color=header:{{ index $p "red" }},footer:{{ index $p "rosewater" }},gutter:{{ index $p "base" }},alt-bg:{{ index $p "mantle" }},alt-gutter:{{ index $p "mantle" }}
+--color=border:{{ index $p "overlay0" }},list-border:{{ index $p "overlay0" }},preview-border:{{ index $p "overlay0" }},input-border:{{ index $p "overlay0" }}
+--color=header-border:{{ index $p "overlay0" }},footer-border:{{ index $p "overlay0" }},scrollbar:{{ index $p "overlay2" }},preview-scrollbar:{{ index $p "overlay2" }}
+--color=separator:{{ index $p "surface2" }},gap-line:{{ index $p "surface2" }},label:{{ index $p "text" }},list-label:{{ index $p "text" }}
+--color=preview-label:{{ index $p "rosewater" }},input-label:{{ index $p "rosewater" }},header-label:{{ index $p "rosewater" }},footer-label:{{ index $p "rosewater" }}

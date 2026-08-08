@@ -1,5 +1,18 @@
 .config/ghostty/config
 .ssh/github_key
+.codex/themes/catppuccin-frappe-pink.tmTheme
+.codex/themes/catppuccin-latte-pink.tmTheme
+.config/ghostty/backgrounds/catppuccin-emoji-corner.png
+.config/ghostty/shaders/catppuccin-bubbles.glsl
+.config/ghostty/themes/catppuccin-frappe-pink.conf
+.config/ghostty/themes/catppuccin-latte-pink.conf
+.config/gtk-3.0/catppuccin-accent.css
+.config/gtk-4.0/catppuccin-accent.css
+.config/systemd/user/gnome-catppuccin-accent.service
+.config/yazi/flavors/catppuccin-frappe-pink.yazi
+.config/yazi/flavors/catppuccin-latte-pink.yazi
+.local/bin/gnome-catppuccin-accent
+.vim/pack/vendor/start/catppuccin
 {{- if eq .chezmoi.os "darwin" }}
 Library/Application Support/com.mitchellh.ghostty/config
 Library/Application Support/com.mitchellh.ghostty/themes/catppuccin-frappe-pink.conf

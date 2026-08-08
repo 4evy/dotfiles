@@ -1,0 +1,108 @@
+{{- $variant := . -}}
+{{- $brd := include ".chezmoitemplates/black_rose_doll_palette.json" | fromJson -}}
+{{- $p := index $brd $variant -}}
+{{- $label := "Dark" -}}
+{{- $selectedBg := "surface1" -}}
+{{- $inactiveFg := "overlay1" -}}
+{{- $meterBg := "surface1" -}}
+{{- $divLine := "overlay0" -}}
+{{- if eq $variant "light" -}}
+{{- $label = "Light" -}}
+{{- $selectedBg = "surface0" -}}
+{{- $inactiveFg = "overlay0" -}}
+{{- $meterBg = "surface0" -}}
+{{- $divLine = "surface1" -}}
+{{- end -}}
+# Black Rose Doll {{ $label }} — rose, lace, and antique gold.
+
+# Main background, empty for terminal default, need to be empty if you want transparent background
+theme[main_bg]="{{ index $p "base" }}"
+
+# Main text color
+theme[main_fg]="{{ index $p "text" }}"
+
+# Title color for boxes
+theme[title]="{{ index $p "text" }}"
+
+# Highlight color for keyboard shortcuts
+theme[hi_fg]="{{ index $p "pink" }}"
+
+# Background color of selected item in processes box
+theme[selected_bg]="{{ index $p $selectedBg }}"
+
+# Foreground color of selected item in processes box
+theme[selected_fg]="{{ index $p "pink" }}"
+
+# Color of inactive/disabled text
+theme[inactive_fg]="{{ index $p $inactiveFg }}"
+
+# Color of text appearing on top of graphs, i.e uptime and current network graph scaling
+theme[graph_text]="{{ index $p "rosewater" }}"
+
+# Background color of the percentage meters
+theme[meter_bg]="{{ index $p $meterBg }}"
+
+# Misc colors for processes box including mini cpu graphs, details memory graph and details status text
+theme[proc_misc]="{{ index $p "rosewater" }}"
+
+# Process follow/pause banners and the followed row
+theme[proc_pause_bg]="{{ index $p "surface2" }}"
+theme[proc_follow_bg]="{{ index $p "pine" }}"
+theme[proc_banner_bg]="{{ index $p "iris" }}"
+theme[proc_banner_fg]="{{ index $p "text" }}"
+theme[followed_bg]="{{ index $p "pine" }}"
+theme[followed_fg]="{{ index $p "text" }}"
+
+# CPU, Memory, Network, Proc box outline colors
+theme[cpu_box]="{{ index $p "rose" }}"
+theme[mem_box]="{{ index $p "pine" }}"
+theme[net_box]="{{ index $p "love" }}"
+theme[proc_box]="{{ index $p "iris" }}"
+
+# Box divider line and small boxes line color
+theme[div_line]="{{ index $p $divLine }}"
+
+# Temperature graph color (Green -> Yellow -> Red)
+theme[temp_start]="{{ index $p "green" }}"
+theme[temp_mid]="{{ index $p "yellow" }}"
+theme[temp_end]="{{ index $p "red" }}"
+
+# CPU graph colors (Pink)
+theme[cpu_start]="{{ index $p "teal" }}"
+theme[cpu_mid]="{{ index $p "sapphire" }}"
+theme[cpu_end]="{{ index $p "pink" }}"
+
+# Mem/Disk free meter (Pink)
+theme[free_start]="{{ index $p "pink" }}"
+theme[free_mid]="{{ index $p "lavender" }}"
+theme[free_end]="{{ index $p "blue" }}"
+
+# Mem/Disk cached meter (Pink)
+theme[cached_start]="{{ index $p "sapphire" }}"
+theme[cached_mid]="{{ index $p "blue" }}"
+theme[cached_end]="{{ index $p "lavender" }}"
+
+# Mem/Disk available meter (Peach -> Red)
+theme[available_start]="{{ index $p "peach" }}"
+theme[available_mid]="{{ index $p "maroon" }}"
+theme[available_end]="{{ index $p "red" }}"
+
+# Mem/Disk used meter (Pink)
+theme[used_start]="{{ index $p "green" }}"
+theme[used_mid]="{{ index $p "teal" }}"
+theme[used_end]="{{ index $p "sky" }}"
+
+# Download graph colors (Peach -> Red)
+theme[download_start]="{{ index $p "peach" }}"
+theme[download_mid]="{{ index $p "maroon" }}"
+theme[download_end]="{{ index $p "red" }}"
+
+# Upload graph colors (Pink)
+theme[upload_start]="{{ index $p "green" }}"
+theme[upload_mid]="{{ index $p "teal" }}"
+theme[upload_end]="{{ index $p "sky" }}"
+
+# Process box color gradient for threads, mem and cpu usage (Pink)
+theme[process_start]="{{ index $p "sapphire" }}"
+theme[process_mid]="{{ index $p "lavender" }}"
+theme[process_end]="{{ index $p "pink" }}"

@@ -158,6 +158,7 @@ modules:
         - gtk4-layer-shell
         - just
         - kmscon
+        - kmscon-freetype
         - libgda
         - libgda-sqlite
         - liberation-mono-fonts
@@ -240,4 +241,6 @@ modules:
       - >-
         PYTHONPATH=/usr/lib/dotfiles/python /usr/bin/python3.14 -c
         'import astral; assert astral.__version__ == "3.2"'
+      - rpm -q kmscon kmscon-freetype
+      - test -f /usr/lib64/kmscon/mod-freetype.so
       - bootc container lint

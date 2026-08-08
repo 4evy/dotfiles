@@ -1,7 +1,7 @@
 [runtime]
 theme_environment = ["COLOR_SCHEME", "TERMINAL_THEME", "THEME"]
-theme_dark_aliases = ["frappe", "macchiato", "mocha", "catppuccin-frappe-pink"]
-theme_light_aliases = ["latte", "catppuccin-latte-pink"]
+theme_dark_aliases = ["dark", "black-rose-doll-dark"]
+theme_light_aliases = ["light", "black-rose-doll-light"]
 theme_terminal_program_environment = "TERM_PROGRAM"
 theme_terminal_queries = { ghostty = "color-scheme", xterm-ghostty = "color-scheme", kitty = "color-scheme", xterm-kitty = "color-scheme", "*" = "background" }
 theme_macos_commands = [["defaults", "read", "-g", "AppleInterfaceStyle"]]
@@ -19,7 +19,7 @@ theme_unix_commands = [
     "gtk-theme",
   ],
 ]
-theme_macos_fallback = "dark"
+theme_macos_fallback = "light"
 theme_unix_fallback = "dark"
 theme_probe_timeout_ms = 100
 helper_timeout_ms = 4000

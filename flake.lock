@@ -27,6 +27,18 @@
         "type": "github"
       }
     },
+    "catppuccin-discord-css": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-dXgKjYDlGL9BZ47MYhlxS0JE3Ep6mOnd4ggdeB6rKzw=",
+        "type": "file",
+        "url": "https://catppuccin.github.io/discord/dist/catppuccin-mocha-pink.theme.css"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://catppuccin.github.io/discord/dist/catppuccin-mocha-pink.theme.css"
+      }
+    },
     "eupkgs": {
       "inputs": {
         "nixpkgs": [
@@ -157,6 +169,7 @@
     "root": {
       "inputs": {
         "bun2nix": "bun2nix",
+        "catppuccin-discord-css": "catppuccin-discord-css",
         "eupkgs": "eupkgs",
         "flake-parts": "flake-parts",
         "nixcord": "nixcord",

@@ -2,14 +2,14 @@
 {{- if eq .chezmoi.os "darwin" -}}
 {{- $leader = "super+g" -}}
 {{- end -}}
-theme = light:catppuccin-latte-pink.conf,dark:catppuccin-frappe-pink.conf
-background-image = {{ .chezmoi.homeDir }}/.config/ghostty/backgrounds/catppuccin-emoji-corner.png
+theme = light:black-rose-doll-light.conf,dark:black-rose-doll-dark.conf
+background-image = {{ .chezmoi.homeDir }}/.config/ghostty/backgrounds/black-rose-doll-emoji-corner.png
 background-image-opacity = 0.24
 background-image-position = bottom-right
 {{- if eq .chezmoi.os "linux" }}
 background-image-fit = cover
 {{- end }}
-custom-shader = {{ .chezmoi.homeDir }}/.config/ghostty/shaders/catppuccin-bubbles.glsl
+custom-shader = {{ .chezmoi.homeDir }}/.config/ghostty/shaders/black-rose-doll-lace.glsl
 custom-shader-animation = false
 adjust-underline-position = 4
 confirm-close-surface = false

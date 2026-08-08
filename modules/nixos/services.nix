@@ -46,9 +46,13 @@ in
       enable = true;
       package = dotfilesPackages.kmscon;
       useXkbConfig = true;
-      extraOptions = "--term xterm-256color";
-      config.hwaccel = true;
-      config."font-name" = "JetBrainsMono Nerd Font";
+      config = {
+        hwaccel = true;
+        term = "kmscon";
+        "font-engine" = "freetype";
+        "font-name" = "JetBrainsMono Nerd Font";
+        "sb-size" = 10000;
+      };
     };
 
     libinput.enable = true;

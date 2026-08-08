@@ -10,10 +10,12 @@ fn helperTimeout(milliseconds: u32) std.Io.Timeout {
 
 pub const Prepared = struct {
     argv: std.ArrayList([]const u8) = .empty,
+    environment: std.ArrayList(config.Pair) = .empty,
     temporary_path: ?[:0]u8 = null,
 
     pub fn deinit(self: *Prepared, allocator: std.mem.Allocator) void {
         self.argv.deinit(allocator);
+        self.environment.deinit(allocator);
         if (self.temporary_path) |path| {
             _ = c.unlink(path.ptr);
             allocator.free(path);
@@ -106,6 +108,11 @@ fn replaceAll(allocator: std.mem.Allocator, input: []const u8, needle: []const u
 fn render(allocator: std.mem.Allocator, template: []const u8, theme_name: []const u8, context: []const u8) ![]const u8 {
     const themed = try replaceAll(allocator, template, constants.template.theme, theme_name);
     return replaceAll(allocator, themed, constants.template.context, context);
+}
+
+fn renderEnvironment(allocator: std.mem.Allocator, env: *const std.process.Environ.Map, template: []const u8, theme_name: []const u8) ![]const u8 {
+    const themed = try render(allocator, template, theme_name, "");
+    return replaceAll(allocator, themed, constants.template.home, env.get(constants.environment.home) orelse "");
 }
 
 fn argumentValue(arguments: []const []const u8, flags: []const []const u8, prefixes: []const []const u8, separator: ?[]const u8) ?[]const u8 {
@@ -357,6 +364,13 @@ pub fn prepareForTheme(allocator: std.mem.Allocator, io: std.Io, env: *const std
                 if (!joined) try result.argv.append(allocator, extra[index]);
             }
         },
+        .environment => {
+            for (selected.env) |pair| try result.environment.append(allocator, .{
+                .key = pair.key,
+                .value = try renderEnvironment(allocator, env, pair.value, theme_name),
+            });
+            try result.argv.appendSlice(allocator, extra);
+        },
     }
     return result;
 }
@@ -387,6 +401,20 @@ pub const Invocation = struct {
         self.environment.deinit();
         self.argv.deinit(self.allocator);
         self.prepared.deinit(self.allocator);
+    }
+
+    pub fn replaceOrExecute(self: *Invocation, io: std.Io) !u8 {
+        // Invocations that do not own a temporary file have nothing to clean up
+        // after the command exits. Replace the launcher process so signals and
+        // process ownership go directly to the command instead of leaving a
+        // waiting wrapper that can be terminated independently of its child.
+        if (self.prepared.temporary_path == null and std.process.can_replace) {
+            return std.process.replace(io, .{
+                .argv = self.argv.items,
+                .environ_map = &self.environment,
+            });
+        }
+        return self.execute(io);
     }
 
     pub fn execute(self: *Invocation, io: std.Io) !u8 {
@@ -426,6 +454,8 @@ pub fn prepareInvocation(allocator: std.mem.Allocator, io: std.Io, env: *const s
     errdefer child_env.deinit();
     for (runner.env_unset) |name| _ = child_env.swapRemove(name);
     for (runner.env) |pair| try child_env.put(pair.key, pair.value);
+    for (prepared.environment.items) |pair| try child_env.put(pair.key, pair.value);
+    try child_env.put(constants.environment.active, "1");
     return .{
         .allocator = allocator,
         .argv = argv,
@@ -437,7 +467,7 @@ pub fn prepareInvocation(allocator: std.mem.Allocator, io: std.Io, env: *const s
 pub fn runMatched(allocator: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, manifest: *const config.Manifest, runner: *const config.Runner, requested: []const u8, extra: []const []const u8) !u8 {
     var invocation = try prepareInvocation(allocator, io, env, manifest, runner, requested, extra, null);
     defer invocation.deinit();
-    return invocation.execute(io);
+    return invocation.replaceOrExecute(io);
 }
 
 pub fn execUnknown(allocator: std.mem.Allocator, argv: []const [:0]const u8) u8 {
@@ -457,6 +487,34 @@ test "patches a configured assignment" {
     const patched = try patchAssignment(std.testing.allocator, "x = 1\nstyle = \"old\"\n", "style", '"', "new", .{});
     defer std.testing.allocator.free(patched);
     try std.testing.expectEqualStrings("x = 1\nstyle = \"new\"\n", patched);
+}
+
+test "environment integration renders theme and home placeholders" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+    var env = std.process.Environ.Map.init(std.testing.allocator);
+    defer env.deinit();
+    try env.put(constants.environment.home, "/Users/tester");
+    const runtime: config.Runtime = undefined;
+    const integration: config.Integration = .{
+        .name = "tool",
+        .strategy = .environment,
+        .display_name = "tool",
+        .dark_theme = "night",
+        .light_theme = "day",
+        .env = &.{
+            .{ .key = "TOOL_CONFIG", .value = "{home}/.config/tool/{theme}.toml" },
+            .{ .key = "TOOL_THEME", .value = "{theme}" },
+        },
+    };
+    var prepared = try prepareForTheme(allocator, std.testing.io, &env, &runtime, &integration, &.{"--version"}, .light);
+    defer prepared.deinit(allocator);
+    try std.testing.expectEqualSlices([]const u8, &.{"--version"}, prepared.argv.items);
+    try std.testing.expectEqual(2, prepared.environment.items.len);
+    try std.testing.expectEqualStrings("TOOL_CONFIG", prepared.environment.items[0].key);
+    try std.testing.expectEqualStrings("/Users/tester/.config/tool/day.toml", prepared.environment.items[0].value);
+    try std.testing.expectEqualStrings("day", prepared.environment.items[1].value);
 }
 
 test "validated table assignment is replaced at the root" {

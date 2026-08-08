@@ -1,0 +1,125 @@
+{{- $variant := . -}}
+{{- $brd := include ".chezmoitemplates/black_rose_doll_palette.json" | fromJson -}}
+{{- $p := index $brd $variant -}}
+[app]
+overall = { bg = "{{ index $p "base" }}" }
+
+[mgr]
+cwd = { fg = "{{ index $p "foam" }}" }
+find_keyword = { fg = "{{ index $p "gold" }}", italic = true }
+find_position = { fg = "{{ index $p "rose" }}", italic = true }
+symlink_target = { fg = "{{ index $p "subtle" }}", italic = true }
+marker_copied = { fg = "{{ index $p "pine" }}", bg = "{{ index $p "pine" }}" }
+marker_cut = { fg = "{{ index $p "love" }}", bg = "{{ index $p "love" }}" }
+marker_marked = { fg = "{{ index $p "foam" }}", bg = "{{ index $p "foam" }}" }
+marker_selected = { fg = "{{ index $p "iris" }}", bg = "{{ index $p "iris" }}" }
+marker_symbol = "│"
+count_copied = { fg = "{{ index $p "base" }}", bg = "{{ index $p "pine" }}" }
+count_cut = { fg = "{{ index $p "base" }}", bg = "{{ index $p "love" }}" }
+count_selected = { fg = "{{ index $p "base" }}", bg = "{{ index $p "iris" }}" }
+border_symbol = "│"
+border_style = { fg = "{{ index $p "highlightHigh" }}" }
+
+[tabs]
+active = { fg = "{{ index $p "base" }}", bg = "{{ index $p "rose" }}", bold = true }
+inactive = { fg = "{{ index $p "subtle" }}", bg = "{{ index $p "surface" }}" }
+sep_inner = { open = "", close = "" }
+sep_outer = { open = "", close = "" }
+
+[mode]
+normal_main = { fg = "{{ index $p "base" }}", bg = "{{ index $p "rose" }}", bold = true }
+normal_alt = { fg = "{{ index $p "rose" }}", bg = "{{ index $p "surface" }}" }
+select_main = { fg = "{{ index $p "base" }}", bg = "{{ index $p "pine" }}", bold = true }
+select_alt = { fg = "{{ index $p "pine" }}", bg = "{{ index $p "surface" }}" }
+unset_main = { fg = "{{ index $p "base" }}", bg = "{{ index $p "love" }}", bold = true }
+unset_alt = { fg = "{{ index $p "love" }}", bg = "{{ index $p "surface" }}" }
+
+[indicator]
+parent = { fg = "{{ index $p "subtle" }}", bg = "{{ index $p "surface" }}" }
+current = { fg = "{{ index $p "base" }}", bg = "{{ index $p "rose" }}", bold = true }
+preview = { fg = "{{ index $p "base" }}", bg = "{{ index $p "iris" }}", underline = true }
+padding = { open = "", close = "" }
+
+[status]
+overall = { fg = "{{ index $p "text" }}", bg = "{{ index $p "base" }}" }
+sep_left = { open = "", close = "" }
+sep_right = { open = "", close = "" }
+progress_label = { fg = "{{ index $p "text" }}", bold = true }
+progress_normal = { fg = "{{ index $p "pine" }}", bg = "{{ index $p "highlightLow" }}" }
+progress_error = { fg = "{{ index $p "gold" }}", bg = "{{ index $p "love" }}" }
+perm_type = { fg = "{{ index $p "iris" }}" }
+perm_read = { fg = "{{ index $p "gold" }}" }
+perm_write = { fg = "{{ index $p "love" }}" }
+perm_exec = { fg = "{{ index $p "pine" }}" }
+perm_sep = { fg = "{{ index $p "muted" }}" }
+
+[input]
+border = { fg = "{{ index $p "rose" }}" }
+title = { fg = "{{ index $p "rose" }}" }
+value = { fg = "{{ index $p "text" }}" }
+selected = { reversed = true }
+
+[pick]
+border = { fg = "{{ index $p "rose" }}" }
+active = { fg = "{{ index $p "rose" }}" }
+inactive = { fg = "{{ index $p "subtle" }}" }
+
+[confirm]
+border = { fg = "{{ index $p "rose" }}" }
+title = { fg = "{{ index $p "rose" }}" }
+body = { fg = "{{ index $p "text" }}" }
+list = { fg = "{{ index $p "subtle" }}" }
+btn_yes = { reversed = true }
+btn_no = { fg = "{{ index $p "muted" }}" }
+btn_labels = [ "  [Y]es  ", "  (N)o  " ]
+
+[cmp]
+border = { fg = "{{ index $p "rose" }}" }
+active = { fg = "{{ index $p "base" }}", bg = "{{ index $p "rose" }}", bold = true }
+inactive = { fg = "{{ index $p "subtle" }}" }
+
+[tasks]
+border = { fg = "{{ index $p "rose" }}" }
+title = { fg = "{{ index $p "rose" }}" }
+hovered = { fg = "{{ index $p "rose" }}", bold = true }
+
+[which]
+border = { fg = "{{ index $p "rose" }}" }
+cols = 3
+mask = { bg = "{{ index $p "surface" }}" }
+cand = { fg = "{{ index $p "foam" }}" }
+rest = { fg = "{{ index $p "muted" }}" }
+desc = { fg = "{{ index $p "rose" }}" }
+separator = "  "
+separator_style = { fg = "{{ index $p "highlightHigh" }}" }
+
+[help]
+border = { fg = "{{ index $p "rose" }}" }
+chord = { fg = "{{ index $p "foam" }}" }
+action = { fg = "{{ index $p "text" }}" }
+hovered = { fg = "{{ index $p "text" }}", bg = "{{ index $p "highlightLow" }}", bold = true }
+
+[notify]
+title_info = { fg = "{{ index $p "foam" }}" }
+title_warn = { fg = "{{ index $p "gold" }}" }
+title_error = { fg = "{{ index $p "love" }}" }
+
+[filetype]
+rules = [
+  { mime = "**/image/*", fg = "{{ index $p "foam" }}" },
+  { mime = "**/{audio,video}/*", fg = "{{ index $p "gold" }}" },
+  { mime = "**/application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "{{ index $p "rose" }}" },
+  { mime = "**/application/{pdf,doc,rtf}", fg = "{{ index $p "pine" }}" },
+  { mime = "vfs/{absent,stale}", fg = "{{ index $p "muted" }}" },
+  { url = "*", is = "orphan", bg = "{{ index $p "love" }}" },
+  { url = "*", is = "exec", fg = "{{ index $p "pine" }}" },
+  { url = "*", is = "dummy", bg = "{{ index $p "love" }}" },
+  { url = "*/", is = "dummy", bg = "{{ index $p "love" }}" },
+  { url = "*/", fg = "{{ index $p "iris" }}" },
+]
+
+[spot]
+border = { fg = "{{ index $p "rose" }}" }
+title = { fg = "{{ index $p "rose" }}" }
+tbl_cell = { fg = "{{ index $p "rose" }}", reversed = true }
+tbl_col = { fg = "{{ index $p "foam" }}", bold = true }

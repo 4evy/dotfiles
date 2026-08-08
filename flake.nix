@@ -7,6 +7,9 @@
     bun2nix.inputs.treefmt-nix.follows = "treefmt-nix";
     bun2nix.url = "github:nix-community/bun2nix";
 
+    catppuccin-discord-css.flake = false;
+    catppuccin-discord-css.url = "https://catppuccin.github.io/discord/dist/catppuccin-mocha-pink.theme.css";
+
     eupkgs.inputs.nixpkgs.follows = "nixpkgs-unstable";
     eupkgs.url = "github:euvlok/pkgs";
 

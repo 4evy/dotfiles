@@ -26,6 +26,7 @@ const IntegrationStrategy = enum(c_int) {
     unknown = 0,
     arguments = 1,
     config = 2,
+    environment = 3,
 };
 
 const String = extern struct {
@@ -276,6 +277,7 @@ pub export fn terminal_theme_tools_integration_strategy_at(context: ?*const Cont
     return switch (integration.strategy) {
         .arguments => .arguments,
         .config => .config,
+        .environment => .environment,
     };
 }
 

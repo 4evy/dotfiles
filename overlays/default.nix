@@ -57,11 +57,12 @@ let
       };
       kmscon = prev.kmscon.overrideAttrs (
         _: previousAttrs: {
-          version = "10.0.1";
+          # The pin follows upstream main rather than a release tag.
+          version = "10.0.1-unstable-2026-07-31";
           src = dotfilesSourcePins.kmscon.outPath;
           buildInputs = previousAttrs.buildInputs ++ [ final.dbus ];
+          mesonFlags = (previousAttrs.mesonFlags or [ ]) ++ [ "-Dtests=false" ];
           doCheck = false;
-          doInstallCheck = false;
           # 10.0.1 installs kmscon itself as an ELF binary; nixpkgs'
           # 10.0.0 fixup still tries to rewrite it as a shell script.
           postFixup = ''

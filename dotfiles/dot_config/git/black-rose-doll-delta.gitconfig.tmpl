@@ -1,0 +1,44 @@
+{{- $brd := include ".chezmoitemplates/black_rose_doll_palette.json" | fromJson -}}
+{{- $light := index $brd "light" -}}
+{{- $dark := index $brd "dark" -}}
+[delta "black-rose-doll-light"]
+    blame-palette = "{{ index $light "base" }} {{ index $light "mantle" }} {{ index $light "crust" }} {{ index $light "surface0" }} {{ index $light "surface1" }}"
+    commit-decoration-style = "{{ index $light "overlay0" }}" bold box ul
+    light = true
+    file-decoration-style = "{{ index $light "overlay0" }}"
+    file-style = "{{ index $light "text" }}"
+    hunk-header-decoration-style = "{{ index $light "overlay0" }}" box ul
+    hunk-header-file-style = bold
+    hunk-header-line-number-style = bold "{{ index $light "subtext0" }}"
+    hunk-header-style = file line-number syntax
+    line-numbers-left-style = "{{ index $light "overlay0" }}"
+    line-numbers-minus-style = bold "{{ index $light "red" }}"
+    line-numbers-plus-style = bold "{{ index $light "green" }}"
+    line-numbers-right-style = "{{ index $light "overlay0" }}"
+    line-numbers-zero-style = "{{ index $light "overlay0" }}"
+    minus-emph-style = bold syntax "{{ index $light "red" }}"
+    minus-style = syntax "{{ index $light "maroon" }}"
+    plus-emph-style = bold syntax "{{ index $light "green" }}"
+    plus-style = syntax "{{ index $light "teal" }}"
+    syntax-theme = Black Rose Doll Light
+
+[delta "black-rose-doll-dark"]
+    blame-palette = "{{ index $dark "base" }} {{ index $dark "mantle" }} {{ index $dark "crust" }} {{ index $dark "surface0" }} {{ index $dark "surface1" }}"
+    commit-decoration-style = "{{ index $dark "overlay0" }}" bold box ul
+    dark = true
+    file-decoration-style = "{{ index $dark "overlay0" }}"
+    file-style = "{{ index $dark "text" }}"
+    hunk-header-decoration-style = "{{ index $dark "overlay0" }}" box ul
+    hunk-header-file-style = bold
+    hunk-header-line-number-style = bold "{{ index $dark "subtext0" }}"
+    hunk-header-style = file line-number syntax
+    line-numbers-left-style = "{{ index $dark "overlay0" }}"
+    line-numbers-minus-style = bold "{{ index $dark "red" }}"
+    line-numbers-plus-style = bold "{{ index $dark "green" }}"
+    line-numbers-right-style = "{{ index $dark "overlay0" }}"
+    line-numbers-zero-style = "{{ index $dark "overlay0" }}"
+    minus-emph-style = bold syntax "{{ index $dark "red" }}"
+    minus-style = syntax "{{ index $dark "maroon" }}"
+    plus-emph-style = bold syntax "{{ index $dark "green" }}"
+    plus-style = syntax "{{ index $dark "teal" }}"
+    syntax-theme = Black Rose Doll Dark

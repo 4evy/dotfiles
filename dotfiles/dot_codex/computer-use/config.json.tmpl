@@ -1,7 +1,7 @@
-{{- $ctp := include ".chezmoitemplates/catppuccin_palette.json" | fromJson -}}
-{{- $latte := index $ctp "latte" -}}
+{{- $brd := include ".chezmoitemplates/black_rose_doll_palette.json" | fromJson -}}
+{{- $light := index $brd "light" -}}
 {
-  "accentColor": "{{ index $latte "pink" }}",
+  "accentColor": "{{ index $light "rose" }}",
   "direction": "ltr",
   "locale": "en-US",
   "strings": {

@@ -5,21 +5,27 @@ const constants = library.constants;
 const launch = library.launch;
 
 const help = std.fmt.comptimePrint(
-    \\Usage: {s} [{s}|{s}] [{s}] COMMAND [ARG...]
+    \\Usage: {s} [{s}|{s}|{s}|{s}] [{s}] COMMAND [ARG...]
     \\
     \\{s}
     \\
     \\Options:
     \\  {s}     Show this help
+    \\  {s}  Print the detected terminal theme (`dark` or `light`)
+    \\  {s}  Print the theme without reading terminal input
     \\  {s}  Show program version
     \\
 , .{
     constants.application.name,
     constants.cli.help_option,
+    constants.cli.print_theme_option,
+    constants.cli.print_theme_no_terminal_option,
     constants.cli.version_option,
     constants.cli.separator,
     constants.application.description,
     constants.cli.help_option,
+    constants.cli.print_theme_option,
+    constants.cli.print_theme_no_terminal_option,
     constants.cli.version_option,
 });
 
@@ -50,6 +56,26 @@ fn run(init: std.process.Init) !u8 {
     }
     if (std.mem.eql(u8, args[command_index], constants.cli.version_option)) {
         try printStdout(init.io, constants.application.name ++ " version " ++ constants.application.version ++ "\n");
+        return constants.exit.success;
+    }
+    const print_theme = std.mem.eql(u8, args[command_index], constants.cli.print_theme_option);
+    const print_theme_no_terminal = std.mem.eql(u8, args[command_index], constants.cli.print_theme_no_terminal_option);
+    if (print_theme or print_theme_no_terminal) {
+        if (args.len != constants.cli.first_argument_index + 1) {
+            std.debug.print(constants.application.name ++ ": {s} does not accept arguments\n", .{args[command_index]});
+            return constants.exit.usage;
+        }
+        var manifest = config.Manifest.load(allocator, init.io, init.environ_map) catch |err| {
+            std.debug.print(constants.application.name ++ ": failed to load configuration: {s}\n", .{@errorName(err)});
+            return constants.exit.failure;
+        };
+        defer manifest.deinit();
+        const detected = if (print_theme_no_terminal)
+            library.theme.detectWithoutTerminal(allocator, init.io, &manifest.runtime, init.environ_map)
+        else
+            library.theme.detect(allocator, init.io, &manifest.runtime, init.environ_map);
+        try printStdout(init.io, @tagName(detected));
+        try printStdout(init.io, "\n");
         return constants.exit.success;
     }
     if (std.mem.eql(u8, args[command_index], constants.cli.separator)) {

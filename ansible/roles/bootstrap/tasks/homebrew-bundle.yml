@@ -80,7 +80,7 @@
     argv:
       - /usr/bin/tar
       - -cf
-      - "{{ dotfiles_cache_dir }}/homebrew-sources/terminal-theme-tools-0.2.0.tar"
+      - "{{ dotfiles_cache_dir }}/homebrew-sources/terminal-theme-tools-0.3.0.tar"
       - -C
       - "{{ dotfiles_repo_root }}/packages/terminal-theme-tools"
       - build.zig
@@ -106,8 +106,8 @@
 
 - name: Sync terminal theme tools source archive into local tap
   ansible.builtin.copy:
-    src: "{{ dotfiles_cache_dir }}/homebrew-sources/terminal-theme-tools-0.2.0.tar"
-    dest: "{{ bootstrap_homebrew_local_tap_dir }}/Sources/terminal-theme-tools-0.2.0.tar"
+    src: "{{ dotfiles_cache_dir }}/homebrew-sources/terminal-theme-tools-0.3.0.tar"
+    dest: "{{ bootstrap_homebrew_local_tap_dir }}/Sources/terminal-theme-tools-0.3.0.tar"
     mode: "0644"
     remote_src: true
   when: platform_is_macos
@@ -351,7 +351,7 @@
 
 - name: Read terminal theme tools source archive checksum
   ansible.builtin.stat:
-    path: "{{ bootstrap_homebrew_local_tap_dir }}/Sources/terminal-theme-tools-0.2.0.tar"
+    path: "{{ bootstrap_homebrew_local_tap_dir }}/Sources/terminal-theme-tools-0.3.0.tar"
     checksum_algorithm: sha256
   register: bootstrap_homebrew_terminal_theme_tools_source
   when: platform_is_macos

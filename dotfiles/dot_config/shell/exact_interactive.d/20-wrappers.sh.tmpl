@@ -3,6 +3,12 @@
 alias oo="opencode"
 alias cza="chezmoi apply --force"
 
+if command -v terminal-theme-run >/dev/null 2>&1; then
+	gh() {
+		command terminal-theme-run gh "$@"
+	}
+fi
+
 # `op plugin init` owns this generated file. Keeping the source guarded makes
 # shell-plugin aliases portable without making 1Password a shell startup
 # dependency on machines where the CLI or plugin configuration is absent.
@@ -15,7 +21,11 @@ fi
 # environment variables support the OAuth token format the shell plugins reject.
 if command -v op >/dev/null 2>&1; then
 	gh() {
-		GH_TOKEN='op://Personal/GitHub Token/token' command op run -- gh "$@"
+		if command -v terminal-theme-run >/dev/null 2>&1; then
+			GH_TOKEN='op://Personal/GitHub Token/token' command op run -- terminal-theme-run gh "$@"
+		else
+			GH_TOKEN='op://Personal/GitHub Token/token' command op run -- gh "$@"
+		fi
 	}
 
 	brew() {

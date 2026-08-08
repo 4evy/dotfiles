@@ -1,7 +1,7 @@
 [theme]
-dark = "catppuccin_frappe_pink"
-light = "catppuccin_latte_pink"
-fallback = "catppuccin_frappe_pink"
+dark = "black_rose_doll_dark"
+light = "black_rose_doll_light"
+fallback = "black_rose_doll_dark"
 
 [editor]
 auto-format = true

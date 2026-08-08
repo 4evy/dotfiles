@@ -1,10 +1,134 @@
 /*
- * Equicord QuickCSS.
- * Catppuccin Discord publishes accent-specific custom CSS builds at:
- * https://github.com/catppuccin/discord
+ * Black Rose Doll additions applied after the mechanically recolored
+ * Catppuccin Discord stylesheet. The upstream structure is pinned as the
+ * catppuccin-discord-css flake input; all Mocha and Latte palette literals are
+ * replaced from black_rose_doll_palette.json in lib/flake.nix.
  */
 
-@import url("https://catppuccin.github.io/discord/dist/catppuccin-frappe-pink.theme.css")
-  (prefers-color-scheme: dark);
-@import url("https://catppuccin.github.io/discord/dist/catppuccin-latte-pink.theme.css")
-  (prefers-color-scheme: light);
+:root {
+  /* Keep Catppuccin's rainbow-thread selectors, but use normal channel color. */
+  --ctp-rainbow-thread-disabled: ;
+}
+
+.visual-refresh.theme-dark,
+.visual-refresh .theme-dark {
+  --brd-brand: __BRD_dark_rose__;
+  --brd-composer: __BRD_dark_surface0__;
+  --brd-composer-border: __BRD_dark_surface2__;
+}
+
+.visual-refresh.theme-light,
+.visual-refresh .theme-light {
+  --brd-brand: __BRD_light_rose__;
+  --brd-composer: __BRD_light_surface0__;
+  --brd-composer-border: __BRD_light_surface2__;
+}
+
+/*
+ * Catppuccin generates these shades with Sass, so replacing its 26 palette
+ * literals alone cannot recolor them. Rebuild the interactive scale from the
+ * selected Black Rose Doll rose instead of leaving bright Catppuccin pinks in
+ * hover, pressed, reaction, and opacity states.
+ */
+.visual-refresh.theme-dark,
+.visual-refresh .theme-dark,
+.visual-refresh.theme-light,
+.visual-refresh .theme-light {
+  --brand-100: color-mix(in srgb, var(--brd-brand) 10%, white);
+  --brand-130: color-mix(in srgb, var(--brd-brand) 15%, white);
+  --brand-160: color-mix(in srgb, var(--brd-brand) 20%, white);
+  --brand-200: color-mix(in srgb, var(--brd-brand) 25%, white);
+  --brand-230: color-mix(in srgb, var(--brd-brand) 30%, white);
+  --brand-260: color-mix(in srgb, var(--brd-brand) 35%, white);
+  --brand-300: color-mix(in srgb, var(--brd-brand) 40%, white);
+  --brand-330: color-mix(in srgb, var(--brd-brand) 50%, white);
+  --brand-360: color-mix(in srgb, var(--brd-brand) 60%, white);
+  --brand-400: color-mix(in srgb, var(--brd-brand) 70%, white);
+  --brand-430: color-mix(in srgb, var(--brd-brand) 80%, white);
+  --brand-460: color-mix(in srgb, var(--brd-brand) 90%, white);
+  --brand-500: var(--brd-brand) !important;
+  --brand-530: color-mix(in srgb, var(--brd-brand) 95%, black);
+  --brand-560: color-mix(in srgb, var(--brd-brand) 90%, black);
+  --brand-600: color-mix(in srgb, var(--brd-brand) 85%, black);
+  --brand-630: color-mix(in srgb, var(--brd-brand) 80%, black);
+  --brand-660: color-mix(in srgb, var(--brd-brand) 75%, black);
+  --brand-700: color-mix(in srgb, var(--brd-brand) 70%, black);
+  --brand-730: color-mix(in srgb, var(--brd-brand) 67.5%, black);
+  --brand-760: color-mix(in srgb, var(--brd-brand) 65%, black);
+  --brand-800: color-mix(in srgb, var(--brd-brand) 62.5%, black);
+  --brand-830: color-mix(in srgb, var(--brd-brand) 60%, black);
+  --brand-860: color-mix(in srgb, var(--brd-brand) 57.5%, black);
+  --brand-900: color-mix(in srgb, var(--brd-brand) 55%, black);
+  --brand-05a: color-mix(in srgb, var(--brd-brand) 5%, transparent);
+  --brand-10a: color-mix(in srgb, var(--brd-brand) 10%, transparent);
+  --brand-15a: color-mix(in srgb, var(--brd-brand) 15%, transparent);
+  --brand-20a: color-mix(in srgb, var(--brd-brand) 20%, transparent);
+  --brand-25a: color-mix(in srgb, var(--brd-brand) 25%, transparent);
+  --brand-30a: color-mix(in srgb, var(--brd-brand) 30%, transparent);
+  --brand-35a: color-mix(in srgb, var(--brd-brand) 35%, transparent);
+  --brand-40a: color-mix(in srgb, var(--brd-brand) 40%, transparent);
+  --brand-45a: color-mix(in srgb, var(--brd-brand) 45%, transparent);
+  --brand-50a: color-mix(in srgb, var(--brd-brand) 50%, transparent);
+  --brand-55a: color-mix(in srgb, var(--brd-brand) 55%, transparent);
+  --brand-60a: color-mix(in srgb, var(--brd-brand) 60%, transparent);
+  --brand-65a: color-mix(in srgb, var(--brd-brand) 65%, transparent);
+  --brand-70a: color-mix(in srgb, var(--brd-brand) 70%, transparent);
+  --brand-75a: color-mix(in srgb, var(--brd-brand) 75%, transparent);
+  --brand-80a: color-mix(in srgb, var(--brd-brand) 80%, transparent);
+  --brand-85a: color-mix(in srgb, var(--brd-brand) 85%, transparent);
+  --brand-90a: color-mix(in srgb, var(--brd-brand) 90%, transparent);
+  --brand-95a: color-mix(in srgb, var(--brd-brand) 95%, transparent);
+  --blurple-50: var(--brd-brand);
+  --blurple-60: var(--brand-560);
+  --channeltextarea-background: var(--brd-composer);
+  --chat-input-container-background: var(--brd-composer);
+}
+
+/* Discord's current composer has its own native surface outside the variables
+ * used by older releases. Cover both generations of its CSS-module names. */
+.visual-refresh.theme-dark div[class*="channelTextArea_"],
+.visual-refresh .theme-dark div[class*="channelTextArea_"],
+.visual-refresh.theme-light div[class*="channelTextArea_"],
+.visual-refresh .theme-light div[class*="channelTextArea_"] {
+  --channeltextarea-background: var(--brd-composer);
+  --chat-input-container-background: var(--brd-composer);
+}
+
+.visual-refresh.theme-dark
+  div[class*="channelTextArea_"]
+  div[class*="scrollableContainer_"],
+.visual-refresh
+  .theme-dark
+  div[class*="channelTextArea_"]
+  div[class*="scrollableContainer_"],
+.visual-refresh.theme-light
+  div[class*="channelTextArea_"]
+  div[class*="scrollableContainer_"],
+.visual-refresh
+  .theme-light
+  div[class*="channelTextArea_"]
+  div[class*="scrollableContainer_"],
+.visual-refresh.theme-dark
+  div[class*="channelTextArea_"]
+  div[class*="themedBackground_"],
+.visual-refresh
+  .theme-dark
+  div[class*="channelTextArea_"]
+  div[class*="themedBackground_"],
+.visual-refresh.theme-light
+  div[class*="channelTextArea_"]
+  div[class*="themedBackground_"],
+.visual-refresh
+  .theme-light
+  div[class*="channelTextArea_"]
+  div[class*="themedBackground_"] {
+  background: var(--brd-composer) !important;
+  border-color: var(--brd-composer-border) !important;
+}
+
+.visual-refresh.theme-dark ::selection,
+.visual-refresh .theme-dark ::selection,
+.visual-refresh.theme-light ::selection,
+.visual-refresh .theme-light ::selection {
+  background: color-mix(in srgb, var(--brand-500) 42%, transparent);
+}

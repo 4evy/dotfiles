@@ -28,7 +28,7 @@ codex = "workstation.local.shims:codex_entrypoint"
 desktop-perf-audit = "workstation.local.desktop_audit:desktop_perf_audit_entrypoint"
 discord-equicord = "workstation.apps.discord:entrypoint"
 dotfiles-scripts = "workstation.cli:entrypoint"
-gnome-catppuccin-accent = "workstation.local.gnome:gnome_catppuccin_accent_entrypoint"
+gnome-black-rose-doll-accent = "workstation.local.gnome:gnome_black_rose_doll_accent_entrypoint"
 jj-get = "workstation.local.jj:jj_get_entrypoint"
 phone-mirror = "workstation.local.phone_mirror:entrypoint"
 

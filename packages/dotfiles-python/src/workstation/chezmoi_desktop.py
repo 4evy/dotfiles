@@ -11,7 +11,7 @@ from workstation.local.gnome import _gnome_accent_apply
 
 
 def gnome_accent() -> None:
-    """Refresh Catppuccin GTK accent CSS and its user service."""
+    """Refresh Black Rose Doll GTK accent CSS and its user service."""
     _gnome_accent_apply()
     if which("systemctl") is not None:
         run(("systemctl", "--user", "daemon-reload"), check=False, capture=True)
@@ -21,7 +21,7 @@ def gnome_accent() -> None:
                 "--user",
                 "enable",
                 "--now",
-                "gnome-catppuccin-accent.service",
+                "gnome-black-rose-doll-accent.service",
             ),
             check=False,
             capture=True,

@@ -1,7 +1,7 @@
 require "digest"
 
 class TerminalThemeTools < Formula
-  SOURCE_ARCHIVE = (Pathname(__dir__).parent/"Sources/terminal-theme-tools-0.2.0.tar").freeze
+  SOURCE_ARCHIVE = (Pathname(__dir__).parent/"Sources/terminal-theme-tools-0.3.0.tar").freeze
   SOURCE_SHA256 = Digest::SHA256.file(SOURCE_ARCHIVE).hexdigest.freeze
 
   desc "Theme-aware launcher for terminal applications"

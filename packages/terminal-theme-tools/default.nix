@@ -24,7 +24,7 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "terminal-theme-tools";
-  version = "0.2.0";
+  version = "0.3.0";
 
   __structuredAttrs = true;
   strictDeps = true;

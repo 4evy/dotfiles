@@ -43,7 +43,7 @@ ANSI_ROLE_MAP = {
     "background": "base",
 }
 
-LATTE_ROLE_OVERRIDES = {
+LIGHT_ROLE_OVERRIDES = {
     "black": "subtext1",
     "white": "surface1",
     "light-grey": "surface2",
@@ -84,7 +84,7 @@ def coordinate_from_env(name: str, minimum: float, maximum: float) -> float | No
 def daylight_theme(now: dt.datetime | None = None) -> ThemeChoice:
     forced = os.environ.get("DOTFILES_KMSCON_THEME")
     if forced:
-        if forced not in {"latte", "frappe"}:
+        if forced not in {"light", "dark"}:
             raise ValueError(f"unsupported DOTFILES_KMSCON_THEME: {forced}")
         return ThemeChoice(forced, "DOTFILES_KMSCON_THEME")
     latitude = coordinate_from_env("DOTFILES_KMSCON_LATITUDE", -90.0, 90.0)
@@ -108,12 +108,12 @@ def daylight_theme(now: dt.datetime | None = None) -> ThemeChoice:
         sunset_at = sunset(observer, date=now.date(), tzinfo=now.tzinfo)
     except ValueError:
         solar_elevation = elevation(observer, now)
-        theme = "latte" if solar_elevation >= 0 else "frappe"
+        theme = "light" if solar_elevation >= 0 else "dark"
         return ThemeChoice(
             theme,
             f"sun polar latitude={latitude} longitude={longitude} elevation={solar_elevation:.2f}",
         )
-    theme = "latte" if sunrise_at <= now < sunset_at else "frappe"
+    theme = "light" if sunrise_at <= now < sunset_at else "dark"
     return ThemeChoice(
         theme, f"sun {location_source} latitude={latitude} longitude={longitude}"
     )
@@ -125,11 +125,11 @@ def render_config(
     choice = daylight_theme(now)
     colors = palette[choice.name]
     role_map = dict(ANSI_ROLE_MAP)
-    if choice.name == "latte":
-        role_map.update(LATTE_ROLE_OVERRIDES)
+    if choice.name == "light":
+        role_map.update(LIGHT_ROLE_OVERRIDES)
     lines = [
         "# Managed by dotfiles.",
-        f"# Theme: catppuccin-{choice.name}-pink",
+        f"# Theme: black-rose-doll-{choice.name}",
         f"# Theme source: {choice.source}",
         "term=kmscon",
         "font-engine=freetype",

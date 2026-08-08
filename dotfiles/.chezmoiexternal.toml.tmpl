@@ -1,11 +1,4 @@
 {{- if ne .chezmoi.os "windows" -}}
-{{- $yaziConfigPath := "" -}}
-{{- if eq .chezmoi.os "darwin" -}}
-{{-   $yaziConfigPath = ".config/yazi" -}}
-{{- else -}}
-{{-   $yaziConfigPath = ".config/yazi" -}}
-{{- end -}}
-
 {{- if eq .chezmoi.os "darwin" }}
 # Use the same bitmap emoji font as Linux so generated assets match exactly.
 [".local/share/fonts/NotoColorEmoji/NotoColorEmoji.ttf"]
@@ -61,24 +54,5 @@ url = "https://github.com/lincheney/fzf-tab-completion/archive/master.tar.gz"
 exact = true
 stripComponents = 1
 refreshPeriod = "168h"
-
-# ----- Vim -----
-
-[".vim/pack/vendor/start/catppuccin"]
-type = "archive"
-url = "https://github.com/catppuccin/vim/archive/main.tar.gz"
-exact = true
-stripComponents = 1
-refreshPeriod = "168h"
-
-# ----- Yazi -----
-
-{{- $yaziFlavors := list "frappe" "latte" -}}
-{{- range $flavor := $yaziFlavors }}
-["{{ $yaziConfigPath }}/flavors/catppuccin-{{ $flavor }}-pink.yazi/flavor.toml"]
-type = "file"
-url = "https://raw.githubusercontent.com/catppuccin/yazi/main/themes/{{ $flavor }}/catppuccin-{{ $flavor }}-pink.toml"
-refreshPeriod = "168h"
-{{ end }}
 
 {{- end }}

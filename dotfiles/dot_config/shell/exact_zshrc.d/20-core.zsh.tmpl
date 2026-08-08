@@ -8,6 +8,12 @@ _dotfiles_wrap_command() {
   eval "$command_name() { command ${(q)command_path} \"\$@\"; }"
 }
 
+_dotfiles_wrap_themed_command() {
+  emulate -L zsh
+  local -r command_name=$1
+  eval "$command_name() { command terminal-theme-run ${(q)command_name} \"\$@\"; }"
+}
+
 # A3 / dotfiles repository
 # DOTFILES_REPO takes priority. macOS also checks ~/Developer/dotfiles before
 # falling back to ~/dotfiles.

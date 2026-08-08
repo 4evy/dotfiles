@@ -1,23 +1,23 @@
-# dotfiles 🌸
+# dotfiles 🌹🎀
 
 Personal Spectrum/Bluefin, NixOS, and macOS workstation configuration, built
 with Homebrew, Nix, Ansible, and chezmoi.
 
 <p>
-  <a href="https://github.com/4evy/dotfiles/pkgs/container/spectrum"><img alt="GHCR Spectrum image" src="https://img.shields.io/badge/GHCR-spectrum-f4b8e4?style=flat-square&logo=github&logoColor=f4b8e4&labelColor=232634"></a>
+  <a href="https://github.com/4evy/dotfiles/pkgs/container/spectrum"><img alt="GHCR Spectrum image" src="https://img.shields.io/badge/GHCR-spectrum-ce98a5?style=flat-square&logo=github&logoColor=ce98a5&labelColor=110e17"></a>
 </p>
 
 <p>
-  <a href="https://projectbluefin.io"><img alt="Bluefin" src="https://img.shields.io/badge/Bluefin-f4b8e4?style=flat-square&logo=fedora&logoColor=f4b8e4&labelColor=232634"></a>
-  <a href="https://nixos.org"><img alt="NixOS" src="https://img.shields.io/badge/NixOS-f4b8e4?style=flat-square&logo=nixos&logoColor=f4b8e4&labelColor=232634"></a>
-  <a href="https://www.apple.com/macos"><img alt="macOS" src="https://img.shields.io/badge/macOS-f4b8e4?style=flat-square&logo=apple&logoColor=f4b8e4&labelColor=232634"></a>
+  <a href="https://projectbluefin.io"><img alt="Bluefin" src="https://img.shields.io/badge/Bluefin-ce98a5?style=flat-square&logo=fedora&logoColor=ce98a5&labelColor=110e17"></a>
+  <a href="https://nixos.org"><img alt="NixOS" src="https://img.shields.io/badge/NixOS-ce98a5?style=flat-square&logo=nixos&logoColor=ce98a5&labelColor=110e17"></a>
+  <a href="https://www.apple.com/macos"><img alt="macOS" src="https://img.shields.io/badge/macOS-ce98a5?style=flat-square&logo=apple&logoColor=ce98a5&labelColor=110e17"></a>
 </p>
 
 <p>
-  <a href="https://brew.sh"><img alt="Homebrew" src="https://img.shields.io/badge/Homebrew-f4b8e4?style=flat-square&logo=homebrew&logoColor=f4b8e4&labelColor=232634"></a>
-  <a href="https://www.chezmoi.io"><img alt="chezmoi" src="https://img.shields.io/badge/chezmoi-f4b8e4?style=flat-square&logo=homeassistant&logoColor=f4b8e4&labelColor=232634"></a>
-  <a href="https://www.ansible.com"><img alt="Ansible" src="https://img.shields.io/badge/Ansible-f4b8e4?style=flat-square&logo=ansible&logoColor=f4b8e4&labelColor=232634"></a>
-  <a href="https://catppuccin.com"><img alt="Catppuccin Latte and Frappe" src="https://img.shields.io/badge/Catppuccin-Latte%20%2B%20Frapp%C3%A9-f4b8e4?style=flat-square&labelColor=ea76cb"></a>
+  <a href="https://brew.sh"><img alt="Homebrew" src="https://img.shields.io/badge/Homebrew-ce98a5?style=flat-square&logo=homebrew&logoColor=ce98a5&labelColor=110e17"></a>
+  <a href="https://www.chezmoi.io"><img alt="chezmoi" src="https://img.shields.io/badge/chezmoi-ce98a5?style=flat-square&logo=homeassistant&logoColor=ce98a5&labelColor=110e17"></a>
+  <a href="https://www.ansible.com"><img alt="Ansible" src="https://img.shields.io/badge/Ansible-ce98a5?style=flat-square&logo=ansible&logoColor=ce98a5&labelColor=110e17"></a>
+  <img alt="Black Rose Doll light and dark theme" src="https://img.shields.io/badge/Theme-Black%20Rose%20Doll-ce98a5?style=flat-square&labelColor=110e17">
 </p>
 
 > [!IMPORTANT]

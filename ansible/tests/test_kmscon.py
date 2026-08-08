@@ -13,7 +13,7 @@ import pytest
 REPOSITORY = Path(__file__).parents[2]
 THEME_SCRIPT = REPOSITORY / "ansible/roles/system/files/kmscon/kmscon-theme-config.py"
 REFRESH_SCRIPT = REPOSITORY / "ansible/roles/system/files/kmscon/kmscon-refresh.py"
-PALETTE = REPOSITORY / "dotfiles/.chezmoitemplates/catppuccin_palette.json"
+PALETTE = REPOSITORY / "dotfiles/.chezmoitemplates/black_rose_doll_palette.json"
 UPSTREAM_PALETTE_OPTIONS = {
     "palette-black",
     "palette-red",
@@ -90,30 +90,30 @@ def palette() -> dict[str, dict[str, str]]:
     ("theme", "expected"),
     [
         (
-            "latte",
+            "light",
             {
-                "palette-black=92,95,119",
-                "palette-dark-grey=108,111,133",
-                "palette-light-grey=172,176,190",
-                "palette-white=188,192,204",
-                "palette-foreground=76,79,105",
-                "palette-background=239,241,245",
+                "palette-black=109,97,109",
+                "palette-dark-grey=139,126,135",
+                "palette-light-grey=217,207,211",
+                "palette-white=227,216,220",
+                "palette-foreground=67,56,74",
+                "palette-background=247,239,239",
             },
         ),
         (
-            "frappe",
+            "dark",
             {
-                "palette-black=81,87,109",
-                "palette-dark-grey=98,104,128",
-                "palette-light-grey=165,173,206",
-                "palette-white=181,191,226",
-                "palette-foreground=198,208,245",
-                "palette-background=48,52,70",
+                "palette-black=35,21,34",
+                "palette-dark-grey=64,60,65",
+                "palette-light-grey=123,108,120",
+                "palette-white=186,173,183",
+                "palette-foreground=236,223,233",
+                "palette-background=17,14,23",
             },
         ),
     ],
 )
-def test_rendered_palette_matches_catppuccin_terminal_colors(
+def test_rendered_palette_matches_black_rose_doll_terminal_colors(
     theme_module: ThemeModule,
     palette: dict[str, dict[str, str]],
     monkeypatch: pytest.MonkeyPatch,
@@ -134,7 +134,7 @@ def test_rendered_palette_matches_catppuccin_terminal_colors(
 
 @pytest.mark.parametrize(
     ("hour", "expected"),
-    [(0, "frappe"), (12, "latte")],
+    [(0, "dark"), (12, "light")],
 )
 def test_astral_selects_sofia_day_and_night(
     theme_module: ThemeModule,

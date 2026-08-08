@@ -43,7 +43,7 @@ int main(void) {
   terminal_theme_tools_context *context = nullptr;
 
   assert(terminal_theme_tools_abi_version() == TERMINAL_THEME_TOOLS_ABI_VERSION);
-  assert(string_equals(terminal_theme_tools_version(), "0.2.0"));
+  assert(string_equals(terminal_theme_tools_version(), "0.3.0"));
   assert(terminal_theme_tools_context_create(&options, &context) ==
          TERMINAL_THEME_TOOLS_STATUS_OK);
   assert(context != nullptr);
@@ -84,6 +84,9 @@ int main(void) {
   assert(string_equals(terminal_theme_tools_command_argument(command, 0u), "/bin/sh"));
   assert(string_equals(terminal_theme_tools_command_environment(command, "C_API_CHILD"),
                        "configured"));
+  assert(string_equals(
+      terminal_theme_tools_command_environment(command, "TERMINAL_THEME_RUN_ACTIVE"),
+      "1"));
   assert(terminal_theme_tools_command_temporary_path(command).length == 0u);
 
   uint8_t exit_code = 0u;

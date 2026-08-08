@@ -1,5 +1,16 @@
 ---
 applications_helium_linux_current: "{{ dotfiles_data_dir }}/helium/current"
+applications_black_rose_doll_palette: >-
+  {{
+    lookup(
+      "file",
+      dotfiles_repo_root
+      ~ '/dotfiles/.chezmoitemplates/black_rose_doll_palette.json'
+    )
+    | from_json
+  }}
+applications_helium_accent_rgb: >-
+  {{ applications_black_rose_doll_palette.dark.rose | hex_color_to_rgb_csv }}
 applications_helix_revision: >-
   {{
     lookup('env', 'HELIX_TIP_REVISION')

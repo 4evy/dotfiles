@@ -1,6 +1,6 @@
 .{
     .name = .terminal_theme_tools,
-    .version = "0.2.0",
+    .version = "0.3.0",
     .fingerprint = 0x2f47c58bee2fea05,
     .minimum_zig_version = "0.16.0",
     .dependencies = .{

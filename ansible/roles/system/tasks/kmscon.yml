@@ -20,6 +20,7 @@
         - /usr/bin/python3.14
         - /usr/bin/loginctl
         - /usr/bin/systemctl
+        - /usr/lib64/kmscon/mod-freetype.so
         - /usr/lib/systemd/system/kmsconvt@.service
       register: system_kmscon_prerequisites
 
@@ -60,8 +61,9 @@
           - system_kmscon_terminfo.rc == 0
           - system_kmscon_astral.rc == 0
         fail_msg: >-
-          KMSCON is installed, but its Python 3.14/Astral 3.2 runtime, systemd
-          tools, service template, or terminfo entry is missing from the host image.
+          KMSCON is installed, but its FreeType renderer, Python 3.14/Astral 3.2
+          runtime, systemd tools, service template, or terminfo entry is missing
+          from the host image.
 
     - name: Create KMSCON configuration directories
       ansible.builtin.file:
@@ -90,8 +92,8 @@
         - src: kmscon/kmscon-refresh.py
           dest: /usr/local/libexec/dotfiles/kmscon-refresh
           mode: "0755"
-        - src: "{{ dotfiles_repo_root }}/dotfiles/.chezmoitemplates/catppuccin_palette.json"
-          dest: /usr/local/share/dotfiles/catppuccin_palette.json
+        - src: "{{ dotfiles_repo_root }}/dotfiles/.chezmoitemplates/black_rose_doll_palette.json"
+          dest: /usr/local/share/dotfiles/black_rose_doll_palette.json
           mode: "0644"
       loop_control:
         label: "{{ item.dest }}"
@@ -105,8 +107,8 @@
           # Sofia center is the default location.
           # DOTFILES_KMSCON_LATITUDE=
           # DOTFILES_KMSCON_LONGITUDE=
-          # DOTFILES_KMSCON_THEME=latte
-          # DOTFILES_KMSCON_THEME=frappe
+          # DOTFILES_KMSCON_THEME=light
+          # DOTFILES_KMSCON_THEME=dark
       become: true
 
     - name: Install KMSCON systemd units
@@ -120,7 +122,7 @@
           content: |
             [Service]
             EnvironmentFile=-/etc/default/kmscon-dotfiles
-            ExecStartPre=/usr/bin/python3.14 /usr/local/libexec/dotfiles/kmscon-theme-config /usr/local/share/dotfiles/catppuccin_palette.json /etc/kmscon/kmscon.conf
+            ExecStartPre=/usr/bin/python3.14 /usr/local/libexec/dotfiles/kmscon-theme-config /usr/local/share/dotfiles/black_rose_doll_palette.json /etc/kmscon/kmscon.conf
         - dest: /etc/systemd/system/kmscon-theme-refresh.service
           content: |
             [Unit]
@@ -130,7 +132,7 @@
             [Service]
             Type=oneshot
             EnvironmentFile=-/etc/default/kmscon-dotfiles
-            ExecStart=/usr/bin/python3.14 /usr/local/libexec/dotfiles/kmscon-theme-config /usr/local/share/dotfiles/catppuccin_palette.json /etc/kmscon/kmscon.conf
+            ExecStart=/usr/bin/python3.14 /usr/local/libexec/dotfiles/kmscon-theme-config /usr/local/share/dotfiles/black_rose_doll_palette.json /etc/kmscon/kmscon.conf
             ExecStartPost=/usr/bin/python3.14 /usr/local/libexec/dotfiles/kmscon-refresh /etc/kmscon/kmscon.conf
         - dest: /etc/systemd/system/kmscon-theme-refresh.timer
           content: |

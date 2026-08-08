@@ -22,18 +22,18 @@
 
 [core]
     excludesfile = "{{ .chezmoi.homeDir }}/.gitignore_global"
-    pager = delta
+    pager = terminal-theme-run delta
 
 [interactive]
-    diffFilter = delta --color-only
+    diffFilter = terminal-theme-run delta --color-only
 
 [delta]
-    features = catppuccin-frappe-pink
+    features = black-rose-doll-dark
     navigate = true
     line-numbers = true
 
 [include]
-    path = "{{ .chezmoi.homeDir }}/.config/git/catppuccin-delta.gitconfig"
+    path = "{{ .chezmoi.homeDir }}/.config/git/black-rose-doll-delta.gitconfig"
 
 [filter "lfs"]
     clean = git-lfs clean -- %f

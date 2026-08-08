@@ -1,0 +1,11 @@
+[Unit]
+Description=Apply Black Rose Doll GNOME accent colors
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/gnome-black-rose-doll-accent --watch
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

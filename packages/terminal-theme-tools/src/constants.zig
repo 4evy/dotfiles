@@ -1,11 +1,13 @@
 pub const application = struct {
     pub const name = "terminal-theme-run";
-    pub const version = "0.2.0";
+    pub const version = "0.3.0";
     pub const description = "Run a command with terminal theme integration when a matching profile exists.";
 };
 
 pub const cli = struct {
     pub const help_option = "--help";
+    pub const print_theme_option = "--print-theme";
+    pub const print_theme_no_terminal_option = "--print-theme-no-terminal";
     pub const version_option = "--version";
     pub const option_prefix = "--";
     pub const separator = "--";
@@ -22,6 +24,7 @@ pub const exit = struct {
 };
 
 pub const environment = struct {
+    pub const active = "TERMINAL_THEME_RUN_ACTIVE";
     pub const config = "TERMINAL_THEME_RUN_CONFIG";
     pub const home = "HOME";
     pub const path = "PATH";
@@ -47,6 +50,7 @@ pub const template = struct {
     pub const theme = "{theme}";
     pub const context = "{context}";
     pub const directory = "{directory}";
+    pub const home = "{home}";
 };
 
 pub const protocol = struct {
@@ -132,9 +136,10 @@ pub const toml = struct {
     pub const runtime_fields = &.{ field.theme_environment, field.theme_dark_aliases, field.theme_light_aliases, field.theme_macos_commands, field.theme_unix_commands, field.theme_terminal_program_environment, field.theme_terminal_queries, field.theme_macos_fallback, field.theme_unix_fallback, field.theme_probe_timeout_ms, field.helper_timeout_ms, field.helper_output_limit_bytes };
     pub const interpreter_fields = &.{ field.name, field.shebang_commands, field.shebang_arguments, field.programs };
     pub const runner_fields = &.{ field.name, field.aliases, field.programs, field.skip_env, field.default_args, field.env, field.env_unset, field.integration, field.interpreter };
-    pub const integration_fields = &.{ field.name, field.strategy, field.display_name, field.dark_theme, field.light_theme, field.arguments, field.context_table, field.context_field, field.context_value, field.context_path_flags, field.context_path_prefixes, field.context_argument_separator, field.context_directory_commands, field.default_config, field.assignment, field.config_flags, field.config_output_flag, field.temporary_prefix, field.temporary_location, field.cache_subdirectory, field.quote, field.validation };
+    pub const integration_fields = &.{ field.name, field.strategy, field.display_name, field.dark_theme, field.light_theme, field.arguments, field.env, field.context_table, field.context_field, field.context_value, field.context_path_flags, field.context_path_prefixes, field.context_argument_separator, field.context_directory_commands, field.default_config, field.assignment, field.config_flags, field.config_output_flag, field.temporary_prefix, field.temporary_location, field.cache_subdirectory, field.quote, field.validation };
     pub const arguments_strategy = "arguments";
     pub const config_strategy = "config";
+    pub const environment_strategy = "environment";
     pub const system_location = "system";
     pub const cache_location = "cache";
     pub const toml_validation = "toml";

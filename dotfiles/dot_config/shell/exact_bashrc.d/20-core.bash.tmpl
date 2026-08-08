@@ -14,6 +14,14 @@ _dotfiles_wrap_command() {
 	eval "$command_name() { command $quoted_path \"\$@\"; }"
 }
 
+_dotfiles_wrap_themed_command() {
+	local -r command_name=$1
+	local quoted_name
+
+	printf -v quoted_name '%q' "$command_name"
+	eval "$command_name() { command terminal-theme-run $quoted_name \"\$@\"; }"
+}
+
 _dotfiles_command_path() {
 	local command_path
 	command_path="$(type -P -- "$1")" || return 1

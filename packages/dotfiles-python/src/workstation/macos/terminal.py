@@ -3,9 +3,20 @@
 import sys
 from importlib import import_module
 
+from pydantic import TypeAdapter
+
+from workstation.lib.paths import asset_path
+
+
+def _dark_palette() -> dict[str, str]:
+    palette = TypeAdapter(dict[str, dict[str, str]]).validate_json(
+        asset_path("desktop", "black_rose_doll_palette.json").read_text()
+    )
+    return palette["dark"]
+
 
 def terminal_profile() -> None:
-    """Install the Catppuccin Frappé Pink profile in Terminal.app."""
+    """Install the Black Rose Doll Dark profile in Terminal.app."""
     if sys.platform != "darwin":
         return
     appkit = import_module("AppKit")
@@ -28,7 +39,8 @@ def terminal_profile() -> None:
             )
         )
 
-    name = "Catppuccin Frappé Pink"
+    palette = _dark_palette()
+    name = "Black Rose Doll Dark"
     font = ns_font.fontWithName_size_("JetBrainsMonoNerdFontMono-Regular", 15)
     if font is None:
         font = ns_font.monospacedSystemFontOfSize_weight_(15, 0)
@@ -47,29 +59,29 @@ def terminal_profile() -> None:
         "BackgroundBlurInactive": 0,
         "BackgroundSettingsForInactiveWindows": False,
         "DynamicANSIForegroundColors": False,
-        "TextColor": color("#c6d0f5"),
-        "TextBoldColor": color("#f4b8e4"),
-        "BackgroundColor": color("#303446"),
-        "CursorColor": color("#f4b8e4"),
-        "SelectionColor": color("#51576d"),
+        "TextColor": color(palette["text"]),
+        "TextBoldColor": color(palette["rose"]),
+        "BackgroundColor": color(palette["base"]),
+        "CursorColor": color(palette["rose"]),
+        "SelectionColor": color(palette["highlightMed"]),
     }
-    ansi = (
-        "#51576d",
-        "#e78284",
-        "#a6d189",
-        "#e5c890",
-        "#8caaee",
-        "#f4b8e4",
-        "#81c8be",
-        "#a5adce",
-        "#626880",
-        "#e78284",
-        "#a6d189",
-        "#e5c890",
-        "#8caaee",
-        "#f4b8e4",
-        "#81c8be",
-        "#b5bfe2",
+    ansi_roles = (
+        "surface1",
+        "love",
+        "pine",
+        "gold",
+        "pine",
+        "rose",
+        "foam",
+        "muted",
+        "highlightLow",
+        "love",
+        "pine",
+        "gold",
+        "pine",
+        "rose",
+        "foam",
+        "subtle",
     )
     keys = (
         "ANSIBlackColor",
@@ -89,7 +101,9 @@ def terminal_profile() -> None:
         "ANSIBrightCyanColor",
         "ANSIBrightWhiteColor",
     )
-    profile.update({key: color(value) for key, value in zip(keys, ansi, strict=True)})
+    profile.update({
+        key: color(palette[role]) for key, role in zip(keys, ansi_roles, strict=True)
+    })
     defaults = ns_user_defaults.standardUserDefaults()
     domain = dict(defaults.persistentDomainForName_("com.apple.Terminal") or {})
     settings = dict(domain.get("Window Settings") or {})

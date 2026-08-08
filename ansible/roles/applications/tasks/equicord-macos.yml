@@ -263,9 +263,24 @@
     - discord
     - equicord
 
+- name: Render Equicord QuickCSS from the Black Rose Doll palette on macOS
+  ansible.builtin.command:
+    argv:
+      - nix
+      - eval
+      - --json
+      - path:.#lib.equicordQuickCss
+  args:
+    chdir: "{{ dotfiles_repo_root }}"
+  register: applications_equicord_quick_css_macos
+  changed_when: false
+  tags:
+    - discord
+    - equicord
+
 - name: Install Equicord QuickCSS on macOS
   ansible.builtin.copy:
-    src: "{{ dotfiles_repo_root }}/packages/equicord/quickCss.css"
+    content: "{{ applications_equicord_quick_css_macos.stdout | from_json }}"
     dest: "{{ dotfiles_home_dir }}/Library/Application Support/Equicord/settings/quickCss.css"
     mode: "0644"
   tags:

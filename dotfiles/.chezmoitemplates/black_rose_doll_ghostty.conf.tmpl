@@ -1,0 +1,39 @@
+{{- $variant := . -}}
+{{- $brd := include ".chezmoitemplates/black_rose_doll_palette.json" | fromJson -}}
+{{- $p := index $brd $variant -}}
+{{- $palette0 := "surface1" -}}
+{{- $palette7 := "subtext0" -}}
+{{- $palette8 := "surface2" -}}
+{{- $palette15 := "subtext1" -}}
+{{- $cursorText := "crust" -}}
+{{- if eq $variant "light" -}}
+{{- $palette0 = "subtext1" -}}
+{{- $palette7 = "surface2" -}}
+{{- $palette8 = "subtext0" -}}
+{{- $palette15 = "surface1" -}}
+{{- $cursorText = "base" -}}
+{{- end -}}
+palette = 0={{ index $p $palette0 }}
+palette = 1={{ index $p "red" }}
+palette = 2={{ index $p "green" }}
+palette = 3={{ index $p "yellow" }}
+palette = 4={{ index $p "blue" }}
+palette = 5={{ index $p "pink" }}
+palette = 6={{ index $p "teal" }}
+palette = 7={{ index $p $palette7 }}
+palette = 8={{ index $p $palette8 }}
+palette = 9={{ index $p "red" }}
+palette = 10={{ index $p "green" }}
+palette = 11={{ index $p "yellow" }}
+palette = 12={{ index $p "blue" }}
+palette = 13={{ index $p "pink" }}
+palette = 14={{ index $p "teal" }}
+palette = 15={{ index $p $palette15 }}
+palette-generate = true
+background = {{ index $p "base" }}
+foreground = {{ index $p "text" }}
+cursor-color = {{ index $p "pink" }}
+cursor-text = {{ index $p $cursorText }}
+selection-background = {{ index $p "surface0" }}
+selection-foreground = {{ index $p "text" }}
+split-divider-color = {{ index $p "pink" }}

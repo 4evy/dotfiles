@@ -13,20 +13,27 @@ from workstation.lib.paths import asset_path
 from workstation.local.gsettings import available as gsettings_available
 
 
-def _accent_colors() -> tuple[str, str]:
+def _accent_colors() -> tuple[tuple[str, str], tuple[str, str]]:
     palette = TypeAdapter(dict[str, dict[str, str]]).validate_json(
-        asset_path("desktop", "catppuccin_palette.json").read_text()
+        asset_path("desktop", "black_rose_doll_palette.json").read_text()
     )
-    return palette["latte"]["pink"], palette["frappe"]["pink"]
+    light = palette["light"]
+    dark = palette["dark"]
+    return (light["pink"], light["base"]), (dark["pink"], dark["base"])
 
 
-def _gtk_accent_css(accent: str, *, gtk_version: int) -> str:
+def _gtk_accent_css(accent: str, accent_fg: str, *, gtk_version: int) -> str:
     source = asset_path("desktop", f"gtk-{gtk_version}-accent.css.in")
-    return source.read_text(encoding="utf-8").replace("@accent@", accent)
+    return (
+        source
+        .read_text(encoding="utf-8")
+        .replace("@accent@", accent)
+        .replace("@accent_fg@", accent_fg)
+    )
 
 
 def _gnome_accent_apply() -> None:
-    latte, frappe = _accent_colors()
+    light, dark = _accent_colors()
     scheme = (
         output(
             ("gsettings", "get", "org.gnome.desktop.interface", "color-scheme"),
@@ -35,12 +42,12 @@ def _gnome_accent_apply() -> None:
         if gsettings_available()
         else "default"
     )
-    accent = frappe if "prefer-dark" in scheme else latte
+    accent, accent_fg = dark if "prefer-dark" in scheme else light
     config = user_config_home()
     for version in (3, 4):
         write_if_changed(
-            config / f"gtk-{version}.0/catppuccin-accent.css",
-            _gtk_accent_css(accent, gtk_version=version),
+            config / f"gtk-{version}.0/black-rose-doll-accent.css",
+            _gtk_accent_css(accent, accent_fg, gtk_version=version),
         )
     if not gsettings_available():
         return
@@ -65,7 +72,7 @@ def _gnome_accent_apply() -> None:
 _GNOME_ACCENT_MODE = Group("Mode", validator=validators.LimitedChoice(max=1))
 
 
-def gnome_catppuccin_accent(
+def gnome_black_rose_doll_accent(
     *,
     once: Annotated[
         bool,
@@ -98,11 +105,11 @@ def gnome_catppuccin_accent(
 
 
 _gnome_accent_app = App(
-    default_command=gnome_catppuccin_accent,
+    default_command=gnome_black_rose_doll_accent,
     version_flags=[],
     result_action="return_none",
 )
 
 
-def gnome_catppuccin_accent_entrypoint() -> None:
+def gnome_black_rose_doll_accent_entrypoint() -> None:
     _gnome_accent_app()

@@ -1,0 +1,105 @@
+{{- $variant := . -}}
+{{- $brd := include ".chezmoitemplates/black_rose_doll_palette.json" | fromJson -}}
+{{- $p := index $brd $variant -}}
+"attribute" = "iris"
+"comment" = { fg = "muted", modifiers = ["italic"] }
+"constant" = "gold"
+"constant.builtin" = "gold"
+"constant.character.escape" = "rose"
+"constructor" = "gold"
+"diagnostic.deprecated" = { modifiers = ["crossed_out"] }
+"diagnostic.error" = { underline = { color = "love", style = "curl" } }
+"diagnostic.hint" = { underline = { color = "iris", style = "curl" } }
+"diagnostic.info" = { underline = { color = "foam", style = "curl" } }
+"diagnostic.warning" = { underline = { color = "gold", style = "curl" } }
+"diff.delta" = "rose"
+"diff.minus" = "love"
+"diff.plus" = "pine"
+"function" = "rose"
+"function.builtin" = "rose"
+"function.macro" = "iris"
+"keyword" = "iris"
+"keyword.control" = "rose"
+"keyword.control.conditional" = { fg = "rose", modifiers = ["italic"] }
+"keyword.control.exception" = "love"
+"keyword.control.repeat" = "rose"
+"label" = "foam"
+"markup.bold" = { modifiers = ["bold"] }
+"markup.heading" = { fg = "rose", modifiers = ["bold"] }
+"markup.italic" = { modifiers = ["italic"] }
+"markup.link.label" = "iris"
+"markup.link.text" = "rose"
+"markup.link.url" = { fg = "foam", modifiers = ["italic", "underlined"] }
+"markup.list" = "rose"
+"markup.quote" = "subtle"
+"markup.raw" = "pine"
+"markup.strikethrough" = { modifiers = ["crossed_out"] }
+"namespace" = "foam"
+"operator" = "subtle"
+"punctuation" = "subtle"
+"special" = "rose"
+"string" = "pine"
+"string.regexp" = "foam"
+"string.special" = "rose"
+"tag" = "rose"
+"type" = "gold"
+"type.builtin" = "gold"
+"variable" = "text"
+"variable.builtin" = "love"
+"variable.other.member" = "rose"
+"variable.parameter" = "iris"
+
+"ui.background" = { bg = "base" }
+"ui.bufferline" = { fg = "muted", bg = "surface" }
+"ui.bufferline.active" = { fg = "rose", bg = "base", underline = { color = "rose", style = "line" } }
+"ui.cursor" = { fg = "base", bg = "muted" }
+"ui.cursor.insert" = { fg = "base", bg = "foam" }
+"ui.cursor.match" = { fg = "text", bg = "highlightHigh", modifiers = ["bold"] }
+"ui.cursor.primary" = { fg = "base", bg = "rose" }
+"ui.cursor.primary.insert" = { fg = "base", bg = "foam" }
+"ui.cursor.primary.select" = { fg = "base", bg = "iris" }
+"ui.cursor.select" = { fg = "base", bg = "iris" }
+"ui.help" = { fg = "text", bg = "surface" }
+"ui.highlight" = { bg = "highlightMed" }
+"ui.linenr" = "muted"
+"ui.linenr.selected" = { fg = "rose", modifiers = ["bold"] }
+"ui.menu" = { fg = "text", bg = "surface" }
+"ui.menu.scroll" = { fg = "muted", bg = "overlay" }
+"ui.menu.selected" = { fg = "base", bg = "rose" }
+"ui.popup" = { fg = "text", bg = "surface" }
+"ui.selection" = { bg = "highlightMed" }
+"ui.statusline" = { fg = "text", bg = "surface" }
+"ui.statusline.inactive" = { fg = "muted", bg = "surface" }
+"ui.statusline.insert" = { fg = "base", bg = "foam", modifiers = ["bold"] }
+"ui.statusline.normal" = { fg = "base", bg = "rose", modifiers = ["bold"] }
+"ui.statusline.select" = { fg = "base", bg = "iris", modifiers = ["bold"] }
+"ui.text" = "text"
+"ui.text.directory" = "rose"
+"ui.text.focus" = { fg = "text", bg = "highlightLow" }
+"ui.virtual.indent-guide" = "highlightHigh"
+"ui.virtual.inlay-hint" = "muted"
+"ui.virtual.jump-label" = { fg = "rose", modifiers = ["bold"] }
+"ui.virtual.ruler" = { bg = "highlightLow" }
+"ui.virtual.whitespace" = "highlightHigh"
+"ui.window" = "highlightHigh"
+"warning" = "gold"
+"error" = "love"
+"info" = "foam"
+"hint" = "iris"
+
+[palette]
+base = "{{ index $p "base" }}"
+surface = "{{ index $p "surface" }}"
+overlay = "{{ index $p "overlay" }}"
+muted = "{{ index $p "muted" }}"
+subtle = "{{ index $p "subtle" }}"
+text = "{{ index $p "text" }}"
+love = "{{ index $p "love" }}"
+gold = "{{ index $p "gold" }}"
+rose = "{{ index $p "rose" }}"
+pine = "{{ index $p "pine" }}"
+foam = "{{ index $p "foam" }}"
+iris = "{{ index $p "iris" }}"
+highlightLow = "{{ index $p "highlightLow" }}"
+highlightMed = "{{ index $p "highlightMed" }}"
+highlightHigh = "{{ index $p "highlightHigh" }}"

@@ -106,6 +106,18 @@ pub fn configure(b: *std.Build, base: []const u8) void {
     version_test.expectStdOutEqual(executable_name ++ " version " ++ version ++ "\n");
     test_step.dependOn(&version_test.step);
 
+    const print_theme_test = b.addRunArtifact(executable);
+    print_theme_test.addArg("--print-theme");
+    print_theme_test.setEnvironmentVariable("COLOR_SCHEME", "light");
+    print_theme_test.expectStdOutEqual("light\n");
+    test_step.dependOn(&print_theme_test.step);
+
+    const print_theme_no_terminal_test = b.addRunArtifact(executable);
+    print_theme_no_terminal_test.addArg("--print-theme-no-terminal");
+    print_theme_no_terminal_test.setEnvironmentVariable("COLOR_SCHEME", "dark");
+    print_theme_no_terminal_test.expectStdOutEqual("dark\n");
+    test_step.dependOn(&print_theme_no_terminal_test.step);
+
     const help_test = b.addRunArtifact(executable);
     help_test.addArg("--help");
     help_test.expectStdOutMatch("Usage: " ++ executable_name);

@@ -1,0 +1,23 @@
+{{- $root := index . "root" -}}
+{{- $variant := index . "variant" -}}
+data_dir = "{{ $root.chezmoi.homeDir }}/.local/share/atuin"
+
+sync_address = "http://127.0.0.1:8888"
+auto_sync = true
+
+search_mode = "fuzzy"
+filter_mode_shell_up_key_binding = "directory"
+filter_mode = "global"
+enter_accept = true
+
+style = "compact"
+inline_height = 40
+show_preview = true
+
+[theme]
+name = "black-rose-doll-{{ $variant }}"
+
+[daemon]
+enabled = true
+autostart = true
+sync_frequency = 300

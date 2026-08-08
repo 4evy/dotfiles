@@ -43,6 +43,7 @@ typedef enum terminal_theme_tools_integration_strategy : int {
   TERMINAL_THEME_TOOLS_INTEGRATION_UNKNOWN = 0,
   TERMINAL_THEME_TOOLS_INTEGRATION_ARGUMENTS = 1,
   TERMINAL_THEME_TOOLS_INTEGRATION_CONFIG = 2,
+  TERMINAL_THEME_TOOLS_INTEGRATION_ENVIRONMENT = 3,
 } terminal_theme_tools_integration_strategy;
 
 /* A null environment pointer imports the process environment. A non-null

@@ -1,0 +1,9 @@
+#!/bin/sh
+# Theme fingerprint: {{ include ".chezmoitemplates/black_rose_doll_palette.json" | sha256sum }}
+set -eu
+
+if command -v bat >/dev/null 2>&1; then
+  bat cache --build >/dev/null
+elif command -v batcat >/dev/null 2>&1; then
+  batcat cache --build >/dev/null
+fi

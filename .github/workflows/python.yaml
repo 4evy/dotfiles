@@ -12,7 +12,7 @@ on:
       - ansible/roles/system/templates/macos/tailscale-ssh-helper.py.in
       - browser/helium.toml
       - browser/settings/**
-      - dotfiles/.chezmoitemplates/catppuccin_palette.json
+      - dotfiles/.chezmoitemplates/black_rose_doll_palette.json
       - npins/sources.json
       - packages/dotfiles-python/assets/**
   push:

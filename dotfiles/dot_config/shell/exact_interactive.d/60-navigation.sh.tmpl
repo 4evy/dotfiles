@@ -32,16 +32,4 @@ pip3() {
 }
 
 # C4 / fzf palette
-# Catppuccin Frappé Pink. Pink is a neutral.
-
-{{- $ctp := include ".chezmoitemplates/catppuccin_palette.json" | fromJson }}
-{{- $p := index $ctp "frappe" }}
-export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border
-  --color=bg+:{{ index $p "surface0" }},bg:{{ index $p "base" }}\
-,spinner:{{ index $p "pink" }},hl:{{ index $p "red" }}
-  --color=fg:{{ index $p "text" }},header:{{ index $p "red" }}\
-,info:{{ index $p "pink" }},pointer:{{ index $p "pink" }}
-  --color=marker:{{ index $p "lavender" }},fg+:{{ index $p "text" }}\
-,prompt:{{ index $p "pink" }},hl+:{{ index $p "red" }}
-  --color=selected-bg:{{ index $p "surface1" }},border:{{ index $p "overlay0" }}\
-,label:{{ index $p "text" }}"
+# `terminal-theme-run fzf` supplies the matching option file.

@@ -11,7 +11,11 @@ _fzf_init() {
   local FZF_CTRL_T_COMMAND=''
   local fzf_bin
   fzf_bin="$(_dotfiles_command_path fzf)" || return
-  _dotfiles_wrap_command fzf "$fzf_bin"
+  if _dotfiles_command_path terminal-theme-run >/dev/null; then
+    _dotfiles_wrap_themed_command fzf
+  else
+    _dotfiles_wrap_command fzf "$fzf_bin"
+  fi
 
   local init
   if [[ -r "$HOME/.cache/fzf/init.zsh" ]]; then
@@ -43,7 +47,11 @@ zstyle ':fzf-tab:*' switch-group '<' '>'
 # fresh-machine fallback.
 _starship_bin="$(_dotfiles_command_path starship 2>/dev/null || true)"
 if [[ -n "$_starship_bin" ]]; then
-  _dotfiles_wrap_command starship "$_starship_bin"
+  if _dotfiles_command_path terminal-theme-run >/dev/null; then
+    _dotfiles_wrap_themed_command starship
+  else
+    _dotfiles_wrap_command starship "$_starship_bin"
+  fi
 fi
 if [[ -n "$_starship_bin" && -r "$HOME/.cache/starship/init.zsh" ]]; then
   # shellcheck source=/dev/null
@@ -54,7 +62,11 @@ fi
 unset _starship_bin
 _atuin_bin="$(_dotfiles_command_path atuin 2>/dev/null || true)"
 if [[ -t 0 && -t 1 && -n "$_atuin_bin" && -r "$HOME/.cache/atuin/init.zsh" ]]; then
-  _dotfiles_wrap_command atuin "$_atuin_bin"
+  if _dotfiles_command_path terminal-theme-run >/dev/null; then
+    _dotfiles_wrap_themed_command atuin
+  else
+    _dotfiles_wrap_command atuin "$_atuin_bin"
+  fi
   # shellcheck source=/dev/null
   source "$HOME/.cache/atuin/init.zsh"
   _atuin_search() {

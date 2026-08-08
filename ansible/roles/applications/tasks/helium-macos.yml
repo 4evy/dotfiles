@@ -53,7 +53,8 @@
     applications_helium_macos_flags: >-
       --no-first-run --no-default-browser-check --disable-search-engine-choice-screen
       --extension-mime-request-handling=always-prompt-for-install
-      --omnibox-autocomplete-filtering=search --set-user-color=244,184,228
+      --omnibox-autocomplete-filtering=search
+      --set-user-color={{ applications_helium_accent_rgb }}
       --set-color-scheme=dark --set-color-variant=tonal_spot
   tags:
     - helium

@@ -15,8 +15,8 @@ programs = [
 [[integration]]
 name = "codex"
 strategy = "arguments"
-dark_theme = "catppuccin-frappe-pink"
-light_theme = "catppuccin-latte-pink"
+dark_theme = "black-rose-doll-dark"
+light_theme = "black-rose-doll-light"
 arguments = ["-c", 'tui.theme="{theme}"', "-c", "{context}"]
 context_table = "projects"
 context_field = "trust_level"
@@ -37,8 +37,8 @@ context_directory_commands = [
 [[integration]]
 name = "btop"
 strategy = "config"
-dark_theme = "catppuccin_frappe_pink"
-light_theme = "catppuccin_latte_pink"
+dark_theme = "black_rose_doll_dark"
+light_theme = "black_rose_doll_light"
 default_config = ".config/btop/btop.conf"
 assignment = "color_theme"
 config_flags = ["--config", "-c"]
@@ -47,6 +47,62 @@ temporary_prefix = "terminal-theme-run-btop-XXXXXX"
 temporary_location = "cache"
 cache_subdirectory = "terminal-theme-run/btop"
 quote = '"'
+
+[[integration]]
+name = "atuin"
+strategy = "environment"
+dark_theme = "black-rose-doll-dark"
+light_theme = "black-rose-doll-light"
+env = { ATUIN_CONFIG_DIR = "{home}/.config/atuin-{theme}", ATUIN_THEME_DIR = "{home}/.config/atuin/themes" }
+
+[[integration]]
+name = "bat"
+strategy = "environment"
+dark_theme = "Black Rose Doll Dark"
+light_theme = "Black Rose Doll Light"
+env = { BAT_THEME = "{theme}" }
+
+[[integration]]
+name = "delta"
+strategy = "environment"
+dark_theme = "black-rose-doll-dark"
+light_theme = "black-rose-doll-light"
+env = { DELTA_FEATURES = "{theme}" }
+
+[[integration]]
+name = "eza"
+strategy = "environment"
+dark_theme = "black-rose-doll-dark"
+light_theme = "black-rose-doll-light"
+env = { EZA_CONFIG_DIR = "{home}/.config/eza-{theme}" }
+
+[[integration]]
+name = "fzf"
+strategy = "environment"
+dark_theme = "black-rose-doll-dark"
+light_theme = "black-rose-doll-light"
+env = { FZF_DEFAULT_OPTS_FILE = "{home}/.config/fzf/{theme}.opts" }
+
+[[integration]]
+name = "gitui"
+strategy = "arguments"
+dark_theme = "black-rose-doll-dark"
+light_theme = "black-rose-doll-light"
+arguments = ["--theme", "{theme}.ron"]
+
+[[integration]]
+name = "glamour"
+strategy = "environment"
+dark_theme = "black-rose-doll-dark"
+light_theme = "black-rose-doll-light"
+env = { GLAMOUR_STYLE = "{home}/.config/glamour/styles/{theme}.json" }
+
+[[integration]]
+name = "starship"
+strategy = "environment"
+dark_theme = "black-rose-doll-dark"
+light_theme = "black-rose-doll-light"
+env = { STARSHIP_CONFIG = "{home}/.config/starship-{theme}.toml" }
 
 [[runner]]
 name = "codex"
@@ -71,6 +127,56 @@ programs = ["btop"]
 env_unset = ["NO_COLOR"]
 env = { COLORTERM = "truecolor" }
 integration = "btop"
+
+[[runner]]
+name = "atuin"
+programs = ["atuin"]
+integration = "atuin"
+
+[[runner]]
+name = "bat"
+programs = ["bat"]
+integration = "bat"
+
+[[runner]]
+name = "delta"
+programs = ["delta"]
+env_unset = ["NO_COLOR"]
+integration = "delta"
+
+[[runner]]
+name = "eza"
+programs = ["eza"]
+env_unset = ["NO_COLOR"]
+integration = "eza"
+
+[[runner]]
+name = "fzf"
+programs = ["fzf"]
+env_unset = ["NO_COLOR"]
+integration = "fzf"
+
+[[runner]]
+name = "gh"
+programs = ["gh"]
+integration = "glamour"
+
+[[runner]]
+name = "gitui"
+programs = ["gitui"]
+env_unset = ["NO_COLOR"]
+integration = "gitui"
+
+[[runner]]
+name = "glow"
+programs = ["glow"]
+integration = "glamour"
+
+[[runner]]
+name = "starship"
+programs = ["starship"]
+env_unset = ["NO_COLOR"]
+integration = "starship"
 
 [[runner]]
 name = "helix"

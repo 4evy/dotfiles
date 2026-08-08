@@ -1,0 +1,98 @@
+{{- $brd := include ".chezmoitemplates/black_rose_doll_palette.json" | fromJson -}}
+{{- $p := index $brd . -}}
+{{- $syntaxTheme := "base16-ocean.dark" -}}
+{{- if eq . "light" -}}
+{{- $syntaxTheme = "base16-ocean.light" -}}
+{{- end -}}
+syntax_theme: {{ $syntaxTheme }}
+
+skin: {
+  default: {{ template "theme_rgb" (index $p "text") }} none / {{ template "theme_rgb" (index $p "subtext1") }} none
+  tree: {{ template "theme_rgb" (index $p "pink") }} none / {{ template "theme_rgb" (index $p "surface2") }} none
+  parent: {{ template "theme_rgb" (index $p "surface2") }} none / {{ template "theme_rgb" (index $p "surface1") }} none
+  file: {{ template "theme_rgb" (index $p "text") }} none / {{ template "theme_rgb" (index $p "subtext1") }} none
+  directory: {{ template "theme_rgb" (index $p "blue") }} none Bold / {{ template "theme_rgb" (index $p "subtext0") }} none bold
+  exe: {{ template "theme_rgb" (index $p "green") }} none
+  link: {{ template "theme_rgb" (index $p "teal") }} none
+  pruning: {{ template "theme_rgb" (index $p "overlay0") }} none Italic
+  perm__: {{ template "theme_rgb" (index $p "surface2") }} none
+  perm_r: {{ template "theme_rgb" (index $p "sky") }} none
+  perm_w: {{ template "theme_rgb" (index $p "maroon") }} none
+  perm_x: {{ template "theme_rgb" (index $p "green") }} none
+  owner: {{ template "theme_rgb" (index $p "lavender") }} none
+  group: {{ template "theme_rgb" (index $p "mauve") }} none
+  count: {{ template "theme_rgb" (index $p "peach") }} {{ template "theme_rgb" (index $p "surface2") }}
+  dates: {{ template "theme_rgb" (index $p "sapphire") }} none
+  sparse: {{ template "theme_rgb" (index $p "yellow") }} none
+  content_extract: {{ template "theme_rgb" (index $p "teal") }} none
+  content_match: {{ template "theme_rgb" (index $p "green") }} none
+  preview_title: {{ template "theme_rgb" (index $p "text") }} {{ template "theme_rgb" (index $p "mantle") }} Bold
+  preview: {{ template "theme_rgb" (index $p "text") }} {{ template "theme_rgb" (index $p "mantle") }}
+  preview_line_number: {{ template "theme_rgb" (index $p "overlay0") }} {{ template "theme_rgb" (index $p "mantle") }}
+  preview_separator: {{ template "theme_rgb" (index $p "overlay0") }} {{ template "theme_rgb" (index $p "mantle") }}
+  preview_match: {{ template "theme_rgb" (index $p "pink") }} {{ template "theme_rgb" (index $p "surface2") }} Bold Italic
+  device_id_major: {{ template "theme_rgb" (index $p "lavender") }} none
+  device_id_sep: {{ template "theme_rgb" (index $p "surface2") }} none
+  device_id_minor: {{ template "theme_rgb" (index $p "lavender") }} none
+
+  git_branch: {{ template "theme_rgb" (index $p "pink") }} none
+  git_insertions: {{ template "theme_rgb" (index $p "green") }} none
+  git_deletions: {{ template "theme_rgb" (index $p "red") }} none
+  git_status_current: {{ template "theme_rgb" (index $p "subtext1") }} none
+  git_status_modified: {{ template "theme_rgb" (index $p "yellow") }} none
+  git_status_new: {{ template "theme_rgb" (index $p "sky") }} none Bold
+  git_status_ignored: {{ template "theme_rgb" (index $p "surface2") }} none
+  git_status_conflicted: {{ template "theme_rgb" (index $p "red") }} none
+  git_status_other: {{ template "theme_rgb" (index $p "red") }} none
+  staging_area_title: {{ template "theme_rgb" (index $p "pink") }} none Bold
+
+  selected_line: none {{ template "theme_rgb" (index $p "surface1") }} / none {{ template "theme_rgb" (index $p "surface0") }}
+  char_match: {{ template "theme_rgb" (index $p "green") }} none Bold
+  file_error: {{ template "theme_rgb" (index $p "red") }} none
+
+  flag_label: {{ template "theme_rgb" (index $p "subtext1") }} none
+  flag_value: {{ template "theme_rgb" (index $p "pink") }} none Bold
+
+  input: {{ template "theme_rgb" (index $p "text") }} none / {{ template "theme_rgb" (index $p "subtext1") }} {{ template "theme_rgb" (index $p "surface2") }}
+
+  status_error: {{ template "theme_rgb" (index $p "text") }} {{ template "theme_rgb" (index $p "red") }}
+  status_job: {{ template "theme_rgb" (index $p "yellow") }} {{ template "theme_rgb" (index $p "surface1") }}
+  status_normal: {{ template "theme_rgb" (index $p "text") }} {{ template "theme_rgb" (index $p "surface2") }}
+  status_italic: {{ template "theme_rgb" (index $p "pink") }} {{ template "theme_rgb" (index $p "surface2") }} Italic
+  status_bold: {{ template "theme_rgb" (index $p "pink") }} {{ template "theme_rgb" (index $p "surface2") }} Bold
+  status_code: {{ template "theme_rgb" (index $p "rosewater") }} {{ template "theme_rgb" (index $p "surface2") }}
+  status_ellipsis: {{ template "theme_rgb" (index $p "subtext1") }} {{ template "theme_rgb" (index $p "surface1") }}
+  mode_command_mark: {{ template "theme_rgb" (index $p "pink") }} {{ template "theme_rgb" (index $p "surface2") }} Bold
+
+  help_paragraph: {{ template "theme_rgb" (index $p "text") }} none
+  help_headers: {{ template "theme_rgb" (index $p "pink") }} none Bold
+  help_bold: {{ template "theme_rgb" (index $p "peach") }} none Bold
+  help_italic: {{ template "theme_rgb" (index $p "yellow") }} none Italic
+  help_code: {{ template "theme_rgb" (index $p "green") }} {{ template "theme_rgb" (index $p "surface0") }}
+  help_table_border: {{ template "theme_rgb" (index $p "overlay0") }} none
+
+  hex_null: {{ template "theme_rgb" (index $p "text") }} none
+  hex_ascii_graphic: {{ template "theme_rgb" (index $p "peach") }} none
+  hex_ascii_whitespace: {{ template "theme_rgb" (index $p "green") }} none
+  hex_ascii_other: {{ template "theme_rgb" (index $p "teal") }} none
+  hex_non_ascii: {{ template "theme_rgb" (index $p "pink") }} none
+
+  purpose_normal: {{ template "theme_rgb" (index $p "text") }} none
+  purpose_italic: {{ template "theme_rgb" (index $p "mauve") }} none Italic
+  purpose_bold: {{ template "theme_rgb" (index $p "mauve") }} none Bold
+  purpose_ellipsis: {{ template "theme_rgb" (index $p "overlay1") }} none
+
+  scrollbar_track: {{ template "theme_rgb" (index $p "surface0") }} none
+  scrollbar_thumb: {{ template "theme_rgb" (index $p "surface2") }} none
+
+  good_to_bad_0: {{ template "theme_rgb" (index $p "green") }} none
+  good_to_bad_1: {{ template "theme_rgb" (index $p "teal") }} none
+  good_to_bad_2: {{ template "theme_rgb" (index $p "sky") }} none
+  good_to_bad_3: {{ template "theme_rgb" (index $p "blue") }} none
+  good_to_bad_4: {{ template "theme_rgb" (index $p "sapphire") }} none
+  good_to_bad_5: {{ template "theme_rgb" (index $p "lavender") }} none
+  good_to_bad_6: {{ template "theme_rgb" (index $p "mauve") }} none
+  good_to_bad_7: {{ template "theme_rgb" (index $p "peach") }} none
+  good_to_bad_8: {{ template "theme_rgb" (index $p "maroon") }} none
+  good_to_bad_9: {{ template "theme_rgb" (index $p "red") }} none
+}
