@@ -1,11 +1,32 @@
-{{- $repo := joinPath .chezmoi.sourceDir ".." -}}
 #!/usr/bin/env python3.14
 # vscode-extensions.txt hash: {{ include "dot_config/Code/User/vscode-extensions.txt" | sha256sum }}
-# dotfiles-scripts fingerprint: {{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts") }}
-# helper source hash: {{ output "cat" (joinPath $repo "packages/dotfiles-python/src/workstation/chezmoi.py") | sha256sum }}
 # code fingerprint: {{ template "executable_fingerprint" (lookPath "code") }}
-{{ template "dotfiles_command_body.py.tmpl" (dict
-  "mode" "path"
-  "path" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts")
-  "subcommand" "vscode-extensions"
-) -}}
+from __future__ import annotations
+
+import shutil
+import subprocess
+from pathlib import Path
+
+code = shutil.which("code")
+if code is None:
+    raise SystemExit(0)
+
+configured = Path(
+    {{ joinPath .chezmoi.sourceDir "dot_config/Code/User/vscode-extensions.txt" | quote }}
+)
+installed = {
+    line.casefold()
+    for line in subprocess.run(
+        (code, "--list-extensions"),
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.splitlines()
+}
+for line in configured.read_text(encoding="utf-8").splitlines():
+    extension = line.split("#", 1)[0].strip()
+    if extension and extension.casefold() not in installed:
+        subprocess.run(
+            (code, "--install-extension", extension, "--force"),
+            check=True,
+        )

@@ -1,11 +1,39 @@
 {{- if eq .chezmoi.os "linux" -}}
 {{- $repo := joinPath .chezmoi.sourceDir ".." -}}
 #!/usr/bin/env python3.14
-# dotfiles-scripts fingerprint: {{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts") }}
-# helper source hash: {{ output "cat" (joinPath $repo "packages/dotfiles-python/src/workstation/chezmoi.py") (joinPath $repo "packages/dotfiles-python/src/workstation/chezmoi_desktop.py") (joinPath $repo "packages/dotfiles-python/src/workstation/local/gnome.py") (joinPath $repo "packages/dotfiles-python/assets/desktop/black_rose_doll_palette.json") (joinPath $repo "packages/dotfiles-python/assets/desktop/gtk-3-accent.css.in") (joinPath $repo "packages/dotfiles-python/assets/desktop/gtk-4-accent.css.in") | sha256sum }}
-{{ template "dotfiles_command_body.py.tmpl" (dict
-  "mode" "path"
-  "path" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts")
-  "subcommand" "gnome-accent"
-) -}}
+# command fingerprint: {{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/gnome-black-rose-doll-accent") }}
+# helper source hash: {{ output "cat" (joinPath $repo "packages/dotfiles-python/src/workstation/local/gnome.py") (joinPath $repo "packages/dotfiles-python/assets/desktop/black_rose_doll_palette.json") (joinPath $repo "packages/dotfiles-python/assets/desktop/gtk-3-accent.css.in") (joinPath $repo "packages/dotfiles-python/assets/desktop/gtk-4-accent.css.in") | sha256sum }}
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+from pathlib import Path
+
+command = Path.home() / ".local/bin/gnome-black-rose-doll-accent"
+if not command.is_file():
+    command = Path(shutil.which("gnome-black-rose-doll-accent") or command)
+if command.is_file() and os.access(command, os.X_OK):
+    subprocess.run((command,), check=True)
+
+systemctl = shutil.which("systemctl")
+if systemctl is not None:
+    subprocess.run(
+        (systemctl, "--user", "daemon-reload"),
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.run(
+        (
+            systemctl,
+            "--user",
+            "enable",
+            "--now",
+            "gnome-black-rose-doll-accent.service",
+        ),
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
 {{- end -}}

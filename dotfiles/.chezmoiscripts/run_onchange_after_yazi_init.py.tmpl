@@ -1,11 +1,29 @@
-{{- $repo := joinPath .chezmoi.sourceDir ".." -}}
 #!/usr/bin/env python3.14
 # yazi package.toml hash: {{ include "dot_config/yazi/package.toml" | sha256sum }}
-# dotfiles-scripts fingerprint: {{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts") }}
-# helper source hash: {{ output "cat" (joinPath $repo "packages/dotfiles-python/src/workstation/chezmoi.py") | sha256sum }}
 # ya fingerprint: {{ template "executable_fingerprint" (lookPath "ya") }}
-{{ template "dotfiles_command_body.py.tmpl" (dict
-  "mode" "path"
-  "path" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts")
-  "subcommand" "yazi-init"
-) -}}
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+from pathlib import Path
+
+ya = shutil.which("ya")
+if ya is None:
+    print("Yazi plugin install skipped: ya not found")
+    raise SystemExit(0)
+
+home = Path.home()
+config = Path(os.environ.get("XDG_CONFIG_HOME", home / ".config")) / "yazi"
+package = config / "package.toml"
+if not package.is_file():
+    print(f"Yazi plugin install skipped: {package} not found")
+    raise SystemExit(0)
+
+environment = dict(os.environ)
+environment["YAZI_CONFIG_HOME"] = os.fspath(config)
+subprocess.run(
+    (ya, "pkg", "install", "--discard"),
+    check=True,
+    env=environment,
+)

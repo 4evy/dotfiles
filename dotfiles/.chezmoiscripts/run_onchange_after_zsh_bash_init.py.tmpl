@@ -1,12 +1,118 @@
-{{- $repo := joinPath .chezmoi.sourceDir ".." -}}
 #!/usr/bin/env python3.14
-# dotfiles-scripts fingerprint: {{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts") }}
-# helper source hash: {{ output "cat" (joinPath $repo "packages/dotfiles-python/src/workstation/chezmoi.py") | sha256sum }}
 {{- range $tool := list "atuin" "broot" "chezmoi" "delta" "deno" "fzf" "jj" "rustup" "starship" "zoxide" }}
 # {{ $tool }} fingerprint: {{ template "executable_fingerprint" (lookPath $tool) }}
 {{- end }}
-{{ template "dotfiles_command_body.py.tmpl" (dict
-  "mode" "path"
-  "path" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts")
-  "subcommand" "shell-init"
-) -}}
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path
+
+SHELL_TOOLS = ("atuin", "broot", "fzf", "starship", "zoxide")
+COMPLETION_COMMANDS = (
+    ("chezmoi", ("chezmoi", "completion", "{shell}")),
+    ("op", ("op", "completion", "{shell}")),
+    ("jj", ("jj", "util", "completion", "{shell}")),
+    ("starship", ("starship", "completions", "{shell}")),
+    ("deno", ("deno", "completions", "{shell}")),
+    ("delta", ("delta", "--generate-completion", "{shell}")),
+    ("rustup", ("rustup", "completions", "{shell}")),
+    ("cargo", ("rustup", "completions", "{shell}", "cargo")),
+)
+
+
+def write_if_changed(path: Path, content: str) -> None:
+    if path.is_file() and path.read_text(encoding="utf-8") == content:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as target:
+            target.write(content)
+        temporary.chmod(0o644)
+        temporary.replace(path)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
+
+
+def capture(command: tuple[str, ...], target: Path) -> None:
+    executable = shutil.which(command[0])
+    if executable is None:
+        return
+    result = subprocess.run(command, check=False, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"failed to generate shell init for {command[0]}")
+        return
+    write_if_changed(target, result.stdout)
+
+
+def fzf_zsh(target: Path) -> None:
+    fzf = shutil.which("fzf")
+    if fzf is None:
+        return
+    result = subprocess.run(
+        (fzf, "--zsh"),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return
+    content = result.stdout.split("### completion.zsh ###", 1)[0]
+    marker = "  eval $__fzf_key_bindings_options"
+    replacement = (
+        "  __fzf_key_bindings_options=${__fzf_key_bindings_options/ zle on/}\n"
+        "  __fzf_key_bindings_options=${__fzf_key_bindings_options/ zle off/}\n"
+        + marker
+    )
+    write_if_changed(target, content.replace(marker, replacement))
+
+
+home = Path.home()
+cache = Path(os.environ.get("XDG_CACHE_HOME", home / ".cache"))
+for name in SHELL_TOOLS:
+    (cache / name).mkdir(parents=True, exist_ok=True)
+for shell in ("zsh", "bash"):
+    completion_dir = cache / shell / "completions"
+    completion_dir.mkdir(parents=True, exist_ok=True)
+    if shell == "zsh":
+        fzf_zsh(cache / "fzf/init.zsh")
+    else:
+        capture(("fzf", "--bash"), cache / "fzf/init.bash")
+    capture(("starship", "init", shell), cache / f"starship/init.{shell}")
+    zoxide = (
+        ("zoxide", "init", shell, "--cmd", "cd")
+        if shell == "bash"
+        else ("zoxide", "init", shell)
+    )
+    capture(zoxide, cache / f"zoxide/init.{shell}")
+    capture(
+        ("atuin", "init", shell, "--disable-up-arrow"),
+        cache / f"atuin/init.{shell}",
+    )
+    capture(
+        ("broot", "--print-shell-function", shell),
+        cache / f"broot/init.{shell}",
+    )
+    if (atuin := shutil.which("atuin")) is not None:
+        subprocess.run(
+            (
+                atuin,
+                "gen-completions",
+                "--shell",
+                shell,
+                "--out-dir",
+                completion_dir,
+            ),
+            check=False,
+        )
+    prefix = "_" if shell == "zsh" else ""
+    for name, command in COMPLETION_COMMANDS:
+        capture(
+            tuple(part.format(shell=shell) for part in command),
+            completion_dir / f"{prefix}{name}",
+        )

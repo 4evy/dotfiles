@@ -1,6 +1,28 @@
 #!/usr/bin/env python3.14
-{{ template "dotfiles_command_body.py.tmpl" (dict
-  "mode" "path"
-  "path" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts")
-  "subcommand" "desktop-integrations"
-) -}}
+from __future__ import annotations
+
+import shutil
+import subprocess
+from pathlib import Path
+
+repository = Path({{ joinPath .chezmoi.sourceDir ".." | quote }})
+ansible = shutil.which("ansible-playbook")
+uvx = shutil.which("uvx")
+if ansible is not None:
+    command = (ansible,)
+elif uvx is not None:
+    command = (uvx, "--from", "ansible-core", "ansible-playbook")
+else:
+    print("chezmoi desktop integrations skipped: ansible-playbook/uvx not found")
+    raise SystemExit(0)
+
+subprocess.run(
+    (
+        *command,
+        "ansible/site.yml",
+        "--tags",
+        "always,hyper-window-tiling,sushi-preview,emoji-shortcut",
+    ),
+    cwd=repository,
+    check=True,
+)

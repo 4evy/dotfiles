@@ -7,9 +7,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-command = Path.home() / ".local/bin/dotfiles-scripts"
+command = Path.home() / ".local/bin/discord-equicord"
+if not command.is_file():
+    command = Path(shutil.which("discord-equicord") or command)
 if command.is_file() and os.access(command, os.X_OK):
-    subprocess.run((command, "chezmoi", "discord-equicord"), check=True)
+    subprocess.run((command, "--repair-only"), check=True)
 
 if sys.platform == "darwin":
     nix = shutil.which("nix")
@@ -18,7 +20,13 @@ if sys.platform == "darwin":
 
     repository = Path({{ joinPath .chezmoi.sourceDir ".." | quote }})
     result = subprocess.run(
-        (nix, "build", "--no-link", "--print-out-paths", ".#equicord-settings"),
+        (
+            nix,
+            "build",
+            "--no-link",
+            "--print-out-paths",
+            "path:.#equicord-settings",
+        ),
         cwd=repository,
         check=True,
         capture_output=True,

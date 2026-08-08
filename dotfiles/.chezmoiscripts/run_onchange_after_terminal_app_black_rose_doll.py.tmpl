@@ -1,11 +1,16 @@
 {{- if eq .chezmoi.os "darwin" -}}
 {{- $repo := joinPath .chezmoi.sourceDir ".." -}}
 #!/usr/bin/env python3.14
-# dotfiles-scripts fingerprint: {{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts") }}
-# helper source hash: {{ output "cat" (joinPath $repo "packages/dotfiles-python/src/workstation/chezmoi.py") | sha256sum }}
-{{ template "dotfiles_command_body.py.tmpl" (dict
-  "mode" "always"
-  "path" (joinPath .chezmoi.homeDir ".local/bin/dotfiles-scripts")
-  "subcommand" "terminal-profile"
-) -}}
-{{- end -}}
+# command fingerprint: {{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/terminal-black-rose-doll") }}
+# helper source hash: {{ output "cat" (joinPath $repo "packages/dotfiles-python/src/workstation/macos/terminal.py") | sha256sum }}
+from __future__ import annotations
+
+import os
+import shutil
+from pathlib import Path
+
+command = Path.home() / ".local/bin/terminal-black-rose-doll"
+if not command.is_file():
+    command = Path(shutil.which("terminal-black-rose-doll") or command)
+os.execv(command, (os.fspath(command),))
+{{ end -}}
