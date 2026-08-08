@@ -63,7 +63,6 @@ dotfiles/dot_zshrc.tmpl linguist-language=Shell linguist-detectable
 # Linguist, while still using known Linguist language names where available.
 .ansible-lint linguist-language=YAML linguist-detectable
 .clang-format linguist-language=YAML linguist-detectable
-.clang-tidy linguist-language=YAML linguist-detectable
 .shellcheckrc linguist-language=Shell
 .yamllint linguist-language=YAML linguist-detectable
 dotfiles/.chezmoiignore linguist-language=Ignore-List linguist-detectable
@@ -125,12 +124,11 @@ packages/terminal-theme-tools/vendor/tomlc17/tomlc17.[ch] linguist-vendored
 # sources, host discovery, encryption tools, dependency resolvers, or schemas.
 # Keep dependency locks out of Linguist statistics at every directory depth.
 # The patterns cover conventional locks, binary locks, lockfile extensions,
-# compound names such as packages.lock.json, and Meson's hidden wrap lock.
+# compound names such as packages.lock.json.
 *.lock linguist-generated
 *.lock.* linguist-generated
 *.lockb linguist-generated
 *.lockfile linguist-generated
-.wraplock linguist-generated
 package-lock.json linguist-generated
 pnpm-lock.yaml linguist-generated
 pnpm-lock.yml linguist-generated
@@ -138,5 +136,4 @@ hosts/**/hardware-configuration.nix linguist-generated
 npins/** linguist-generated
 packages/hyper-window-tiling/bun.nix linguist-generated
 packages/**/dist/** linguist-generated
-rumdl.schema.json linguist-generated
 secrets/*.yaml linguist-generated

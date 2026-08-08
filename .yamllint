@@ -4,14 +4,12 @@ extends: default
 ignore: |
   .ansible/
   .cache/
-  .devenv/
   .venv/
   ansible.cfg
   build*/
   dist/
   node_modules/
   packages/terminal-theme-tools/build*/
-  packages/terminal-theme-tools/subprojects/*/
   packages/terminal-theme-tools/zig-pkg/
   result
   secrets/

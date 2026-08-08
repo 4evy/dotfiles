@@ -71,7 +71,6 @@ brew "lua-language-server"
 brew "luacheck"
 brew "luarocks"
 brew "make"
-brew "meson"
 brew "ninja"
 brew "pinact"
 brew "gpatch"
@@ -166,8 +165,7 @@ brew "fastfetch"
 brew "fzf"
 brew "ghidra"
 # Linux Kanata is installed by the keyboard role with uinput/systemd setup.
-# macOS uses a local Ansible-installed Homebrew formula matching the former
-# nix-darwin kanata-with-cmd package.
+# macOS uses the local Ansible-installed Kanata formula with command actions.
 if OS.mac?
   brew "gettext"
   brew "hidapi"

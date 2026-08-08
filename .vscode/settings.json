@@ -34,54 +34,23 @@
   "files.trimTrailingWhitespace": true,
   "files.trimFinalNewlines": true,
   "files.insertFinalNewline": true,
-  "json.schemas": [
-    {
-      "fileMatch": ["/spectrum/bluebuild/dnf.json"],
-      "url": "https://schema.blue-build.org/modules/dnf-v1.json"
-    },
-    {
-      "fileMatch": ["/spectrum/bluebuild/files.json"],
-      "url": "https://schema.blue-build.org/modules/files-v1.json"
-    },
-    {
-      "fileMatch": ["/spectrum/bluebuild/systemd.json"],
-      "url": "https://schema.blue-build.org/modules/systemd-v1.json"
-    }
-  ],
   "explorer.excludeGitIgnore": true,
-  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/meson/compile_commands.json",
-  "C_Cpp.default.configurationProvider": "mesonbuild.mesonbuild",
-  "C_Cpp.default.compilerPath": "/usr/bin/clang",
-  "C_Cpp.default.intelliSenseMode": "macos-clang-arm64",
   "C_Cpp.default.cStandard": "c23",
   "C_Cpp.default.includePath": [
     "${workspaceFolder}/packages/terminal-theme-tools/include"
   ],
   // cpptools still misparses C23 constexpr declarations. Rely on clang-tidy
-  // and Meson diagnostics until its C23 parser support catches up:
+  // diagnostics until its C23 parser support catches up:
   // https://github.com/microsoft/vscode-cpptools/issues?q=is%3Aissue%20C23%20constexpr
   "C_Cpp.errorSquiggles": "disabled",
   "C_Cpp.codeAnalysis.clangTidy.enabled": true,
-  "C_Cpp.codeAnalysis.clangTidy.args": [
-    "--extra-arg=-isysroot",
-    "--extra-arg=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
-  ],
   "C_Cpp.codeAnalysis.exclude": {
     "**/vendor/tomlc17/tomlc17.{c,h}": true
   },
-  "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true,
   "C_Cpp.formatting": "clangFormat",
-  "mesonbuild.buildFolder": "build/meson",
-  "mesonbuild.configureOnOpen": true,
-  "mesonbuild.debuggerExtension": "cpptools",
-  "mesonbuild.formatting.enabled": true,
-  "mesonbuild.formatting.provider": "meson",
-  "mesonbuild.mesonlsp.others.ignoreDiagnosticsFromSubprojects": true,
-  "mesonbuild.modifySettings": false,
   "search.exclude": {
     "**/.ansible": true,
     "**/.cache": true,
-    "**/.devenv": true,
     "**/.jj": true,
     "**/.pytest_cache": true,
     "**/.ruff_cache": true,
@@ -96,7 +65,6 @@
   "files.watcherExclude": {
     "**/.ansible/**": true,
     "**/.cache/**": true,
-    "**/.devenv/**": true,
     "**/.jj/**": true,
     "**/.pytest_cache/**": true,
     "**/.ruff_cache/**": true,
@@ -198,10 +166,6 @@
     "editor.defaultFormatter": "ms-vscode.cpptools",
     "editor.formatOnSave": true,
     "editor.formatOnType": true
-  },
-  "[meson]": {
-    "editor.defaultFormatter": "mesonbuild.mesonbuild",
-    "editor.formatOnSave": true
   },
   "[nix]": {
     "editor.defaultFormatter": "jnoortheen.nix-ide",

@@ -11,14 +11,12 @@ Thumbs.db
 !/.vscode/**
 
 # Local environments and tool state
-.devenv/
 .ansible/
 .jj/
 .venv/
 .ruby-lsp/
 .cache/
 .complexipy_cache/
-.mypy_cache/
 .pytest_cache/
 .ruff_cache/
 .rumdl_cache/
@@ -52,10 +50,8 @@ zig-out/
 a.out
 build/
 build-*/
-builddir/
 dist/
 *.egg-info/
-.dotfiles-gnome-extension/
 result
 tmp/
 
@@ -66,8 +62,4 @@ coverage.xml
 htmlcov/
 lcov.info
 
-# Meson wrap downloads
-/packages/terminal-theme-tools/subprojects/*/
-!/packages/terminal-theme-tools/subprojects/packagefiles/
-!/packages/terminal-theme-tools/subprojects/packagefiles/**
 /.bluebuild-scripts_*

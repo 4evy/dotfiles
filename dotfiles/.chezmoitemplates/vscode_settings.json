@@ -202,10 +202,6 @@
     "editor.defaultFormatter": "ms-azuretools.vscode-containers",
     "editor.formatOnSave": true
   },
-  "[meson]": {
-    "editor.defaultFormatter": "mesonbuild.mesonbuild",
-    "editor.formatOnSave": true
-  },
   "[nix]": {
     "editor.defaultFormatter": "jnoortheen.nix-ide",
     "editor.formatOnPaste": true,

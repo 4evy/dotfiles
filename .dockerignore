@@ -10,12 +10,6 @@
 !pyproject.toml
 !uv.lock
 
-!cmd/
-!cmd/chezmoi-support/
-!cmd/chezmoi-support/**
-!internal/
-!internal/**
-
 !containers/
 !containers/**
 
@@ -23,7 +17,8 @@
 !ansible/**
 
 !patches/
-!patches/**
+!patches/ghostty/
+!patches/ghostty/**
 
 !bluebuild/
 !bluebuild/**
@@ -35,9 +30,6 @@
 !dotfiles/
 !dotfiles/**
 
-!manifests/
-!manifests/**
-
 !npins/
 !npins/sources.json
 
@@ -46,18 +38,7 @@ packages/*
 !packages/ghostty/
 !packages/ghostty/**
 !packages/dotfiles-python/
-!packages/dotfiles-python/src/
-!packages/dotfiles-python/src/workstation/
-!packages/dotfiles-python/src/workstation/__init__.py
-!packages/dotfiles-python/src/workstation/errors.py
-!packages/dotfiles-python/src/workstation/lib/
-!packages/dotfiles-python/src/workstation/lib/__init__.py
-!packages/dotfiles-python/src/workstation/lib/commands.py
-!packages/dotfiles-python/src/workstation/lib/files.py
-!packages/dotfiles-python/src/workstation/lib/http.py
-!packages/dotfiles-python/src/workstation/lib/validation.py
-!packages/scripts/
-!packages/scripts/**
+!packages/dotfiles-python/**
 !packages/terminal-theme-tools/
 !packages/terminal-theme-tools/**
 

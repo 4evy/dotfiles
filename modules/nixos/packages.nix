@@ -92,7 +92,6 @@ in
         luarocks
         maven
         mediainfo
-        meson
         ncdu
         netcat
         nil

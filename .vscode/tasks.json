@@ -85,52 +85,6 @@
         "panel": "dedicated",
         "clear": true
       }
-    },
-    {
-      "label": "meson: configure",
-      "detail": "Configure every native workspace project and its compilation database.",
-      "type": "process",
-      "command": "meson",
-      "args": ["setup", "${workspaceFolder}/build/meson", "${workspaceFolder}"],
-      "group": "build",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": true
-      }
-    },
-    {
-      "label": "meson: compile",
-      "detail": "Compile every native workspace project with Meson.",
-      "type": "process",
-      "command": "meson",
-      "args": ["compile", "-C", "${workspaceFolder}/build/meson"],
-      "dependsOn": ["meson: configure"],
-      "dependsOrder": "sequence",
-      "group": "build",
-      "problemMatcher": ["$gcc"],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": true
-      }
-    },
-    {
-      "label": "meson: test",
-      "detail": "Build and run every native workspace test suite.",
-      "type": "process",
-      "command": "meson",
-      "args": ["test", "-C", "${workspaceFolder}/build/meson", "--print-errorlogs"],
-      "dependsOn": ["meson: compile"],
-      "dependsOrder": "sequence",
-      "group": "test",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": true
-      }
     }
   ]
 }
