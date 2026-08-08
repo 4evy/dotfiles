@@ -85,7 +85,7 @@ in
       };
     })
     # Fix for GNOME suspend/resume issues with NVIDIA GPUs
-    (mkIf config.local.nvidia.enable {
+    (mkIf (config.local.gnome.enable && config.local.nvidia.enable) {
       systemd.services = {
         gnome-suspend = {
           description = "Suspend gnome shell";

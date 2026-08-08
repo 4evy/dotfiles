@@ -54,6 +54,10 @@ in
         assertion = builtins.hasAttr cfg.name config.users.users;
         message = "local.user.name must identify an account declared in users.users.";
       }
+      {
+        assertion = !(config.local.gnome.enable && config.local.kde.enable);
+        message = "local.gnome.enable and local.kde.enable cannot both be enabled.";
+      }
     ];
 
     determinate.enable = true;
