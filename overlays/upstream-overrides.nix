@@ -5,7 +5,11 @@ let
 in
 {
   libtsm = prev.libtsm.overrideAttrs {
-    version = lib.removePrefix "v" dotfilesSourcePins.libtsm.version;
+    version = builtins.head (
+      builtins.match ".*version: '([^']+)'.*" (
+        builtins.readFile "${dotfilesSourcePins.libtsm.outPath}/meson.build"
+      )
+    );
     src = dotfilesSourcePins.libtsm.outPath;
   };
 

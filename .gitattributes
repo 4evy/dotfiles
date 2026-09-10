@@ -123,7 +123,6 @@ package-lock.json linguist-generated
 pnpm-lock.yaml linguist-generated
 pnpm-lock.yml linguist-generated
 hosts/**/hardware-configuration.nix linguist-generated
-npins/** linguist-generated
 packages/hyper-window-tiling/bun.nix linguist-generated
 packages/**/dist/** linguist-generated
 secrets/*.yaml linguist-generated

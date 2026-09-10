@@ -1,32 +1,24 @@
 # frozen_string_literal: true
 
-require "json"
+require_relative "../packages/source-lock/flake_lock"
 
 class KanataWithCmd < Formula
   tap_root = Pathname(__dir__).parent
-  pins = JSON.load_file(tap_root/"npins/sources.json").fetch("pins")
-  upstream = pins.fetch("kanata")
-  homebrew = pins.fetch("kanata_homebrew")
-  archive = pins.fetch("kanata_homebrew_archive")
+  homebrew = DotfilesFlakeLock.input(tap_root, "source-kanata-homebrew")
   patches_tap = Tap.fetch("4evy", "patches")
   raise "Tap 4evy/patches before installing kanata-with-cmd" unless patches_tap.installed?
 
   manifest = JSON.load_file(patches_tap.path/"stacks/kanata/stack.json")
   stack_revision = manifest.fetch("source").fetch("revision")
-  raise "The Kanata source pin does not match the 4evy/patches stack" if stack_revision != homebrew.fetch("revision")
-
-  digest = archive.fetch("hash").delete_prefix("sha256-").unpack1("m0").unpack1("H*")
+  raise "The Kanata source pin does not match the 4evy/patches stack" if stack_revision != homebrew.fetch("rev")
 
   desc "Cross-platform keyboard remapper with command actions enabled"
-  homepage "https://github.com/#{upstream.dig("repository", "owner")}/#{upstream.dig("repository", "repo")}"
-  url archive.fetch("url")
-  version "git-#{homebrew.fetch("revision")[0, 7]}"
-  sha256 digest
+  homepage "https://github.com/jtroo/kanata"
+  url DotfilesFlakeLock.repository(homebrew), revision: homebrew.fetch("rev")
+  version "git-#{homebrew.fetch("rev")[0, 7]}"
   license "LGPL-3.0-only"
   revision 1
-  head "https://github.com/#{homebrew.dig("repository", "owner")}/" \
-       "#{homebrew.dig("repository", "repo")}.git",
-       branch: homebrew.fetch("branch")
+  head DotfilesFlakeLock.repository(homebrew), branch: "main"
 
   depends_on "rust" => :build
 

@@ -3,7 +3,7 @@
 name: ghostty
 from: registry.fedoraproject.org/fedora:45@sha256:880a6f885db64973f88e01289baa74e3854506afaafdb8d705d18f408bddaa56
 modules:
-  # Keep Ghostty's source inputs independent from unrelated npins updates.
+  # Keep Ghostty's source inputs independent from unrelated flake updates.
   - type: copy@v1
     src: bluebuild/recipes/spectrum/sources/ghostty.json
     dest: /src/sources.json
@@ -15,6 +15,10 @@ modules:
   - type: copy@v1
     src: packages/ghostty-patched/build.sh
     dest: /src/build-ghostty.sh
+
+  - type: copy@v1
+    src: packages/source-lock/source_lock.py
+    dest: /src/source_lock.py
 
   - type: dnf@v1
     source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
@@ -42,6 +46,7 @@ modules:
         - openssl
         - pango-devel
         - patch
+        - python3
         - pkgconf-pkg-config
         - tar
         - xz
@@ -56,9 +61,8 @@ modules:
           --mount=type=cache,id=spectrum-ghostty-zig-global-v1,sharing=locked,target=/build/zig-cache \
           --mount=type=cache,id=spectrum-ghostty-zig-local-v1,sharing=locked,target=/build/source/.zig-cache \
           SOURCE_LOCK=/src/sources.json \
-          SOURCE_PIN=ghostty_archive \
-          REVISION_PIN=ghostty \
-          ZIG_PIN=ghostty_zig_x86_64_linux \
+          SOURCE_PIN=ghostty \
+          ZIG_PIN=ghostty-zig-x86-64-linux \
           PATCHES_LOCK=/src/patches.json \
           PATCH_STACK=ghostty \
           PREFIX=/out/usr \

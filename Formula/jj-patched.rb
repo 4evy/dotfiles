@@ -1,27 +1,22 @@
 # frozen_string_literal: true
 
-require "json"
+require_relative "../packages/source-lock/flake_lock"
 
 class JjPatched < Formula
   tap_root = Pathname(__dir__).parent
-  pins = JSON.load_file(tap_root/"npins/sources.json").fetch("pins")
-  jj = pins.fetch("jj")
-  archive = pins.fetch("jj_archive")
+  jj = DotfilesFlakeLock.input(tap_root, "source-jj")
   patches_tap = Tap.fetch("4evy", "patches")
   raise "Tap 4evy/patches before installing jj-patched" unless patches_tap.installed?
 
   manifest = JSON.load_file(patches_tap.path/"stacks/jj/stack.json")
   stack_revision = manifest.fetch("source").fetch("revision")
   result_tree = manifest.fetch("result").fetch("tree").fetch("oid")
-  raise "The jj source pin does not match the 4evy/patches stack" if stack_revision != jj.fetch("revision")
-
-  digest = archive.fetch("hash").delete_prefix("sha256-").unpack1("m0").unpack1("H*")
+  raise "The jj source pin does not match the 4evy/patches stack" if stack_revision != jj.fetch("rev")
 
   desc "Jujutsu build with the 4evy patch stack"
   homepage "https://github.com/jj-vcs/jj"
-  url archive.fetch("url")
+  url DotfilesFlakeLock.repository(jj), revision: jj.fetch("rev")
   version "0.44.0-head-#{result_tree[0, 8]}"
-  sha256 digest
   license "Apache-2.0"
   revision 1
   depends_on "rust" => :build

@@ -71,48 +71,73 @@
       "versioningTemplate": "docker"
     },
     {
-      "customType": "jsonata",
-      "description": "Discover non-frozen npins GitHub branch revisions",
-      "fileFormat": "json",
-      "managerFilePatterns": ["/^npins\\/sources\\.json$/"],
+      "customType": "regex",
+      "description": "Track the Helium binary flake input",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
       "matchStrings": [
-        "$each(pins, function($v, $k) { $v.type = \"Git\" and $v.repository.type = \"GitHub\" and $not($v.frozen = true) ? { \"depName\": $v.repository.owner & \"/\" & $v.repository.repo, \"currentValue\": $v.branch, \"currentDigest\": $v.revision, \"datasource\": \"github-digest\", \"versioning\": \"git\", \"depType\": \"npins\" } })"
-      ]
+        "url = \"file\\+https://github\\.com/imputnet/helium-linux/releases/download/(?<currentValue>[^/]+)/helium-[^/]+-x86_64_linux\\.tar\\.xz\";"
+      ],
+      "depNameTemplate": "imputnet/helium-linux",
+      "datasourceTemplate": "github-releases",
+      "autoReplaceStringTemplate": "url = \"file+https://github.com/imputnet/helium-linux/releases/download/{{{newValue}}}/helium-{{{newValue}}}-x86_64_linux.tar.xz\";"
     },
     {
-      "customType": "jsonata",
-      "description": "Discover non-frozen npins GitHub release tags",
-      "fileFormat": "json",
-      "managerFilePatterns": ["/^npins\\/sources\\.json$/"],
+      "customType": "regex",
+      "description": "Track the Astral source flake input",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
       "matchStrings": [
-        "$each(pins, function($v, $k) { $v.type = \"GitRelease\" and $v.repository.type = \"GitHub\" and $not($v.frozen = true) ? { \"depName\": $v.repository.owner & \"/\" & $v.repository.repo, \"currentValue\": $v.version, \"datasource\": \"github-tags\", \"versioning\": \"loose\", \"depType\": \"npins\" } })"
-      ]
+        "url = \"file\\+https://files\\.pythonhosted\\.org/packages/source/a/astral/astral-(?<currentValue>[^/]+)\\.tar\\.gz\";"
+      ],
+      "depNameTemplate": "astral",
+      "datasourceTemplate": "pypi",
+      "versioningTemplate": "pep440"
     },
     {
-      "customType": "jsonata",
-      "description": "Discover non-frozen npins PyPI releases",
-      "fileFormat": "json",
-      "managerFilePatterns": ["/^npins\\/sources\\.json$/"],
+      "customType": "regex",
+      "description": "Track Equilotl release tags in the flake",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
+      "matchStrings": ["url = \"github:Equicord/Equilotl/(?<currentValue>v[^\"/]+)\";"],
+      "depNameTemplate": "Equicord/Equilotl",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "Track Toshy release tags in the flake",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
       "matchStrings": [
-        "$each(pins, function($v, $k) { $v.type = \"PyPi\" and $not($v.frozen = true) ? { \"depName\": $v.name, \"currentValue\": $v.version, \"datasource\": \"pypi\", \"versioning\": \"pep440\", \"depType\": \"npins\" } })"
-      ]
+        "url = \"github:RedBearAK/Toshy/Toshy_v(?<currentValue>[^\"/]+)\";"
+      ],
+      "depNameTemplate": "RedBearAK/Toshy",
+      "datasourceTemplate": "github-tags",
+      "extractVersionTemplate": "^Toshy_v(?<version>.*)$",
+      "versioningTemplate": "loose"
     }
   ],
   "packageRules": [
     {
-      "description": "Let npins own grouped lock updates and hash regeneration",
-      "matchManagers": ["custom.jsonata"],
-      "matchDepTypes": ["npins"],
-      "groupName": "npins sources",
-      "groupSlug": "npins-sources",
+      "description": "Relock release URLs changed by the flake source managers",
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["flake.nix"],
       "postUpgradeTasks": {
-        "commands": ["bash .github/renovate/update-npins.sh"],
-        "fileFilters": [
-          "npins/sources.json",
-          "bluebuild/recipes/spectrum/sources/*.json"
-        ],
+        "commands": ["nix flake lock"],
+        "fileFilters": ["flake.lock"],
         "executionMode": "branch"
       }
+    },
+    {
+      "description": "Preserve frozen source revisions and let release managers own tag changes",
+      "matchManagers": ["nix"],
+      "matchDepNames": [
+        "source-equilotl",
+        "source-toshy",
+        "source-ghostty",
+        "source-jj",
+        "source-kanata-homebrew",
+        "source-kmscon",
+        "source-libtsm",
+        "source-uresourced"
+      ],
+      "enabled": false
     }
   ]
 }

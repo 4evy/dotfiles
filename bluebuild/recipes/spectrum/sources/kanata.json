@@ -1,8 +1,0 @@
-{
-  "pins": {
-    "kanata_homebrew_archive": {
-      "hash": "sha256-vZO0ESYSYuz5UriSKvB4EgyjiWR1jKHDJBgQxEllKw4=",
-      "url": "https://github.com/jtroo/kanata/archive/565d5070e9e61992af5b4e844d512a9ce2f2d8c1.tar.gz"
-    }
-  }
-}

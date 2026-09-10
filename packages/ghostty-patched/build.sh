@@ -5,7 +5,6 @@ set -euo pipefail
 
 : "${SOURCE_LOCK:?}"
 : "${SOURCE_PIN:?}"
-: "${REVISION_PIN:?}"
 : "${ZIG_PIN:?}"
 : "${PATCHES_LOCK:?}"
 : "${PATCH_STACK:?}"
@@ -15,34 +14,30 @@ set -euo pipefail
 : "${BUILD_ARGUMENTS:?}"
 
 read -r -a build_arguments <<<"$BUILD_ARGUMENTS"
-source_url=$(jq -er --arg pin "$SOURCE_PIN" '.pins[$pin].url' "$SOURCE_LOCK")
-source_hash=$(jq -er --arg pin "$SOURCE_PIN" '.pins[$pin].hash' "$SOURCE_LOCK")
-zig_url=$(jq -er --arg pin "$ZIG_PIN" '.pins[$pin].url' "$SOURCE_LOCK")
-zig_hash=$(jq -er --arg pin "$ZIG_PIN" '.pins[$pin].hash' "$SOURCE_LOCK")
-revision=$(jq -er --arg pin "$REVISION_PIN" '.pins[$pin].revision' "$SOURCE_LOCK")
+source_repository=$(jq -er --arg pin "$SOURCE_PIN" '"https://github.com/" + .pins[$pin].owner + "/" + .pins[$pin].repo + ".git"' "$SOURCE_LOCK")
+revision=$(jq -er --arg pin "$SOURCE_PIN" '.pins[$pin].rev' "$SOURCE_LOCK")
 patches_repository=$(jq -er '.repository' "$PATCHES_LOCK")
 patches_revision=$(jq -er '.revision' "$PATCHES_LOCK")
 
-verify_sri() {
-	local path=$1
-	local expected=$2
-	local actual
-	actual="sha256-$(openssl dgst -sha256 -binary "$path" | openssl base64 -A)"
-	if [[ $actual != "$expected" ]]; then
-		printf 'checksum mismatch for %s\nexpected: %s\nactual:   %s\n' \
-			"$path" "$expected" "$actual" >&2
-		return 1
-	fi
-}
-
 mkdir -p /build/source /build/zig "$PREFIX"
-curl -fLsS --retry 5 "$source_url" -o /build/ghostty.tar.gz
-curl -fLsS --retry 5 "$zig_url" -o /build/zig.tar.xz
-verify_sri /build/ghostty.tar.gz "$source_hash"
-verify_sri /build/zig.tar.xz "$zig_hash"
+python3 - "$SOURCE_LOCK" "$ZIG_PIN" <<'PYTHON'
+import json
+import sys
+from pathlib import Path
 
-tar -xzf /build/ghostty.tar.gz --strip-components=1 -C /build/source
+sys.path.insert(0, "/src")
+from source_lock import download_file
+
+lock, name = sys.argv[1:]
+pin = json.loads(Path(lock).read_text())["pins"][name]
+download_file(pin, Path("/build/zig.tar.xz"))
+PYTHON
 tar -xJf /build/zig.tar.xz --strip-components=1 -C /build/zig
+
+git init -q /build/source
+git -C /build/source remote add origin "$source_repository"
+git -C /build/source fetch --depth=1 origin "$revision"
+git -C /build/source checkout --detach --quiet FETCH_HEAD
 
 git init -q /build/patches
 git -C /build/patches remote add origin "$patches_repository"

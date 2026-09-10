@@ -28,8 +28,10 @@
     bootstrap_homebrew_tap_rsync_common:
       - "--filter=protect_/Sources/***"
       - "--include=/Formula/***"
-      - "--include=/npins/"
-      - "--include=/npins/sources.json"
+      - "--include=/flake.lock"
+      - "--include=/packages/"
+      - "--include=/packages/source-lock/"
+      - "--include=/packages/source-lock/***"
     bootstrap_homebrew_tap_rsync_macos:
       - "--include=/libexec/***"
   tags: *bootstrap_homebrew_tap_tags

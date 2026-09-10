@@ -338,7 +338,6 @@
             cosign
             hadolint
             jq
-            npins
             shellcheck
             skopeo
             syft

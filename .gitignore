@@ -59,3 +59,6 @@ result
 tmp/
 
 /.bluebuild-scripts_*
+
+/bluebuild/recipes/.spectrum.generated.yml
+/bluebuild/recipes/spectrum/sources/

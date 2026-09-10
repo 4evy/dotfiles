@@ -126,11 +126,11 @@ system_macos_defaults:
     value: 1
 
 system_macos_karabiner:
-  package_url: "{{ dotfiles_pins.karabiner_vhid_package.url }}"
+  package_url: "{{ dotfiles_karabiner_pin.url }}"
   package_checksum: >-
     sha256:7faf4c33046c2274726da9e29da795fb2d2ad81796557db0fcc1686c611eeafc
   package_path: >-
-    {{ dotfiles_cache_dir }}/{{ dotfiles_pins.karabiner_vhid_package.url | basename }}
+    {{ dotfiles_cache_dir }}/{{ dotfiles_karabiner_pin.url | basename }}
   label: org.pqrs.service.daemon.Karabiner-VirtualHIDDevice-Daemon
   manager: >-
     /Applications/.Karabiner-VirtualHIDDevice-Manager.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Manager

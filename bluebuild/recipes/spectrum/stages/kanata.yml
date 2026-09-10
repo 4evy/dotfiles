@@ -35,7 +35,7 @@ modules:
           --mount=type=cache,id=spectrum-kanata-cargo-git-v1,sharing=locked,target=/root/.cargo/git \
           --mount=type=cache,id=spectrum-kanata-target-v1,sharing=locked,target=/build/kanata-source/target \
           SOURCE_LOCK=/src/sources.json \
-          SOURCE_PIN=kanata_homebrew_archive \
+          SOURCE_PIN=kanata-homebrew \
           PATCHES_LOCK=/src/patches.json \
           PATCH_STACK=kanata \
           PREFIX=/out/usr \

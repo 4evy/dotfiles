@@ -8,7 +8,8 @@ on:
       - Brewfile
       - Formula/**
       - LICENSE
-      - npins/sources.json
+      - flake.lock
+      - packages/source-lock/**
       - packages/theme-run/**
   push:
     branches:

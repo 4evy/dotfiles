@@ -1,21 +1,17 @@
 # frozen_string_literal: true
 
-require "json"
+require_relative "../packages/source-lock/flake_lock"
 
 class Equilotl < Formula
   tap_root = Pathname(__dir__).parent
-  pins = JSON.load_file(tap_root/"npins/sources.json").fetch("pins")
-  pin = pins.fetch("equilotl")
-  archive = pins.fetch("equilotl_archive")
-  digest = archive.fetch("hash").delete_prefix("sha256-").unpack1("m0").unpack1("H*")
-  UPSTREAM_REVISION = pin.fetch("revision").freeze
-  UPSTREAM_TAG = pin.fetch("version").freeze
+  pin = DotfilesFlakeLock.input(tap_root, "source-equilotl")
+  UPSTREAM_REVISION = pin.fetch("rev").freeze
+  UPSTREAM_TAG = pin.fetch("ref").freeze
 
   desc "Cross-platform Equicord installer and repair CLI"
   homepage "https://github.com/Equicord/Equilotl"
-  url archive.fetch("url")
+  url DotfilesFlakeLock.repository(pin), revision: pin.fetch("rev")
   version "release-#{UPSTREAM_TAG.delete_prefix("v")}"
-  sha256 digest
   license "GPL-3.0-only"
 
   depends_on "go" => :build

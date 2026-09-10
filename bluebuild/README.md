@@ -25,11 +25,10 @@ becoming the owner of the machine
 ## BlueBuild CLI and build flow
 
 Spectrum includes the BlueBuild CLI at `/usr/bin/bluebuild`, together with
-Podman and the other runtime tools it needs to build images. The embedded CLI
-is pinned to the same upstream commit as the `bluebuild-cli` entry in
-`npins/sources.json`; this keeps the feature-gated recipe-v2 parser used by
-Spectrum available inside the installed OS. `just spectrum-validate` rejects
-the recipe if those pins drift apart.
+Podman and the other runtime tools it needs to build images. The embedded CLI is
+pinned to the same upstream commit as the `source-bluebuild-cli` input in
+`flake.lock`. Build preparation reads that revision into the generated recipe,
+so the installed CLI and the feature-gated recipe-v2 generator stay aligned.
 
 Use `just spectrum-build` to build the local image. The repository-root
 `recipes` symlink points here to `bluebuild/recipes`, so BlueBuild resolves
@@ -51,15 +50,21 @@ installation to local files and system policy. This ordering means edits to
 local configuration do not invalidate package, font, extension, or Linuxbrew
 layers.
 
-Astral, Ghostty, and Kanata consume minimal source-lock projections under
-`recipes/spectrum/sources` instead of the repository-wide npins lock.
-Consequently, an unrelated source update doesn't invalidate those builder
-stages. `just source-update` refreshes these projections, and
-`just spectrum-validate` rejects any drift from `npins/sources.json` or
-`flake.lock`. Ghostty and Kanata fetch their patch queues from the shared
-repository revision pinned by the flake. The Ghostty stage also mounts
-persistent global and local Zig caches, allowing compilation artifacts to
-survive a source or patch cache miss.
+Use `nix flake update` at the repository root to update source inputs and all
+Nix dependencies, including the development and NixOS partitions. Release
+versions remain explicit in `flake.nix`; Renovate bumps those URLs and updates
+the lock. Sources tied to patch stacks retain their fixed revisions.
+
+Astral, Ghostty, and Kanata consume small files generated from `flake.lock`
+under `recipes/spectrum/sources`. Build preparation regenerates these files and
+`recipes/.spectrum.generated.yml` automatically. Both are ignored by Git, so a
+lock update cannot leave tracked copies stale. Each stage includes only the
+inputs it needs, preserving its cache across unrelated source updates.
+
+Ghostty and Kanata fetch their source and shared patch queues at locked Git
+revisions. File downloads use the NAR hashes recorded by Nix. The Ghostty stage
+also mounts persistent global and local Zig caches, allowing compilation
+artifacts to survive a source or patch cache miss.
 
 The repository-local Hyper window tiler is also built once in a pinned Bun
 stage and copied into the system GNOME and KWin extension directories.

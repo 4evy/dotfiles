@@ -14,11 +14,11 @@ keyboard_toshy_runtime_revision: >-
   {{ keyboard_toshy_runtime_dir }}/share/toshy/revision
 
 keyboard_toshy_repository: >-
-  https://github.com/{{ dotfiles_pins.toshy.repository.owner }}/{{
-    dotfiles_pins.toshy.repository.repo
+  https://github.com/{{ dotfiles_toshy_pin.locked.owner }}/{{
+    dotfiles_toshy_pin.locked.repo
   }}.git
-keyboard_toshy_revision: "{{ dotfiles_pins.toshy.revision }}"
-keyboard_toshy_version: "{{ dotfiles_pins.toshy.version }}"
+keyboard_toshy_revision: "{{ dotfiles_toshy_pin.locked.rev }}"
+keyboard_toshy_version: "{{ dotfiles_toshy_pin.original.ref }}"
 keyboard_toshy_force_install: >-
   {{ lookup('ansible.builtin.env', 'TOSHY_RUN_INSTALLER') == '1' }}
 keyboard_toshy_distro_override: >-

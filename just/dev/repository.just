@@ -1,6 +1,6 @@
 [parallel]
 [private]
-_lint-files: _check-worktree-paths _lint-chezmoi-source (_run-files 'jq' ['*.json', 'flake.lock', ':(exclude).vscode/settings.json'] ['empty']) _lint-container-files (_run-files 'luacheck' ['*.lua']) (_run 'rumdl' ['check', '--respect-gitignore', '.']) _lint-nix npins-check (_run 'uv' ['run', 'ruff', 'check', '.']) _lint-shell-files _lint-shell-templates-portable _lint-templates (_run-files 'taplo' ['*.toml'] ['lint']) _lint-xml
+_lint-files: _check-worktree-paths _lint-chezmoi-source (_run-files 'jq' ['*.json', 'flake.lock', ':(exclude).vscode/settings.json'] ['empty']) _lint-container-files (_run-files 'luacheck' ['*.lua']) (_run 'rumdl' ['check', '--respect-gitignore', '.']) _lint-nix (_run 'uv' ['run', 'ruff', 'check', '.']) _lint-shell-files _lint-shell-templates-portable _lint-templates (_run-files 'taplo' ['*.toml'] ['lint']) _lint-xml
 
 [linux]
 [private]

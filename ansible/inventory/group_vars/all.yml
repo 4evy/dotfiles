@@ -1,12 +1,11 @@
 ---
 dotfiles_repo_root: "{{ inventory_dir | dirname | dirname }}"
-dotfiles_pins: >-
-  {{
-    (
-      lookup('ansible.builtin.file', dotfiles_repo_root ~ '/npins/sources.json')
-      | from_json
-    ).pins
-  }}
+dotfiles_lock: >-
+  {{ lookup('ansible.builtin.file', dotfiles_repo_root ~ '/flake.lock') | from_json }}
+dotfiles_lock_inputs: "{{ dotfiles_lock.nodes[dotfiles_lock.root].inputs }}"
+dotfiles_toshy_pin: "{{ dotfiles_lock.nodes[dotfiles_lock_inputs['source-toshy']] }}"
+dotfiles_karabiner_pin: >-
+  {{ dotfiles_lock.nodes[dotfiles_lock_inputs['source-karabiner-vhid-package']].locked }}
 dotfiles_home_dir: >-
   {{
     ansible_facts.get('env', {}).get(

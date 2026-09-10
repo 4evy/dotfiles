@@ -3,40 +3,20 @@
 
 set -euo pipefail
 
-source_lock=${SOURCE_LOCK:?SOURCE_LOCK must point to the projected source lock}
-source_pin=${SOURCE_PIN:-kanata_homebrew_archive}
+source_lock=${SOURCE_LOCK:?SOURCE_LOCK must point to the generated source lock}
+source_pin=${SOURCE_PIN:-kanata-homebrew}
 patches_lock=${PATCHES_LOCK:?PATCHES_LOCK must point to the shared repository lock}
 patch_stack=${PATCH_STACK:-kanata}
 prefix=${PREFIX:-/out/usr}
 source_directory=${SOURCE_DIRECTORY:-/build/kanata-source}
 
-archive=$(mktemp)
-trap 'rm -f -- "$archive"' EXIT
-
-python3 - "$source_lock" "$source_pin" "$archive" <<'PYTHON'
-import base64
-import hashlib
-import json
-import sys
-import urllib.request
-from pathlib import Path
-
-source_lock, source_pin, archive = sys.argv[1:]
-pin = json.loads(Path(source_lock).read_text())["pins"][source_pin]
-urllib.request.urlretrieve(pin["url"], archive)
-
-algorithm, encoded_digest = pin["hash"].split("-", maxsplit=1)
-if algorithm != "sha256":
-    raise ValueError(f"unsupported Kanata archive hash: {algorithm}")
-expected_digest = base64.b64decode(encoded_digest, validate=True)
-with Path(archive).open("rb") as source:
-    actual_digest = hashlib.file_digest(source, "sha256").digest()
-if actual_digest != expected_digest:
-    raise ValueError("Kanata source archive checksum mismatch")
-PYTHON
-
+source_repository=$(jq -er --arg pin "$source_pin" '"https://github.com/" + .pins[$pin].owner + "/" + .pins[$pin].repo + ".git"' "$source_lock")
+source_revision=$(jq -er --arg pin "$source_pin" '.pins[$pin].rev' "$source_lock")
 install -d -m 0755 "$source_directory"
-tar -xf "$archive" --strip-components=1 -C "$source_directory"
+git init -q "$source_directory"
+git -C "$source_directory" remote add origin "$source_repository"
+git -C "$source_directory" fetch --depth=1 origin "$source_revision"
+git -C "$source_directory" checkout --detach --quiet FETCH_HEAD
 
 patches_repository=$(jq -er '.repository' "$patches_lock")
 patches_revision=$(jq -er '.revision' "$patches_lock")

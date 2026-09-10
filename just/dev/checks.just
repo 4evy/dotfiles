@@ -23,17 +23,6 @@ _check-python: python-complexity python-dead-code python-dependencies python-typ
     PYTHONPYCACHEPREFIX="$bytecode_dir" uv run python -m compileall -q ansible dotfiles packages
     uv build --out-dir "$build_dir" --no-build-logs
 
-# Update every non-frozen npins source.
-[group('dev')]
-source-update:
-    nix shell nixpkgs#npins --command bash .github/renovate/update-npins-lock.sh
-    bash bluebuild/recipes/spectrum/sync-sources.sh
-
-# Verify that npins metadata and fetch URLs describe the same sources.
-[group('check')]
-npins-check:
-    bash .github/renovate/check-npins.sh
-
 # Check declared dependencies against first-party imports.
 [group('check')]
 python-dependencies:
@@ -124,8 +113,6 @@ _lint-checks: _lint-files _check-python _check-github-actions _check-bun _check-
 # Evaluate every flake output without building package derivations.
 [group('check')]
 nix-check: (doctor 'fmt')
-    nix store add-path nix/dev >/dev/null
-    nix store add-path nix/nixos >/dev/null
     nix flake check --all-systems --keep-going --no-build --no-eval-cache
 
 # Run the repo validation suite.

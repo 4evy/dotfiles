@@ -58,7 +58,7 @@ determinate-status: (doctor 'nix') _ensure-nix
 [confirm('Upgrade this installer-managed Determinate Nix installation?')]
 [group('system')]
 determinate-upgrade: (doctor 'nix') _ensure-nix
-    : {{ assert(!path_exists('/etc/NIXOS'), 'NixOS manages Determinate declaratively; update nix/nixos/flake.lock and rebuild instead.') }}
+    : {{ assert(!path_exists('/etc/NIXOS'), 'NixOS manages Determinate declaratively; update flake.lock and rebuild instead.') }}
     sudo determinate-nixd upgrade
 
 # Replace incorrect Nix expression hashes, prompting before each edit by default.

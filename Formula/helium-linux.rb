@@ -1,16 +1,16 @@
 # frozen_string_literal: true
 
-require "json"
+require_relative "../packages/source-lock/flake_lock"
+require_relative "../packages/source-lock/nix_file_download_strategy"
 
 class HeliumLinux < Formula
   tap_root = Pathname(__dir__).parent
-  pins = JSON.load_file(tap_root/"npins/sources.json").fetch("pins")
-  binary = pins.fetch("helium_linux_binary")
-  digest = binary.fetch("hash").delete_prefix("sha256-").unpack1("m0").unpack1("H*")
+  binary = DotfilesFlakeLock.input(tap_root, "source-helium-linux-binary")
+  digest = binary.fetch("narHash").delete_prefix("sha256-").unpack1("m0").unpack1("H*")
 
   desc "Chromium-based Helium browser for Linux"
   homepage "https://helium.computer/"
-  url binary.fetch("url")
+  url binary.fetch("url"), using: NixFileDownloadStrategy
   sha256 digest
   license "GPL-3.0-only"
 

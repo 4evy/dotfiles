@@ -62,10 +62,11 @@ runs:
       shell: bash
       run: |-
         set -euo pipefail
+        python3 bluebuild/recipes/spectrum/prepare-sources.py
         "$CHECK_JSONSCHEMA" \
           --base-uri https://schema.blue-build.org/ \
           --schemafile https://schema.blue-build.org/recipe-v2.json \
-          bluebuild/recipes/spectrum.yml
+          bluebuild/recipes/.spectrum.generated.yml
         "$CHECK_JSONSCHEMA" \
           --base-uri https://schema.blue-build.org/ \
           --schemafile https://schema.blue-build.org/stage-v1.json \
@@ -74,14 +75,13 @@ runs:
           --base-uri https://schema.blue-build.org/ \
           --schemafile https://schema.blue-build.org/module-list-v1.json \
           bluebuild/recipes/spectrum/modules/*.yml
-        bash bluebuild/recipes/spectrum/sync-sources.sh --check
         # Upstream's feature-gated v2 parser works, but its validate
         # subcommand still hardcodes the v1 schema.
         "$BLUEBUILD" generate \
           --skip-validation \
           --output /tmp/Containerfile \
-          bluebuild/recipes/spectrum.yml
-        bluebuild_revision=$(jq -er '.pins["bluebuild-cli"].revision' npins/sources.json)
+          bluebuild/recipes/.spectrum.generated.yml
+        bluebuild_revision=$(jq -er '.nodes as $nodes | $nodes[$nodes[.root].inputs["source-bluebuild-cli"]].locked.rev' flake.lock)
         grep -Fq "COPY --from=ghcr.io/blue-build/cli:${bluebuild_revision}-installer" /tmp/Containerfile
         grep -Fq '/out/bluebuild /bins/bluebuild' /tmp/Containerfile
         grep -Fq 'cp /tmp/bins/* /usr/bin/' /tmp/Containerfile
@@ -91,7 +91,7 @@ runs:
         grep -Fq 'bluebuild/recipes/spectrum/sources/ghostty.json /src/sources.json' /tmp/Containerfile
         grep -Fq -- '--mount=type=cache,id=spectrum-ghostty-zig-global-v1,sharing=locked,target=/build/zig-cache' /tmp/Containerfile
         grep -Fq -- '--mount=type=cache,id=spectrum-ghostty-zig-local-v1,sharing=locked,target=/build/source/.zig-cache' /tmp/Containerfile
-        ! grep -Fq 'npins/sources.json /src/' /tmp/Containerfile
+        ! grep -Fq 'flake.lock /src/' /tmp/Containerfile
         expected=$(tr -d '\n' <bluebuild/recipes/spectrum.lock)
         tagged=${expected%@*}
         expected_arg="${tagged%:*}@${expected##*@}"

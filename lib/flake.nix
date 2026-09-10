@@ -13,7 +13,7 @@ let
   ];
 
   overlays = import ../overlays { inherit inputs; };
-  toshySource = (import ../npins { }).toshy.outPath;
+  toshySource = inputs.source-toshy;
 
   equicordParseRules = builtins.fromJSON (
     builtins.readFile "${inputs.nixcord}/modules/plugins/parse-rules.json"
@@ -85,12 +85,10 @@ in
   };
 
   partitions.dev = {
-    extraInputsFlake = ../nix/dev;
     module = ../nix/dev/flake-module.nix;
   };
 
   partitions.nixos = {
-    extraInputsFlake = ../nix/nixos;
     module =
       {
         inputs,

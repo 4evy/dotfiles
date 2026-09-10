@@ -21,11 +21,12 @@
 !dotfiles/
 !dotfiles/**
 
-!npins/
-!npins/sources.json
+!flake.lock
 
 !packages/
 packages/*
+!packages/source-lock/
+!packages/source-lock/**
 !packages/dotfiles-python/
 packages/dotfiles-python/*
 !packages/dotfiles-python/assets/

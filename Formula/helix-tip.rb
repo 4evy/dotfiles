@@ -1,22 +1,17 @@
 # frozen_string_literal: true
 
-require "json"
+require_relative "../packages/source-lock/flake_lock"
 
 class HelixTip < Formula
   tap_root = Pathname(__dir__).parent
-  pins = JSON.load_file(tap_root/"npins/sources.json").fetch("pins")
-  pin = pins.fetch("helix")
-  archive = pins.fetch("helix_archive")
-  digest = archive.fetch("hash").delete_prefix("sha256-").unpack1("m0").unpack1("H*")
+  pin = DotfilesFlakeLock.input(tap_root, "source-helix")
 
   desc "Post-release Helix editor build pinned by the dotfiles lock"
   homepage "https://helix-editor.com"
-  url archive.fetch("url")
-  version "git-#{pin.fetch("revision")[0, 8]}"
-  sha256 digest
+  url DotfilesFlakeLock.repository(pin), revision: pin.fetch("rev")
+  version "git-#{pin.fetch("rev")[0, 8]}"
   license "MPL-2.0"
-  head "https://github.com/#{pin.dig("repository", "owner")}/#{pin.dig("repository", "repo")}.git",
-       branch: pin.fetch("branch")
+  head DotfilesFlakeLock.repository(pin), branch: "master"
 
   depends_on "rust" => :build
 

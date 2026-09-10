@@ -8,13 +8,12 @@ on:
       - .github/actions/setup-bun/**
       - .github/renovate.json
       - .github/renovate/bun.lock
-      - .github/renovate/check-npins.sh
       - .github/renovate/package.json
-      - .github/renovate/update-npins.sh
-      - .github/renovate/update-npins-lock.sh
       - .github/workflows/renovate.yaml
       - .github/workflows/validate-renovate.yaml
-      - npins/sources.json
+      - flake.nix
+      - flake.lock
+      - packages/source-lock/**
   push:
     branches:
       - master
@@ -59,10 +58,7 @@ jobs:
       - name: Validate Renovate Config
         env:
           RENOVATE_GITHUB_COM_TOKEN: ${{ github.token }}
-        run: |
+        run: |-
           bun install --cwd .github/renovate --frozen-lockfile
           bun run --cwd .github/renovate validate
           bun run --cwd .github/renovate extract
-
-      - name: Validate npins Lock Consistency
-        run: bash .github/renovate/check-npins.sh

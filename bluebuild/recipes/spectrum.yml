@@ -15,10 +15,6 @@ metadata:
 spec:
   platforms:
     - linux/amd64
-  tool-versions:
-    # Keep this aligned with the bluebuild-cli npins revision. Unlike tagged
-    # release installers, commit installers include the recipe-v2 feature.
-    bluebuild: b01c4d22d9c5e12cfe9e09087d21e6050642ad56
 
 stages:
   - from-file: spectrum/stages/python-runtime.yml

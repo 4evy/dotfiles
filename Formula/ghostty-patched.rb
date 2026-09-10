@@ -1,26 +1,21 @@
 # frozen_string_literal: true
 
-require "json"
+require_relative "../packages/source-lock/flake_lock"
 
 class GhosttyPatched < Formula
   tap_root = Pathname(__dir__).parent
-  pins = JSON.load_file(tap_root/"npins/sources.json").fetch("pins")
-  ghostty = pins.fetch("ghostty")
-  archive = pins.fetch("ghostty_archive")
+  ghostty = DotfilesFlakeLock.input(tap_root, "source-ghostty")
   patches_tap = Tap.fetch("4evy", "patches")
   raise "Tap 4evy/patches before installing ghostty-patched" unless patches_tap.installed?
 
   manifest = JSON.load_file(patches_tap.path/"stacks/ghostty/stack.json")
   stack_revision = manifest.fetch("source").fetch("revision")
-  raise "The Ghostty source pin does not match the 4evy/patches stack" if stack_revision != ghostty.fetch("revision")
-
-  digest = archive.fetch("hash").delete_prefix("sha256-").unpack1("m0").unpack1("H*")
+  raise "The Ghostty source pin does not match the 4evy/patches stack" if stack_revision != ghostty.fetch("rev")
 
   desc "Fast, native terminal emulator with the 4evy patch stack"
   homepage "https://ghostty.org"
-  url archive.fetch("url")
-  version "1.3.2-dev.#{ghostty.fetch("revision")[0, 7]}"
-  sha256 digest
+  url DotfilesFlakeLock.repository(ghostty), revision: ghostty.fetch("rev")
+  version "1.3.2-dev.#{ghostty.fetch("rev")[0, 7]}"
   license "MIT"
 
   depends_on "gettext" => :build

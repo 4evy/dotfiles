@@ -17,7 +17,7 @@ on:
       - flake.nix
       - lib/flake.nix
       - nix/dev/flake-module.nix
-      - npins/sources.json
+      - packages/source-lock/**
       - overlays/default.nix
       - packages/bluebuild-v2/**
       - packages/ghostty-patched/build.sh
