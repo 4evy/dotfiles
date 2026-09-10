@@ -5,7 +5,9 @@ require "json"
 module DotfilesFlakeLock
   def self.input(root, name)
     lock = JSON.load_file(root/"flake.lock")
-    node = lock.fetch("nodes").fetch(lock.fetch("nodes").fetch(lock.fetch("root")).fetch("inputs").fetch(name))
+    nodes = lock.fetch("nodes")
+    inputs = nodes.fetch(lock.fetch("root")).fetch("inputs")
+    node = nodes.fetch(inputs.fetch(name))
     node.fetch("locked").merge("ref" => node.fetch("original")["ref"])
   end
 
