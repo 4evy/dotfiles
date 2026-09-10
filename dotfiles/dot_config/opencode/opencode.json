@@ -111,7 +111,26 @@
       "gh repo view*": "allow",
       "gh repo list*": "allow",
       "gh release view*": "allow",
-      "gh release list*": "allow"
+      "gh release list*": "allow",
+      "gh pr diff*": "allow",
+      "gh pr checks*": "allow",
+      "gh pr status*": "allow",
+      "gh issue status*": "allow",
+      "gh run watch*": "allow",
+      "gh workflow view*": "allow",
+      "gh workflow list*": "allow",
+      "gh release download*": "allow",
+      "gh search*": "allow",
+      "gh status*": "allow",
+      "gh api *": "allow",
+      "gh api *-X*": "ask",
+      "gh api *--method*": "ask",
+      "gh api *-f*": "ask",
+      "gh api *-F*": "ask",
+      "gh api *--field*": "ask",
+      "gh api *--raw-field*": "ask",
+      "gh api *--input*": "ask",
+      "gh api *graphql*": "ask"
     },
     "ghidra_import_file": "deny"
   }
