@@ -134,7 +134,6 @@
 
     nixcord = {
       inputs = {
-        flake-parts.follows = "flake-parts";
         nixpkgs.follows = "nixpkgs-unstable";
         treefmt-nix.follows = "treefmt-nix";
       };
