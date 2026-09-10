@@ -127,8 +127,7 @@ system_macos_defaults:
 
 system_macos_karabiner:
   package_url: "{{ dotfiles_karabiner_pin.url }}"
-  package_checksum: >-
-    sha256:7faf4c33046c2274726da9e29da795fb2d2ad81796557db0fcc1686c611eeafc
+  package_nar_hash: "{{ dotfiles_karabiner_pin.narHash }}"
   package_path: >-
     {{ dotfiles_cache_dir }}/{{ dotfiles_karabiner_pin.url | basename }}
   label: org.pqrs.service.daemon.Karabiner-VirtualHIDDevice-Daemon

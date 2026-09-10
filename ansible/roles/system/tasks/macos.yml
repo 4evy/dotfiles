@@ -147,12 +147,25 @@
 
 - name: Download Karabiner VirtualHID
   ansible.builtin.get_url:
-    # renovate: datasource=github-releases depName=pqrs-org/Karabiner-DriverKit-VirtualHIDDevice
     url: "{{ system_macos_karabiner.package_url }}"
     dest: "{{ system_macos_karabiner.package_path }}"
-    checksum: "{{ system_macos_karabiner.package_checksum }}"
+    force: true
     mode: "0644"
   when: not system_karabiner_manager.stat.exists
+  tags:
+    - kanata
+
+- name: Verify Karabiner VirtualHID against the flake lock
+  ansible.builtin.command:
+    argv:
+      - "{{ ansible_playbook_python }}"
+      - "{{ dotfiles_repo_root }}/packages/source-lock/source_lock.py"
+      - "{{ system_macos_karabiner.package_path }}"
+      - "{{ system_macos_karabiner.package_nar_hash }}"
+  changed_when: false
+  when:
+    - not system_karabiner_manager.stat.exists
+    - not ansible_check_mode
   tags:
     - kanata
 
