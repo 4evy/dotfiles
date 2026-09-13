@@ -753,8 +753,8 @@
       },
       "original": {
         "owner": "kmscon",
+        "ref": "main",
         "repo": "kmscon",
-        "rev": "baa2bcc5bde55318dcfbff0dd0090271e1f88674",
         "type": "github"
       }
     },
@@ -770,8 +770,8 @@
       },
       "original": {
         "owner": "kmscon",
+        "ref": "main",
         "repo": "libtsm",
-        "rev": "ef0a1a40c30d164913f413c47de5bbd8383a6daa",
         "type": "github"
       }
     },
@@ -809,15 +809,14 @@
       "locked": {
         "lastModified": 1705776631,
         "narHash": "sha256-WTTQYk8tADY9BIfeQ5kFuBbODbRWW8/YCw3vp6O032o=",
-        "ref": "v0.5.4",
-        "rev": "68668042c91afd53cf3119bdfb62b0e1345e8ad6",
+        "ref": "refs/tags/v0.5.4",
+        "rev": "907d91989f50842caaf9d681e82a9d6791701927",
         "revCount": 67,
         "type": "git",
         "url": "https://gitlab.freedesktop.org/benzea/uresourced.git"
       },
       "original": {
-        "ref": "v0.5.4",
-        "rev": "68668042c91afd53cf3119bdfb62b0e1345e8ad6",
+        "ref": "refs/tags/v0.5.4",
         "type": "git",
         "url": "https://gitlab.freedesktop.org/benzea/uresourced.git"
       }

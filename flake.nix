@@ -74,12 +74,12 @@
 
     source-kmscon = {
       flake = false;
-      url = "github:kmscon/kmscon/baa2bcc5bde55318dcfbff0dd0090271e1f88674";
+      url = "github:kmscon/kmscon/main";
     };
 
     source-libtsm = {
       flake = false;
-      url = "github:kmscon/libtsm/ef0a1a40c30d164913f413c47de5bbd8383a6daa";
+      url = "github:kmscon/libtsm/main";
     };
 
     source-python-astral = {
@@ -94,7 +94,7 @@
 
     source-uresourced = {
       flake = false;
-      url = "git+https://gitlab.freedesktop.org/benzea/uresourced.git?ref=v0.5.4&rev=68668042c91afd53cf3119bdfb62b0e1345e8ad6";
+      url = "git+https://gitlab.freedesktop.org/benzea/uresourced.git?ref=refs/tags/v0.5.4";
     };
 
     source-yt-dlp-script = {
