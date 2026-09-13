@@ -26,9 +26,9 @@ becoming the owner of the machine
 
 Spectrum includes the BlueBuild CLI at `/usr/bin/bluebuild`, together with
 Podman and the other runtime tools it needs to build images. The embedded CLI is
-pinned to the same upstream commit as the `source-bluebuild-cli` input in
-`flake.lock`. Build preparation reads that revision into the generated recipe,
-so the installed CLI and the feature-gated recipe-v2 generator stay aligned.
+built from the `source-bluebuild-cli` pin in `flake.lock` inside a stage that
+uses the locked Bluefin base, so its glibc matches the final image. The recipe
+opts out of BlueBuild's upstream installer tag.
 
 Use `just spectrum-build` to build the local image. The repository-root
 `recipes` symlink points here to `bluebuild/recipes`, so BlueBuild resolves

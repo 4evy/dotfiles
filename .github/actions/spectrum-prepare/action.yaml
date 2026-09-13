@@ -82,7 +82,8 @@ runs:
           --output /tmp/Containerfile \
           bluebuild/recipes/.spectrum.generated.yml
         ! grep -Fq 'COPY --from=ghcr.io/blue-build/cli:' /tmp/Containerfile
-        grep -Fq 'COPY --from=bluebuild-cli /out/usr /usr' /tmp/Containerfile
+        # Docker inserts --link; Podman does not.
+        grep -Eq 'COPY --from=bluebuild-cli( --link)? /out/usr /usr' /tmp/Containerfile
         grep -Fq 'bluebuild/recipes/spectrum/sources/bluebuild.json /src/sources.json' /tmp/Containerfile
         grep -Fq -- '--mount=type=cache,sharing=locked,dst=/var/cache/rpm-ostree,id=rpm-ostree-cache-spectrum-' /tmp/Containerfile
         grep -Fq -- '--mount=type=cache,sharing=locked,dst=/var/cache/libdnf5,id=dnf-cache-spectrum-' /tmp/Containerfile
