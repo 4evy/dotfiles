@@ -29,11 +29,7 @@ env = SHELL=/bin/zsh
 font-size = 14
 quit-after-last-window-closed = true
 scrollback-limit-bytes = 100000000
-{{- if eq .chezmoi.os "darwin" }}
-scrollback-editor = direct:/opt/homebrew/bin/theme-run /opt/homebrew/bin/hx
-{{- else }}
-scrollback-editor = direct:{{ .chezmoi.homeDir }}/.local/bin/theme-run helix
-{{- end }}
+scrollback-editor = direct:{{ .chezmoi.homeDir }}/.local/bin/emacs-tui --ansi
 window-padding-x = 8
 window-padding-y = 4
 window-padding-balance = true
@@ -100,6 +96,7 @@ keybind = super+v=text:\x16
 keybind = super+w=text:\x17
 keybind = super+x=text:\x18
 keybind = super+y=text:\x19
+keybind = super+space=text:\x00
 keybind = super+z=text:\x1a
 keybind = super+shift+a=select_all
 keybind = super+shift+backspace=close_surface
@@ -229,7 +226,7 @@ keybind = chain=activate_key_table_once:ghostty-resize
 keybind = ghostty/escape=deactivate_key_table
 keybind = ghostty/catch_all=deactivate_key_table
 
-keybind = ghostty-scrollback/e=write_scrollback_file:open
+keybind = ghostty-scrollback/e=write_scrollback_file:open,vt
 keybind = ghostty-scrollback/j=scroll_page_lines:1
 keybind = ghostty-scrollback/k=scroll_page_lines:-1
 keybind = ghostty-scrollback/page_down=scroll_page_down

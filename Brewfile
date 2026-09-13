@@ -117,6 +117,7 @@ brew "yara"
 brew "gdb" if OS.linux?
 
 # Editors and terminals
+brew "emacs"
 brew "4evy/dotfiles/helix-tip"
 brew "yazi"
 

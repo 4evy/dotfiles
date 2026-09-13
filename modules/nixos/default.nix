@@ -20,6 +20,7 @@ in
   imports = [
     ../cross
     ./desktop-packages.nix
+    ./emacs.nix
     ./gnome.nix
     ./hardware.nix
     ./kanata.nix

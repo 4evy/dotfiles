@@ -1,6 +1,6 @@
 ---
 git_protocol: ssh
-editor: hx
+editor: emacs-tui
 pager: less
 color_labels: enabled
 version: "1"

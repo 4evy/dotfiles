@@ -193,6 +193,9 @@ unset _dotfiles_ssh_auth_sock
 
 # 04 / shared tool defaults
 
+export EDITOR="emacs-tui"
+export VISUAL="emacs-tui"
+
 {{- if eq .chezmoi.os "darwin" }}
 if command -v sops-age-key-1password >/dev/null 2>&1; then
 	export SOPS_AGE_KEY_CMD="${SOPS_AGE_KEY_CMD:-sops-age-key-1password}"

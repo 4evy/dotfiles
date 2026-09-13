@@ -1,0 +1,194 @@
+#!/usr/bin/env bash
+# One terminal editor entry point for shells, tool editors, and scrollback.
+set -euo pipefail
+
+# NixOS service managers need the system profile before sourcing our environment.
+if [[ -d /run/current-system/sw/bin ]]; then
+  export PATH="/run/current-system/sw/bin:$PATH"
+fi
+
+# Ghostty's direct launcher does not run an interactive shell first.
+if [[ -r "$HOME/.config/shell/environment.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$HOME/.config/shell/environment.sh"
+fi
+
+# Service-managed daemons do not inherit Ghostty's terminfo environment.
+# Keep the default search paths (the empty entry) and any user overrides.
+for ghostty_resources in "${GHOSTTY_RESOURCES_DIR:-}" /Applications/Ghostty.app/Contents/Resources; do
+  if [[ -n "$ghostty_resources" && -d "$ghostty_resources/terminfo" ]]; then
+    export TERMINFO_DIRS="${TERMINFO_DIRS:-}:$ghostty_resources/terminfo"
+  fi
+done
+unset ghostty_resources
+
+if [[ -z ${TERMINAL_THEME:-} ]] && command -v theme-run >/dev/null 2>&1; then
+  TERMINAL_THEME=$(theme-run --print-theme-no-terminal)
+  export TERMINAL_THEME
+fi
+
+if command -v emacs >/dev/null 2>&1; then
+  editor=$(command -v emacs)
+elif [[ -x /opt/homebrew/bin/emacs ]]; then
+  editor=/opt/homebrew/bin/emacs
+elif [[ -x /home/linuxbrew/.linuxbrew/bin/emacs ]]; then
+  editor=/home/linuxbrew/.linuxbrew/bin/emacs
+else
+  printf 'emacs-tui: Emacs is not installed\n' >&2
+  exit 127
+fi
+
+client="$(dirname "$editor")/emacsclient"
+if [[ ! -x "$client" ]]; then
+  printf 'emacs-tui: emacsclient is not installed beside Emacs\n' >&2
+  exit 127
+fi
+
+client=("$client")
+
+# Services use the same PATH and tool environment as interactive clients.
+if [[ ${1:-} == --daemon ]]; then
+  exec "$editor" --fg-daemon
+fi
+
+service=
+if [[ $(uname -s) == Darwin && -f "$HOME/Library/LaunchAgents/dev.4evy.emacs.plist" ]]; then
+  service=launchd
+  service_target="gui/$(id -u)/dev.4evy.emacs"
+elif [[ -f "$HOME/.config/systemd/user/emacs.service" || -f /etc/systemd/user/emacs.service ]]; then
+  service=systemd
+fi
+
+check_saved() {
+  "${client[@]}" -a false -e '
+    (when (seq-some (lambda (buffer)
+                     (with-current-buffer buffer
+                       (and buffer-file-name (buffer-modified-p))))
+                   (buffer-list))
+      (user-error "Save modified file buffers before restarting Emacs"))' >/dev/null
+}
+
+service_running() {
+  case "$service" in
+  launchd) launchctl print "$service_target" >/dev/null 2>&1 ;;
+  systemd) systemctl --user is-active --quiet emacs.service ;;
+  *) return 1 ;;
+  esac
+}
+
+start_service() {
+  case "$service" in
+  launchd)
+    if ! service_running; then
+      launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/dev.4evy.emacs.plist"
+    fi
+    launchctl kickstart "$service_target"
+    ;;
+  systemd) systemctl --user start emacs.service ;;
+  esac
+}
+
+service_socket_selected=false
+use_service_socket() {
+  if [[ "$service" == systemd && "$service_socket_selected" == false ]]; then
+    # Tailscale SSH can omit XDG_RUNTIME_DIR; address the user service directly.
+    client+=(-s "/run/user/$(id -u)/emacs/server")
+    service_socket_selected=true
+  fi
+}
+
+wait_for_service() {
+  use_service_socket
+  for ((attempt = 0; attempt < 600; attempt++)); do
+    if "${client[@]}" -a false -e t >/dev/null 2>&1; then
+      return
+    fi
+    sleep 0.5
+  done
+  printf 'emacs-tui: daemon did not become ready; check the service log\n' >&2
+  return 1
+}
+
+if [[ ${1:-} == --install-service ]]; then
+  unset EMACS_SOCKET_NAME EMACS_SERVER_FILE
+  [[ -n "$service" ]] || {
+    printf 'emacs-tui: service definition is missing\n' >&2
+    exit 1
+  }
+  # Adopt an existing on-demand daemon only after checking for unsaved files.
+  if ! service_running && "${client[@]}" -a false -e t >/dev/null 2>&1; then
+    check_saved
+    "${client[@]}" -a false -e '(kill-emacs)' >/dev/null
+  fi
+  case "$service" in
+  launchd)
+    mkdir -p "$HOME/Library/Logs"
+    launchctl enable "$service_target"
+    ;;
+  systemd)
+    systemctl --user daemon-reload
+    systemctl --user enable emacs.service
+    ;;
+  esac
+  start_service
+  wait_for_service
+  exit
+fi
+
+# Explicit socket overrides remain useful for isolated Emacs sessions.
+if [[ -n ${EMACS_SOCKET_NAME:-} || -n ${EMACS_SERVER_FILE:-} ]]; then
+  service=
+fi
+
+use_service_socket
+
+# Pass only fixed Lisp values for frame settings.
+theme=dark
+[[ ${TERMINAL_THEME:-} != light ]] || theme=light
+ansi=nil
+
+# Explicit "-" or an argument-free pipe opens its contents as a temporary file.
+if [[ ${1:-} == --ansi ]]; then
+  shift
+  ansi=t
+fi
+client_args=(-q -t -a "" -F "((evy-terminal-theme . $theme) (evy-render-ansi . $ansi))")
+
+if [[ ${1:-} == --restart ]]; then
+  shift
+  if "${client[@]}" -a false -e t >/dev/null 2>&1; then
+    check_saved
+  fi
+  case "$service" in
+  launchd)
+    if service_running; then
+      launchctl kickstart -k "$service_target"
+    else
+      start_service
+    fi
+    ;;
+  systemd) systemctl --user restart emacs.service ;;
+  *)
+    if "${client[@]}" -a false -e t >/dev/null 2>&1; then
+      "${client[@]}" -a false -e '(kill-emacs)' >/dev/null
+    fi
+    ;;
+  esac
+fi
+
+if [[ -n "$service" ]]; then
+  start_service
+  wait_for_service
+  # Never race the service manager by spawning an unmanaged second daemon.
+  client_args=(-q -t -a false -F "((evy-terminal-theme . $theme) (evy-render-ansi . $ansi))")
+fi
+
+if [[ ${1:-} == - ]] || { [[ $# == 0 ]] && [[ ! -t 0 ]]; }; then
+  [[ ${1:-} != - ]] || shift
+  scrollback=$(mktemp "${TMPDIR:-/tmp}/emacs-stdin.XXXXXXXX")
+  trap 'rm -f -- "$scrollback"' EXIT
+  cat >"$scrollback"
+  "${client[@]}" "${client_args[@]}" -- "$scrollback" "$@" </dev/tty
+else
+  exec "${client[@]}" "${client_args[@]}" -- "$@"
+fi
