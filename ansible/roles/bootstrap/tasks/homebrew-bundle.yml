@@ -179,43 +179,65 @@
     - temurin
 
 - name: Apply Homebrew bundle
-  ansible.builtin.command:
-    argv:
-      - "{{ bootstrap_homebrew_prefix }}/bin/brew"
-      - bundle
-      - install
-      - >-
-        {{
-          '--upgrade'
-          if lookup('ansible.builtin.env', 'DOTFILES_HOMEBREW_UPGRADE') == '1'
-          else '--no-upgrade'
-        }}
-      - --force-cleanup
-      - --file
-      - "-"
-  args:
-    chdir: "{{ dotfiles_repo_root }}"
-    stdin: |-
-      {{ lookup('ansible.builtin.file', dotfiles_repo_root ~ '/Brewfile') }}
-      {{
-        lookup(
-          'ansible.builtin.file',
-          bootstrap_homebrew_private_bundle_file,
-          errors='ignore'
-        )
-      }}
-  environment:
-    HOMEBREW_NO_ASK: "1"
-    HOMEBREW_TEMP: "{{ bootstrap_homebrew_temp_dir }}"
-    PATH: "{{ bootstrap_homebrew_path }}"
-  register: bootstrap_homebrew_bundle_install
-  retries: 2
-  delay: 2
-  until: bootstrap_homebrew_bundle_install.rc == 0
-  changed_when: >-
-    bootstrap_homebrew_bundle_install.attempts | default(1) > 1
-    or bootstrap_homebrew_bundle_install.stdout is search('(^|\n)(==> )?(Installing|Upgrading|Uninstalling|Uninstalled|Untapping|Removing) ')
-    or bootstrap_homebrew_bundle_install.stderr is search('(^|\n)(==> )?(Installing|Upgrading|Uninstalling|Uninstalled|Untapping|Removing) ')
+  block:
+    - name: Allow Xcode asset builds to reach macOS services
+      ansible.builtin.replace:
+        path: >-
+          {{ bootstrap_homebrew_repository }}/Library/Homebrew/extend/os/mac/sandbox.rb
+        regexp: '^        \(deny mach-lookup\)$'
+        replace: '        (allow mach-lookup)'
+      register: bootstrap_homebrew_xcode_sandbox
+      when: platform_is_macos
+
+    - name: Install Homebrew bundle
+      ansible.builtin.command:
+        argv:
+          - "{{ bootstrap_homebrew_prefix }}/bin/brew"
+          - bundle
+          - install
+          - >-
+            {{
+              '--upgrade'
+              if lookup('ansible.builtin.env', 'DOTFILES_HOMEBREW_UPGRADE') == '1'
+              else '--no-upgrade'
+            }}
+          - --force-cleanup
+          - --file
+          - "-"
+      args:
+        chdir: "{{ dotfiles_repo_root }}"
+        stdin: |-
+          {{ lookup('ansible.builtin.file', dotfiles_repo_root ~ '/Brewfile') }}
+          {{
+            lookup(
+              'ansible.builtin.file',
+              bootstrap_homebrew_private_bundle_file,
+              errors='ignore'
+            )
+          }}
+      environment:
+        HOMEBREW_NO_ASK: "1"
+        HOMEBREW_NO_AUTO_UPDATE: "1"
+        HOMEBREW_TEMP: "{{ bootstrap_homebrew_temp_dir }}"
+        PATH: "{{ bootstrap_homebrew_path }}"
+      register: bootstrap_homebrew_bundle_install
+      retries: 2
+      delay: 2
+      until: bootstrap_homebrew_bundle_install.rc == 0
+      changed_when: >-
+        bootstrap_homebrew_bundle_install.attempts | default(1) > 1
+        or bootstrap_homebrew_bundle_install.stdout is search('(^|\n)(==> )?(Installing|Upgrading|Uninstalling|Uninstalled|Untapping|Removing) ')
+        or bootstrap_homebrew_bundle_install.stderr is search('(^|\n)(==> )?(Installing|Upgrading|Uninstalling|Uninstalled|Untapping|Removing) ')
+  always:
+    - name: Restore the Homebrew macOS sandbox profile
+      ansible.builtin.replace:
+        path: >-
+          {{ bootstrap_homebrew_repository }}/Library/Homebrew/extend/os/mac/sandbox.rb
+        regexp: '^        \(allow mach-lookup\)$'
+        replace: '        (deny mach-lookup)'
+      when:
+        - platform_is_macos
+        - bootstrap_homebrew_xcode_sandbox is changed
 
 - name: Read the packaged theme-run source checksum
   ansible.builtin.stat:
