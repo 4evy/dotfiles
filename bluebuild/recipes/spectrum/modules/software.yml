@@ -3,11 +3,6 @@
 modules:
   # Install stable, remote-heavy inputs before repository-local files so local
   # edits do not force these downloads to run again.
-  - type: bling@v1
-    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
-    install:
-      - 1password
-
   # Repository definitions are intentional inputs to the following DNF layer.
   - type: copy@v1
     src: bluebuild/files/dnf
@@ -18,11 +13,14 @@ modules:
     repos:
       cleanup: true
       keys:
+        - https://downloads.1password.com/linux/keys/1password.asc
         - https://packages.microsoft.com/keys/microsoft.asc
       nonfree: rpmfusion
     install:
       install-weak-deps: false
       packages:
+        - 1password
+        - 1password-cli
         - blueprint-compiler
         - bootc
         - bubblewrap
@@ -81,6 +79,23 @@ modules:
         # renovate: datasource=github-releases depName=rustdesk/rustdesk
         - https://github.com/rustdesk/rustdesk/releases/download/1.4.9/rustdesk-1.4.9-0.x86_64.rpm
         - https://discord.com/api/download?platform=linux&format=rpm
+
+  # The RPM owns desktop files and icons. Preserve the fixed helper GIDs used
+  # by bling without its obsolete resources/1password.desktop copy step.
+  - type: script@v1
+    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    snippets:
+      - |
+        chmod 4755 /opt/1Password/chrome-sandbox
+        chgrp 1500 /opt/1Password/1Password-BrowserSupport
+        chmod g+s /opt/1Password/1Password-BrowserSupport
+        chgrp 1600 /usr/bin/op
+        chmod g+s /usr/bin/op
+        printf 'g onepassword 1500\n' > /usr/lib/sysusers.d/onepassword.conf
+        printf 'g onepassword-cli 1600\n' > /usr/lib/sysusers.d/onepassword-cli.conf
+        rm -f /usr/lib/sysusers.d/30-rpmostree-pkg-group-onepassword.conf
+        rm -f /usr/lib/sysusers.d/30-rpmostree-pkg-group-onepassword-cli.conf
+        rm -f /etc/yum.repos.d/1password.repo
 
   # Provision Linuxbrew as part of the image so the bootstrap only has to
   # apply the Brewfile. Keep package upgrades explicit through `just update`.
