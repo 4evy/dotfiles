@@ -113,6 +113,19 @@
 
 (add-hook 'elpaca-after-init-hook #'evy-helix-navigation 90)
 
+;; ESC returns to one cursor, as in Helix, before Hel's other ESC layers.
+(defun evy-hel-escape ()
+  "Collapse multiple cursors to one; otherwise run Hel's ESC behavior."
+  (interactive)
+  (if (bound-and-true-p hel-multiple-cursors-mode)
+      (hel-disable-multiple-cursors-mode)
+    (call-interactively #'hel-normal-state-escape)))
+;; Run once for the main cursor, so Hel does not prompt about fake cursors.
+(put 'evy-hel-escape 'multiple-cursors nil)
+
+(hel-keymap-global-set :state 'normal
+  "<escape>" #'evy-hel-escape)
+
 ;; Keep Helix's internal copy/paste separate from the system clipboard.
 (setq select-enable-clipboard nil
       select-enable-primary nil)
