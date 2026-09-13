@@ -3,31 +3,31 @@ set -eu
 
 repo=${DOTFILES_REPO:-}
 if [ -z "$repo" ]; then
-	if [ -d "$HOME/Developer/dotfiles" ]; then
-		repo=$HOME/Developer/dotfiles
-	elif [ -d "$HOME/dotfiles" ]; then
-		repo=$HOME/dotfiles
-	else
-		printf '%s\n' "patch-chatgpt-computer-use: DOTFILES_REPO was not found" >&2
-		exit 1
-	fi
+  if [ -d "$HOME/Developer/dotfiles" ]; then
+    repo=$HOME/Developer/dotfiles
+  elif [ -d "$HOME/dotfiles" ]; then
+    repo=$HOME/dotfiles
+  else
+    printf '%s\n' "patch-chatgpt-computer-use: DOTFILES_REPO was not found" >&2
+    exit 1
+  fi
 fi
 
 script=$repo/packages/chatgpt/patch-computer-use-policy.ts
 if [ ! -f "$script" ]; then
-	printf '%s\n' "patch-chatgpt-computer-use: patcher not found: $script" >&2
-	exit 1
+  printf '%s\n' "patch-chatgpt-computer-use: patcher not found: $script" >&2
+  exit 1
 fi
 
 if command -v bun >/dev/null 2>&1; then
-	bun=$(command -v bun)
+  bun=$(command -v bun)
 elif [ -x /opt/homebrew/bin/bun ]; then
-	bun=/opt/homebrew/bin/bun
+  bun=/opt/homebrew/bin/bun
 elif [ -x /home/linuxbrew/.linuxbrew/bin/bun ]; then
-	bun=/home/linuxbrew/.linuxbrew/bin/bun
+  bun=/home/linuxbrew/.linuxbrew/bin/bun
 else
-	printf '%s\n' "patch-chatgpt-computer-use: bun is not installed" >&2
-	exit 127
+  printf '%s\n' "patch-chatgpt-computer-use: bun is not installed" >&2
+  exit 127
 fi
 
 exec "$bun" "$script" "$@"

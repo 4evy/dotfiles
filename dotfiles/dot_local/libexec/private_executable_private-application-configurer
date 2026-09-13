@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require "English"
 require "fileutils"
 require "json"
 require "open-uri"
@@ -148,8 +149,10 @@ module ComputerUse
 
     return true if system(PATCHER.to_s)
 
-    status = $?.exitstatus
-    warn "private-application-configurer: Computer Use patch failed#{status ? " (exit #{status})" : ""}"
+    status = $CHILD_STATUS.exitstatus
+    message = "private-application-configurer: Computer Use patch failed"
+    message += " (exit #{status})" if status
+    warn message
     false
   end
 end
