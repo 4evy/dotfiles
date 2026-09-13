@@ -22,8 +22,11 @@ for ghostty_resources in "${GHOSTTY_RESOURCES_DIR:-}" /Applications/Ghostty.app/
 done
 unset ghostty_resources
 
-if [[ -z ${TERMINAL_THEME:-} ]] && command -v theme-run >/dev/null 2>&1; then
-  TERMINAL_THEME=$(theme-run --print-theme-no-terminal)
+if command -v theme-run >/dev/null 2>&1; then
+  # Shell theme variables can predate a live terminal appearance change.
+  # Query the terminal again, falling back to the current system appearance.
+  TERMINAL_THEME=$(env -u COLOR_SCHEME -u LC_TERMINAL_THEME \
+    -u TERMINAL_THEME -u THEME theme-run --print-theme)
   export TERMINAL_THEME
 fi
 
