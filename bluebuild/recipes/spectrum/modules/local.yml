@@ -4,6 +4,11 @@ modules:
   # Builder outputs and repository-local configuration deliberately follow
   # remote-heavy modules. Changes here invalidate only this assembly tail.
   - type: copy@v1
+    from: bluebuild-cli
+    src: /out/usr
+    dest: /usr
+
+  - type: copy@v1
     from: python-runtime
     src: /out/usr
     dest: /usr

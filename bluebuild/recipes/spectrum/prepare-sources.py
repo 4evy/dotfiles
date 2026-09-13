@@ -30,6 +30,7 @@ def main() -> None:
     directory.mkdir(exist_ok=True)
     groups = {
         "astral": ["python-astral"],
+        "bluebuild": ["bluebuild-cli"],
         "ghostty": ["ghostty", "ghostty-zig-x86-64-linux"],
         "kanata": ["kanata-homebrew"],
     }
@@ -62,16 +63,8 @@ def main() -> None:
         )
         + "\n"
     )
-    revision = input_pin(lock, "source-bluebuild-cli")["rev"]
     recipe = ROOT / "bluebuild/recipes/spectrum.yml"
-    text = recipe.read_text()
-    if text.count("\nspec:\n") != 1:
-        raise ValueError("Spectrum recipe must contain exactly one spec mapping")
-    text = text.replace(
-        "\nspec:\n",
-        f"\nspec:\n  tool-versions:\n    bluebuild: {revision}\n",
-    )
-    (recipe.parent / ".spectrum.generated.yml").write_text(text)
+    shutil.copyfile(recipe, recipe.parent / ".spectrum.generated.yml")
 
 
 if __name__ == "__main__":

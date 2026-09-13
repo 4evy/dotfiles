@@ -1,0 +1,38 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/stage-v1.json
+name: bluebuild-cli
+# Match the final image's libc instead of depending on an upstream installer tag.
+from: ${BASE_IMAGE}
+modules:
+  - type: copy@v1
+    src: bluebuild/recipes/spectrum/sources/bluebuild.json
+    dest: /src/sources.json
+
+  - type: copy@v1
+    src: bluebuild/recipes/spectrum/build-bluebuild.sh
+    dest: /src/build-bluebuild.sh
+
+  - type: dnf@v1
+    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    install:
+      install-weak-deps: false
+      packages:
+        - cargo
+        - cmake
+        - gcc
+        - gcc-c++
+        - git
+        - jq
+        - make
+        - perl-core
+        - rust
+
+  - type: containerfile
+    snippets:
+      - |-
+        RUN \
+          --mount=type=cache,id=spectrum-bluebuild-cargo-registry-v1,sharing=locked,target=/root/.cargo/registry \
+          --mount=type=cache,id=spectrum-bluebuild-cargo-git-v1,sharing=locked,target=/root/.cargo/git \
+          --mount=type=cache,id=spectrum-bluebuild-target-v1,sharing=locked,target=/build/bluebuild-source/target \
+          SOURCE_LOCK=/src/sources.json \
+          bash /src/build-bluebuild.sh
