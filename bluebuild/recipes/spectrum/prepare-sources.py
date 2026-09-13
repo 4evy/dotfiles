@@ -1,6 +1,7 @@
 """Materialize Spectrum build inputs from the current flake lock."""
 
 import json
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -14,10 +15,13 @@ def input_pin(lock: dict, name: str) -> dict:
 
 
 def main() -> None:
+    nix = shutil.which("nix")
+    if nix is None:
+        raise FileNotFoundError("nix is required to prepare Spectrum sources")
     lock = json.loads((ROOT / "flake.lock").read_text(encoding="utf-8"))
     stack_sources = json.loads(
         subprocess.check_output(
-            ["nix", "eval", ".#patchStackSources", "--json", "--no-write-lock-file"],
+            [nix, "eval", ".#patchStackSources", "--json", "--no-write-lock-file"],
             cwd=ROOT,
             text=True,
         )
