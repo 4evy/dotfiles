@@ -3,14 +3,10 @@
 require_relative "../packages/source-lock/flake_lock"
 
 class KanataWithCmd < Formula
-  tap_root = Pathname(__dir__).parent
-  homebrew = DotfilesFlakeLock.input(tap_root, "source-kanata-homebrew")
   patches_tap = Tap.fetch("4evy", "patches")
   raise "Tap 4evy/patches before installing kanata-with-cmd" unless patches_tap.installed?
 
-  manifest = JSON.load_file(patches_tap.path/"stacks/kanata/stack.json")
-  stack_revision = manifest.fetch("source").fetch("revision")
-  raise "The Kanata source pin does not match the 4evy/patches stack" if stack_revision != homebrew.fetch("rev")
+  homebrew = DotfilesFlakeLock.stack_source(patches_tap.path, "kanata")
 
   desc "Cross-platform keyboard remapper with command actions enabled"
   homepage "https://github.com/jtroo/kanata"

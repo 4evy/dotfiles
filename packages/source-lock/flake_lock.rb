@@ -12,6 +12,14 @@ module DotfilesFlakeLock
   end
 
   def self.repository(pin)
+    return pin.fetch("canonical") if pin.key?("canonical")
+
     "https://github.com/#{pin.fetch('owner')}/#{pin.fetch('repo')}.git"
+  end
+
+  def self.stack_source(patches_root, name)
+    manifest = JSON.load_file(patches_root/"stacks"/name/"stack.json")
+    source = manifest.fetch("source")
+    source.merge("rev" => source.fetch("revision"))
   end
 end

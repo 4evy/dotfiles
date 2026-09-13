@@ -3,14 +3,10 @@
 require_relative "../packages/source-lock/flake_lock"
 
 class GhosttyPatched < Formula
-  tap_root = Pathname(__dir__).parent
-  ghostty = DotfilesFlakeLock.input(tap_root, "source-ghostty")
   patches_tap = Tap.fetch("4evy", "patches")
   raise "Tap 4evy/patches before installing ghostty-patched" unless patches_tap.installed?
 
-  manifest = JSON.load_file(patches_tap.path/"stacks/ghostty/stack.json")
-  stack_revision = manifest.fetch("source").fetch("revision")
-  raise "The Ghostty source pin does not match the 4evy/patches stack" if stack_revision != ghostty.fetch("rev")
+  ghostty = DotfilesFlakeLock.stack_source(patches_tap.path, "ghostty")
 
   desc "Fast, native terminal emulator with the 4evy patch stack"
   homepage "https://ghostty.org"

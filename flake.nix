@@ -42,11 +42,6 @@
       url = "github:Equicord/Equilotl/v2.2.6";
     };
 
-    source-ghostty = {
-      flake = false;
-      url = "github:ghostty-org/ghostty/c81f0b26871c7fbbe2fc35549fdad1f64ed29094";
-    };
-
     source-ghostty-zig-aarch64-linux = {
       flake = false;
       url = "file+https://ziglang.org/download/0.16.0/zig-aarch64-linux-0.16.0.tar.xz";
@@ -67,19 +62,9 @@
       url = "github:helix-editor/helix/master";
     };
 
-    source-jj = {
-      flake = false;
-      url = "github:jj-vcs/jj/1d41436bfe6f9410b573f8ef39169c5253bbccdf";
-    };
-
     source-kanata = {
       flake = false;
       url = "github:jtroo/kanata/main";
-    };
-
-    source-kanata-homebrew = {
-      flake = false;
-      url = "github:jtroo/kanata/565d5070e9e61992af5b4e844d512a9ce2f2d8c1";
     };
 
     source-karabiner-vhid-package = {

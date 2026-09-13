@@ -1,6 +1,7 @@
 """Materialize Spectrum build inputs from the current flake lock."""
 
 import json
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -14,6 +15,13 @@ def input_pin(lock: dict, name: str) -> dict:
 
 def main() -> None:
     lock = json.loads((ROOT / "flake.lock").read_text(encoding="utf-8"))
+    stack_sources = json.loads(
+        subprocess.check_output(
+            ["nix", "eval", ".#patchStackSources", "--json", "--no-write-lock-file"],
+            cwd=ROOT,
+            text=True,
+        )
+    )
     directory = ROOT / "bluebuild/recipes/spectrum/sources"
     directory.mkdir(exist_ok=True)
     groups = {
@@ -22,7 +30,19 @@ def main() -> None:
         "kanata": ["kanata-homebrew"],
     }
     for group, names in groups.items():
-        pins = {name: input_pin(lock, f"source-{name}") for name in names}
+        pins = {}
+        for name in names:
+            stack_name = "kanata" if name == "kanata-homebrew" else name
+            if stack_name in stack_sources:
+                source = stack_sources[stack_name]
+                pins[name] = {
+                    "owner": source["canonical"].split("/")[-2],
+                    "repo": source["canonical"].split("/")[-1].removesuffix(".git"),
+                    "rev": source["revision"],
+                    "type": "github",
+                }
+            else:
+                pins[name] = input_pin(lock, f"source-{name}")
         (directory / f"{group}.json").write_text(
             json.dumps({"pins": pins}, indent=2, sort_keys=True) + "\n"
         )

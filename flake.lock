@@ -523,11 +523,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1789044300,
-        "narHash": "sha256-LBuYj2TZOcqBS7DrE+Dh282lOAMLpgDd/oatG2YsJbk=",
+        "lastModified": 1789320300,
+        "narHash": "sha256-MqB+oS6VmH/QqaSXMTI/YdQtH9uvQeW9W+ia6FJqiX8=",
         "owner": "4evy",
         "repo": "patches",
-        "rev": "0a35d593dc231bcba09900b6abe85416fdc1ceef",
+        "rev": "7ecb354335ad0bb7b77b14be6a2a755fbbbc77e5",
         "type": "github"
       },
       "original": {
@@ -552,14 +552,11 @@
         "source-bluebuild-cli": "source-bluebuild-cli",
         "source-browser": "source-browser",
         "source-equilotl": "source-equilotl",
-        "source-ghostty": "source-ghostty",
         "source-ghostty-zig-aarch64-linux": "source-ghostty-zig-aarch64-linux",
         "source-ghostty-zig-x86-64-linux": "source-ghostty-zig-x86-64-linux",
         "source-helium-linux-binary": "source-helium-linux-binary",
         "source-helix": "source-helix",
-        "source-jj": "source-jj",
         "source-kanata": "source-kanata",
-        "source-kanata-homebrew": "source-kanata-homebrew",
         "source-karabiner-vhid-package": "source-karabiner-vhid-package",
         "source-kmscon": "source-kmscon",
         "source-libtsm": "source-libtsm",
@@ -662,23 +659,6 @@
         "type": "github"
       }
     },
-    "source-ghostty": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1788476979,
-        "narHash": "sha256-F4/7xhoQZ5CxRtAQF9vQnZJMDl3QMm8/g/r2E/zuLw8=",
-        "owner": "ghostty-org",
-        "repo": "ghostty",
-        "rev": "c81f0b26871c7fbbe2fc35549fdad1f64ed29094",
-        "type": "github"
-      },
-      "original": {
-        "owner": "ghostty-org",
-        "repo": "ghostty",
-        "rev": "c81f0b26871c7fbbe2fc35549fdad1f64ed29094",
-        "type": "github"
-      }
-    },
     "source-ghostty-zig-aarch64-linux": {
       "flake": false,
       "locked": {
@@ -732,23 +712,6 @@
         "type": "github"
       }
     },
-    "source-jj": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1788563719,
-        "narHash": "sha256-SwwGwuj8DVaXco/PTF1cpTkKOeiEGgjNnS4XGl1rZMQ=",
-        "owner": "jj-vcs",
-        "repo": "jj",
-        "rev": "1d41436bfe6f9410b573f8ef39169c5253bbccdf",
-        "type": "github"
-      },
-      "original": {
-        "owner": "jj-vcs",
-        "repo": "jj",
-        "rev": "1d41436bfe6f9410b573f8ef39169c5253bbccdf",
-        "type": "github"
-      }
-    },
     "source-kanata": {
       "flake": false,
       "locked": {
@@ -763,23 +726,6 @@
         "owner": "jtroo",
         "ref": "main",
         "repo": "kanata",
-        "type": "github"
-      }
-    },
-    "source-kanata-homebrew": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1786906774,
-        "narHash": "sha256-O3cKyJ352/miOr2sTnO7ZmKz4dJKYSH6iQZo9ELDIms=",
-        "owner": "jtroo",
-        "repo": "kanata",
-        "rev": "565d5070e9e61992af5b4e844d512a9ce2f2d8c1",
-        "type": "github"
-      },
-      "original": {
-        "owner": "jtroo",
-        "repo": "kanata",
-        "rev": "565d5070e9e61992af5b4e844d512a9ce2f2d8c1",
         "type": "github"
       }
     },

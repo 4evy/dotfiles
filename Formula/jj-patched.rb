@@ -3,15 +3,12 @@
 require_relative "../packages/source-lock/flake_lock"
 
 class JjPatched < Formula
-  tap_root = Pathname(__dir__).parent
-  jj = DotfilesFlakeLock.input(tap_root, "source-jj")
   patches_tap = Tap.fetch("4evy", "patches")
   raise "Tap 4evy/patches before installing jj-patched" unless patches_tap.installed?
 
   manifest = JSON.load_file(patches_tap.path/"stacks/jj/stack.json")
-  stack_revision = manifest.fetch("source").fetch("revision")
+  jj = DotfilesFlakeLock.stack_source(patches_tap.path, "jj")
   result_tree = manifest.fetch("result").fetch("tree").fetch("oid")
-  raise "The jj source pin does not match the 4evy/patches stack" if stack_revision != jj.fetch("rev")
 
   desc "Jujutsu build with the 4evy patch stack"
   homepage "https://github.com/jj-vcs/jj"

@@ -134,9 +134,11 @@ in
   };
 
   flake = {
+    patchStackSources = inputs.patches.stackSources;
     lib = {
       inherit equicordQuickCss;
       equicordSettingsJson = equicordSettings.jsonConfig;
+      patchStackSources = inputs.patches.stackSources;
       supportedSystems = systems;
     };
 
