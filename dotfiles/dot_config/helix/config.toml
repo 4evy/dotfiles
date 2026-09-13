@@ -49,15 +49,14 @@ right = [
 ]
 
 [editor.whitespace]
-render = "all"
+render = { space = "none", newline = "none", tab = "all", nbsp = "all" }
 
 [editor.whitespace.characters]
 nbsp = "⍽"
-newline = "⏎"
-space = "·"
+space = " "
 tab = "→"
-tabpad = "·"
-trail = "•"
+tabpad = " "
+trail = " "
 
 [editor.lsp]
 display-messages = true
@@ -87,8 +86,8 @@ flatten-dirs = true
 start-position = "previous"
 
 [editor.soft-wrap]
-enable = true
-wrap-at-text-width = true
+enable = false
+wrap-at-text-width = false
 
 [editor.smart-tab]
 enable = true
