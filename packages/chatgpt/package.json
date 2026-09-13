@@ -1,0 +1,13 @@
+{
+  "name": "chatgpt",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "bun run typecheck",
+    "typecheck": "bun x --no-install tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

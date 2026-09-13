@@ -129,6 +129,31 @@ module CodexPlugins
   end
 end
 
+# Makes Computer Use follow unrestricted local Codex config.
+module ComputerUse
+  PATCHER = Pathname(Dir.home)/".local/bin/patch-chatgpt-computer-use"
+  APP = Pathname("/Applications/ChatGPT.app")
+
+  module_function
+
+  def patch
+    unless APP.directory?
+      warn "private-application-configurer: ChatGPT is absent; skipping Computer Use patch"
+      return false
+    end
+    unless PATCHER.executable?
+      warn "private-application-configurer: Computer Use patcher is absent; skipping"
+      return false
+    end
+
+    return true if system(PATCHER.to_s)
+
+    status = $?.exitstatus
+    warn "private-application-configurer: Computer Use patch failed#{status ? " (exit #{status})" : ""}"
+    false
+  end
+end
+
 # Configures the Homebrew-managed Raycast app using dotfiles-managed data.
 module Raycast
   PROGRAM_NAME = "raycast-manager"
@@ -593,6 +618,7 @@ module Raycast
         reject_arguments(arguments)
 
         CodexPlugins.sync
+        ComputerUse.patch
         @manager.with_lock do
           @manager.configure(if_present:)
         end

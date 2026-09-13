@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>dev.4evy.patch-chatgpt-computer-use</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>{{ .chezmoi.homeDir }}/.local/bin/patch-chatgpt-computer-use</string>
+    </array>
+    <key>WatchPaths</key>
+    <array>
+      <string>/Applications/ChatGPT.app/Contents/Resources</string>
+    </array>
+    <key>ThrottleInterval</key>
+    <integer>15</integer>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>ProcessType</key>
+    <string>Background</string>
+  </dict>
+</plist>

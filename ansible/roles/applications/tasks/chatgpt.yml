@@ -1,0 +1,19 @@
+---
+- name: Inspect the installed ChatGPT application on macOS
+  ansible.builtin.stat:
+    path: /Applications/ChatGPT.app
+  register: applications_chatgpt_app
+
+- name: Make ChatGPT Computer Use follow unrestricted local config on macOS
+  ansible.builtin.command:
+    argv:
+      - bun
+      - "{{ dotfiles_repo_root }}/packages/chatgpt/patch-computer-use-policy.ts"
+      - /Applications/ChatGPT.app
+  environment:
+    PATH: "{{ platform_homebrew_path | default(dotfiles_path) }}"
+  register: applications_chatgpt_computer_use
+  changed_when: >-
+    applications_chatgpt_computer_use.stdout is search('^(Patched|Enabled|Restarted) ')
+  when:
+    - applications_chatgpt_app.stat.isdir | default(false)

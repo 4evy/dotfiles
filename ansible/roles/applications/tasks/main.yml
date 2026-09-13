@@ -6,6 +6,14 @@
     - applications
     - ghostty
 
+- name: Patch ChatGPT Computer Use on macOS
+  ansible.builtin.import_tasks: chatgpt.yml
+  when: platform_is_macos
+  tags:
+    - applications
+    - chatgpt
+    - macos
+
 - name: Load private application settings
   ansible.builtin.import_tasks: private-settings.yml
   tags:
