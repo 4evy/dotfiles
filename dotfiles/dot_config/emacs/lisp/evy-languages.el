@@ -15,6 +15,7 @@
 (require 'eglot)
 (require 'treesit)
 (require 'editorconfig)
+(require 'evy-performance)
 (declare-function web-mode "web-mode")
 (declare-function web-mode-set-content-type "web-mode" (content-type))
 (editorconfig-mode 1)
@@ -168,6 +169,7 @@
   (and buffer-file-name
        (not (file-remote-p buffer-file-name))
        (not (evy-template-buffer-p))
+       (not (evy-long-line-buffer-p))
        (not (string-prefix-p (file-truename temporary-file-directory)
                              (file-truename buffer-file-name)))))
 
@@ -223,6 +225,9 @@
   (dolist (mode '(python-mode python-ts-mode))
     (setf (alist-get mode apheleia-mode-alist) 'ruff))
   (add-hook 'apheleia-inhibit-functions #'evy-template-buffer-p)
+  (add-hook 'apheleia-inhibit-functions #'evy-long-line-buffer-p)
+  (add-hook 'apheleia-skip-functions #'evy-template-buffer-p)
+  (add-hook 'apheleia-skip-functions #'evy-long-line-buffer-p)
   (apheleia-global-mode 1))
 
 (provide 'evy-languages)

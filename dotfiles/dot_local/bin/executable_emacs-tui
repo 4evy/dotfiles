@@ -102,8 +102,9 @@ use_service_socket() {
 
 wait_for_service() {
   use_service_socket
-  for ((attempt = 0; attempt < 600; attempt++)); do
-    if "${client[@]}" -a false -e t >/dev/null 2>&1; then
+  local service_deadline=$((SECONDS + 300))
+  while ((SECONDS < service_deadline)); do
+    if "${client[@]}" --timeout=1 -a false -e t >/dev/null 2>&1; then
       return
     fi
     sleep 0.5
@@ -193,5 +194,10 @@ if [[ ${1:-} == - ]] || { [[ $# == 0 ]] && [[ ! -t 0 ]]; }; then
   cat >"$scrollback"
   "${client[@]}" "${client_args[@]}" -- "$scrollback" "$@" </dev/tty
 else
+  # A daemon's scratch buffer retains its startup directory (often /).
+  # With no file argument, browse the directory this client was launched in.
+  if [[ $# == 0 ]]; then
+    set -- .
+  fi
   exec "${client[@]}" "${client_args[@]}" -- "$@"
 fi
