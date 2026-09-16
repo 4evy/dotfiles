@@ -33,35 +33,14 @@
 (setq select-enable-clipboard nil
       select-enable-primary nil)
 
+(setup clipetty (:install t))
+
 (defun evy-copy-to-clipboard ()
-  "Copy the active selection to the system clipboard."
+  "Copy explicitly using the GUI clipboard or the client's terminal."
   (interactive)
-  (unless (use-region-p)
-    (user-error "Select text first"))
-  (let* ((text (filter-buffer-substring (region-beginning) (region-end)))
-         ;; A daemon may have started in a different desktop or SSH session.
-         (process-environment (or (frame-parameter nil 'environment)
-                                  process-environment))
-         (command
-          (cond
-           ((eq system-type 'darwin) '("pbcopy"))
-           ((and (getenv "WAYLAND_DISPLAY") (executable-find "wl-copy"))
-            '("wl-copy" "--type" "text/plain;charset=utf-8"))
-           ((and (getenv "DISPLAY") (executable-find "xclip"))
-            '("xclip" "-selection" "clipboard" "-in")))))
-    (cond
-     (command
-      (with-temp-buffer
-        (insert text)
-        (unless (zerop (apply #'call-process-region
-                             (point-min) (point-max) (car command)
-                             nil nil nil (cdr command)))
-          (user-error "Clipboard copy failed"))))
-     ((or (display-graphic-p)
-          (terminal-parameter nil 'xterm--set-selection))
-      (gui-set-selection 'CLIPBOARD text))
-     (t (user-error "No clipboard available in this session"))))
-  (message "Copied to system clipboard"))
+  (call-interactively (if (display-graphic-p)
+                         #'clipboard-kill-ring-save
+                       #'clipetty-kill-ring-save)))
 
 (defvar evy-clipboard-map
   (let ((map (make-sparse-keymap)))
@@ -84,42 +63,23 @@
 
 ;; Keep terminal colors when a piped command supplies ANSI SGR sequences.
 (defun evy-render-ansi-colors ()
-  "Display ANSI colors in this buffer without changing its saved contents."
+  "Decode ANSI output into editable, colored text.
+Saving the buffer writes readable text without terminal escape sequences."
   (interactive)
   (require 'ansi-color)
+  (require 'ansi-osc)
   (whitespace-mode -1)
   (font-lock-mode -1)
   (let ((inhibit-read-only t)
         (buffer-undo-list t)
-        (existing-overlays (overlays-in (point-min) (point-max)))
-        (modified (buffer-modified-p)))
-    (unwind-protect
-        (progn
-          (setq-local ansi-color-context-region nil)
-          ;; VT exports also contain OSC default colors and hyperlinks.
-          ;; Hide these as data; never send terminal commands back to Ghostty.
-          (save-excursion
-            (goto-char (point-min))
-            (while (re-search-forward
-                    (rx "\e]" (* (not (any "\e\a")))
-                        (or "\a" "\e\\")) nil t)
-              (overlay-put (make-overlay (match-beginning 0) (match-end 0))
-                           'invisible t)))
-          (ansi-color-apply-on-region (point-min) (point-max) t)
-          ;; Undo restores text properties, but not deleted overlays.
-          ;; Convert only our rendering overlays so colors and hidden codes
-          ;; travel with the text through deletion, undo, and yank.
-          (dolist (overlay (overlays-in (point-min) (point-max)))
-            (unless (memq overlay existing-overlays)
-              (let ((start (overlay-start overlay))
-                    (end (overlay-end overlay)))
-                (dolist (property '(face invisible))
-                  (when-let* ((value (overlay-get overlay property)))
-                    (put-text-property start end property value)))
-                (put-text-property start end 'rear-nonsticky
-                                   '(face invisible)))
-              (delete-overlay overlay))))
-      (set-buffer-modified-p modified))))
+        (modified (buffer-modified-p))
+        (ansi-color-context-region nil)
+        (ansi-color-apply-face-function
+         (lambda (begin end face)
+           (when face (put-text-property begin end 'face face)))))
+    (ansi-osc-filter-region (point-min) (point-max))
+    (ansi-color-apply-on-region (point-min) (point-max))
+    (set-buffer-modified-p modified)))
 
 (defun evy-render-piped-colors ()
   "Render colored output opened by the emacs-tui pipe launcher."
@@ -134,8 +94,29 @@
 
 (add-hook 'find-file-hook #'evy-render-piped-colors 95)
 
+(defun evy-client-buffer-directory ()
+  "Use the client's working directory for scratch and incoming pipe buffers."
+  ;; Emacsclient already sends its environment with each new frame.
+  (when-let* ((directory (getenv "PWD" (selected-frame)))
+              ((file-name-absolute-p directory))
+              ((file-directory-p directory)))
+    (with-current-buffer (window-buffer (selected-window))
+      (when (or (not buffer-file-name)
+                (frame-parameter nil 'evy-piped-buffer))
+        (setq-local default-directory (file-name-as-directory directory))))))
+
+(defun evy-client-scratch-directory ()
+  "Initialize the displayed non-file buffer for a new client frame."
+  (unless (frame-parameter nil 'evy-piped-buffer)
+    (evy-client-buffer-directory)))
+
+(add-hook 'server-after-make-frame-hook #'evy-client-scratch-directory)
+
 (defun evy-client-render-ansi-colors ()
   "Render the initial buffer when a client requests ANSI scrollback."
+  (when (frame-parameter nil 'evy-piped-buffer)
+    (evy-client-buffer-directory)
+    (set-frame-parameter nil 'evy-piped-buffer nil))
   (when (frame-parameter nil 'evy-render-ansi)
     (set-frame-parameter nil 'evy-render-ansi nil)
     (evy-render-ansi-colors)))

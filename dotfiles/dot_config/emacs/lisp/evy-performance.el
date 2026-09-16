@@ -15,7 +15,7 @@
       (bound-and-true-p so-long-minor-mode)
       (save-restriction
         (widen)
-        (so-long-statistics-excessive-p))))
+        (funcall so-long-predicate))))
 
 (defun evy-so-long-file-buffer ()
   "Protect file buffers immediately; defer changes to internal buffers."

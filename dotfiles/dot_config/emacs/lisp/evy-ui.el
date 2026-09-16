@@ -10,20 +10,10 @@
 (eval-when-compile
   (defvar helheim-package-manager 'elpaca))
 (require 'tab-line)
-(require 'seq)
 
 (declare-function hel-update-cursor "hel")
 (declare-function doom-modeline-set-modeline "doom-modeline-core"
                   (key &optional default))
-
-(defun evy-file-tabs ()
-  "List open files, retaining the current buffer in non-file views."
-  (let ((files (seq-filter
-                (lambda (buffer) (buffer-local-value 'buffer-file-name buffer))
-                (buffer-list))))
-    (if (memq (current-buffer) files)
-        files
-      (cons (current-buffer) files))))
 
 (setup doom-modeline
   (:install t)
@@ -57,14 +47,19 @@
   "Apply UI settings after Helheim has configured its packages."
   (setopt tab-bar-show nil)
   (tab-bar-mode -1)
-  (setq tab-line-tabs-function #'evy-file-tabs
+  (setq tab-line-tabs-function #'tab-line-tabs-fixed-window-buffers
         tab-line-close-button-show nil
         tab-line-new-button-show nil
         tab-line-separator " ")
   (global-tab-line-mode 1)
   (evy-enable-status-line)
   (remove-hook 'prog-mode-hook #'helheim-show-fill-column-indicator)
+  (remove-hook 'markdown-mode-hook #'+wrap-line-mode)
+  (remove-hook 'markdown-ts-mode-hook #'+wrap-line-mode)
   (setq-default display-fill-column-indicator nil)
+  ;; Pad both sides of the colored state labels.
+  (setf (hel-state-property 'normal :tag) " NORMAL "
+        (hel-state-property 'insert :tag) " INSERT ")
   ;; Use the customization setters so Hel updates its state properties too.
   (setopt hel-normal-state-cursor-type 'box
           hel-insert-state-cursor-type '(bar . 2))
