@@ -35,7 +35,7 @@ binary_next_line = false
 simplify = false
 switch_case_indent = true
 
-[{dotfiles/dot_bash*.tmpl,dotfiles/dot_zprofile,dotfiles/dot_local/bin/executable_codex-node-repl-browser-trust,dotfiles/dot_local/bin/executable_hide-display-audio,dotfiles/dot_local/bin/executable_solaar-no-tray,dotfiles/dot_local/bin/executable_sops-age-key-1password}]
+[{dotfiles/dot_bash*.tmpl,dotfiles/dot_zprofile,dotfiles/dot_local/bin/executable_codex-node-repl-browser-trust,dotfiles/dot_local/bin/executable_solaar-no-tray,dotfiles/dot_local/bin/executable_sops-age-key-1password}]
 indent_style = tab
 indent_size = tab
 binary_next_line = false

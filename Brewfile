@@ -3,6 +3,7 @@
 cask_args appdir: "/Applications" if OS.mac?
 
 tap "4evy/dotfiles", trusted: true
+tap "4evy/hide-disply-audio", "https://github.com/4evy/hide-disply-audio", trusted: true
 tap "4evy/patches", "https://github.com/4evy/patches", trusted: true
 
 # Bootstrap shell and provisioning tools
@@ -181,6 +182,7 @@ brew "4evy/dotfiles/theme-run"
 # Linux's image owns Kanata's executable, configuration, and host integration.
 # macOS keeps its Brew-provided binary and signed launch daemon in Ansible.
 if OS.mac?
+  brew "4evy/hide-disply-audio/hide-display-audio", args: ["HEAD"]
   brew "4evy/dotfiles/kanata-with-cmd"
   brew "gettext"
   brew "hidapi"

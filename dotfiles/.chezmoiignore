@@ -45,7 +45,6 @@ Library/
 .config/homebrew/Brewfile.private
 .config/raycast/
 .local/bin/codex-node-repl-browser-trust
-.local/bin/hide-display-audio
 .local/bin/patch-chatgpt-computer-use
 .local/libexec/private-application-configurer
 {{ end }}
