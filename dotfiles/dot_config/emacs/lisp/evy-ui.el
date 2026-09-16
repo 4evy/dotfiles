@@ -43,6 +43,16 @@
 
 (add-hook 'hel-mode-hook #'evy-enable-status-line)
 
+(defun evy-enable-compiler-log-hel ()
+  "Restore Hel in compiler logs created with global mode hooks suppressed."
+  (when (and (bound-and-true-p hel-mode)
+             (derived-mode-p 'emacs-lisp-compilation-mode)
+             (not (bound-and-true-p hel-local-mode)))
+    (hel-local-mode 1)))
+
+;; Compile Angel suppresses `after-change-major-mode-hook' while compiling.
+(add-hook 'emacs-lisp-compilation-mode-hook #'evy-enable-compiler-log-hel)
+
 (defun evy-enable-editor-ui ()
   "Apply UI settings after Helheim has configured its packages."
   (setopt tab-bar-show nil)
@@ -66,6 +76,7 @@
   (blink-cursor-mode -1)
   (dolist (buffer (buffer-list))
     (with-current-buffer buffer
+      (evy-enable-compiler-log-hel)
       (setq-local display-fill-column-indicator nil)
       (when (bound-and-true-p hel-local-mode)
         (hel-update-cursor)))))
