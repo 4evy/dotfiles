@@ -44,24 +44,24 @@ jobs:
       - name: Set Up Go
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version-file: go.mod
+          go-version-file: packages/records/go.mod
           cache-dependency-path: |
-            go.sum
+            packages/records/go.sum
             packages/theme-run/go.sum
 
       - name: Check Formatting
         run: >-
           test -z
-          "$(find cmd packages/theme-run -type f -name '*.go' -exec gofmt -l {} +)"
+          "$(find packages/records packages/theme-run -type f -name '*.go' -exec gofmt -l {} +)"
 
       - name: Test
         run: |
-          go test ./...
+          go -C packages/records test ./...
           go -C packages/theme-run test ./...
 
       - name: Vet
         run: |
-          go vet ./...
+          go -C packages/records vet ./...
           go -C packages/theme-run vet ./...
 
       - name: Build Static theme-run

@@ -126,8 +126,8 @@ Run `just help <command>` with either a command or alias for argument details.
 I keep shared tool configuration at the root: `.editorconfig` for shell
 formatting, `.yamlfmt` for YAML, and `.luacheckrc` for Lua globals. Direct tool
 commands, editor integrations, and the Nix checks read the same settings.
-`go.work` connects the records command and `theme-run`, so I can check both
-modules from here with `go vet ./... ./packages/theme-run/...`.
+`go.work` connects the `records` command and `theme-run`, so I can check both
+modules from here with `go vet ./packages/records/... ./packages/theme-run/...`.
 
 For direct Nix work, drop down a level:
 

@@ -121,13 +121,13 @@ readonly -a REQUIRED_REPOSITORY_FILES=(
 	"${PRIVATE_SETTINGS_FILE}"
 	"${MACOS_AGE_KEY_HELPER_FILE}"
 	'Justfile'
-	'cmd/records/files.go'
-	'cmd/records/main.go'
-	'cmd/records/source.go'
-	'cmd/records/vault.go'
-	'cmd/records/workspace.go'
-	'go.mod'
-	'go.sum'
+	'packages/records/cmd/files.go'
+	'packages/records/cmd/main.go'
+	'packages/records/cmd/source.go'
+	'packages/records/cmd/vault.go'
+	'packages/records/cmd/workspace.go'
+	'packages/records/go.mod'
+	'packages/records/go.sum'
 	'secrets/records.yaml'
 )
 

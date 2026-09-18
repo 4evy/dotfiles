@@ -13,7 +13,7 @@ sops_settings_vault := repo_dir / "secrets/secrets.yaml"
 [private]
 sops_vaults := [sops_records_vault, sops_settings_vault]
 [private]
-records_command := sops_environment ++ ['SOPS_AGE_KEY_CACHE=records', 'go', 'run', './cmd/records']
+records_command := sops_environment ++ ['SOPS_AGE_KEY_CACHE=records', 'go', 'run', './packages/records/cmd']
 
 # Materialize records at their chezmoi source paths, or pass an external workspace.
 [arg('workspace', max='1', help='Optional protected workspace outside the repository')]

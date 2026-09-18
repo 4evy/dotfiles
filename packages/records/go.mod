@@ -1,4 +1,4 @@
-module github.com/4evy/dotfiles
+module github.com/4evy/dotfiles/packages/records
 
 go 1.27
 

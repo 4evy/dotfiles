@@ -1,6 +1,6 @@
 go 1.27
 
 use (
-	.
+	./packages/records
 	./packages/theme-run
 )
