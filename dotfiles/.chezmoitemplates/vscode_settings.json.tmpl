@@ -1,0 +1,447 @@
+{{- $t3 := .t3_chat -}}
+{{- $light := index $t3 `light` -}}
+{{- $dark := index $t3 `dark` -}}
+{
+  "files.associations": {
+    "*.css": "css",
+    "*.html": "html"
+  },
+  "chat.disableAIFeatures": true,
+  "github.copilot.enable": {
+    "*": false
+  },
+  "github.copilot.editor.enableCodeActions": false,
+  "github.copilot.nextEditSuggestions.enabled": false,
+  "editor.fontFamily": "'JetBrainsMono Nerd Font Mono', 'Noto Sans Mono', monospace",
+  "editor.wordWrap": "on",
+  "editor.mouseWheelZoom": true,
+  "editor.renderWhitespace": "selection",
+  "editor.linkedEditing": true,
+  "editor.guides.bracketPairs": "active",
+  "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+  "editor.accessibilitySupport": "off",
+  "editor.semanticHighlighting.enabled": true,
+  "workbench.editor.showIcons": true,
+  "workbench.startupEditor": "none",
+  "window.autoDetectColorScheme": true,
+  "workbench.preferredDarkColorTheme": "Catppuccin Mocha",
+  "workbench.preferredLightColorTheme": "Catppuccin Latte",
+  "workbench.colorTheme": "Catppuccin Mocha",
+  "workbench.iconTheme": "t3-chat-catppuccin-icons",
+  "catppuccin.accentColor": "pink",
+  "catppuccin.bracketMode": "monochromatic",
+  "catppuccin.extraBordersEnabled": true,
+  "catppuccin.colorOverrides": {
+    "mocha": {
+      "rosewater": "{{ index $dark `rosewater` }}",
+      "flamingo": "{{ index $dark `flamingo` }}",
+      "pink": "{{ template `theme_color_mix` (dict `background` (index $dark `pink`) `foreground` (index $dark `rosewater`) `weight` 25) }}",
+      "mauve": "{{ template `theme_color_mix` (dict `background` (index $dark `mauve`) `foreground` (index $dark `rosewater`) `weight` 15) }}",
+      "red": "{{ index $dark `red` }}",
+      "maroon": "{{ template `theme_color_mix` (dict `background` (index $dark `maroon`) `foreground` (index $dark `rosewater`) `weight` 45) }}",
+      "peach": "{{ index $dark `peach` }}",
+      "yellow": "{{ index $dark `yellow` }}",
+      "green": "{{ index $dark `green` }}",
+      "teal": "{{ index $dark `teal` }}",
+      "sky": "{{ index $dark `sky` }}",
+      "sapphire": "{{ index $dark `info` }}",
+      "blue": "{{ index $dark `blue` }}",
+      "lavender": "{{ template `theme_color_mix` (dict `background` (index $dark `lavender`) `foreground` (index $dark `rosewater`) `weight` 35) }}",
+      "text": "{{ index $dark `text` }}",
+      "subtext1": "{{ index $dark `subtext1` }}",
+      "subtext0": "{{ index $dark `subtext0` }}",
+      "overlay2": "{{ index $dark `overlay2` }}",
+      "overlay1": "{{ index $dark `overlay1` }}",
+      "overlay0": "{{ index $dark `overlay0` }}",
+      "surface2": "{{ index $dark `surface2` }}",
+      "surface1": "{{ index $dark `surface1` }}",
+      "surface0": "{{ index $dark `surface0` }}",
+      "base": "{{ index $dark `base` }}",
+      "mantle": "{{ index $dark `mantle` }}",
+      "crust": "{{ index $dark `crust` }}"
+    },
+    "latte": {
+      "rosewater": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `rose`) `weight` 75) }}",
+      "flamingo": "{{ index $light `flamingo` }}",
+      "pink": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `pink`) `weight` 90) }}",
+      "mauve": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `mauve`) `weight` 85) }}",
+      "red": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `red`) `weight` 80) }}",
+      "maroon": "{{ index $light `maroon` }}",
+      "peach": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `peach`) `weight` 55) }}",
+      "yellow": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `yellow`) `weight` 45) }}",
+      "green": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `green`) `weight` 60) }}",
+      "teal": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `teal`) `weight` 50) }}",
+      "sky": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `sky`) `weight` 55) }}",
+      "sapphire": "{{ index $light `infoForeground` }}",
+      "blue": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `blue`) `weight` 65) }}",
+      "lavender": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `lavender`) `weight` 70) }}",
+      "text": "{{ index $light `text` }}",
+      "subtext1": "{{ index $light `subtext1` }}",
+      "subtext0": "{{ index $light `subtext0` }}",
+      "overlay2": "{{ index $light `overlay2` }}",
+      "overlay1": "{{ index $light `overlay1` }}",
+      "overlay0": "{{ index $light `overlay0` }}",
+      "surface2": "{{ index $light `surface2` }}",
+      "surface1": "{{ index $light `surface1` }}",
+      "surface0": "{{ index $light `surface0` }}",
+      "base": "{{ index $light `base` }}",
+      "mantle": "{{ index $light `mantle` }}",
+      "crust": "{{ index $light `crust` }}"
+    }
+  },
+  "editor.tokenColorCustomizations": {
+    "[Catppuccin Latte]": {
+      "comments": "#737373",
+      "strings": "#199f43",
+      "numbers": "#1ca1c7",
+      "keywords": "#d32a61",
+      "functions": "#693acf",
+      "types": "#a631be",
+      "textMateRules": [
+        {
+          "scope": [
+            "variable.parameter",
+            "keyword.operator",
+            "punctuation"
+          ],
+          "settings": {
+            "foreground": "#636363"
+          }
+        },
+        {
+          "scope": [
+            "variable.other.constant",
+            "variable.language",
+            "entity.name.namespace"
+          ],
+          "settings": {
+            "foreground": "#d5901c"
+          }
+        }
+      ]
+    },
+    "[Catppuccin Mocha]": {
+      "comments": "#737373",
+      "strings": "#5ecc71",
+      "numbers": "#68cdf2",
+      "keywords": "#ff678d",
+      "functions": "#9d6afb",
+      "types": "#d568ea",
+      "textMateRules": [
+        {
+          "scope": [
+            "variable.parameter",
+            "keyword.operator",
+            "punctuation"
+          ],
+          "settings": {
+            "foreground": "#a3a3a3"
+          }
+        },
+        {
+          "scope": [
+            "variable.other.constant",
+            "variable.language",
+            "entity.name.namespace"
+          ],
+          "settings": {
+            "foreground": "#ffab16"
+          }
+        }
+      ]
+    }
+  },
+  "workbench.colorCustomizations": {
+    "[Catppuccin Mocha]": {
+      "activityBar.activeBorder": "{{ index $dark `focus` }}",
+      "activityBarBadge.background": "{{ index $dark `accent` }}",
+      "activityBarBadge.foreground": "{{ index $dark `accentForeground` }}",
+      "focusBorder": "{{ index $dark `focus` }}",
+      "statusBar.background": "{{ index $dark `crust` }}",
+      "statusBar.foreground": "{{ index $dark `text` }}",
+      "statusBar.noFolderBackground": "{{ index $dark `crust` }}",
+      "editor.background": "{{ index $dark `codeBackground` }}",
+      "editor.foreground": "{{ index $dark `codeForeground` }}",
+      "editorLineNumber.foreground": "{{ index $dark `placeholder` }}",
+      "editorLineNumber.activeForeground": "{{ index $dark `accent` }}",
+      "input.background": "{{ index $dark `surfaceRaised` }}",
+      "input.border": "{{ index $dark `input` }}",
+      "input.foreground": "{{ index $dark `text` }}",
+      "input.placeholderForeground": "{{ index $dark `placeholder` }}",
+      "sideBar.background": "{{ index $dark `sidebar` }}",
+      "sideBar.border": "{{ index $dark `sidebarBorder` }}",
+      "sideBar.foreground": "{{ index $dark `sidebarForeground` }}",
+      "sideBarSectionHeader.foreground": "{{ index $dark `sidebarForeground` }}",
+      "tab.activeBorderTop": "{{ index $dark `focus` }}",
+      "terminal.background": "{{ index $dark `terminalBackground` }}",
+      "terminal.foreground": "{{ index $dark `terminalForeground` }}",
+      "terminalCursor.foreground": "{{ index $dark `terminalCursor` }}",
+      "terminal.selectionBackground": "{{ index $dark `terminalSelection` }}",
+      "terminal.ansiBlack": "{{ index $dark `ansiBlack` }}",
+      "terminal.ansiBrightBlack": "{{ index $dark `ansiBlack` }}",
+      "terminal.ansiRed": "{{ index $dark `red` }}",
+      "terminal.ansiBrightRed": "{{ index $dark `red` }}",
+      "terminal.ansiGreen": "{{ index $dark `pine` }}",
+      "terminal.ansiBrightGreen": "{{ index $dark `pine` }}",
+      "terminal.ansiYellow": "{{ index $dark `yellow` }}",
+      "terminal.ansiBrightYellow": "{{ index $dark `yellow` }}",
+      "terminal.ansiBlue": "{{ index $dark `blue` }}",
+      "terminal.ansiBrightBlue": "{{ index $dark `blue` }}",
+      "terminal.ansiMagenta": "{{ index $dark `mauve` }}",
+      "terminal.ansiBrightMagenta": "{{ index $dark `mauve` }}",
+      "terminal.ansiCyan": "{{ index $dark `teal` }}",
+      "terminal.ansiBrightCyan": "{{ index $dark `teal` }}",
+      "terminal.ansiWhite": "{{ index $dark `ansiWhite` }}",
+      "terminal.ansiBrightWhite": "{{ index $dark `ansiWhite` }}",
+      "titleBar.activeBackground": "{{ index $dark `toolbar` }}",
+      "titleBar.activeForeground": "{{ index $dark `toolbarForeground` }}",
+      "titleBar.border": "{{ index $dark `toolbarBorder` }}"
+    },
+    "[Catppuccin Latte]": {
+      "activityBar.activeBorder": "{{ index $light `focus` }}",
+      "activityBarBadge.background": "{{ index $light `accent` }}",
+      "activityBarBadge.foreground": "{{ index $light `accentForeground` }}",
+      "focusBorder": "{{ index $light `focus` }}",
+      "statusBar.background": "{{ index $light `crust` }}",
+      "statusBar.foreground": "{{ index $light `text` }}",
+      "statusBar.noFolderBackground": "{{ index $light `crust` }}",
+      "statusBar.debuggingBackground": "{{ index $light `warning` }}",
+      "statusBar.debuggingForeground": "{{ index $light `text` }}",
+      "editor.background": "{{ index $light `surfaceRaised` }}",
+      "editor.foreground": "{{ index $light `codeForeground` }}",
+      "editorLineNumber.foreground": "{{ index $light `placeholder` }}",
+      "editorLineNumber.activeForeground": "{{ index $light `accent` }}",
+      "input.background": "{{ index $light `surfaceRaised` }}",
+      "input.border": "{{ index $light `input` }}",
+      "input.foreground": "{{ index $light `text` }}",
+      "input.placeholderForeground": "{{ index $light `placeholder` }}",
+      "sideBar.background": "{{ index $light `sidebar` }}",
+      "sideBar.border": "{{ index $light `sidebarBorder` }}",
+      "sideBar.foreground": "{{ index $light `sidebarForeground` }}",
+      "sideBarSectionHeader.foreground": "{{ index $light `sidebarForeground` }}",
+      "tab.activeBorderTop": "{{ index $light `focus` }}",
+      "terminal.background": "{{ index $light `terminalBackground` }}",
+      "terminal.foreground": "{{ index $light `terminalForeground` }}",
+      "terminalCursor.foreground": "{{ index $light `terminalCursor` }}",
+      "terminal.selectionBackground": "{{ index $light `terminalSelection` }}",
+      "terminal.ansiBlack": "{{ index $light `ansiBlack` }}",
+      "terminal.ansiBrightBlack": "{{ index $light `ansiBlack` }}",
+      "terminal.ansiRed": "{{ index $light `red` }}",
+      "terminal.ansiBrightRed": "{{ index $light `red` }}",
+      "terminal.ansiGreen": "{{ index $light `pine` }}",
+      "terminal.ansiBrightGreen": "{{ index $light `pine` }}",
+      "terminal.ansiYellow": "{{ index $light `yellow` }}",
+      "terminal.ansiBrightYellow": "{{ index $light `yellow` }}",
+      "terminal.ansiBlue": "{{ index $light `blue` }}",
+      "terminal.ansiBrightBlue": "{{ index $light `blue` }}",
+      "terminal.ansiMagenta": "{{ index $light `mauve` }}",
+      "terminal.ansiBrightMagenta": "{{ index $light `mauve` }}",
+      "terminal.ansiCyan": "{{ index $light `teal` }}",
+      "terminal.ansiBrightCyan": "{{ index $light `teal` }}",
+      "terminal.ansiWhite": "{{ index $light `ansiWhite` }}",
+      "terminal.ansiBrightWhite": "{{ index $light `ansiWhite` }}",
+      "titleBar.activeBackground": "{{ index $light `toolbar` }}",
+      "titleBar.activeForeground": "{{ index $light `toolbarForeground` }}",
+      "titleBar.border": "{{ index $light `toolbarBorder` }}"
+    }
+  },
+  "window.zoomLevel": 1.5,
+  "window.titleBarStyle": "custom",
+  "terminal.integrated.fontFamily": "'JetBrainsMono Nerd Font Mono', 'Noto Sans Mono', monospace",
+  "terminal.integrated.minimumContrastRatio": 1,
+  "terminal.integrated.macOptionIsMeta": true,
+  "files.trimTrailingWhitespace": true,
+  "files.trimFinalNewlines": true,
+  "files.insertFinalNewline": true,
+  "diffEditor.ignoreTrimWhitespace": false,
+  "security.workspace.trust.enabled": false,
+  "telemetry.telemetryLevel": "off",
+  "git.enableCommitSigning": true,
+  "git.mergeEditor": true,
+  "git.branchProtection": ["main", "master"],
+  "git.branchProtectionPrompt": "alwaysCommitToNewBranch",
+  "git.branchRandomName.enable": true,
+  "js/ts.experimental.useTsgo": true,
+  "js/ts.inlayHints.parameterNames.enabled": "literals",
+  "js/ts.inlayHints.parameterTypes.enabled": true,
+  "js/ts.inlayHints.functionLikeReturnTypes.enabled": true,
+  "js/ts.preferences.preferTypeOnlyAutoImports": true,
+  "js/ts.suggest.completeFunctionCalls": true,
+  "js/ts.updateImportsOnFileMove.enabled": "always",
+  "python.languageServer": "None",
+  "python.useEnvironmentsExtension": true,
+  "python.defaultInterpreterPath": "{{- if lookPath `python` -}}{{ lookPath `python` }}{{- else if lookPath `python3` -}}{{ lookPath `python3` }}{{- else -}}python{{- end -}}",
+  "python.experiments.enabled": false,
+  "python-envs.terminal.autoActivationType": "shellStartup",
+  "ty.importStrategy": "fromEnvironment",
+  "ty.path": ["{{- if lookPath `ty` -}}{{ lookPath `ty` }}{{- else -}}ty{{- end -}}"],
+  "ruff.importStrategy": "fromEnvironment",
+  "ruff.path": [
+    "{{- if lookPath `ruff` -}}{{ lookPath `ruff` }}{{- else -}}ruff{{- end -}}"
+  ],
+  "ruff.nativeServer": "on",
+  "C_Cpp.codeAnalysis.clangTidy.path": "{{- if lookPath `clang-tidy` -}}{{ lookPath `clang-tidy` }}{{- else if stat `/opt/homebrew/opt/llvm/bin/clang-tidy` -}}/opt/homebrew/opt/llvm/bin/clang-tidy{{- else -}}clang-tidy{{- end -}}",
+  "path-intellisense.autoSlashAfterDirectory": true,
+  "path-intellisense.autoTriggerNextSuggestion": true,
+  "markdownlint.run": "onSave",
+  "vscode-just.runInTerminal": true,
+  "stylua.searchBinaryInPATH": true,
+  "stylua.disableVersionCheck": true,
+  "systemd.version": "latest",
+  "containers.containerClient": "com.microsoft.visualstudio.containers.{{- if lookPath `podman` -}}podman{{- else -}}docker{{- end -}}",
+  "containers.orchestratorClient": "com.microsoft.visualstudio.orchestrators.{{- if lookPath `podman` -}}podmancompose{{- else -}}dockercompose{{- end -}}",
+  "ansible.lightspeed.enabled": false,
+  "ansible.lightspeed.suggestions.enabled": false,
+  "ansible.mcpServer.enabled": false,
+  "errorLens.delay": 250,
+  "errorLens.enabledDiagnosticLevels": ["error", "warning"],
+  "errorLens.messageMaxChars": 160,
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
+  "[go]": {
+    "editor.defaultFormatter": "golang.go",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "[shellscript]": {
+    "editor.defaultFormatter": "mkhl.shfmt"
+  },
+  "[dockerfile]": {
+    "editor.defaultFormatter": "ms-azuretools.vscode-containers",
+    "editor.formatOnSave": true
+  },
+  "[nix]": {
+    "editor.defaultFormatter": "jnoortheen.nix-ide",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
+  },
+  "[html][css][scss][less][postcss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[svelte]": {
+    "editor.defaultFormatter": "svelte.svelte-vscode",
+    "editor.formatOnSave": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+    "editor.formatOnSave": true
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+    "editor.formatOnSave": true
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.formatOnSave": true
+  },
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml",
+    "editor.formatOnSave": true
+  },
+  "[lua]": {
+    "editor.defaultFormatter": "johnnymorganz.stylua",
+    "editor.formatOnSave": true
+  },
+  "[xml]": {
+    "editor.defaultFormatter": "redhat.vscode-xml",
+    "editor.formatOnSave": true
+  },
+  "[kdl]": {
+    "editor.defaultFormatter": "kdl-org.kdl",
+    "editor.formatOnSave": true
+  },
+  "[typst]": {
+    "editor.defaultFormatter": "myriad-dreamin.tinymist",
+    "editor.formatOnSave": true
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "nix.enableLanguageServer": true,
+  "nix.serverPath": "{{- if lookPath `vscode-nixd` -}}{{ lookPath `vscode-nixd` }}{{- else if lookPath `nixd` -}}{{ lookPath `nixd` }}{{- else if lookPath `nil` -}}{{ lookPath `nil` }}{{- else -}}nixd{{- end -}}",
+  "nix.formatterPath": "{{- if lookPath `vscode-nixfmt` -}}{{ lookPath `vscode-nixfmt` }}{{- else if lookPath `nixfmt` -}}{{ lookPath `nixfmt` }}{{- else -}}nixfmt{{- end -}}",
+  "nix.serverSettings": {
+    "nil": {
+      "formatting": {
+        "command": [
+          "{{- if lookPath `vscode-nixfmt` -}}{{ lookPath `vscode-nixfmt` }}{{- else if lookPath `nixfmt` -}}{{ lookPath `nixfmt` }}{{- else -}}nixfmt{{- end -}}"
+        ]
+      }
+    },
+    "nixd": {
+      "formatting": {
+        "command": [
+          "{{- if lookPath `vscode-nixfmt` -}}{{ lookPath `vscode-nixfmt` }}{{- else if lookPath `nixfmt` -}}{{ lookPath `nixfmt` }}{{- else -}}nixfmt{{- end -}}"
+        ]
+      }
+    }
+  },
+  "redhat.telemetry.enabled": false,
+  "yaml.disableSchemaDetection": [
+    "**/.github/workflows/*.yml",
+    "**/.github/workflows/*.yaml",
+    "**/.gitea/workflows/*.yml",
+    "**/.gitea/workflows/*.yaml",
+    "**/.forgejo/workflows/*.yml",
+    "**/.forgejo/workflows/*.yaml"
+  ],
+  "json.schemaDownload.trustedDomains": {
+    "https://schemastore.azurewebsites.net/": true,
+    "https://raw.githubusercontent.com/": true,
+    "https://www.schemastore.org/": true,
+    "https://json.schemastore.org/": true,
+    "https://json-schema.org/": true,
+    "https://esm.sh": true
+  }
+}
