@@ -13,7 +13,7 @@ modules:
     dest: /src/build-bluebuild.sh
 
   - type: dnf@v1
-    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:b4037298aa9dc3203ddccda40791284a66e28b478fded6d5b9ce560ecd9ba3c6
     install:
       install-weak-deps: false
       packages:

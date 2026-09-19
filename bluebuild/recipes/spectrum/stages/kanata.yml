@@ -1,7 +1,8 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/stage-v1.json
 name: kanata
-from: registry.fedoraproject.org/fedora:45@sha256:880a6f885db64973f88e01289baa74e3854506afaafdb8d705d18f408bddaa56
+# Use the final image's Fedora release and runtime libraries.
+from: ${BASE_IMAGE}
 modules:
   - type: copy@v1
     src: bluebuild/recipes/spectrum/sources/kanata.json
@@ -16,7 +17,7 @@ modules:
     dest: /src/build-kanata.sh
 
   - type: dnf@v1
-    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:b4037298aa9dc3203ddccda40791284a66e28b478fded6d5b9ce560ecd9ba3c6
     install:
       install-weak-deps: false
       packages:

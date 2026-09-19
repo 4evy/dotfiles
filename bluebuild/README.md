@@ -28,7 +28,10 @@ Spectrum includes the BlueBuild CLI at `/usr/bin/bluebuild`, together with
 Podman and the other runtime tools it needs to build images. The embedded CLI is
 built from the `source-bluebuild-cli` pin in `flake.lock` inside a stage that
 uses the locked Bluefin base, so its glibc matches the final image. The recipe
-opts out of BlueBuild's upstream installer tag.
+opts out of BlueBuild's upstream installer tag. Both CLI builds enable the
+`bootc` and `recipe-v2` features, so deployment commands prefer bootc when it
+is available. Recipe validation still uses the official v2 JSON schema because
+the CLI's validator currently selects the v1 schema.
 
 Use `just spectrum-build` to build the local image. The repository-root
 `recipes` symlink points here to `bluebuild/recipes`, so BlueBuild resolves
@@ -47,8 +50,7 @@ The top-level recipe is intentionally only an assembly manifest. Expensive
 build stages live under `recipes/spectrum/stages`, while main-image modules
 are ordered under `recipes/spectrum/modules` from remote-heavy software
 installation to local files and system policy. This ordering means edits to
-local configuration do not invalidate package, font, extension, or Linuxbrew
-layers.
+local configuration do not invalidate package, font, or extension layers.
 
 Use `nix flake update` at the repository root to update source inputs and all
 Nix dependencies, including the development and NixOS partitions. Release
@@ -61,9 +63,10 @@ under `recipes/spectrum/sources`. Build preparation regenerates these files and
 lock update cannot leave tracked copies stale. Each stage includes only the
 inputs it needs, preserving its cache across unrelated source updates.
 
-Ghostty and Kanata fetch their source and shared patch queues at locked Git
-revisions. File downloads use the NAR hashes recorded by Nix. The Ghostty stage
-also mounts persistent global and local Zig caches, allowing compilation
+Ghostty and Kanata build on the locked Bluefin base so their runtime libraries
+match the final image. They fetch their source and shared patch queues at locked
+Git revisions. File downloads use the NAR hashes recorded by Nix. The Ghostty
+stage also mounts persistent global and local Zig caches, allowing compilation
 artifacts to survive a source or patch cache miss.
 
 The repository-local Hyper window tiler is also built once in a pinned Bun
@@ -87,3 +90,35 @@ the image, including Helium, its profile configurer, Equilotl, and the
 repository-pinned `yt-dlp-script`. Chezmoi owns their user launchers and
 post-install reconciliation; Ansible no longer downloads those programs
 itself.
+
+## Bluefin integration
+
+Spectrum inherits Bluefin's Homebrew payload, setup service, and shell
+integration. The BlueBuild `brew` module used an older extracted payload and
+replaced those services, so it is no longer included. Existing installations
+keep `/home/linuxbrew/.linuxbrew`; fresh installations use Bluefin's bundled
+tarball. Spectrum disables the Brew update timers and automatic uupd Brew
+module, keeps analytics disabled, and leaves upgrades to `just update`.
+
+The DNF module manages the Vicinae COPR directly and disables it after package
+installation. System configuration is installed into `/etc`, and kernel
+arguments use bootc's `/usr/lib/bootc/kargs.d` through the `kargs` module.
+Use bootc for image updates so those arguments are applied.
+
+Each external module uses its own versioned image and digest, tracked by
+Renovate. Major module migrations also require recipe changes, so Renovate
+updates these image digests without changing their version tags. A shared
+`source` image overrides the module version selector and can silently run a
+different implementation from the one named in `type`.
+
+Shell snippets use `script@v2`, which preserves multiline snippets and runs
+them with `/bin/sh -c` and `set -eu`. The v1 module split multiline snippets
+into separate commands, breaking heredocs and shell control flow.
+
+Upstream references:
+
+- [BlueBuild script module](https://blue-build.org/reference/modules/script/)
+- [BlueBuild DNF migration](https://blue-build.org/blog/dnf-module/)
+- [BlueBuild kernel arguments](https://blue-build.org/reference/modules/kargs/)
+- [Bluefin build](https://github.com/projectbluefin/bluefin/blob/main/Containerfile)
+- [Universal Blue Homebrew](https://github.com/ublue-os/brew)

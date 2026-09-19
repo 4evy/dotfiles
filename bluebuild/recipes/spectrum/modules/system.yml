@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://schema.blue-build.org/module-list-v1.json
 modules:
   - type: kargs@v1
-    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    source: ghcr.io/blue-build/modules/kargs:v1@sha256:8b6b438e3312ae3528d54e30dcef84f71961f221278d9401a1a738b777f86e62
     kargs:
       - plymouth.enable=0
       - rd.plymouth=0
@@ -11,9 +11,10 @@ modules:
       - loglevel=7
 
   - type: systemd@v1
-    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    source: ghcr.io/blue-build/modules/systemd:v1@sha256:b87e8f34217ed472513fe512528977b317c1c72164e287af708e095e1bb2a79a
     system:
       enabled:
+        - brew-setup.service
         - fedora-atomic-desktop-appstream-cache-refresh.timer
         - kanata-main.service
         - kmscon-theme-refresh.timer
@@ -26,6 +27,8 @@ modules:
         - tailscaled.service
         - uresourced.service
       disabled:
+        - brew-update.timer
+        - brew-upgrade.timer
         - bootc-unified-storage.service
         - fedora-atomic-desktop-appstream-cache-refresh.service
     user:
@@ -33,11 +36,16 @@ modules:
         - toshy-kanata-device.path
         - vicinae.service
 
-  - type: script@v1
-    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+  - type: script@v2
+    source: ghcr.io/blue-build/modules/script:v2@sha256:b19e432cf10bf5dab8d881e04ed692a9c61dd336e839acf77f9361cccf394484
     snippets:
       - install -d -m 0755 /nix /var/roothome
       - touch /nix/.spectrum-mountpoint
+      # Keep the analytics opt-out previously supplied by the brew module.
+      - |
+        touch /etc/environment
+        sed -i '/^HOMEBREW_NO_ANALYTICS=/d' /etc/environment
+        printf '%s\n' 'HOMEBREW_NO_ANALYTICS=1' >> /etc/environment
       - |
         if authselect is-feature-enabled with-fingerprint >/dev/null 2>&1; then
           authselect disable-feature with-fingerprint

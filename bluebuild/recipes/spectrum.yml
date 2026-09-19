@@ -6,7 +6,7 @@ base:
     registry: ghcr.io
     repository: projectbluefin/bluefin-nvidia
     tag: stable
-    digest: sha256:8e1376cf17f9d8a47e35bc22dbb80c14f66018cb8d857f236db03b4958bdcbdb
+    digest: sha256:27dc87ad87606fea73092a9e6271663f90058698e24339f8d8e05fdb639e8746
 metadata:
   name: spectrum
   description: Evy's Bluefin workstation image

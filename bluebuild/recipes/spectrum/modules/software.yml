@@ -9,9 +9,11 @@ modules:
     dest: /etc/yum.repos.d
 
   - type: dnf@v1
-    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:b4037298aa9dc3203ddccda40791284a66e28b478fded6d5b9ce560ecd9ba3c6
     repos:
       cleanup: true
+      copr:
+        - scottames/vicinae
       keys:
         - https://downloads.1password.com/linux/keys/1password.asc
         - https://packages.microsoft.com/keys/microsoft.asc
@@ -80,46 +82,43 @@ modules:
         - https://github.com/rustdesk/rustdesk/releases/download/1.4.9/rustdesk-1.4.9-0.x86_64.rpm
         - https://discord.com/api/download?platform=linux&format=rpm
 
-  # The RPM owns desktop files and icons. Preserve the fixed helper GIDs used
-  # by bling without its obsolete resources/1password.desktop copy step.
-  - type: script@v1
-    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+  # The RPM owns desktop files and icons. Keep helper GIDs consistent between
+  # the image group database, setgid executables, and boot-time sysusers.
+  - type: script@v2
+    source: ghcr.io/blue-build/modules/script:v2@sha256:b19e432cf10bf5dab8d881e04ed692a9c61dd336e839acf77f9361cccf394484
     snippets:
       - |
+        groupmod --gid 1500 onepassword
+        groupmod --gid 1600 onepassword-cli
+        groupmod --gid 1700 onepassword-mcp
         chmod 4755 /opt/1Password/chrome-sandbox
         chgrp 1500 /opt/1Password/1Password-BrowserSupport
         chmod g+s /opt/1Password/1Password-BrowserSupport
         chgrp 1600 /usr/bin/op
         chmod g+s /usr/bin/op
+        chgrp 1700 /opt/1Password/1password-mcp
+        chmod g+s /opt/1Password/1password-mcp
         printf 'g onepassword 1500\n' > /usr/lib/sysusers.d/onepassword.conf
         printf 'g onepassword-cli 1600\n' > /usr/lib/sysusers.d/onepassword-cli.conf
+        printf 'g onepassword-mcp 1700\n' > /usr/lib/sysusers.d/onepassword-mcp.conf
         rm -f /usr/lib/sysusers.d/30-rpmostree-pkg-group-onepassword.conf
         rm -f /usr/lib/sysusers.d/30-rpmostree-pkg-group-onepassword-cli.conf
+        rm -f /usr/lib/sysusers.d/30-rpmostree-pkg-group-onepassword-mcp.conf
         rm -f /etc/yum.repos.d/1password.repo
 
-  # Provision Linuxbrew as part of the image so the bootstrap only has to
-  # apply the Brewfile. Keep package upgrades explicit through `just update`.
-  - type: brew@v1
-    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
-    auto-update: false
-    auto-upgrade: false
-    brew-analytics: false
-    direct-pull: true
-    installer-commit: f4aa1b1ca5b256954dbde0315455fb259cdfc45a
-
   - type: fonts@v1
-    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    source: ghcr.io/blue-build/modules/fonts:v1@sha256:b785bba5d895f1c190a900aa4a50b5964db5961ff28f9c1e085a2fa4530fd24b
     fonts:
       nerd-fonts:
         - JetBrainsMono
       url-fonts:
         - name: NotoColorEmojiBitmap
-          url: https://raw.githubusercontent.com/googlefonts/noto-emoji/main/fonts/NotoColorEmoji.ttf
+          url: https://raw.githubusercontent.com/googlefonts/noto-emoji/main/2D/fonts/NotoColorEmoji.ttf
 
   # Reconcile user Flatpaks at boot. Flatpak itself selects and maintains the
   # host's matching graphics-driver extensions with each runtime.
   - type: default-flatpaks@v2
-    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    source: ghcr.io/blue-build/modules/default-flatpaks:v2@sha256:b46933a92019379bee506489d63a80ba227faf6d47369055dc7560da01fd3d0f
     configurations:
       - scope: user
         notify: false
@@ -131,7 +130,7 @@ modules:
           - org.gnome.NautilusPreviewer
 
   - type: gnome-extensions@v1
-    source: ghcr.io/blue-build/modules@sha256:c5ed99f07b15c8d575a4fa64a77e5cd5602b00da4c84379f5675db2ae4757061
+    source: ghcr.io/blue-build/modules/gnome-extensions:v1@sha256:336421227e2c518c7e8b44a5d3982d4ac69e0b70757d7182b9749bd661a3b419
     install:
       - 4974 # Window Calls Extended
       - 5060 # Xremap

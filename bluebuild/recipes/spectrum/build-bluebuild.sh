@@ -19,7 +19,7 @@ cargo build \
 	--manifest-path "$source_directory/Cargo.toml" \
 	--locked \
 	--release \
-	--features recipe-v2 \
+	--features bootc,recipe-v2 \
 	--bin bluebuild
 install -D -m 0755 "$source_directory/target/release/bluebuild" "$prefix/bin/bluebuild"
 "$prefix/bin/bluebuild" --version
