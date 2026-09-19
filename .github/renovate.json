@@ -64,10 +64,9 @@
         "/^bluebuild\\/recipes\\/spectrum(?:\\.yml|\\/.*\\.yml)$/"
       ],
       "matchStrings": [
-        "source:\\s+(?<depName>ghcr\\.io/blue-build/modules)@(?<currentDigest>sha256:[a-f0-9]{64})"
+        "source:\\s+(?<depName>ghcr\\.io/blue-build/modules/[a-z-]+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
       ],
       "datasourceTemplate": "docker",
-      "currentValueTemplate": "latest",
       "versioningTemplate": "docker"
     },
     {
@@ -114,6 +113,13 @@
     }
   ],
   "packageRules": [
+    {
+      "description": "Keep module majors aligned with recipe types; update digests automatically",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/blue-build/modules/**"],
+      "matchUpdateTypes": ["major", "minor", "patch"],
+      "enabled": false
+    },
     {
       "description": "Relock release URLs changed by the flake source managers",
       "matchManagers": ["custom.regex"],
