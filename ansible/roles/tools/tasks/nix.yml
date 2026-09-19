@@ -121,13 +121,13 @@
         - not ansible_check_mode
         - "'dotfiles-nix-tools' not in tools_nix_profile_elements"
 
-    - name: Upgrade Nix profile packages
+    - name: Upgrade the repository-owned Nix tool bundle
       ansible.builtin.command:
         argv:
           - "{{ tools_nix_command_bin }}"
           - profile
           - upgrade
-          - --all
+          - dotfiles-nix-tools
       changed_when: false
       when: not ansible_check_mode
 
