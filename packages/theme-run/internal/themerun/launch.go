@@ -40,7 +40,7 @@ const (
 
 type Prepared struct {
 	Args          []string
-	Environment   Pairs
+	Environment   Variables
 	TemporaryPath string
 }
 
@@ -117,8 +117,8 @@ func PrepareInvocation(manifest *Manifest, runner Runner, requested string, extr
 	for _, name := range runner.EnvUnset {
 		delete(childEnv, name)
 	}
-	runner.Env.Apply(childEnv)
-	prepared.Environment.Apply(childEnv)
+	maps.Copy(childEnv, runner.Env)
+	maps.Copy(childEnv, prepared.Environment)
 	childEnv[ActiveEnv] = activeEnvironmentValue
 	return &Invocation{Argv: argv, Environment: childEnv, TemporaryPath: prepared.TemporaryPath}, nil
 }
@@ -167,11 +167,11 @@ func Prepare(runtime Runtime, integration *Integration, extra []string, env Vari
 		result.Args = append(result.Args, arguments...)
 		return result, nil
 	case IntegrationStrategyEnvironment:
-		result := Prepared{Args: slices.Clone(extra)}
-		for _, pair := range integration.Env {
-			value := render(pair.Value, themeName, "")
+		result := Prepared{Args: slices.Clone(extra), Environment: make(Variables)}
+		for key, template := range integration.Env {
+			value := render(template, themeName, "")
 			value = strings.ReplaceAll(value, homePlaceholder, env[homeEnvironment])
-			result.Environment = append(result.Environment, Pair{Key: pair.Key, Value: value})
+			result.Environment[key] = value
 		}
 		return result, nil
 	default:

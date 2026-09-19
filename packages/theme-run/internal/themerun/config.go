@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"maps"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -95,20 +94,7 @@ type ValidationFormat string
 
 const ValidationTOML ValidationFormat = "toml"
 
-type Pair struct {
-	Key   string
-	Value string
-}
-
-type Pairs []Pair
-
 type Variables map[string]string
-
-func (pairs Pairs) Apply[M ~map[string]string](destination M) {
-	for _, pair := range pairs {
-		destination[pair.Key] = pair.Value
-	}
-}
 
 type Platform struct {
 	Commands [][]string `toml:"commands"`
@@ -158,15 +144,15 @@ type Interpreter struct {
 }
 
 type Runner struct {
-	Name        string   `toml:"name"`
-	Aliases     []string `toml:"aliases"`
-	Programs    []string `toml:"programs"`
-	SkipEnv     []string `toml:"skip_env"`
-	DefaultArgs []string `toml:"default_args"`
-	Env         Pairs    `toml:"env"`
-	EnvUnset    []string `toml:"env_unset"`
-	Integration string   `toml:"integration"`
-	Interpreter string   `toml:"interpreter"`
+	Name        string    `toml:"name"`
+	Aliases     []string  `toml:"aliases"`
+	Programs    []string  `toml:"programs"`
+	SkipEnv     []string  `toml:"skip_env"`
+	DefaultArgs []string  `toml:"default_args"`
+	Env         Variables `toml:"env"`
+	EnvUnset    []string  `toml:"env_unset"`
+	Integration string    `toml:"integration"`
+	Interpreter string    `toml:"interpreter"`
 }
 
 type Integration struct {
@@ -176,7 +162,7 @@ type Integration struct {
 	DarkTheme                string              `toml:"dark_theme"`
 	LightTheme               string              `toml:"light_theme"`
 	Arguments                []string            `toml:"arguments"`
-	Env                      Pairs               `toml:"env"`
+	Env                      Variables           `toml:"env"`
 	ContextTable             string              `toml:"context_table"`
 	ContextField             string              `toml:"context_field"`
 	ContextValue             string              `toml:"context_value"`
@@ -233,22 +219,6 @@ func Load(env Variables) (*Manifest, error) {
 	return manifest, nil
 }
 
-func LoadText(text []byte) (*Manifest, error) {
-	manifest := newManifest()
-	if err := manifest.loadFragment(defaults, "embedded defaults.toml"); err != nil {
-		return nil, err
-	}
-	if len(text) != 0 {
-		if err := manifest.loadFragment(text, "manifest"); err != nil {
-			return nil, err
-		}
-	}
-	if err := manifest.validate(); err != nil {
-		return nil, err
-	}
-	return manifest, nil
-}
-
 func newManifest() *Manifest {
 	return &Manifest{
 		Runners:      make(map[string]Runner),
@@ -262,7 +232,6 @@ func (m *Manifest) loadFragment(contents []byte, source string) error {
 	var value fragment
 	decoder := toml.NewDecoder(bytes.NewReader(contents))
 	decoder.DisallowUnknownFields()
-	decoder.EnableUnmarshalerInterface()
 	if err := decoder.Decode(&value); err != nil {
 		return fmt.Errorf("parse %s: %w", source, err)
 	}
@@ -351,9 +320,9 @@ func (m *Manifest) validate() error {
 				return fmt.Errorf("runner %q has invalid environment name %q", name, value)
 			}
 		}
-		for _, pair := range item.Env {
-			if !validEnvName(pair.Key) {
-				return fmt.Errorf("runner %q has invalid environment name %q", name, pair.Key)
+		for key := range item.Env {
+			if !validEnvName(key) {
+				return fmt.Errorf("runner %q has invalid environment name %q", name, key)
 			}
 		}
 		if slices.Contains(item.Programs, environmentReference) {
@@ -438,9 +407,9 @@ func validateIntegration(value Integration) error {
 	if value.Name == "" || value.DarkTheme == "" || value.LightTheme == "" {
 		return errors.New("name and theme values must not be empty")
 	}
-	for _, pair := range value.Env {
-		if !validEnvName(pair.Key) {
-			return fmt.Errorf("invalid environment name %q", pair.Key)
+	for key := range value.Env {
+		if !validEnvName(key) {
+			return fmt.Errorf("invalid environment name %q", key)
 		}
 	}
 	switch value.Strategy {
@@ -481,8 +450,8 @@ func validateIntegration(value Integration) error {
 			return errors.New("environment strategy needs variables")
 		}
 		found := false
-		for _, pair := range value.Env {
-			found = found || strings.Contains(pair.Value, themePlaceholder)
+		for _, contents := range value.Env {
+			found = found || strings.Contains(contents, themePlaceholder)
 		}
 		if !found {
 			return fmt.Errorf("environment strategy must use %s", themePlaceholder)
@@ -499,45 +468,6 @@ func validateCommands(commands [][]string) error {
 			return errors.New("runtime helper commands must not be empty")
 		}
 	}
-	return nil
-}
-
-func (p *Pairs) UnmarshalTOML(input []byte) error {
-	document := struct {
-		Value any `toml:"value"`
-	}{}
-	wrapped := fmt.Appendf(nil, "value = %s", input)
-	if err := toml.Unmarshal(wrapped, &document); err != nil {
-		return err
-	}
-
-	var result Pairs
-	switch typed := document.Value.(type) {
-	case map[string]any:
-		keys := slices.Sorted(maps.Keys(typed))
-		for _, key := range keys {
-			item, ok := typed[key].(string)
-			if !ok {
-				return errors.New("environment table values must be strings")
-			}
-			result = append(result, Pair{Key: key, Value: item})
-		}
-	case []any:
-		for _, item := range typed {
-			assignment, ok := item.(string)
-			if !ok {
-				return errors.New("environment array values must be strings")
-			}
-			key, contents, found := strings.Cut(assignment, assignmentSeparator)
-			if !found || key == "" {
-				return fmt.Errorf("invalid environment assignment %q", assignment)
-			}
-			result = append(result, Pair{Key: key, Value: contents})
-		}
-	default:
-		return errors.New("environment must be an inline table or string array")
-	}
-	*p = result
 	return nil
 }
 
