@@ -2,8 +2,7 @@
 # shellcheck shell=bash
 #
 # Prepare a fresh macOS or Linux host and run this repository's Ansible
-# playbook. Keep bootstrap policy in the readonly data below; the functions
-# only interpret that policy and orchestrate system-provided command-line tools.
+# playbook using system-provided command-line tools.
 # The shebang selects macOS's Bash 3.2 regardless of the user's Zsh login
 # shell. Staying 3.2-compatible avoids installing an interpreter merely to
 # install the bootstrap's real dependencies; newer Linux Bash runs it as-is.
@@ -15,36 +14,21 @@ readonly ANSIBLE_REQUIREMENTS_FILE='ansible/requirements.yml'
 readonly ANSIBLE_COLLECTIONS_DIRECTORY='.ansible/collections'
 readonly PRIVATE_SETTINGS_FILE='secrets/secrets.yaml'
 readonly MACOS_AGE_KEY_HELPER_FILE='dotfiles/dot_local/bin/executable_sops-age-key-1password'
-readonly MINIMUM_MACOS_MAJOR='26'
+readonly MINIMUM_MACOS_MAJOR='27'
 readonly PYTHON_VERSION='3.14'
 readonly DOWNLOAD_ATTEMPTS='3'
 readonly SUDO_PASSWORD_ATTEMPTS='3'
 readonly PYTHON_COMMAND="python${PYTHON_VERSION}"
 readonly USER_EXECUTABLE_DIRECTORY="${HOME}/.local/bin"
 # Update the revision and checksum together from Homebrew/install's install.sh.
-readonly HOMEBREW_INSTALLER_REVISION='f4aa1b1ca5b256954dbde0315455fb259cdfc45a'
+readonly HOMEBREW_INSTALLER_REVISION='525cea89e317348cda72711932734eb30613b559'
 readonly DEFAULT_HOMEBREW_INSTALLER_URL="https://raw.githubusercontent.com/Homebrew/install/${HOMEBREW_INSTALLER_REVISION}/install.sh"
-readonly DEFAULT_HOMEBREW_INSTALLER_CHECKSUM='12479a24be3f5307eecac7cde670fad7118640f031229e964f544b1367b52a41'
+readonly DEFAULT_HOMEBREW_INSTALLER_CHECKSUM='71d25d14c32edd7adeaf4413ba671b28474ea08e4f6662cb1a73e85ff0eba368'
 # These environment overrides are intentional hatches for mirrors and the
 # simulator. Overriding only the URL remains safe because the pinned checksum
 # will reject different content; alternate content must supply both values.
 readonly HOMEBREW_INSTALLER_URL="${HOMEBREW_INSTALLER_URL:-${DEFAULT_HOMEBREW_INSTALLER_URL}}"
 readonly HOMEBREW_INSTALLER_CHECKSUM="${HOMEBREW_INSTALLER_CHECKSUM:-${DEFAULT_HOMEBREW_INSTALLER_CHECKSUM}}"
-
-# Bash 3.2 has indexed arrays but no associative arrays. These aligned arrays
-# model records without delimiter parsing and still work with macOS's Bash.
-readonly -a HOMEBREW_PLATFORM_KERNELS=(
-	'Darwin'
-	'Linux'
-)
-readonly -a HOMEBREW_PLATFORM_ARCHITECTURES=(
-	'arm64'
-	'*'
-)
-readonly -a HOMEBREW_PLATFORM_PREFIXES=(
-	'/opt/homebrew'
-	'/home/linuxbrew/.linuxbrew'
-)
 
 readonly -a HOMEBREW_FORMULAE=(
 	'ruby'
@@ -75,17 +59,6 @@ readonly -a PYTHON_ALIASES=(
 	'python3'
 )
 
-# Each UV_TOOL_SPEC has a corresponding executable provider. An empty provider
-# means that the package itself owns every executable being installed.
-readonly -a UV_TOOL_SPECS=(
-	'ansible>=14,<15'
-	'ansible-lint>=26,<27'
-)
-readonly -a UV_TOOL_EXECUTABLE_PROVIDERS=(
-	'ansible-core'
-	''
-)
-
 readonly -a REQUIRED_ANSIBLE_COMMANDS=(
 	'ansible-galaxy'
 	'ansible-lint'
@@ -95,24 +68,6 @@ readonly -a REQUIRED_ANSIBLE_COMMANDS=(
 readonly -a REQUIRED_ANSIBLE_COLLECTIONS=(
 	'community/general'
 	'community/sops'
-)
-
-# SETUP_PHASE_KINDS and SETUP_PHASE_ARGUMENTS are aligned records. Keeping
-# order here makes the workflow reviewable without mixing policy into branch
-# logic; two arrays are the smallest safe record representation in Bash 3.2.
-readonly -a SETUP_PHASE_KINDS=(
-	'ansible'
-	'userland-checkpoint'
-	'ansible'
-	'just'
-	'ansible'
-)
-readonly -a SETUP_PHASE_ARGUMENTS=(
-	'stage-10,stage-20'
-	''
-	'stage-30'
-	'apply'
-	'host'
 )
 
 readonly -a REQUIRED_REPOSITORY_FILES=(
@@ -189,73 +144,15 @@ validate_required_values() {
 	done
 }
 
-validate_record_field_counts() {
-	local record_description="$1"
-	local expected_field_count="$2"
-	shift 2
-	local actual_field_count
-
-	for actual_field_count in "$@"; do
-		if ((actual_field_count != expected_field_count)); then
-			die "${record_description} configuration has unaligned fields"
-		fi
-	done
-}
-
-# Validate every declarative record before it can affect the host.
+# Validate required package, command, and repository file lists.
 validate_configuration() {
-	local index
-	local platform_count="${#HOMEBREW_PLATFORM_KERNELS[@]}"
-	local uv_tool_count="${#UV_TOOL_SPECS[@]}"
-	local setup_phase_count="${#SETUP_PHASE_KINDS[@]}"
-
-	validate_record_field_counts 'Homebrew platform' "${platform_count}" \
-		"${#HOMEBREW_PLATFORM_ARCHITECTURES[@]}" \
-		"${#HOMEBREW_PLATFORM_PREFIXES[@]}"
-	validate_record_field_counts 'uv tool' "${uv_tool_count}" \
-		"${#UV_TOOL_EXECUTABLE_PROVIDERS[@]}"
-	validate_record_field_counts 'setup phase' "${setup_phase_count}" \
-		"${#SETUP_PHASE_ARGUMENTS[@]}"
-
 	validate_required_values 'Homebrew formula' "${HOMEBREW_FORMULAE[@]}"
-	validate_required_values 'uv tool' "${UV_TOOL_SPECS[@]}"
 	validate_required_values \
 		'required Ansible command' "${REQUIRED_ANSIBLE_COMMANDS[@]}"
 	validate_required_values \
 		'required Ansible collection' "${REQUIRED_ANSIBLE_COLLECTIONS[@]}"
 	validate_required_values \
 		'required repository file' "${REQUIRED_REPOSITORY_FILES[@]}"
-	validate_required_values 'setup phase kind' "${SETUP_PHASE_KINDS[@]}"
-
-	for ((index = 0; index < platform_count; index++)); do
-		if [[ -z "${HOMEBREW_PLATFORM_KERNELS[index]}" ]]; then
-			die "invalid Homebrew platform record at index ${index}"
-		fi
-		if [[ -z "${HOMEBREW_PLATFORM_ARCHITECTURES[index]}" ]]; then
-			die "invalid Homebrew platform record at index ${index}"
-		fi
-		if [[ "${HOMEBREW_PLATFORM_PREFIXES[index]}" != /* ]]; then
-			die "invalid Homebrew platform record at index ${index}"
-		fi
-	done
-
-	for ((index = 0; index < setup_phase_count; index++)); do
-		case "${SETUP_PHASE_KINDS[index]}" in
-			ansible | just)
-				if [[ -z "${SETUP_PHASE_ARGUMENTS[index]}" ]]; then
-					die "setup phase ${index} requires an argument"
-				fi
-				;;
-			userland-checkpoint)
-				if [[ -n "${SETUP_PHASE_ARGUMENTS[index]}" ]]; then
-					die "setup phase ${index} does not accept an argument"
-				fi
-				;;
-			*)
-				die "unsupported setup phase kind: ${SETUP_PHASE_KINDS[index]}"
-				;;
-		esac
-	done
 }
 
 has_ansible_become_prompt_arg() {
@@ -487,8 +384,6 @@ resolve_repository_root() {
 resolve_homebrew_prefix() {
 	local operating_system="$1"
 	local machine_architecture="$2"
-	local configured_architecture
-	local index
 
 	if [[ "${operating_system}" == 'Darwin' &&
 		"${machine_architecture}" == 'x86_64' ]]; then
@@ -499,23 +394,11 @@ resolve_homebrew_prefix() {
 			'not Rosetta'
 	fi
 
-	for ((index = 0; index < ${#HOMEBREW_PLATFORM_KERNELS[@]}; index++)); do
-		if [[ "${HOMEBREW_PLATFORM_KERNELS[index]}" != "${operating_system}" ]]; then
-			continue
-		fi
-		configured_architecture="${HOMEBREW_PLATFORM_ARCHITECTURES[index]}"
-		if [[ "${configured_architecture}" != '*' &&
-			"${configured_architecture}" != "${machine_architecture}" ]]; then
-			continue
-		fi
-
-		printf '%s\n' "${HOMEBREW_PLATFORM_PREFIXES[index]}"
-		return 0
-	done
-
-	die \
-		"unsupported bootstrap platform:" \
-		"${operating_system} ${machine_architecture}"
+	case "${operating_system}/${machine_architecture}" in
+		Darwin/arm64) printf '%s\n' '/opt/homebrew' ;;
+		Linux/*) printf '%s\n' '/home/linuxbrew/.linuxbrew' ;;
+		*) die "unsupported bootstrap platform:" "${operating_system} ${machine_architecture}" ;;
+	esac
 }
 
 validate_macos_version() {
@@ -704,37 +587,19 @@ install_python_runtime() {
 install_python_tools() {
 	local uv_executable="$1"
 	local python_executable="$2"
-	local index
-	local tool_spec
-	local executable_provider
-	local -a uv_args
+	local -a uv_args=(
+		--no-config tool install --python "${python_executable}"
+		--no-python-downloads --force --compile-bytecode
+	)
 
 	log 'Installing Python command-line tools'
-	for ((index = 0; index < ${#UV_TOOL_SPECS[@]}; index++)); do
-		tool_spec="${UV_TOOL_SPECS[index]}"
-		executable_provider="${UV_TOOL_EXECUTABLE_PROVIDERS[index]}"
-		uv_args=(
-			'--no-config'
-			'tool'
-			'install'
-			'--python'
-			"${python_executable}"
-			'--no-python-downloads'
-			'--force'
-			'--compile-bytecode'
-		)
-		if [[ -n "${executable_provider}" ]]; then
-			uv_args+=(
-				'--with-executables-from'
-				"${executable_provider}"
-			)
-		fi
-		uv_args+=("${tool_spec}")
-
-		if ! "${uv_executable}" "${uv_args[@]}"; then
-			die "failed to install uv tool: ${tool_spec}"
-		fi
-	done
+	if ! "${uv_executable}" "${uv_args[@]}" \
+		--with-executables-from ansible-core 'ansible>=14,<15'; then
+		die 'failed to install uv tool: ansible>=14,<15'
+	fi
+	if ! "${uv_executable}" "${uv_args[@]}" 'ansible-lint>=26,<27'; then
+		die 'failed to install uv tool: ansible-lint>=26,<27'
+	fi
 }
 
 verify_ansible_runtime() {
@@ -898,57 +763,20 @@ verify_setup_prerequisites() {
 	fi
 }
 
-# Interpret one setup record without embedding setup order in control flow.
-execute_setup_phase() {
-	local phase_kind="$1"
-	local phase_argument="$2"
-	local ansible_playbook_executable="$3"
-	local homebrew_prefix="$4"
-	local repository_root="$5"
-	local operating_system="$6"
-	local just_executable="${homebrew_prefix}/bin/just"
-
-	case "${phase_kind}" in
-		ansible)
-			run_ansible_playbook \
-				"${ansible_playbook_executable}" --tags "${phase_argument}"
-			;;
-		userland-checkpoint)
-			verify_setup_prerequisites \
-				"${homebrew_prefix}" \
-				"${repository_root}" \
-				"${operating_system}"
-			;;
-		just)
-			log 'Applying chezmoi dotfiles'
-			"${just_executable}" \
-				--justfile "${repository_root}/Justfile" "${phase_argument}"
-			;;
-		*)
-			die "unsupported setup phase kind: ${phase_kind}"
-			;;
-	esac
-}
-
 execute_setup_plan() {
 	local ansible_playbook_executable="$1"
 	local homebrew_prefix="$2"
 	local repository_root="$3"
 	local operating_system="$4"
-	local phase_index
-	local phase_count="${#SETUP_PHASE_KINDS[@]}"
 
-	# A long userland phase may outlive sudo's credential cache. Each Ansible
-	# record independently decides whether to request credentials again.
-	for ((phase_index = 0; phase_index < phase_count; phase_index++)); do
-		execute_setup_phase \
-			"${SETUP_PHASE_KINDS[phase_index]}" \
-			"${SETUP_PHASE_ARGUMENTS[phase_index]}" \
-			"${ansible_playbook_executable}" \
-			"${homebrew_prefix}" \
-			"${repository_root}" \
-			"${operating_system}"
-	done
+	# Each playbook invocation checks credentials again after long setup stages.
+	run_ansible_playbook "${ansible_playbook_executable}" --tags stage-10,stage-20
+	verify_setup_prerequisites \
+		"${homebrew_prefix}" "${repository_root}" "${operating_system}"
+	run_ansible_playbook "${ansible_playbook_executable}" --tags stage-30
+	log 'Applying chezmoi dotfiles'
+	"${homebrew_prefix}/bin/just" --justfile "${repository_root}/Justfile" apply
+	run_ansible_playbook "${ansible_playbook_executable}" --tags host
 }
 
 main() {
