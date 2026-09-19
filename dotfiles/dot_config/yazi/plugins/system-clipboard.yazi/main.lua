@@ -145,52 +145,21 @@ function M.write_stdin(command, args, payload)
 	return child:wait()
 end
 
-function M.copy_wayland_gnome(paths, operation)
-	local payload = { operation or "copy" }
+function M.copy_display(paths, backend, operation, protocol)
+	local payload = backend == "gnome" and { operation } or {}
 	for _, path in ipairs(paths) do
-		payload[#payload + 1] = M.file_uri(path)
+		payload[#payload + 1] = backend == "paths" and path or M.file_uri(path)
 	end
-
-	return M.write_stdin("wl-copy", { "--type", "x-special/gnome-copied-files" }, M.join(payload))
-end
-
-function M.copy_wayland_uri_list(paths)
-	local payload = {}
-	for _, path in ipairs(paths) do
-		payload[#payload + 1] = M.file_uri(path)
-	end
-
-	return M.write_stdin("wl-copy", { "--type", "text/uri-list" }, M.join(payload, "\r\n"))
-end
-
-function M.copy_wayland_paths(paths)
-	return M.write_stdin("wl-copy", { "--type", "text/plain;charset=utf-8" }, M.join(paths))
-end
-
-function M.copy_x11_gnome(paths, operation)
-	local payload = { operation or "copy" }
-	for _, path in ipairs(paths) do
-		payload[#payload + 1] = M.file_uri(path)
-	end
-
-	return M.write_stdin(
-		"xclip",
-		{ "-selection", "clipboard", "-target", "x-special/gnome-copied-files" },
-		M.join(payload)
-	)
-end
-
-function M.copy_x11_uri_list(paths)
-	local payload = {}
-	for _, path in ipairs(paths) do
-		payload[#payload + 1] = M.file_uri(path)
-	end
-
-	return M.write_stdin("xclip", { "-selection", "clipboard", "-target", "text/uri-list" }, M.join(payload, "\r\n"))
-end
-
-function M.copy_x11_paths(paths)
-	return M.write_stdin("xclip", { "-selection", "clipboard", "-target", "UTF8_STRING" }, M.join(paths))
+	local mime = ({
+		gnome = "x-special/gnome-copied-files",
+		["uri-list"] = "text/uri-list",
+		paths = protocol == "wayland" and "text/plain;charset=utf-8" or "UTF8_STRING",
+	})[backend]
+	local command = protocol == "wayland" and "wl-copy" or "xclip"
+	local args = protocol == "wayland" and { "--type", mime } or { "-selection", "clipboard", "-target", mime }
+	local labels = { paths = "path text", gnome = "GNOME files", ["uri-list"] = "URI list" }
+	local status, err = M.write_stdin(command, args, M.join(payload, backend == "uri-list" and "\r\n" or "\n"))
+	return status, err, command .. " " .. labels[backend]
 end
 
 function M.copy_macos_files(paths)
@@ -257,14 +226,6 @@ function M.copy_linux(paths, args)
 	local operation = M.has_arg(args, "cut") and "cut" or "copy"
 	local attempts = {}
 
-	local function attempt(label, fn)
-		local status, err = fn()
-		if M.success(status) then
-			return status, label
-		end
-		attempts[#attempts + 1] = label .. ": " .. M.status_error(status, err)
-	end
-
 	local wayland = M.env("WAYLAND_DISPLAY") ~= ""
 	local x11 = M.env("DISPLAY") ~= ""
 	-- Try the active display protocol first. Trying both also handles XWayland and
@@ -275,35 +236,10 @@ function M.copy_linux(paths, args)
 	end
 
 	for _, protocol in ipairs(protocols) do
-		local status, label
-		if protocol == "wayland" then
-			if backend == "paths" then
-				status, label = attempt("wl-copy path text", function()
-					return M.copy_wayland_paths(paths)
-				end)
-			elseif backend == "gnome" then
-				status, label = attempt("wl-copy GNOME files", function()
-					return M.copy_wayland_gnome(paths, operation)
-				end)
-			else
-				status, label = attempt("wl-copy URI list", function()
-					return M.copy_wayland_uri_list(paths)
-				end)
-			end
-		else
-			if backend == "paths" then
-				status, label = attempt("xclip path text", function()
-					return M.copy_x11_paths(paths)
-				end)
-			elseif backend == "gnome" then
-				status, label = attempt("xclip GNOME files", function()
-					return M.copy_x11_gnome(paths, operation)
-				end)
-			else
-				status, label = attempt("xclip URI list", function()
-					return M.copy_x11_uri_list(paths)
-				end)
-			end
+		local status, err, label = M.copy_display(paths, backend, operation, protocol)
+		if not M.success(status) then
+			attempts[#attempts + 1] = label .. ": " .. M.status_error(status, err)
+			status = nil
 		end
 
 		if status then
