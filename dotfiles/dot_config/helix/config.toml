@@ -105,7 +105,8 @@ wrap-around = true
 "}" = "page_cursor_half_down"
 # Keep Helix's counted G motion; ge goes to the last line.
 G = "goto_line"
-g = { g = "goto_file_start", q = "@mip:reflow<ret>" }
+# Reflow the existing selection; use mip first to select a paragraph.
+g = { g = "goto_file_start", q = ":reflow" }
 Z = { Z = ":write-quit", Q = ":quit!" }
 "space" = { "space" = "file_picker" }
 C-space = "yank_to_clipboard"
