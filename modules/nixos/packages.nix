@@ -67,7 +67,6 @@ in
         dockerfmt
         duf
         dust
-        emacs-nox
         fd
         ffmpeg
         file

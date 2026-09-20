@@ -67,7 +67,3 @@ Library/
 .local/share/applications/
 {{ end }}
 
-{{ if and (eq .chezmoi.os "linux") (eq (get .chezmoi.osRelease "id") "nixos") }}
-# NixOS owns this user unit and its default.target dependency.
-.config/systemd/user/emacs.service
-{{ end }}

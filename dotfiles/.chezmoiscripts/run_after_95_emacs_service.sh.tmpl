@@ -1,6 +1,0 @@
-{{- $isNixOS := and (eq .chezmoi.os "linux") (eq (get .chezmoi.osRelease "id") "nixos") -}}
-{{- if and (not $isNixOS) (or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux")) -}}
-#!/usr/bin/env bash
-set -euo pipefail
-"{{ .chezmoi.homeDir }}/.local/bin/emacs-tui" --install-service
-{{ end -}}
