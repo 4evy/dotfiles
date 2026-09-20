@@ -59,7 +59,7 @@
 
     source-helix = {
       flake = false;
-      url = "github:helix-editor/helix/master";
+      url = "github:Helix-Unstable/helix-unstable/unstable";
     };
 
     source-kanata = {

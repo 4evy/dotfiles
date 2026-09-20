@@ -6,12 +6,12 @@ class HelixTip < Formula
   tap_root = Pathname(__dir__).parent
   pin = DotfilesFlakeLock.input(tap_root, "source-helix")
 
-  desc "Post-release Helix editor build pinned by the dotfiles lock"
-  homepage "https://helix-editor.com"
+  desc "Helix Unstable editor build pinned by the dotfiles lock"
+  homepage "https://github.com/Helix-Unstable/helix-unstable"
   url DotfilesFlakeLock.repository(pin), revision: pin.fetch("rev")
   version "git-#{pin.fetch("rev")[0, 8]}"
   license "MPL-2.0"
-  head DotfilesFlakeLock.repository(pin), branch: "master"
+  head DotfilesFlakeLock.repository(pin), branch: pin.fetch("ref")
 
   depends_on "rust" => :build
 
