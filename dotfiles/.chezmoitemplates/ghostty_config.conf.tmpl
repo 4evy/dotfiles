@@ -29,7 +29,8 @@ env = SHELL=/bin/zsh
 font-size = 14
 quit-after-last-window-closed = true
 scrollback-limit-bytes = 100000000
-scrollback-editor = direct:hx
+# Load the shared shell environment so desktop launches can find Helix.
+scrollback-editor = direct:{{ .chezmoi.homeDir }}/.local/bin/ghostty-scrollback-editor
 window-padding-x = 8
 window-padding-y = 4
 window-padding-balance = true
@@ -226,7 +227,8 @@ keybind = chain=activate_key_table_once:ghostty-resize
 keybind = ghostty/escape=deactivate_key_table
 keybind = ghostty/catch_all=deactivate_key_table
 
-keybind = ghostty-scrollback/e=write_scrollback_file:open,vt
+# Helix reads plain text; it does not render terminal color sequences.
+keybind = ghostty-scrollback/e=write_scrollback_file:open
 keybind = ghostty-scrollback/j=scroll_page_lines:1
 keybind = ghostty-scrollback/k=scroll_page_lines:-1
 keybind = ghostty-scrollback/page_down=scroll_page_down
