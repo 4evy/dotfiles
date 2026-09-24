@@ -15,14 +15,14 @@ modules:
     dest: /src/source_lock.py
 
   - type: dnf@v1
-    source: ghcr.io/blue-build/modules/dnf:v1@sha256:b4037298aa9dc3203ddccda40791284a66e28b478fded6d5b9ce560ecd9ba3c6
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:4fa89e050fbbc397ec7c04ed11339a5f430cc339224facaa8b8ce65e07d39921
     install:
       install-weak-deps: false
       packages:
         - python3
 
   - type: script@v2
-    source: ghcr.io/blue-build/modules/script:v2@sha256:b19e432cf10bf5dab8d881e04ed692a9c61dd336e839acf77f9361cccf394484
+    source: ghcr.io/blue-build/modules/script:v2@sha256:fa4455089da980cb871c804521786ffa74c534987df4251a90eba850fe4a7d86
     snippets:
       - |-
         python3 - <<'PYTHON'

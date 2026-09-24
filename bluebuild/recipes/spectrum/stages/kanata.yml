@@ -17,7 +17,7 @@ modules:
     dest: /src/build-kanata.sh
 
   - type: dnf@v1
-    source: ghcr.io/blue-build/modules/dnf:v1@sha256:b4037298aa9dc3203ddccda40791284a66e28b478fded6d5b9ce560ecd9ba3c6
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:4fa89e050fbbc397ec7c04ed11339a5f430cc339224facaa8b8ce65e07d39921
     install:
       install-weak-deps: false
       packages:

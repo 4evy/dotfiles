@@ -9,7 +9,7 @@ modules:
     dest: /etc/yum.repos.d
 
   - type: dnf@v1
-    source: ghcr.io/blue-build/modules/dnf:v1@sha256:b4037298aa9dc3203ddccda40791284a66e28b478fded6d5b9ce560ecd9ba3c6
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:4fa89e050fbbc397ec7c04ed11339a5f430cc339224facaa8b8ce65e07d39921
     repos:
       cleanup: true
       copr:
@@ -85,7 +85,7 @@ modules:
   # The RPM owns desktop files and icons. Keep helper GIDs consistent between
   # the image group database, setgid executables, and boot-time sysusers.
   - type: script@v2
-    source: ghcr.io/blue-build/modules/script:v2@sha256:b19e432cf10bf5dab8d881e04ed692a9c61dd336e839acf77f9361cccf394484
+    source: ghcr.io/blue-build/modules/script:v2@sha256:fa4455089da980cb871c804521786ffa74c534987df4251a90eba850fe4a7d86
     snippets:
       - |
         groupmod --gid 1500 onepassword
@@ -107,7 +107,7 @@ modules:
         rm -f /etc/yum.repos.d/1password.repo
 
   - type: fonts@v1
-    source: ghcr.io/blue-build/modules/fonts:v1@sha256:b785bba5d895f1c190a900aa4a50b5964db5961ff28f9c1e085a2fa4530fd24b
+    source: ghcr.io/blue-build/modules/fonts:v1@sha256:2f907eef696b67f54bc4294f6da8e7edbbdd46756f022e6807d44616cced7c38
     fonts:
       nerd-fonts:
         - JetBrainsMono
@@ -118,7 +118,7 @@ modules:
   # Reconcile user Flatpaks at boot. Flatpak itself selects and maintains the
   # host's matching graphics-driver extensions with each runtime.
   - type: default-flatpaks@v2
-    source: ghcr.io/blue-build/modules/default-flatpaks:v2@sha256:b46933a92019379bee506489d63a80ba227faf6d47369055dc7560da01fd3d0f
+    source: ghcr.io/blue-build/modules/default-flatpaks:v2@sha256:66a998b9ec21334863e3a1e9930baf6535e4b71e1fc0192dd117ca6e74082594
     configurations:
       - scope: user
         notify: false
@@ -130,7 +130,7 @@ modules:
           - org.gnome.NautilusPreviewer
 
   - type: gnome-extensions@v1
-    source: ghcr.io/blue-build/modules/gnome-extensions:v1@sha256:336421227e2c518c7e8b44a5d3982d4ac69e0b70757d7182b9749bd661a3b419
+    source: ghcr.io/blue-build/modules/gnome-extensions:v1@sha256:f45e38185b5d4a78f806bb50487970c40e9b59ae8c7e6fde2c41dd312e514994
     install:
       - 4974 # Window Calls Extended
       - 5060 # Xremap
