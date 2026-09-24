@@ -8,7 +8,6 @@ approval_policy = "never"
 default_permissions = "unrestricted"
 web_search = "live"
 check_for_update_on_startup = false
-suppress_unstable_features_warning = true
 tool_output_token_limit = 32768
 
 {{- if eq .chezmoi.os "darwin" }}
@@ -289,7 +288,6 @@ default_tools_approval_mode = "approve"
 
 [notice]
 hide_full_access_warning = true
-hide_world_writable_warning = true
 
 # ChatGPT derives ~/.codex/computer-use/config.json from these desktop theme
 # values and the active locale; leave that generated file app-owned.
