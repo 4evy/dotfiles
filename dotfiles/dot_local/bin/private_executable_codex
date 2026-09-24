@@ -1,7 +1,6 @@
 #!/usr/bin/env python3.14
 import os
 import subprocess
-import shutil
 import sys
 from collections.abc import Iterable
 from pathlib import Path
@@ -41,51 +40,10 @@ real = first_executable(candidates, excluding=wrapper)
 if real is None:
     raise SystemExit("codex: real Codex binary not found")
 
-arguments = list(sys.argv[1:])
-# Computer Use starts this internal server by resolving `codex` from PATH. It
-# must not inherit the interactive theme runner or it stops on the MCP pipes.
-if os.environ.get("THEME_RUN_ACTIVE") or arguments[:1] == ["app-server"]:
-    os.execv(real, [os.fspath(real), *arguments])
-
-overrides = [
-    "-c",
-    "model_reasoning_effort=low",
-    "-c",
-    "plan_mode_reasoning_effort=low",
-    "-c",
-    "mcp_servers.node_repl.env.BROWSER_USE_TINYSKY_ENABLED=0",
-]
-if not any(
-    argument == "--profile" or argument.startswith("--profile=")
-    for argument in arguments
-):
-    overrides.extend(["-c", "approval_policy=never"])
-if "--dangerously-bypass-hook-trust" not in arguments:
-    overrides.insert(0, "--dangerously-bypass-hook-trust")
-arguments = [*overrides, *arguments]
-
-themed_arguments = arguments.copy()
-if not os.environ.get("THEME_RUN_CODEX_BIN"):
-    themed_arguments = [
-        value
-        for value in themed_arguments
-        if value != "--dangerously-bypass-approvals-and-sandbox"
-    ]
-
-theme_runner = home / ".local/bin/theme-run"
-theme_runner = first_executable((theme_runner, shutil.which("theme-run")))
-if theme_runner is not None:
-    environment = dict(os.environ)
-    environment["THEME_RUN_CODEX_BIN"] = os.fspath(real)
-    environment["THEME_RUN_CODEX_WRAPPER"] = os.fspath(wrapper)
-    os.execve(
-        theme_runner,
-        [os.fspath(theme_runner), "codex", *themed_arguments],
-        environment,
-    )
-
+# cx already runs theme-run. Keep direct Codex launches on the same configured
+# model and update the syntax theme without wrapping the process again.
 theme_helper = home / ".local/libexec/codex-theme-defaults"
 if theme_helper.is_file() and sys.stdin.isatty() and sys.stdout.isatty():
     subprocess.run([sys.executable, theme_helper, real], check=False)
 
-os.execv(real, [os.fspath(real), *arguments])
+os.execv(real, [os.fspath(real), *sys.argv[1:]])
