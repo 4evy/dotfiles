@@ -1,4 +1,10 @@
 ---
+- name: Keep GNOME popup backgrounds free of Blur my Shell effects
+  community.general.dconf:
+    key: /org/gnome/shell/extensions/blur-my-shell/popup/blur
+    value: "false"
+    state: present
+
 - name: Configure GNOME window switching shortcuts
   community.general.dconf:
     key: "/org/gnome/desktop/wm/keybindings/{{ item.key }}"
