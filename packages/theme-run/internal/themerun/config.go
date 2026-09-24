@@ -2,6 +2,7 @@ package themerun
 
 import (
 	"bytes"
+	"cmp"
 	_ "embed"
 	"errors"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"slices"
 	"strings"
 
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -33,8 +35,6 @@ const (
 	cacheDirectoryName     = ".cache"
 	maxFileBytes           = 1024 * 1024
 	fileReadLimit          = maxFileBytes + 1
-	runtimeLimitMin        = 1
-	runtimeLimitMax        = 60_000
 	quoteCharacterCount    = 1
 	temporarySuffix        = "XXXXXX"
 	defaultTemporaryPath   = "/tmp"
@@ -47,8 +47,6 @@ const (
 	homePlaceholder        = "{home}"
 	terminalFallbackName   = "*"
 	activeEnvironmentValue = "1"
-	validQuoteCharacters   = "'\""
-	invalidEnvNameBytes    = assignmentSeparator + "\x00"
 
 	homeEnvironment       = "HOME"
 	pathEnvironment       = "PATH"
@@ -245,9 +243,7 @@ func (m *Manifest) loadFragment(contents []byte, source string) error {
 		m.Runners[item.Name] = item
 	}
 	for _, item := range value.Integrations {
-		if item.DisplayName == "" {
-			item.DisplayName = item.Name
-		}
+		item.DisplayName = cmp.Or(item.DisplayName, item.Name)
 		m.Integrations[item.Name] = item
 	}
 	return nil
@@ -297,41 +293,17 @@ func (m *Manifest) FindRunner(command string) (Runner, bool) {
 }
 
 func (m *Manifest) validate() error {
-	if err := validateRuntime(m.Runtime); err != nil {
+	if err := validation.ValidateStruct(m,
+		validation.Field(&m.Runtime),
+		validation.Field(&m.Interpreters),
+		validation.Field(&m.Integrations),
+		validation.Field(&m.Runners),
+	); err != nil {
 		return err
 	}
 	m.aliases = make(map[string]string)
-	for name, item := range m.Interpreters {
-		if name == "" || len(item.ShebangCommands) == 0 || len(item.ShebangArguments) == 0 || len(item.Programs) == 0 || hasEmpty(item.ShebangCommands) || hasEmpty(item.ShebangArguments) || hasEmpty(item.Programs) {
-			return fmt.Errorf("invalid interpreter %q", name)
-		}
-	}
-	for name, item := range m.Integrations {
-		if err := validateIntegration(item); err != nil {
-			return fmt.Errorf("integration %q: %w", name, err)
-		}
-	}
 	for name, item := range m.Runners {
-		if name == "" {
-			return errors.New("runner name must not be empty")
-		}
-		for _, value := range slices.Concat(item.SkipEnv, item.EnvUnset) {
-			if !validEnvName(value) {
-				return fmt.Errorf("runner %q has invalid environment name %q", name, value)
-			}
-		}
-		for key := range item.Env {
-			if !validEnvName(key) {
-				return fmt.Errorf("runner %q has invalid environment name %q", name, key)
-			}
-		}
-		if slices.Contains(item.Programs, environmentReference) {
-			return fmt.Errorf("runner %q has invalid program reference", name)
-		}
 		for _, alias := range item.Aliases {
-			if alias == "" {
-				return fmt.Errorf("runner %q has an empty alias", name)
-			}
 			if _, exists := m.Runners[alias]; exists {
 				return fmt.Errorf("runner alias %q collides with a runner", alias)
 			}
@@ -354,136 +326,10 @@ func (m *Manifest) validate() error {
 	return nil
 }
 
-func validateRuntime(value Runtime) error {
-	if len(value.ThemeEnvironment) == 0 || value.ThemeTerminalProgramEnvironment == "" {
-		return errors.New("runtime theme detection policy is incomplete")
-	}
-	for _, theme := range themePriorities {
-		aliases := value.ThemeAliases[theme]
-		if len(aliases) == 0 || hasEmpty(aliases) {
-			return fmt.Errorf("runtime aliases for %s must not be empty", theme)
-		}
-	}
-	for theme := range value.ThemeAliases {
-		if !validTheme(theme) {
-			return fmt.Errorf("runtime aliases contain invalid theme %q", theme)
-		}
-	}
-	for name, protocol := range value.ThemeTerminalQueries {
-		if protocol != TerminalProtocolBackground && protocol != TerminalProtocolColorScheme {
-			return fmt.Errorf("invalid terminal protocol %q for %q", protocol, name)
-		}
-	}
-	if _, ok := value.ThemeTerminalQueries[terminalFallbackName]; !ok {
-		return errors.New("runtime terminal query fallback is missing")
-	}
-	if _, ok := value.ThemePlatforms[terminalFallbackName]; !ok {
-		return errors.New("runtime platform fallback is missing")
-	}
-	for name, platform := range value.ThemePlatforms {
-		if name == "" {
-			return errors.New("runtime platform name must not be empty")
-		}
-		if !validTheme(platform.Fallback) {
-			return fmt.Errorf("runtime platform %q fallback must be %s or %s", name, Dark, Light)
-		}
-		if err := validateCommands(platform.Commands); err != nil {
-			return fmt.Errorf("runtime platform %q: %w", name, err)
-		}
-	}
-	limits := []int{value.ThemeProbeTimeoutMS, value.HelperTimeoutMS}
-	for _, limit := range limits {
-		if limit < runtimeLimitMin || limit > runtimeLimitMax {
-			return fmt.Errorf("runtime timeout must be between %d and %d ms", runtimeLimitMin, runtimeLimitMax)
-		}
-	}
-	if value.HelperOutputLimitBytes < runtimeLimitMin || value.HelperOutputLimitBytes > maxFileBytes {
-		return fmt.Errorf("runtime helper output limit must be between %d and %d bytes", runtimeLimitMin, maxFileBytes)
-	}
-	return nil
-}
-
-func validateIntegration(value Integration) error {
-	if value.Name == "" || value.DarkTheme == "" || value.LightTheme == "" {
-		return errors.New("name and theme values must not be empty")
-	}
-	for key := range value.Env {
-		if !validEnvName(key) {
-			return fmt.Errorf("invalid environment name %q", key)
-		}
-	}
-	switch value.Strategy {
-	case IntegrationStrategyArguments:
-		if len(value.Arguments) == 0 || !containsPlaceholder(value.Arguments, themePlaceholder) {
-			return fmt.Errorf("argument strategy must use %s", themePlaceholder)
-		}
-		contextFields := []string{value.ContextTable, value.ContextField, value.ContextValue}
-		usesContext := slices.ContainsFunc(contextFields, func(field string) bool {
-			return field != ""
-		})
-		if usesContext && (hasEmpty(contextFields) || !containsPlaceholder(value.Arguments, contextPlaceholder)) {
-			return errors.New("directory context policy is incomplete")
-		}
-		for _, command := range value.ContextDirectoryCommands {
-			if len(command) == 0 || !containsPlaceholder(command, directoryPlaceholder) {
-				return fmt.Errorf("directory context command must use %s", directoryPlaceholder)
-			}
-		}
-	case IntegrationStrategyConfig:
-		if value.DefaultConfig == "" || value.Assignment == "" || len(value.ConfigFlags) == 0 || value.ConfigOutputFlag == "" || value.TemporaryPrefix == "" || value.TemporaryLocation == "" || len(value.Quote) != quoteCharacterCount || !strings.Contains(validQuoteCharacters, value.Quote) {
-			return errors.New("config strategy is incomplete")
-		}
-		if !strings.HasSuffix(value.TemporaryPrefix, temporarySuffix) || filepath.Base(value.TemporaryPrefix) != value.TemporaryPrefix {
-			return fmt.Errorf("temporary prefix must be a basename ending in %s", temporarySuffix)
-		}
-		if value.TemporaryLocation != TemporaryLocationSystem && value.TemporaryLocation != TemporaryLocationCache {
-			return fmt.Errorf("temporary location must be %s or %s", TemporaryLocationSystem, TemporaryLocationCache)
-		}
-		if value.TemporaryLocation == TemporaryLocationCache && value.CacheSubdirectory == "" {
-			return errors.New("cache temporary files need a cache subdirectory")
-		}
-		if value.Validation != "" && value.Validation != ValidationTOML {
-			return fmt.Errorf("validation must be %s", ValidationTOML)
-		}
-	case IntegrationStrategyEnvironment:
-		if len(value.Env) == 0 {
-			return errors.New("environment strategy needs variables")
-		}
-		found := false
-		for _, contents := range value.Env {
-			found = found || strings.Contains(contents, themePlaceholder)
-		}
-		if !found {
-			return fmt.Errorf("environment strategy must use %s", themePlaceholder)
-		}
-	default:
-		return fmt.Errorf("unsupported strategy %q", value.Strategy)
-	}
-	return nil
-}
-
-func validateCommands(commands [][]string) error {
-	for _, command := range commands {
-		if len(command) == 0 || hasEmpty(command) {
-			return errors.New("runtime helper commands must not be empty")
-		}
-	}
-	return nil
-}
-
-func validTheme(value Theme) bool { return slices.Contains(themePriorities, value) }
-
-func validEnvName(value string) bool {
-	return value != "" && !strings.ContainsAny(value, invalidEnvNameBytes)
-}
-
 func containsPlaceholder(values []string, placeholder string) bool {
-	for _, value := range values {
-		if strings.Contains(value, placeholder) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(values, func(value string) bool {
+		return strings.Contains(value, placeholder)
+	})
 }
 
 func hasEmpty(values []string) bool {

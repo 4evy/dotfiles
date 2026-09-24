@@ -39,30 +39,16 @@ func run(args []string) int {
 		fmt.Fprintf(os.Stderr, "%s: %v\n", themerun.Name, err)
 		return themerun.ExitUsage
 	}
-	if len(args) == 0 {
-		_ = context.PrintUsage(false)
-		return themerun.ExitSuccess
-	}
-	if cli.PrintTheme || cli.PrintThemeNoTerminal {
-		if len(cli.Command) != 0 {
-			fmt.Fprintf(os.Stderr, "%s: theme printing does not accept a command\n", themerun.Name)
-			return themerun.ExitUsage
-		}
-		env := themerun.CurrentEnvironment()
-		manifest, err := themerun.Load(env)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: failed to load configuration: %v\n", themerun.Name, err)
-			return themerun.ExitFailure
-		}
-		withTerminal := cli.PrintTheme
-		fmt.Println(themerun.Detect(manifest.Runtime, env, withTerminal))
-		return themerun.ExitSuccess
+	printTheme := cli.PrintTheme || cli.PrintThemeNoTerminal
+	if printTheme && len(cli.Command) != 0 {
+		fmt.Fprintf(os.Stderr, "%s: theme printing does not accept a command\n", themerun.Name)
+		return themerun.ExitUsage
 	}
 	command := cli.Command
 	if len(command) != 0 && command[0] == argumentDelimiter {
 		command = command[1:]
 	}
-	if len(command) == 0 {
+	if !printTheme && len(command) == 0 {
 		_ = context.PrintUsage(false)
 		return themerun.ExitSuccess
 	}
@@ -72,6 +58,10 @@ func run(args []string) int {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s: failed to load configuration: %v\n", themerun.Name, err)
 		return themerun.ExitFailure
+	}
+	if printTheme {
+		fmt.Println(themerun.Detect(manifest.Runtime, env, cli.PrintTheme))
+		return themerun.ExitSuccess
 	}
 	runner, matched := manifest.FindRunner(command[0])
 	if !matched {

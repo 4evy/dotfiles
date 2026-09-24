@@ -140,42 +140,32 @@ func probeTerminal(query string, timeout time.Duration) (Theme, bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	events := make(chan uv.Event)
-	done := make(chan error, 1)
 	terminalReader := uv.NewTerminalReader(reader, "")
 	go func() {
-		done <- terminalReader.StreamEvents(ctx, events)
+		defer close(events)
+		_ = terminalReader.StreamEvents(ctx, events)
 	}()
-	stopped := false
-	stop := func() {
-		if stopped {
-			return
-		}
+	defer func() {
 		cancel()
 		if !reader.Cancel() {
 			_ = input.Close()
 		}
-		for {
-			select {
-			case <-events:
-			case <-done:
-				stopped = true
-				return
-			}
+		// StreamEvents may flush pending events while shutting down.
+		for range events {
 		}
-	}
-	defer stop()
+	}()
 	if _, err := io.WriteString(console.Writer(), query); err != nil {
 		return "", false
 	}
 	for {
 		select {
-		case event := <-events:
+		case event, ok := <-events:
+			if !ok {
+				return "", false
+			}
 			if mode, ok := modeFromEvent(event); ok {
 				return mode, true
 			}
-		case <-done:
-			stopped = true
-			return "", false
 		case <-ctx.Done():
 			return "", false
 		}
@@ -217,6 +207,7 @@ func runCommandOutput(runtime Runtime, env Variables, argv []string) (string, er
 	defer cancel()
 	command := exec.CommandContext(ctx, argv[0], argv[1:]...)
 	command.Env = envList(env)
+	command.WaitDelay = time.Duration(runtime.HelperTimeoutMS) * time.Millisecond
 	stdout := &limitedBuffer{limit: runtime.HelperOutputLimitBytes}
 	stderr := &limitedBuffer{limit: runtime.HelperOutputLimitBytes}
 	command.Stdout = stdout

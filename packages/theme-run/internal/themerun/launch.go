@@ -2,6 +2,7 @@ package themerun
 
 import (
 	"bytes"
+	"cmp"
 	"errors"
 	"fmt"
 	"io"
@@ -229,10 +230,7 @@ func candidate(raw string, skipPaths []string, env Variables) (string, bool) {
 	if isPathLike(name) {
 		return executableCandidate(name, skipPaths)
 	}
-	path := env[pathEnvironment]
-	if path == "" {
-		path = defaultSearchPath
-	}
+	path := cmp.Or(env[pathEnvironment], defaultSearchPath)
 	for _, directory := range filepath.SplitList(path) {
 		joined := name
 		if directory != "" {
@@ -328,10 +326,7 @@ func directoryContext(runtime Runtime, integration Integration, arguments []stri
 	if err != nil {
 		return "", err
 	}
-	directoryValue := argumentValue(arguments, integration.ContextPathFlags, integration.ContextPathPrefixes, integration.ContextArgumentSeparator)
-	if directoryValue == "" {
-		directoryValue = cwd
-	}
+	directoryValue := cmp.Or(argumentValue(arguments, integration.ContextPathFlags, integration.ContextPathPrefixes, integration.ContextArgumentSeparator), cwd)
 	directory := canonicalDirectory(cwd, directoryValue)
 	directories := []string{directory}
 	seen := map[string]bool{directory: true}
@@ -380,7 +375,7 @@ func canonicalDirectory(base, value string) string {
 		return real
 	}
 	if absolute, err := filepath.Abs(path); err == nil {
-		return filepath.Clean(absolute)
+		return absolute
 	}
 	return filepath.Clean(path)
 }
@@ -445,54 +440,42 @@ func patchConfig(contents []byte, integration Integration, value string) ([]byte
 }
 
 func patchAssignment(contents []byte, key string, quote byte, value string) []byte {
-	lines := strings.Split(string(contents), lineSeparator)
-	var output strings.Builder
+	var output bytes.Buffer
 	replaced := false
-	for index, line := range lines {
-		trimmed := strings.TrimLeft(line, indentCharacters)
-		matches := false
-		if rest, found := strings.CutPrefix(trimmed, key); found {
-			rest = strings.TrimLeft(rest, indentCharacters)
-			matches = strings.HasPrefix(rest, assignmentSeparator)
-		}
-		if !replaced && matches {
+	for line := range bytes.Lines(contents) {
+		rest, found := bytes.CutPrefix(bytes.TrimLeft(line, indentCharacters), []byte(key))
+		if !replaced && found && bytes.HasPrefix(bytes.TrimLeft(rest, indentCharacters), []byte(assignmentSeparator)) {
 			fmt.Fprintf(&output, assignmentFormat, key, quote, value, quote)
+			if bytes.HasSuffix(line, []byte(lineSeparator)) {
+				output.WriteString(lineSeparator)
+			}
 			replaced = true
 		} else {
-			output.WriteString(line)
-		}
-		if index+1 < len(lines) {
-			output.WriteString(lineSeparator)
+			output.Write(line)
 		}
 	}
 	if replaced {
-		return []byte(output.String())
+		return output.Bytes()
 	}
 	assignment := fmt.Sprintf(assignmentLine, key, quote, value, quote)
-	if output.Len() != 0 && !strings.HasSuffix(output.String(), lineSeparator) {
+	if output.Len() != 0 && !bytes.HasSuffix(output.Bytes(), []byte(lineSeparator)) {
 		output.WriteString(lineSeparator)
 	}
 	output.WriteString(assignment)
-	return []byte(output.String())
+	return output.Bytes()
 }
 
 func makeTemporary(integration Integration, contents []byte, env Variables) (string, error) {
 	directory := ""
 	switch integration.TemporaryLocation {
 	case TemporaryLocationSystem:
-		directory = env[temporaryEnvironment]
-		if directory == "" {
-			directory = defaultTemporaryPath
-		}
+		directory = cmp.Or(env[temporaryEnvironment], defaultTemporaryPath)
 	case TemporaryLocationCache:
 		base := env[cacheHomeEnvironment]
 		if base == "" && env[homeEnvironment] != "" {
 			base = filepath.Join(env[homeEnvironment], cacheDirectoryName)
 		}
-		if base == "" {
-			base = defaultTemporaryPath
-		}
-		directory = filepath.Join(base, integration.CacheSubdirectory)
+		directory = filepath.Join(cmp.Or(base, defaultTemporaryPath), integration.CacheSubdirectory)
 	}
 	if err := os.MkdirAll(directory, temporaryMode); err != nil {
 		return "", err
