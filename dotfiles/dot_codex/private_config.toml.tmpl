@@ -41,7 +41,12 @@ dangerously_allow_all_unix_sockets = true
 [tui]
 notification_condition = "always"
 show_tooltips = false
-theme = "t3-chat-dark"
+{{- $terminalTheme := "light" -}}
+{{- if ne .chezmoi.os "darwin" -}}{{- $terminalTheme = "dark" -}}{{- end -}}
+{{- if lookPath "theme-run" -}}
+{{- $terminalTheme = output "theme-run" "--print-theme-no-terminal" | trim -}}
+{{- end }}
+theme = "t3-chat-{{ $terminalTheme }}"
 terminal_resize_reflow_max_rows = 0
 status_line = [
   "model-with-reasoning",

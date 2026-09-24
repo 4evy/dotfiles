@@ -1,5 +1,6 @@
 #!/usr/bin/env python3.14
 import os
+import subprocess
 import shutil
 import sys
 from collections.abc import Iterable
@@ -82,5 +83,9 @@ if theme_runner is not None:
         [os.fspath(theme_runner), "codex", *themed_arguments],
         environment,
     )
+
+theme_helper = home / ".local/libexec/codex-theme-defaults"
+if theme_helper.is_file() and sys.stdin.isatty() and sys.stdout.isatty():
+    subprocess.run([sys.executable, theme_helper, real], check=False)
 
 os.execv(real, [os.fspath(real), *arguments])
