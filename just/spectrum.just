@@ -25,10 +25,9 @@ _spectrum-validate: (doctor 'spectrum')
     # BlueBuild's feature-gated v2 parser is ready, but its validate command
     # still hardcodes the v1 schema. The official v2 schema is checked above.
     bluebuild generate --skip-validation --output "$generated" bluebuild/recipes/.spectrum.generated.yml
-    ! grep -Fq 'COPY --from=ghcr.io/blue-build/cli:' "$generated"
-    # Docker inserts --link; Podman does not.
-    grep -Eq 'COPY --from=bluebuild-cli( --link)? /out/usr /usr' "$generated"
-    grep -Fq 'bluebuild/recipes/spectrum/sources/bluebuild.json /src/sources.json' "$generated"
+    cli_revision=$(jq -r '.nodes[.nodes[.root].inputs["source-bluebuild-cli"]].locked.rev' flake.lock)
+    grep -Fq "COPY --from=ghcr.io/blue-build/cli:${cli_revision}-installer" "$generated"
+    grep -Fq '/out/bluebuild /bins/bluebuild' "$generated"
     grep -Fq -- '--mount=type=cache,sharing=locked,dst=/var/cache/rpm-ostree,id=rpm-ostree-cache-spectrum-' "$generated"
     grep -Fq -- '--mount=type=cache,sharing=locked,dst=/var/cache/libdnf5,id=dnf-cache-spectrum-' "$generated"
     grep -Fq 'bluebuild/recipes/spectrum/sources/astral.json /src/sources.json' "$generated"

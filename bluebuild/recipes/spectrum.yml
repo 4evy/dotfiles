@@ -14,12 +14,12 @@ metadata:
     org.opencontainers.image.source: https://github.com/4evy/dotfiles
 spec:
   tool-versions:
-    bluebuild: none
+    # Build preparation resolves this from source-bluebuild-cli in flake.lock.
+    bluebuild: ${BLUEBUILD_CLI_REVISION}
   platforms:
     - linux/amd64
 
 stages:
-  - from-file: spectrum/stages/bluebuild-cli.yml
   - from-file: spectrum/stages/python-runtime.yml
   - from-file: spectrum/stages/ghostty.yml
   - from-file: spectrum/stages/hyper-window-tiling.yml

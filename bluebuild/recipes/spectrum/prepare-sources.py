@@ -30,7 +30,6 @@ def main() -> None:
     directory.mkdir(exist_ok=True)
     groups = {
         "astral": ["python-astral"],
-        "bluebuild": ["bluebuild-cli"],
         "ghostty": ["ghostty", "ghostty-zig-x86-64-linux"],
         "kanata": ["kanata-homebrew"],
     }
@@ -64,7 +63,10 @@ def main() -> None:
         + "\n"
     )
     recipe = ROOT / "bluebuild/recipes/spectrum.yml"
-    shutil.copyfile(recipe, recipe.parent / ".spectrum.generated.yml")
+    cli_revision = input_pin(lock, "source-bluebuild-cli")["rev"]
+    (recipe.parent / ".spectrum.generated.yml").write_text(
+        recipe.read_text().replace("${BLUEBUILD_CLI_REVISION}", cli_revision)
+    )
 
 
 if __name__ == "__main__":

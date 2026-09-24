@@ -25,13 +25,15 @@ becoming the owner of the machine
 ## BlueBuild CLI and build flow
 
 Spectrum includes the BlueBuild CLI at `/usr/bin/bluebuild`, together with
-Podman and the other runtime tools it needs to build images. The embedded CLI is
-built from the `source-bluebuild-cli` pin in `flake.lock` inside a stage that
-uses the locked Bluefin base, so its glibc matches the final image. The recipe
-opts out of BlueBuild's upstream installer tag. Both CLI builds enable the
-`bootc` and `recipe-v2` features, so deployment commands prefer bootc when it
-is available. Recipe validation still uses the official v2 JSON schema because
-the CLI's validator currently selects the v1 schema.
+Podman and the other runtime tools it needs to build images. Build preparation
+sets BlueBuild's native CLI installer version from the `source-bluebuild-cli`
+revision in `flake.lock`. Upstream's commit-tagged installer supplies a static
+musl binary, so the image does not need a separate Rust build stage or matching
+glibc versions. Main-branch installers enable all features, including `bootc`
+and `recipe-v2`; the Nix build tool enables those same two features. Deployment
+commands therefore prefer bootc when it is available. Recipe validation still
+uses the official v2 JSON schema because the CLI's validator currently selects
+the v1 schema.
 
 Use `just spectrum-build` to build the local image. The repository-root
 `recipes` symlink points here to `bluebuild/recipes`, so BlueBuild resolves
