@@ -14,6 +14,10 @@
 !bluebuild/
 !bluebuild/**
 
+!files/
+!files/dnf/
+!files/dnf/**
+
 # BlueBuild extracts embedded build helpers here before invoking BuildKit.
 !.bluebuild-scripts_*/
 !.bluebuild-scripts_*/**

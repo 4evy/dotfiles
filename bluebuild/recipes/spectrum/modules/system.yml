@@ -52,7 +52,6 @@ modules:
         fi
       - rm -rf -- /boot/efi
       - rm -rf -- /run/selinux-policy /run/setrans
-      - rm -f -- /etc/yum.repos.d/vscode.repo
       - rm -f -- /usr/etc/profile.d/umotd.sh /etc/profile.d/umotd.sh
       - >-
         glib-compile-schemas

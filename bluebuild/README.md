@@ -102,8 +102,13 @@ keep `/home/linuxbrew/.linuxbrew`; fresh installations use Bluefin's bundled
 tarball. Spectrum disables the Brew update timers and automatic uupd Brew
 module, keeps analytics disabled, and leaves upgrades to `just update`.
 
-The DNF module manages the Vicinae COPR directly and disables it after package
-installation. System configuration is installed into `/etc`, and kernel
+The DNF module imports the 1Password and VS Code repository definitions from
+the native `files/dnf` directory at the repository root and removes them after
+installation. It also manages the Vicinae COPR and disables it after package
+installation. Keeping only DNF inputs in `files` avoids invalidating package
+layers when other system configuration changes.
+
+System configuration is installed into `/etc`, and kernel
 arguments use bootc's `/usr/lib/bootc/kargs.d` through the `kargs` module.
 Use bootc for image updates so those arguments are applied.
 

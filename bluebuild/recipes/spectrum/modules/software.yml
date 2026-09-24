@@ -3,15 +3,13 @@
 modules:
   # Install stable, remote-heavy inputs before repository-local files so local
   # edits do not force these downloads to run again.
-  # Repository definitions are intentional inputs to the following DNF layer.
-  - type: copy@v1
-    src: bluebuild/files/dnf
-    dest: /etc/yum.repos.d
-
   - type: dnf@v1
     source: ghcr.io/blue-build/modules/dnf:v1@sha256:4fa89e050fbbc397ec7c04ed11339a5f430cc339224facaa8b8ce65e07d39921
     repos:
       cleanup: true
+      files:
+        - 1password.repo
+        - vscode.repo
       copr:
         - scottames/vicinae
       keys:
@@ -104,7 +102,6 @@ modules:
         rm -f /usr/lib/sysusers.d/30-rpmostree-pkg-group-onepassword.conf
         rm -f /usr/lib/sysusers.d/30-rpmostree-pkg-group-onepassword-cli.conf
         rm -f /usr/lib/sysusers.d/30-rpmostree-pkg-group-onepassword-mcp.conf
-        rm -f /etc/yum.repos.d/1password.repo
 
   - type: fonts@v1
     source: ghcr.io/blue-build/modules/fonts:v1@sha256:2f907eef696b67f54bc4294f6da8e7edbbdd46756f022e6807d44616cced7c38
