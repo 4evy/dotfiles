@@ -1,19 +1,20 @@
-[private]
-_run executable +arguments:
-    printf '==> %s\n' {{ quote(join_list([executable, arguments])) }}
-    {{ quote(require(executable)) }} {{ quote(arguments) }}
+# Keep Git's NUL delimiters until conversion to a Just list, including newlines
+# in filenames. shell() propagates discovery failures before a checker runs.
+nul_split(output) := if output == '' { [] } else { split(trim_end_match(output, "\u{0}"), "\u{0}") }
+git_files(patterns) := nul_split(shell('git ls-files -z --deduplicate --cached --others --exclude-standard -- ' + join_list(quote(patterns))))
 
-[private]
+[shell]
+_run executable +arguments:
+    {{ quote([executable, arguments]) }}
+
 _run-files executable patterns arguments=[]:
     printf '==> %s\n' {{ quote(join_list([executable, arguments])) }}
-    : {{ quote(assert(patterns, '_run-files requires at least one file pattern')) }}
     files=()
-    while IFS= read -r -d '' file; do
+    for file in {{ quote(git_files(patterns)) }}; do
       [[ -f $file && ! -L $file ]] && files+=("$file")
-    done < <(git ls-files -z --cached --others --exclude-standard -- {{ quote(patterns) }})
-    ((${#files[@]} == 0)) || {{ quote(require(executable)) }} {{ quote(arguments) }} "${files[@]}"
+    done
+    ((${#files[@]} == 0)) || {{ quote([executable, arguments]) }} "${files[@]}"
 
-[private]
 _check-python: python-complexity python-dead-code python-dependencies python-typecheck
     uv lock --check
     uv sync --check
@@ -44,17 +45,14 @@ python-dead-code:
 python-complexity:
     uv run complexipy --plain
 
-[private]
 _check-ansible: (doctor 'ansible') _deps (_run-files 'yamllint' ['*.yaml', '*.yml'])
     ansible-playbook --syntax-check ansible/site.yml
     ansible-lint ansible
 
-[private]
 _check-github-actions:
     actionlint
     zizmor --persona=pedantic .github/workflows .github/actions
 
-[private]
 _check-bun: (doctor 'bun')
     bun run check
 
@@ -80,15 +78,13 @@ bun-nix-update:
       --output-file packages/hyper-window-tiling/bun.nix
     nix fmt -- packages/hyper-window-tiling/bun.nix
 
-[private]
 _check-ruby:
     bundle exec rubocop
-    while IFS= read -r -d '' file; do
+    for file in {{ quote(git_files(['*.rb', 'Brewfile', 'Gemfile'])) }}; do
       [[ -f $file && ! -L $file ]] || continue
       ruby -c "$file" >/dev/null
-    done < <(git ls-files -z --cached --others --exclude-standard -- '*.rb' Brewfile Gemfile)
+    done
 
-[private]
 _check-go:
     go test ./packages/records/... ./packages/theme-run/...
     go vet ./packages/records/... ./packages/theme-run/...
@@ -96,7 +92,6 @@ _check-go:
     CGO_ENABLED=0 go build -o /dev/null ./packages/theme-run/cmd/theme-run
 
 # Lint repository source files and run project validation.
-[private]
 _lint-deps:
     bundle install
     bun install --frozen-lockfile
@@ -107,7 +102,6 @@ _lint-deps:
 lint: (doctor 'lint') check-format _lint-deps _check-ansible _lint-checks
 
 [parallel]
-[private]
 _lint-checks: _lint-files _check-python _check-github-actions _check-bun _check-go _check-ruby
 
 # Evaluate every flake output without building package derivations.

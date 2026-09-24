@@ -1,21 +1,17 @@
 # Format the repository and any available encrypted records through treefmt.
 [group('dev')]
 fmt: (doctor 'fmt')
-    just_command=({{ quote([just_executable(), '--justfile', justfile()]) }})
     records_ready=0
 
     pack_records() {
       exit_status=$?
       trap - EXIT
       if ((records_ready)); then
-        set +e
-        "${just_command[@]}" records-pack
-        pack_status=$?
-        set -e
-        if ((pack_status != 0)); then
+        {{ just_command }} records-pack || {
+          pack_status=$?
           printf 'Failed to repack encrypted records; plaintext remains materialized.\n' >&2
           exit "$pack_status"
-        fi
+        }
       fi
       exit "$exit_status"
     }
@@ -23,7 +19,7 @@ fmt: (doctor 'fmt')
 
     if [[ -f .records-unpacked ]]; then
       records_ready=1
-    elif "${just_command[@]}" records-unpack; then
+    elif {{ just_command }} records-unpack; then
       records_ready=1
     else
       printf 'Skipping encrypted records because they could not be unpacked.\n' >&2
@@ -51,7 +47,7 @@ fmt: (doctor 'fmt')
 [arg('args', help='Recipe and arguments to rerun on file changes')]
 [group('dev')]
 watch +args=['check']: (doctor 'watch')
-    watchexec --clear --restart -- {{ quote(just_executable()) }} --justfile {{ quote(justfile()) }} {{ quote(args) }}
+    watchexec --clear --restart -- {{ just_command }} {{ quote(args) }}
 
 # Run the same treefmt wrapper in CI mode without retaining rewrites.
 [group('check')]

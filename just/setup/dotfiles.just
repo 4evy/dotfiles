@@ -29,15 +29,12 @@ setup: (doctor 'setup')
 [group('setup')]
 update: _userland apply _host
 
-[private]
 _deps:
     ansible-galaxy collection install {{ if !path_exists('.ansible/collections/ansible_collections/community/general/MANIFEST.json') || !path_exists('.ansible/collections/ansible_collections/community/sops/MANIFEST.json') { '--force' } }} \
       --requirements-file ansible/requirements.yml
 
-[private]
 _userland:
     DOTFILES_HOMEBREW_UPGRADE=1 ansible/bootstrap.sh --tags userland
 
-[private]
 _host:
     ansible/bootstrap.sh --tags host

@@ -3,10 +3,9 @@
 [linux]
 spectrum-validate: (doctor 'nix')
     nix develop .#operations --command \
-      {{ quote(just_executable()) }} --justfile {{ quote(justfile()) }} _spectrum-validate
+      {{ just_command }} _spectrum-validate
 
 [linux]
-[private]
 _spectrum-validate: (doctor 'spectrum')
     generated=$(mktemp)
     trap 'rm -f "$generated"' EXIT
@@ -53,25 +52,14 @@ _spectrum-validate: (doctor 'spectrum')
     grep -Fq -- '-Dcpu=baseline' "$generated"
     ! grep -qw akmods bluebuild/recipes/.spectrum.generated.yml "$generated"
 
-# Validate the recipe and enforce the Renovate-managed base digest lock.
-[group('spectrum')]
-[macos]
-spectrum-validate: (_linux-only recipe_name())
-
 # Build the local Spectrum image from the BlueBuild recipe v2 definition.
 [group('spectrum')]
 [linux]
 spectrum-build: (doctor 'nix')
     nix develop .#operations --command \
-      {{ quote(just_executable()) }} --justfile {{ quote(justfile()) }} _spectrum-build
+      {{ just_command }} _spectrum-build
 
 [linux]
-[private]
 _spectrum-build: _spectrum-validate
     # Nix shells use /tmp, whose tmpfs quota can be smaller than an image layer.
     TMPDIR=/var/tmp bluebuild build --skip-validation --no-sign bluebuild/recipes/.spectrum.generated.yml
-
-# Build the local Spectrum image from the BlueBuild recipe v2 definition.
-[group('spectrum')]
-[macos]
-spectrum-build: (_linux-only recipe_name())

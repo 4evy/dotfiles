@@ -17,21 +17,24 @@ podman := split(env("PODMAN", "podman"))
 
 host_os := os()
 repo_dir := justfile_directory()
+[private]
+just_command := quote([just_executable(), "--justfile", justfile()])
 
 homebrew_prefix := env("HOMEBREW_PREFIX", if host_os == "macos" { "/opt/homebrew" } else { "/home/linuxbrew/.linuxbrew" })
 homebrew_gnu_formulae := ['coreutils', 'findutils', 'gnu-sed', 'grep', 'gawk', 'gnu-tar', 'gnu-which', 'diffutils', 'make']
-homebrew_gnu_path := if host_os == "macos" { join_list(append("/libexec/gnubin", prepend(homebrew_prefix / "opt/", homebrew_gnu_formulae)), PATH_VAR_SEP) + PATH_VAR_SEP } else { "" }
-homebrew_path := homebrew_gnu_path + homebrew_prefix / "bin" + PATH_VAR_SEP + homebrew_prefix / "sbin"
+homebrew_gnu_path := if host_os == "macos" { homebrew_prefix / "opt" / homebrew_gnu_formulae / "libexec/gnubin" }
+homebrew_path := homebrew_prefix / ["bin", "sbin"]
 nix_bin_dir := "/nix/var/nix/profiles/default/bin"
 nix_profile_bin_dir := home_directory() / ".nix-profile/bin"
 nixos_profile_bin_dir := "/run/current-system/sw/bin"
 
-export PATH := homebrew_path + PATH_VAR_SEP + nix_bin_dir + PATH_VAR_SEP + nix_profile_bin_dir + PATH_VAR_SEP + nixos_profile_bin_dir + PATH_VAR_SEP + env("PATH", "")
+export PATH := join_list([homebrew_gnu_path, homebrew_path, nix_bin_dir, nix_profile_bin_dir, nixos_profile_bin_dir, env("PATH", "")], PATH_VAR_SEP)
 # Development recipes are reproducible by default; dependency changes must be
 # made explicitly with uv outside the task runner.
 export UV_LOCKED := "1"
 
 alias a := apply
+[linux]
 alias build := spectrum-build
 alias c := check
 alias cf := check-format
@@ -41,10 +44,12 @@ alias f := fmt
 alias h := help
 alias l := lint
 alias nx := nix
+[linux]
 alias r := reboot
 alias s := setup
 alias typecheck := python-typecheck
 alias up := update
+[linux]
 alias validate := spectrum-validate
 alias w := watch
 
@@ -52,6 +57,5 @@ alias w := watch
 [arg('recipe', help='Recipe to explain; omit to list all recipes')]
 [group('system')]
 help recipe='':
-    {{ quote(just_executable()) }} \
-      --justfile {{ quote(justfile()) }} \
+    {{ just_command }} \
       {{ quote(if recipe != '' { ['--usage', recipe] } else { ['--list', '--list-submodules'] }) }}

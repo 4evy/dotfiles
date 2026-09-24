@@ -3,20 +3,19 @@ import 'system/clean.just'
 doctor_setup_commands := ['bash', 'curl', 'git', 'sudo']
 doctor_format_commands := ['git', 'nix']
 doctor_ansible_commands := ['ansible-doc', 'ansible-galaxy', 'ansible-lint', 'ansible-playbook', 'yamllint']
-doctor_lint_commands := ['actionlint', 'bundle', 'chezmoi', 'deadnix', 'diffstat', 'go', 'golangci-lint', 'jq', 'luacheck', 'nix-instantiate', 'ruby', 'rumdl', 'shellcheck', 'statix', 'taplo', 'uv', 'zizmor'] ++ (if host_os == "linux" { ['hadolint'] } else { [] }) ++ doctor_format_commands ++ doctor_ansible_commands
+doctor_lint_commands := ['actionlint', 'bundle', 'chezmoi', 'deadnix', 'diffstat', 'go', 'golangci-lint', 'jq', 'luacheck', 'nix-instantiate', 'ruby', 'rumdl', 'shellcheck', 'statix', 'taplo', 'uv', 'zizmor'] ++ (if host_os == "linux" { ['hadolint'] }) ++ doctor_format_commands ++ doctor_ansible_commands
 [private]
-doctor_sops_commands := ['bash', 'sops'] ++ (if host_os == "macos" { ['op'] } else { [] })
+doctor_sops_commands := ['bash', 'sops'] ++ (if host_os == "macos" { ['op'] })
 [private]
 doctor_records_commands := doctor_sops_commands ++ ['git', 'go']
 doctor_all_commands := doctor_lint_commands ++ doctor_sops_commands ++ ['bun', 'curl', 'shfmt', 'sudo', 'watchexec']
 
-doctor_commands(profile) := if profile == 'status' { if host_os == 'linux' { ['bootc', 'sudo'] } } else if profile == 'reboot' { if host_os == 'linux' { ['systemctl'] } } else if profile == 'install' { if host_os == 'linux' { ['bootc', 'sudo'] } } else if profile == 'spectrum' { ['bluebuild', 'check-jsonschema', 'jq', 'skopeo'] } else if profile == 'setup' { doctor_setup_commands } else if profile == 'apply' { ['chezmoi', 'jq', 'ruby', doctor_records_commands] } else if profile == 'records' { doctor_records_commands } else if profile == 'sops' { doctor_sops_commands } else if profile == 'shell' { ['shellcheck', 'shfmt'] } else if profile == 'fmt' { doctor_format_commands } else if profile == 'lint' || profile == 'check' { doctor_lint_commands } else if profile == 'ansible' { doctor_ansible_commands } else if profile == 'bun' { ['bun'] } else if profile == 'nix' { ['bash', 'curl', 'sudo'] } else if profile == 'watch' { ['watchexec'] } else if profile == 'all' { doctor_all_commands ++ (if host_os == 'linux' { ['bootc', 'systemctl'] }) } else { [] }
+doctor_commands(profile) := if profile == 'status' { if host_os == 'linux' { ['bootc', 'sudo'] } } else if profile == 'reboot' { if host_os == 'linux' { ['systemctl'] } } else if profile == 'install' { if host_os == 'linux' { ['bootc', 'sudo'] } } else if profile == 'spectrum' { ['bluebuild', 'check-jsonschema', 'jq', 'skopeo'] } else if profile == 'setup' { doctor_setup_commands } else if profile == 'apply' { ['chezmoi', 'jq', 'ruby', doctor_records_commands] } else if profile == 'records' { doctor_records_commands } else if profile == 'sops' { doctor_sops_commands } else if profile == 'shell' { ['shellcheck', 'shfmt'] } else if profile == 'fmt' { doctor_format_commands } else if profile == 'lint' || profile == 'check' { doctor_lint_commands } else if profile == 'ansible' { doctor_ansible_commands } else if profile == 'bun' { ['bun'] } else if profile == 'nix' { ['bash', 'curl', 'sudo'] } else if profile == 'watch' { ['watchexec'] } else if profile == 'all' { doctor_all_commands ++ (if host_os == 'linux' { ['bootc', 'systemctl'] }) }
 
 # Check one workflow's commands, or every workflow when omitted.
-[arg('profile', pattern=['status', 'reboot', 'install', 'build', 'setup', 'apply', 'records', 'sops', 'shell', 'spectrum', 'fmt', 'lint', 'ansible', 'bun', 'nix', 'watch', 'check', 'all'], help='status, reboot, install, build, setup, apply, records, sops, shell, spectrum, fmt, lint, ansible, bun, nix, watch, check, or all')]
+[arg('profile', pattern=['status', 'reboot', 'install', 'build', 'setup', 'apply', 'records', 'sops', 'shell', 'spectrum', 'fmt', 'lint', 'ansible', 'bun', 'nix', 'watch', 'check', 'all'], help='Workflow to check')]
 [group('system')]
-doctor profile="all":
-    profile={{ quote(profile) }}
+doctor $profile="all":
     host_os={{ quote(host_os) }}
     commands=({{ quote(doctor_commands(profile)) }})
     podman_command=({{ quote(podman) }})
@@ -42,12 +41,6 @@ doctor profile="all":
     fi
     printf 'Ready: all commands for the %s workflow are available.\n' "$profile"
 
-[macos]
-[private]
-[shell]
-_linux-only recipe:
-    @printf 'Skipping `just %s`: this workflow is only supported on Linux.\n' {{ quote(recipe) }}
-
 # Show bootc and image metadata status.
 [group('system')]
 [linux]
@@ -58,19 +51,9 @@ status: (doctor 'status')
       jq . /usr/share/ublue-os/image-info.json; \
     fi
 
-# Show bootc and image metadata status.
-[group('system')]
-[macos]
-status: (_linux-only recipe_name())
-
 # Reboot the host.
 [confirm('Reboot this host now?')]
 [group('system')]
 [linux]
 reboot: (doctor 'reboot')
     systemctl reboot
-
-# Reboot the host.
-[group('system')]
-[macos]
-reboot: (_linux-only recipe_name())

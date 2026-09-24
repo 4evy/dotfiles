@@ -92,7 +92,8 @@ access when needed
 
 ## Commands
 
-`just` or `just --list` shows every recipe
+`just` or `just --list --list-submodules` shows every recipe for the current
+host
 
 <details>
 <summary><strong>Everyday commands</strong></summary>
@@ -105,20 +106,20 @@ access when needed
 | `just update`                     | `just up`           | Update userland, dotfiles, and host setup                |
 | `just dotfiles-diff`              | `just diff`         | Preview pending chezmoi changes                          |
 | `just apply [targets...]`         | `just a`            | Apply all dotfiles or only the given targets             |
-| `just status`                     | -                   | Show Spectrum image status                               |
+| `just status`                     | -                   | Linux: Show Spectrum image status                        |
 | `just doctor [profile]`           | -                   | Check every workflow dependency or one profile           |
 | `just determinate-status`         | -                   | Show the Determinate version, features, and daemon state |
 | `just determinate-upgrade`        | -                   | Upgrade installer-managed Determinate Nix                |
 | `just nix`                        | `just nx`           | Install Nix and ensure its profile tools are available   |
-| `just spectrum-validate`          | `just validate`     | Validate the BlueBuild recipe and base digest            |
-| `just spectrum-build`             | `just build`        | Build Spectrum locally                                   |
+| `just spectrum-validate`          | `just validate`     | Linux: Validate the BlueBuild recipe and base digest     |
+| `just spectrum-build`             | `just build`        | Linux: Build Spectrum locally                            |
 | `just fmt`                        | `just f`            | Format the repository                                    |
 | `just check-format`               | `just cf`           | Check repository formatting without retaining rewrites   |
 | `just lint`                       | `just l`            | Run static checks                                        |
 | `just check`                      | `just c`, `just ck` | Run the full validation suite                            |
 | `just python-typecheck [args...]` | `just typecheck`    | Type-check Python, forwarding optional arguments         |
 | `just watch [recipe]`             | `just w`            | Rerun a recipe when files change                         |
-| `just reboot`                     | `just r`            | Reboot the Linux host after confirmation                 |
+| `just reboot`                     | `just r`            | Linux: Reboot the host after confirmation                |
 | `just help [command]`             | `just h`            | List recipes or show command usage                       |
 
 Run `just help <command>` with either a command or alias for argument details.

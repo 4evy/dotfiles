@@ -6,7 +6,6 @@ nix_profile_tools := ['deadnix:deadnix', 'nh:nh', 'nil:nil', 'nix-instantiate:ni
 
 # Install Nix on Linux, accounting for immutable composefs hosts.
 [linux]
-[private]
 _ensure-nix:
     if [[ ! -e /nix ]] &&
       command -v rpm-ostree >/dev/null 2>&1 &&
@@ -27,7 +26,6 @@ _ensure-nix:
 
 # Install the signed, notarized Determinate package recommended for macOS.
 [macos]
-[private]
 _ensure-nix:
     if ! command -v nix >/dev/null 2>&1; then
       scratch=$(mktemp -d "${TMPDIR:-/tmp}/determinate.XXXXXXXXXX")
@@ -71,7 +69,7 @@ determinate-fix-hashes *args: (doctor 'nix') _ensure-nix
 [group('setup')]
 nix: (doctor 'nix') _ensure-nix
     nix_profile_bin_dir={{ quote(nix_profile_bin_dir) }}
-    nix_bin={{ quote(if which(nix_bin) { which(nix_bin) } else { require('nix') }) }}
+    nix_bin={{ quote(which(nix_bin) || 'nix') }}
 
     missing=()
     for spec in {{ quote(nix_profile_tools) }}; do

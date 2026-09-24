@@ -1,24 +1,15 @@
 [parallel]
-[private]
 _lint-files: _check-worktree-paths _lint-chezmoi-source (_run-files 'jq' ['*.json', 'flake.lock', ':(exclude).vscode/settings.json'] ['empty']) _lint-container-files (_run-files 'luacheck' ['*.lua']) (_run 'rumdl' ['check', '--respect-gitignore', '.']) _lint-nix (_run 'uv' ['run', 'ruff', 'check', '.']) _lint-shell-files _lint-shell-templates-portable _lint-templates (_run-files 'taplo' ['*.toml'] ['lint']) _lint-xml
 
 [linux]
-[private]
-_lint-container-files:
-    files=()
-    while IFS= read -r -d '' file; do
-      [[ -f $file && ! -L $file ]] && files+=("$file")
-    done < <(git ls-files -z --cached --others --exclude-standard -- Dockerfile Containerfile)
-    ((${#files[@]} == 0)) || hadolint "${files[@]}"
+_lint-container-files: (_run-files 'hadolint' ['Dockerfile', 'Containerfile'])
 
 [macos]
-[private]
 _lint-container-files:
 
-[private]
 _check-worktree-paths:
     broken=0
-    while IFS= read -r -d '' file; do
+    for file in {{ quote(git_files([])) }}; do
       if [[ -L $file && ! -e $file ]]; then
         target=$(readlink "$file")
         if [[ $file == bluebuild/files/system/* && $target == /* && -e bluebuild/files/system$target ]]; then
@@ -29,10 +20,9 @@ _check-worktree-paths:
       elif [[ ! -e $file ]]; then
         printf 'tracked path missing from worktree: %s\n' "$file" >&2
       fi
-    done < <(git ls-files -z --cached --others --exclude-standard --)
+    done
     exit "$broken"
 
-[private]
 _lint-chezmoi-source: sops-check
     temporary_dir=$(mktemp -d)
     trap 'rm -rf "$temporary_dir"' EXIT

@@ -1,31 +1,12 @@
-[private]
-_lint-nix:
-    nix_files=()
-    while IFS= read -r -d '' file; do
-      [[ -f $file && ! -L $file ]] && nix_files+=("$file")
-    done < <(git ls-files -z --cached --others --exclude-standard -- '*.nix')
-    deadnix_files=()
-    for file in "${nix_files[@]}"; do
+_lint-nix: (_run-files 'deadnix' ['*.nix', ':(exclude)hosts/linux/hardware-configuration.nix', ':(exclude)packages/hyper-window-tiling/bun.nix'] ['--fail'])
+    for file in {{ quote(git_files(['*.nix'])) }}; do
+      [[ -f $file && ! -L $file ]] || continue
       nix-instantiate --parse "$file" >/dev/null
-      case $file in
-        hosts/linux/hardware-configuration.nix | packages/hyper-window-tiling/bun.nix) ;;
-        *) deadnix_files+=("$file") ;;
-      esac
     done
-    ((${#deadnix_files[@]} == 0)) || deadnix --fail "${deadnix_files[@]}"
     statix check .
 
-[private]
-_lint-xml:
-    xml_files=()
-    while IFS= read -r -d '' file; do
-      [[ -f $file && ! -L $file ]] && xml_files+=("$file")
-    done < <(git ls-files -z --cached --others --exclude-standard -- '*.plist' '*.xml')
-    ((${#xml_files[@]} == 0)) || uv run python -c \
-      'import sys; from defusedxml.ElementTree import parse; [parse(path) for path in sys.argv[1:]]' \
-      "${xml_files[@]}"
+_lint-xml: (_run-files 'uv' ['*.plist', '*.xml'] ['run', 'python', '-c', 'import sys; from defusedxml.ElementTree import parse; [parse(path) for path in sys.argv[1:]]'])
 
-[private]
 _lint-templates:
     python_template_files=()
     ruby_template_files=()
@@ -36,7 +17,7 @@ _lint-templates:
     zsh_template_files=()
     python_input_template_files=()
     xml_input_template_files=()
-    while IFS= read -r -d '' file; do
+    for file in {{ quote(git_files(['*.tmpl', '*.py.in', '*.plist.in', '*.xml.in'])) }}; do
       [[ -f $file && ! -L $file ]] || continue
       case "$file" in
         dotfiles/.chezmoitemplates/*) ;;
@@ -50,7 +31,7 @@ _lint-templates:
         *.py.in) python_input_template_files+=("$file") ;;
         *.plist.in | *.xml.in) xml_input_template_files+=("$file") ;;
       esac
-    done < <(git ls-files -z --cached --others --exclude-standard -- '*.tmpl' '*.py.in' '*.plist.in' '*.xml.in')
+    done
 
     tmp_destination=$(mktemp -d)
     trap 'rm -rf "$tmp_destination"' EXIT
@@ -169,7 +150,6 @@ _lint-templates:
       'import sys; from defusedxml.ElementTree import parse; [parse(path) for path in sys.argv[1:]]' \
       "${rendered_xml_files[@]}"
 
-[private]
 _lint-shell-templates-portable:
     platform_overrides=(
       '{"chezmoi":{"os":"darwin","arch":"arm64","osRelease":{}}}'
@@ -177,17 +157,9 @@ _lint-shell-templates-portable:
       '{"chezmoi":{"os":"linux","arch":"amd64","osRelease":{"id":"nixos"}}}'
     )
     shell_template_files=()
-    while IFS= read -r -d '' file; do
+    for file in {{ quote(git_files(['dotfiles/dot_bash*.tmpl', 'dotfiles/dot_zsh*.tmpl', 'dotfiles/dot_config/shell/*.tmpl', 'dotfiles/dot_config/shell/exact_bashrc.d/*.tmpl', 'dotfiles/dot_config/shell/exact_interactive.d/*.tmpl', 'dotfiles/dot_config/shell/exact_zshrc.d/*.tmpl'])) }}; do
       [[ -f $file && ! -L $file ]] && shell_template_files+=("$file")
-    done < <(
-      git ls-files -z --cached --others --exclude-standard -- \
-        'dotfiles/dot_bash*.tmpl' \
-        'dotfiles/dot_zsh*.tmpl' \
-        'dotfiles/dot_config/shell/*.tmpl' \
-        'dotfiles/dot_config/shell/exact_bashrc.d/*.tmpl' \
-        'dotfiles/dot_config/shell/exact_interactive.d/*.tmpl' \
-        'dotfiles/dot_config/shell/exact_zshrc.d/*.tmpl'
-    )
+    done
 
     tmp_destination=$(mktemp -d)
     trap 'rm -rf "$tmp_destination"' EXIT
@@ -219,10 +191,9 @@ _lint-shell-templates-portable:
       done
     done
 
-[private]
 _lint-shell-files:
     shell_files=()
-    while IFS= read -r -d '' file; do
+    for file in {{ quote(git_files([])) }}; do
       [[ -f $file && ! -L $file ]] || continue
       case "$file" in
         *.tmpl | *.txt | *.patch) continue ;;
@@ -231,6 +202,6 @@ _lint-shell-files:
       if head -n 2 < "$file" | grep -Eq '^#!.*[[:space:]/](sh|bash)([[:space:]]|$)|^# shellcheck shell=(sh|bash)'; then
         shell_files+=("$file")
       fi
-    done < <(git ls-files -z --cached --others --exclude-standard --)
+    done
     ((${#shell_files[@]} == 0)) && exit
     shellcheck -x "${shell_files[@]}"

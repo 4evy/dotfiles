@@ -144,8 +144,3 @@ clean:
     total_reclaimed=$((total_before - total_after))
     printf '\n==> Cleanup total\n'
     report_usage_delta "$total_reclaimed" cleanup
-
-# Reclaim disposable Podman, Nix, tool, user, and journal data.
-[group('system')]
-[macos]
-clean: (_linux-only recipe_name())
