@@ -148,6 +148,7 @@ in
         tree
         ty
         unzip
+        python314
         uv
         vulkan-tools
         watchexec

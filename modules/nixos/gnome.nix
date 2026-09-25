@@ -117,7 +117,7 @@ in
     })
     (mkIf config.local.dconf.enable {
       environment.systemPackages = attrValues {
-        inherit (pkgs.gnomeExtensions) appindicator clipboard-indicator pip-on-top;
+        inherit (pkgs.gnomeExtensions) appindicator pip-on-top;
         inherit hyperWindowTilingExtension;
       };
       programs.dconf.profiles.user.databases = [
@@ -181,7 +181,6 @@ in
             "org/gnome/shell" = {
               enabled-extensions = mkArray [
                 "appindicatorsupport@rgcjonas.gmail.com"
-                "clipboard-indicator@tudmotu.com"
                 copyousExtensionUuid
                 hyperWindowTilingExtensionUuid
                 "pip-on-top@rafostar.github.com"
