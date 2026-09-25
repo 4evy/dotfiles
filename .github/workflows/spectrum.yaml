@@ -13,6 +13,7 @@ on:
       - .github/workflows/spectrum.yaml
       - bluebuild/**
       - files/dnf/**
+      - dotfiles/.chezmoidata/t3_chat.json
       - recipes
       - flake.lock
       - flake.nix
