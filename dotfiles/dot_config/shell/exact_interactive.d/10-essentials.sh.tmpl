@@ -75,7 +75,7 @@ neofetch() { pfetch "$@"; }
 #           └─ cut variants share one yt-dlp runner
 
 _dotfiles_ytdlp() {
-	env -u PROMPT_MULTILINE_INDICATOR "$HOME/.local/bin/yt-dlp-script" "$@"
+	env -u PROMPT_MULTILINE_INDICATOR yt-dlp-script "$@"
 }
 
 m4a() { _dotfiles_ytdlp m4a "$@"; }
