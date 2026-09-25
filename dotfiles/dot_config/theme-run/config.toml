@@ -13,28 +13,6 @@ programs = [
 ]
 
 [[integration]]
-name = "codex"
-strategy = "arguments"
-dark_theme = "t3-chat-dark"
-light_theme = "t3-chat-light"
-arguments = ["-c", 'tui.theme="{theme}"', "-c", "{context}"]
-context_table = "projects"
-context_field = "trust_level"
-context_value = "trusted"
-context_path_flags = ["-C", "--cd"]
-context_path_prefixes = ["-C", "--cd="]
-context_argument_separator = "--"
-context_directory_commands = [
-  [
-    "git",
-    "-C",
-    "{directory}",
-    "rev-parse",
-    "--show-toplevel",
-  ],
-]
-
-[[integration]]
 name = "btop"
 strategy = "config"
 dark_theme = "t3_chat_dark"
@@ -108,6 +86,7 @@ env = { STARSHIP_CONFIG = "{home}/.config/starship-{theme}.toml" }
 name = "codex"
 programs = [
   "$THEME_RUN_CODEX_BIN",
+  "~/.local/bin/codex",
   "~/.bun/bin/codex",
   "~/.cache/.bun/bin/codex",
   "~/.npm/bin/codex",
@@ -117,7 +96,6 @@ default_args = ["--dangerously-bypass-approvals-and-sandbox"]
 skip_env = ["THEME_RUN_CODEX_WRAPPER"]
 env_unset = ["NO_COLOR"]
 env = { COLORTERM = "truecolor" }
-integration = "codex"
 interpreter = "ecmascript"
 
 [[runner]]

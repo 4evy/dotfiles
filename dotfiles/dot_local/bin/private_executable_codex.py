@@ -40,8 +40,8 @@ real = first_executable(candidates, excluding=wrapper)
 if real is None:
     raise SystemExit("codex: real Codex binary not found")
 
-# cx already runs theme-run. Keep direct Codex launches on the same configured
-# model and update the syntax theme without wrapping the process again.
+# Both cx and direct Codex launches use this wrapper. Update the syntax theme
+# in the config file so CLI overrides do not disable the shared server.
 theme_helper = home / ".local/libexec/codex-theme-defaults"
 if theme_helper.is_file() and sys.stdin.isatty() and sys.stdout.isatty():
     subprocess.run([sys.executable, theme_helper, real], check=False)
