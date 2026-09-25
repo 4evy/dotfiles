@@ -78,7 +78,7 @@ sudo nixos-rebuild switch --flake .#nixos
 
 <br>
 
-This path needs macOS 26 or newer. From the cloned repo, I run:
+This path needs macOS 27 or newer. From the cloned repo, I run:
 
 ``` bash
 ./ansible/bootstrap.sh --setup
