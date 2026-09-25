@@ -54,21 +54,10 @@
 - name: Package the current theme-run source for Homebrew
   ansible.builtin.command:
     argv:
-      - /usr/bin/tar
-      - -cf
+      - bash
+      - "{{ dotfiles_repo_root }}/scripts/package-theme-run.sh"
       - "{{ bootstrap_homebrew_local_tap_dir }}/Sources/theme-run-0.1.0.tar"
-      - -C
-      - "{{ dotfiles_repo_root }}/packages/theme-run"
-      - go.mod
-      - go.sum
-      - README.md
-      - cmd
-      - internal
-      - -C
-      - "{{ dotfiles_repo_root }}"
-      - LICENSE
-  environment:
-    COPYFILE_DISABLE: "1"
+    chdir: "{{ dotfiles_repo_root }}"
   changed_when: false
   tags:
     - theme-run
