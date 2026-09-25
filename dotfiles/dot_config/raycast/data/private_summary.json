@@ -10,34 +10,95 @@
     "uiZoom"
   ],
   "counts": [
-    { "key": "nodeExtensions", "methodPath": ["nodeExtensions", "allExtensions"] },
-    { "key": "nodeCommands", "methodPath": ["nodeExtensions", "allCommands"] },
-    { "key": "nodeTools", "methodPath": ["nodeExtensions", "allTools"] },
-    { "key": "commandSettings", "methodPath": ["settings", "allCommandSettings"] },
-    { "key": "mcpServers", "methodPath": ["settings", "allMcpServers"] },
-    { "key": "quicklinks", "methodPath": ["quicklinks", "count"] },
-    { "key": "snippets", "methodPath": ["snippets", "count"] },
-    { "key": "notes", "methodPath": ["notes", "count"] },
+    {
+      "key": "nodeExtensions",
+      "methodPath": ["nodeExtensions", "allExtensions"]
+    },
+    {
+      "key": "nodeCommands",
+      "methodPath": ["nodeExtensions", "allCommands"]
+    },
+    {
+      "key": "nodeTools",
+      "methodPath": ["nodeExtensions", "allTools"]
+    },
+    {
+      "key": "commandSettings",
+      "methodPath": ["settings", "allCommandSettings"]
+    },
+    {
+      "key": "mcpServers",
+      "methodPath": ["settings", "allMcpServers"]
+    },
+    {
+      "key": "quicklinks",
+      "methodPath": ["quicklinks", "count"]
+    },
+    {
+      "key": "snippets",
+      "methodPath": ["snippets", "count"]
+    },
+    {
+      "key": "notes",
+      "methodPath": ["notes", "count"]
+    },
     {
       "key": "clipboard",
       "methodPath": ["clipboard", "all"],
       "args": [{}],
       "select": "entries"
     },
-    { "key": "frecency", "methodPath": ["frecency", "getAll"] },
-    { "key": "userActivity", "methodPath": ["userActivity", "getAllActivities"] },
-    { "key": "aiChats", "methodPath": ["ai", "chatGetAllIds"] },
-    { "key": "aiModels", "methodPath": ["ai", "modelGetAll"] },
-    { "key": "aiCommands", "methodPath": ["ai", "commandGetAll"] },
-    { "key": "aiModes", "methodPath": ["ai", "modeGetAll"] },
-    { "key": "aiTranscriptions", "methodPath": ["ai", "transcriptionGetAll"] },
+    {
+      "key": "frecency",
+      "methodPath": ["frecency", "getAll"]
+    },
+    {
+      "key": "userActivity",
+      "methodPath": ["userActivity", "getAllActivities"]
+    },
+    {
+      "key": "aiChats",
+      "methodPath": ["ai", "chatGetAllIds"]
+    },
+    {
+      "key": "aiModels",
+      "methodPath": ["ai", "modelGetAll"]
+    },
+    {
+      "key": "aiCommands",
+      "methodPath": ["ai", "commandGetAll"]
+    },
+    {
+      "key": "aiModes",
+      "methodPath": ["ai", "modeGetAll"]
+    },
+    {
+      "key": "aiTranscriptions",
+      "methodPath": ["ai", "transcriptionGetAll"]
+    },
     {
       "key": "aiTranscriptionStyles",
       "methodPath": ["ai", "transcriptionStyleGetAll"]
     },
-    { "key": "orgSkills", "methodPath": ["orgPacks", "listOrgSkills"] },
-    { "key": "orgAgents", "methodPath": ["orgPacks", "listOrgAiAgents"] },
-    { "key": "calculator", "methodPath": ["calculator", "all"] },
-    { "key": "contacts", "methodPath": ["contacts", "all"] }
+    {
+      "key": "orgSkills",
+      "methodPath": ["orgPacks", "listOrgSkills"]
+    },
+    {
+      "key": "orgAgents",
+      "methodPath": ["orgPacks", "listOrgAiAgents"]
+    },
+    {
+      "key": "calculator",
+      "methodPath": ["calculator", "all"]
+    },
+    {
+      "key": "contacts",
+      "methodPath": ["contacts", "all"]
+    },
+    {
+      "key": "aiScheduledMessages",
+      "methodPath": ["ai", "scheduledMessageGetAll"]
+    }
   ]
 }

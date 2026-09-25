@@ -57,7 +57,15 @@ function installDatabaseKeyDump(keyFile = process.env[PATHS.env.keyDumpFile]): v
       ) {
         constructor(...ctorArgs: unknown[]) {
           const key = encryptionKeyFromConstructorArgs(ctorArgs);
-          if (key) fs.writeFileSync(destination, key);
+          if (key) {
+            const descriptor = fs.openSync(destination, "w", 0o600);
+            try {
+              fs.fchmodSync(descriptor, 0o600);
+              fs.writeFileSync(descriptor, key);
+            } finally {
+              fs.closeSync(descriptor);
+            }
+          }
           super(...ctorArgs);
         }
       };

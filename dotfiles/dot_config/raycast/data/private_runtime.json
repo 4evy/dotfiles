@@ -1,8 +1,8 @@
 {
   "checkedAgainst": {
-    "raycastVersion": "0.71.7.0",
-    "commit": "a467a146eb1ba035b7beefdf92fff8f31fa4c042",
-    "date": "2026-08-19"
+    "raycastVersion": "2.5.1.0",
+    "commit": "09c79271d60fe898235e84a8d7db3268ee4fbad4",
+    "date": "2026-09-24"
   },
   "node": {
     "bundled": "22.22.2",

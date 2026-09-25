@@ -4,12 +4,7 @@ import {
   loadRaycastDataAddon,
   type RaycastDatabaseClient,
 } from "./db.mts";
-import { callPath, count, errorMessage, getPath, isRecord } from "./util.mts";
-
-export type MethodResolution = {
-  method: (...args: unknown[]) => unknown;
-  receiver: Record<string, unknown>;
-};
+import { queryCount } from "./util.mts";
 
 export function parseStoredJson(value: unknown): unknown {
   if (typeof value !== "string") return value;
@@ -78,30 +73,6 @@ export function databaseMethodSurface(db: RaycastDatabaseClient): {
   };
 }
 
-export function resolveDatabaseMethod(
-  db: RaycastDatabaseClient,
-  methodPath: string,
-): MethodResolution {
-  const segments = methodPath.split(".").filter(Boolean);
-  const method = getPath(db, segments);
-  const receiver = segments.length <= 1 ? db : getPath(db, segments.slice(0, -1));
-  if (typeof method !== "function" || !isRecord(receiver)) {
-    throw new Error(`unknown database method: ${methodPath}`);
-  }
-  return { method: method as (...args: unknown[]) => unknown, receiver };
-}
-
-async function optionalCount(
-  label: string,
-  read: () => Promise<unknown>,
-): Promise<readonly [string, number | { error: string }]> {
-  try {
-    return [label, count(await read())];
-  } catch (error) {
-    return [label, { error: errorMessage(error) }];
-  }
-}
-
 export async function databaseSummary(
   db: RaycastDatabaseClient,
 ): Promise<Record<string, unknown>> {
@@ -110,12 +81,7 @@ export async function databaseSummary(
       db.getDatabaseStatus(),
       db.settings.getGeneralSettings(),
       db.settings.allInternalExtensionsSettings(),
-      ...SUMMARY.counts.map((query) =>
-        optionalCount(query.key, async () => {
-          const value = await callPath(db, query.methodPath, query.args ?? []);
-          return query.select ? getPath(value, [query.select]) : value;
-        }),
-      ),
+      ...SUMMARY.counts.map((query) => queryCount(db, query)),
     ]);
 
   return {
