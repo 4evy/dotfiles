@@ -47,15 +47,6 @@ def _matching_lines(
     return "\n".join(lines)
 
 
-def _lspci_display_devices(text: str) -> str:
-    lines = text.splitlines()
-    selected: list[str] = []
-    for index, line in enumerate(lines):
-        if re.search(r"VGA|3D|Display", line, re.IGNORECASE):
-            selected.extend(lines[index : index + 5])
-    return "\n".join(dict.fromkeys(selected))
-
-
 def _audit_system() -> None:
     _section("system")
     _print_if_available("hostnamectl")
@@ -70,8 +61,7 @@ def _audit_system() -> None:
 
 def _audit_graphics() -> None:
     _section("graphics")
-    if which("lspci"):
-        console.print(_lspci_display_devices(output(("lspci", "-nnk"), check=False)))
+    _print_if_available("lspci", "-nnk", "-d", "::03xx")
     if Path("/dev/dri").exists() and which("ls"):
         _print_command("ls", "-l", "/dev/dri")
     if which("lsmod"):

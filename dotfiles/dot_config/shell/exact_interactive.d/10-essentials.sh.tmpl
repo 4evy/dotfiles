@@ -60,7 +60,7 @@ pfetch() {
 	fi
 
 	if [[ ! -t 1 ]]; then
-		fetch_options+=(--pipe --logo none --key-width 0)
+		fetch_options+=(--logo none)
 	elif [[ "$terminal_width" =~ ^[0-9]+$ ]] && ((terminal_width < 100)); then
 		fetch_options+=(--logo none)
 	fi
