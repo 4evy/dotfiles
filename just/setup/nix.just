@@ -2,7 +2,6 @@ determinate_nix_installer_url := "https://install.determinate.systems/nix"
 determinate_nix_pkg_url := "https://install.determinate.systems/determinate-pkg/stable/Universal"
 determinate_nix_team_id := "X3JQ4VPJZ6"
 nix_bin := nix_bin_dir / "nix"
-nix_profile_tools := ['deadnix:deadnix', 'nh:nh', 'nil:nil', 'nix-instantiate:nix', 'nom:nix-output-monitor', 'nix-tree:nix-tree', 'nixd:nixd', 'nixfmt:nixfmt', 'statix:statix']
 
 # Install Nix on Linux, accounting for immutable composefs hosts.
 [linux]
@@ -65,30 +64,17 @@ determinate-upgrade: (doctor 'nix') _ensure-nix
 determinate-fix-hashes *args: (doctor 'nix') _ensure-nix
     determinate-nixd fix hashes {{ quote(args) }}
 
-# Install Nix on the live host and ensure Nix profile tools exist.
+# Install Nix and reconcile only the repository-owned tool bundle.
 [group('setup')]
 nix: (doctor 'nix') _ensure-nix
-    nix_profile_bin_dir={{ quote(nix_profile_bin_dir) }}
-    nix_bin={{ quote(which(nix_bin) || 'nix') }}
-
-    missing=()
-    for spec in {{ quote(nix_profile_tools) }}; do
-      bin=${spec%%:*}
-      source=${spec#*:}
-      if ! command -v "$bin" >/dev/null 2>&1 &&
-        [[ ! -e "$nix_profile_bin_dir/$bin" ]] &&
-        [[ ! -e "/run/current-system/sw/bin/$bin" ]]; then
-        if [[ $source != *'#'* ]]; then
-          source="nixpkgs#$source"
-        fi
-        missing+=("$source")
-      fi
-    done
-
-    if ((${#missing[@]})); then
-      "$nix_bin" profile install "${missing[@]}"
-    else
-      printf '%s\n' 'Nix profile tools already installed; checking for upgrades.'
+    if [[ -e /etc/NIXOS ]]; then
+      printf '%s\n' 'NixOS owns these tools; update the flake and rebuild the system to upgrade them.'
+      exit 0
     fi
 
-    "$nix_bin" profile upgrade --all
+    nix_bin={{ quote(which(nix_bin) || 'nix') }}
+    installed=$("$nix_bin" profile list --json | jq -er '.elements | has("dotfiles-nix-tools") | tostring')
+    if [[ $installed == false ]]; then
+      "$nix_bin" profile add --priority 3 {{ quote('path:' + repo_dir + '#dotfiles-nix-tools') }}
+    fi
+    "$nix_bin" profile upgrade dotfiles-nix-tools
