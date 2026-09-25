@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # shellcheck shell=bash
 #
 # Prepare a fresh macOS or Linux host and run this repository's Ansible
 # playbook using system-provided command-line tools.
-# The shebang selects macOS's Bash 3.2 regardless of the user's Zsh login
-# shell. Staying 3.2-compatible avoids installing an interpreter merely to
-# install the bootstrap's real dependencies; newer Linux Bash runs it as-is.
+# Resolve Bash through PATH for NixOS, which has no /bin/bash. Staying
+# compatible with macOS's Bash 3.2 avoids requiring a newer interpreter
+# before the bootstrap dependencies are installed.
 
 set -euo pipefail
 
@@ -126,6 +126,8 @@ Options:
 
 Without --setup, all arguments are forwarded to ansible-playbook after the
 bootstrap dependencies and Ansible collections are installed.
+On NixOS, use the active system tools and reconcile only collections, home
+files, and host integrations; rebuild NixOS separately to update programs.
 EOF
 }
 
@@ -779,6 +781,30 @@ execute_setup_plan() {
 	run_ansible_playbook "${ansible_playbook_executable}" --tags host
 }
 
+# NixOS supplies the runtime and programs through the active system generation.
+# Only collections, home files, and the live keyboard session need reconciliation.
+run_nixos_bootstrap() {
+	local repository_root="$1"
+	local setup_requested="$2"
+	shift 2
+	local system_bin='/run/current-system/sw/bin'
+	local executable
+
+	for executable in ansible-galaxy ansible-playbook just; do
+		if [[ ! -x "${system_bin}/${executable}" ]]; then
+			die "rebuild the NixOS configuration first: missing ${system_bin}/${executable}"
+		fi
+	done
+	cd "${repository_root}" || die "failed to enter repository: ${repository_root}"
+	install_ansible_collections "${system_bin}/ansible-galaxy" "${repository_root}"
+	if [[ "${setup_requested}" == 'true' ]]; then
+		"${system_bin}/just" --justfile "${repository_root}/Justfile" apply
+		run_ansible_playbook "${system_bin}/ansible-playbook" --tags host
+	else
+		run_ansible_playbook "${system_bin}/ansible-playbook" "$@"
+	fi
+}
+
 main() {
 	local repository_root
 	local operating_system
@@ -816,6 +842,10 @@ main() {
 	validate_configuration
 	repository_root="$(resolve_repository_root)"
 	operating_system="$(uname -s)"
+	if [[ "${operating_system}" == Linux && -e /etc/NIXOS ]]; then
+		run_nixos_bootstrap "${repository_root}" "${setup_requested}" "$@"
+		return
+	fi
 	machine_architecture="$(uname -m)"
 	validate_macos_version "${operating_system}"
 	homebrew_prefix="$(
