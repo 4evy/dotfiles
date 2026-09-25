@@ -66,8 +66,8 @@ ds = ["diff", "--tool", "git-plaintext-records-stat"]
 p = ["git", "push"]
 e = ["edit"]
 n = ["new"]
-get.definition = ["util", "exec", "--", "jj-get"]
-get.doc = "Fetch a remote Git branch or GitHub pull request into a local bookmark"
+get.definition = ["git", "ref", "fetch"]
+get.doc = "Fetch Git refs or commit IDs (native git ref fetch options)"
 
 [templates]
 git_push_bookmark = '"4evy/push-" ++ change_id.short()'
