@@ -4,6 +4,7 @@ import re
 import socket
 import sys
 import time
+import xml.etree.ElementTree as ET  # ruff: ignore[suspicious-xml-etree-import] — parses our local Nmap output
 from collections.abc import Sequence
 from pathlib import Path
 from subprocess import CompletedProcess
@@ -25,7 +26,6 @@ from workstation.local.phone_mirror_models import (
     Config,
     IPAddress,
     RunCommand,
-    TailscaleStatus,
     TargetCache,
 )
 
@@ -38,7 +38,6 @@ _GUI_ENVIRONMENT_KEYS = frozenset({
     "XDG_SESSION_TYPE",
 })
 _WIRELESS_DEBUGGING_PORTS = (30000, 49999)
-_OPEN_TCP_PORT = re.compile(r"(?<!\d)(\d{1,5})/open/tcp")
 _PHONE_LAN_INTERFACE_PREFIXES = ("eth", "wlan")
 
 
@@ -63,27 +62,19 @@ def _detail(result: CompletedProcess[str]) -> str:
 
 
 def resolve_tailscale_ip(name: str, run_command: RunCommand) -> str:
-    result = run_command(("tailscale", "status", "--json"), timeout=8)
+    result = run_command(("tailscale", "ip", "--", name), timeout=8)
     if result.returncode != 0:
-        raise DotfilesError(f"tailscale status failed: {_detail(result)}")
+        raise DotfilesError(f"tailscale ip failed: {_detail(result)}")
     try:
-        status = TailscaleStatus.model_validate_json(result.stdout)
-    except ValidationError as error:
-        raise DotfilesError("tailscale status returned invalid data") from error
-
-    wanted = name.rstrip(".").casefold()
-    matches = [node for node in status.nodes if wanted in node.names]
-    if not matches:
-        raise DotfilesError(f"could not find {name} in tailscale status")
-    if len(matches) > 1:
-        raise DotfilesError(f"tailscale name {name!r} matched more than one device")
-    if not matches[0].addresses:
+        addresses: list[IPAddress] = [
+            ipaddress.ip_address(line) for line in result.stdout.splitlines()
+        ]
+    except ValueError as error:
+        raise DotfilesError("tailscale ip returned invalid data") from error
+    if not addresses:
         raise DotfilesError(f"tailscale did not report a valid IP for {name}")
     return str(
-        min(
-            matches[0].addresses,
-            key=lambda address: ipaddress.ip_address(str(address)).version,
-        )
+        next((address for address in addresses if address.version == 4), addresses[0])
     )
 
 
@@ -165,7 +156,17 @@ def _phone_lan_addresses(output: str) -> tuple[ipaddress.IPv4Address, ...]:
 
 
 def _open_ports_from_nmap(output: str) -> tuple[int, ...]:
-    return tuple(dict.fromkeys(int(match) for match in _OPEN_TCP_PORT.findall(output)))
+    try:
+        scan = ET.fromstring(output)  # ruff: ignore[suspicious-xml-element-tree-usage] — Nmap generates this XML locally
+        return tuple(
+            dict.fromkeys(
+                int(port.attrib["portid"])
+                for port in scan.findall("./host/ports/port[@protocol='tcp']")
+                if port.find("state[@state='open']") is not None
+            )
+        )
+    except (ET.ParseError, KeyError, ValueError) as exc:
+        raise DotfilesError(f"Invalid Nmap scan output: {exc}") from exc
 
 
 def scan_open_ports(
@@ -184,7 +185,7 @@ def scan_open_ports(
             "45s",
             "-p",
             f"{start}-{end}",
-            "-oG",
+            "-oX",
             "-",
             host,
         ),
@@ -380,13 +381,6 @@ class PhoneMirror:
         ]
         if sys.platform.startswith("linux") and self.config.render_driver:
             arguments.extend(("--render-driver", self.config.render_driver))
-        if self.config.connect_only:
-            arguments.extend((
-                "--no-video",
-                "--no-audio",
-                "--no-control",
-                "--time-limit=1",
-            ))
         arguments.extend(self.config.scrcpy_args)
         return tuple(arguments)
 
