@@ -1,6 +1,5 @@
 (defcfg
   process-unmapped-keys yes
-  log-layer-changes yes
   linux-output-device-name "dotfiles-kanata-main"
   linux-dev-names-include (
     "ITE Tech. Inc. ITE Device(8910) Keyboard"
