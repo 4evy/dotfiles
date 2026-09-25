@@ -47,7 +47,7 @@ fmt: (doctor 'fmt')
 [arg('args', help='Recipe and arguments to rerun on file changes')]
 [group('dev')]
 watch +args=['check']: (doctor 'watch')
-    watchexec --clear --restart -- {{ just_command }} {{ quote(args) }}
+    watchexec --clear --restart --shell=none -- {{ just_command }} {{ quote(args) }}
 
 # Run the same treefmt wrapper in CI mode without retaining rewrites.
 [group('check')]
