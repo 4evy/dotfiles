@@ -38,7 +38,7 @@ export function parseProfilePayload(
 export async function applyProfileDefaults(
   db: RaycastDatabaseClient,
   profile: RaycastProfilePayload,
-): Promise<Record<string, unknown> & { id: string; name: string }> {
+): Promise<RaycastProfilePayload["currentUser"]> {
   await db.userDefaults.set(
     PROFILE_USER_DEFAULTS.currentUser,
     JSON.stringify(profile.currentUser),
@@ -49,7 +49,8 @@ export async function applyProfileDefaults(
   );
 
   const stored = await db.userDefaults.get(PROFILE_USER_DEFAULTS.currentUser);
-  if (!stored) throw new Error("CurrentUser was not stored");
+  if (typeof stored !== "string")
+    throw new Error("CurrentUser was not stored as JSON text");
   return parseProfilePayload(stored, JSON.stringify(profile.oauthToken)).currentUser;
 }
 

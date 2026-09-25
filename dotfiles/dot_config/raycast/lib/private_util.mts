@@ -1,9 +1,9 @@
-import { access, readFile, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 
-import { IO } from "./config.mts";
+import { type CountQuery, IO } from "./config.mts";
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -31,16 +31,20 @@ export async function readJson(file: string): Promise<unknown> {
 }
 
 export async function writeJson(file: string, value: unknown): Promise<void> {
-  await writeFile(file, `${JSON.stringify(value, null, IO.JSON_INDENT)}\n`, {
-    mode: IO.FILE_MODE,
-  });
-}
-
-export function clone<T>(value: T): T {
-  return value == null ? value : structuredClone(value);
+  const directory = await mkdtemp(path.join(path.dirname(file), ".raycast-backup-"));
+  try {
+    const temporary = path.join(directory, "backup.json");
+    await writeFile(temporary, `${JSON.stringify(value, null, IO.JSON_INDENT)}\n`, {
+      mode: IO.FILE_MODE,
+    });
+    await rename(temporary, file);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 }
 
 export function count(value: unknown): number {
+  if (typeof value === "number") return value;
   if (Array.isArray(value)) return value.length;
   if (value == null) return 0;
   if (typeof value === "object") return Object.keys(value).length;
@@ -67,7 +71,7 @@ export async function callPath(
   if (typeof method !== "function") {
     throw new Error(`missing Raycast database method: ${segments.join(".")}`);
   }
-  return (method as (...methodArgs: unknown[]) => unknown).apply(receiver, [...args]);
+  return Reflect.apply(method, receiver, args);
 }
 
 export async function mapEntries<T, K extends string, V>(
@@ -101,4 +105,23 @@ export function runCli(name: string, start: () => Promise<void>): void {
     console.error(`${name}: ${message}`);
     process.exitCode = 1;
   });
+}
+
+export async function queryCount(
+  source: unknown,
+  query: CountQuery,
+): Promise<readonly [string, number | { error: string }]> {
+  try {
+    const result = await callPath(source, query.methodPath, query.args ?? []);
+    const selected = query.select ? getPath(result, [query.select]) : result;
+    const filter = query.filter;
+    const records = filter
+      ? Array.isArray(selected)
+        ? selected.filter((item) => getPath(item, filter.path) === filter.equals)
+        : []
+      : selected;
+    return [query.key, count(records)];
+  } catch (error) {
+    return [query.key, { error: errorMessage(error) }];
+  }
 }

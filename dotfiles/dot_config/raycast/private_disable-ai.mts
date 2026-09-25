@@ -24,11 +24,12 @@ const USAGE = `Usage: node disable-ai.mts [--status] [--dry-run] [--restore]
 
 Disables Raycast AI surfaces through Raycast's own local settings database:
 - disables internal AI, Dictation, Translator, MCP, and Screen Awareness
+- disables remote AI chat, local subscriptions, and agent search exposure
+- resets tool permissions to confirmation and clears automatic approval rules
 - clears Quick AI fallback command exposure
 - clears AI skill directories and BYOK API keys
 - disables file-search semantic indexing
 - marks all Raycast AI models disabled
-- clears selected/last-used AI model defaults
 - clears Raycast AI/Dictation/Translator/Screen Awareness command frecency
 - clears Raycast's AI chat window defaults
 
@@ -69,13 +70,16 @@ async function run(): Promise<void> {
 
     const backup = backupPath(appSupport);
     const before = await buildSnapshot(db);
+    const backupWritten = await ensureBackup(backup, before, dryRun);
+    const changes = await applyDisabled(db, before, dryRun);
     printJson({
       mode: "disable",
       dryRun,
       keyFile,
       backup,
-      backupWritten: await ensureBackup(backup, before, dryRun),
-      operations: (await applyDisabled(db, before, dryRun)).length,
+      backupWritten,
+      operations: changes.length,
+      changes,
       status: await status(db),
     });
   });

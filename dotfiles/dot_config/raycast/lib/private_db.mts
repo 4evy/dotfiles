@@ -58,8 +58,7 @@ export async function findKeyFile(appSupport: string): Promise<string | undefine
     if (await pathExists(cached)) return cached;
   }
 
-  const lastKey = path.join(appSupport, PATHS.lastKeyName);
-  return (await pathExists(lastKey)) ? lastKey : undefined;
+  return undefined;
 }
 
 export async function readKey(keyFile: string | undefined): Promise<string> {

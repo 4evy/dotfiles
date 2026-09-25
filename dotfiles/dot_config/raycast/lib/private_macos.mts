@@ -29,16 +29,13 @@ const WRITE_ARGS = {
 >;
 
 function isRestoreType(value: string): value is MacOSRestoreType {
-  return value in WRITE_ARGS;
+  return Object.hasOwn(WRITE_ARGS, value);
 }
 
 export async function readMacOSDefault({
   key,
   restoreType,
-}: {
-  key: string;
-  restoreType: string;
-}): Promise<MacOSDefaultValue> {
+}: Pick<MacOSDefaultValue, "key" | "restoreType">): Promise<MacOSDefaultValue> {
   try {
     const { stdout } = await execFile(PATHS.defaultsBin, [
       "read",

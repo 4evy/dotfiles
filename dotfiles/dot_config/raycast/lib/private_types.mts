@@ -72,12 +72,14 @@ export type RaycastInitReport = {
 };
 
 export type RaycastUserDefaultsRepository = {
-  get: (key: string) => Promise<string | null>;
-  set: (key: string, value: string) => Promise<void>;
+  get: (key: string) => Promise<string | number | boolean | null>;
+  set: (key: string, value: string | number | boolean) => Promise<void>;
   delete: (key: string) => Promise<void>;
 };
 
 export type SettingsRepository = {
+  addInternalExtensionSettings: (settings: Record<string, unknown>) => Promise<void>;
+  deleteInternalExtensionSettings: (id: string) => Promise<void>;
   getInternalExtensionSettings: (
     id: string,
   ) => Promise<InternalExtensionSettings | null | undefined>;
@@ -134,9 +136,8 @@ export type RaycastNativeAddon = {
   [key: string]: unknown;
 };
 
-export type RaycastDatabaseContext = {
+export type RaycastDatabaseContext = AsyncDisposable & {
   db: RaycastDatabaseClient;
   appSupport: string;
   keyFile: string | undefined;
-  [Symbol.asyncDispose]: () => Promise<void>;
 };

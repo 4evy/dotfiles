@@ -1,20 +1,19 @@
 import process from "node:process";
-
 import policyJson from "../data/disable-ai.json" with { type: "json" };
 import pathsJson from "../data/paths.json" with { type: "json" };
 import runtimeJson from "../data/runtime.json" with { type: "json" };
 import summaryJson from "../data/summary.json" with { type: "json" };
+import type { InternalExtensionSettings } from "./types.mts";
 
 export const POLICY = policyJson satisfies {
   backupVersion: number;
   fallbackCommandIds: string[];
-  modelUserDefaultKeys: string[];
   frecencyPrefixes: string[];
   mergeableBackupCollections: string[];
-  internalExtensions: { id: string }[];
-  statusFields: { key: string; path: string[] }[];
+  internalExtensions: ExtensionRule[];
+  statusFields: StatusField[];
   macOSDefaults: { key: string; restoreType: string }[];
-  aiDataQueries: { key: string; methodPath: string[] }[];
+  aiDataQueries: CountQuery[];
 };
 
 export const PATHS = pathsJson satisfies {
@@ -24,7 +23,6 @@ export const PATHS = pathsJson satisfies {
   nodeRuntime: string;
   nodeGlob: string;
   keyCacheName: string;
-  lastKeyName: string;
   aiDisableBackupName: string;
   defaultsBin: string;
   defaultsDomain: string;
@@ -60,20 +58,35 @@ export const RUNTIME = runtimeJson satisfies {
 
 export const SUMMARY = summaryJson satisfies {
   generalSettings: string[];
-  counts: { key: string; methodPath: string[]; args?: unknown[]; select?: string }[];
+  counts: CountQuery[];
 };
 
 export type Policy = typeof POLICY;
 export type Paths = typeof PATHS;
 export type Runtime = typeof RUNTIME;
 export type Summary = typeof SUMMARY;
-export type ExtensionRule = Policy["internalExtensions"][number];
-export type AiDataQuery = Policy["aiDataQueries"][number];
+export type ExtensionRule = Pick<InternalExtensionSettings, "id"> &
+  Partial<
+    Pick<
+      InternalExtensionSettings,
+      "enabled" | "syncedMeta" | "localMeta" | "enabledFallbackCommandIds"
+    >
+  >;
 
-export const ENABLEMENT = {
-  DISABLE: false,
-  PRESERVE: "preserve",
-} as const;
+export type StatusField = {
+  key: string;
+  path: string[];
+  defaultValue?: unknown;
+  count?: boolean;
+};
+
+export type CountQuery = {
+  key: string;
+  methodPath: string[];
+  args?: unknown[];
+  select?: string;
+  filter?: { path: string[]; equals: unknown };
+};
 
 export const RESTORE_TYPE = {
   BOOL: "bool",

@@ -1,107 +1,194 @@
 {
   "backupVersion": 1,
   "fallbackCommandIds": ["c:r:ai::-::openQuickAi"],
-  "modelUserDefaultKeys": [
-    "AIChatWindowLastUsedModel",
-    "AIChatWindowSelectedModel",
-    "SelectedAIModel"
-  ],
   "frecencyPrefixes": [
     "c:r:ai:",
     "c:r:dictation:",
     "c:r:translator:",
     "c:r:screen-awareness:"
   ],
-  "mergeableBackupCollections": [
-    "internalExtensions",
-    "models",
-    "userDefaults",
-    "macOSDefaults"
-  ],
+  "mergeableBackupCollections": ["internalExtensions", "models", "macOSDefaults"],
   "internalExtensions": [
     {
       "id": "e:r:ai",
       "syncedMeta": {
-        "aiChatAskQuestionsEnabled": false,
         "aiMemoryEnabled": false,
-        "aiToolConfirmationAllowList": []
+        "aiToolConfirmationAllowList": [],
+        "aiChatBackgroundNotificationsEnabled": false,
+        "aiChatToolConfirmationMode": "confirm",
+        "aiChatAutoReviewRules": []
       },
       "localMeta": {
         "aiByokApiKeys": [],
-        "aiChatInvalidCompletionRecoveryEnabled": false,
-        "skillDirectories": []
+        "skillDirectories": [],
+        "remoteAiChatEnabled": false,
+        "remoteAiChatKeepAvailable": false,
+        "aiLocalSubscriptionsEnabled": false,
+        "showAgentsInRootSearch": false,
+        "aiChatPreventIdleSleep": false
       },
-      "enabledFallbackCommandIds": []
+      "enabledFallbackCommandIds": [],
+      "enabled": false
     },
     {
       "id": "e:r:dictation",
       "syncedMeta": {
         "appContext": false,
         "autoDetectStyle": false
-      }
+      },
+      "enabled": false
     },
     {
-      "id": "e:r:translator"
+      "id": "e:r:translator",
+      "enabled": false
     },
     {
-      "id": "e:r:mcp"
+      "id": "e:r:mcp",
+      "enabled": false
     },
     {
-      "id": "e:r:screen-awareness"
+      "id": "e:r:screen-awareness",
+      "enabled": false
     },
     {
       "id": "e:r:file-search",
-      "enabled": "preserve",
       "localMeta": {
+        "contentSearchEngine": "native",
         "semanticIndexingPaths": [],
         "semanticIndexingUseFileSearchScope": false
       }
     }
   ],
   "statusFields": [
-    { "key": "enabled", "path": ["enabled"] },
+    {
+      "key": "contentSearchEngine",
+      "path": ["localMeta", "contentSearchEngine"]
+    },
+    {
+      "key": "enabled",
+      "path": ["enabled"]
+    },
     {
       "key": "enabledFallbackCommandIds",
       "path": ["enabledFallbackCommandIds"],
       "defaultValue": []
     },
     {
-      "key": "aiChatAskQuestionsEnabled",
-      "path": ["syncedMeta", "aiChatAskQuestionsEnabled"]
+      "key": "aiMemoryEnabled",
+      "path": ["syncedMeta", "aiMemoryEnabled"]
     },
-    { "key": "aiMemoryEnabled", "path": ["syncedMeta", "aiMemoryEnabled"] },
     {
-      "key": "aiChatInvalidCompletionRecoveryEnabled",
-      "path": ["localMeta", "aiChatInvalidCompletionRecoveryEnabled"]
+      "key": "skillDirectories",
+      "path": ["localMeta", "skillDirectories"]
     },
-    { "key": "skillDirectories", "path": ["localMeta", "skillDirectories"] },
-    { "key": "aiByokApiKeys", "path": ["localMeta", "aiByokApiKeys"] },
-    { "key": "semanticIndexingPaths", "path": ["localMeta", "semanticIndexingPaths"] },
+    {
+      "key": "aiByokApiKeyCount",
+      "path": ["localMeta", "aiByokApiKeys"],
+      "count": true
+    },
+    {
+      "key": "semanticIndexingPaths",
+      "path": ["localMeta", "semanticIndexingPaths"]
+    },
     {
       "key": "semanticIndexingUseFileSearchScope",
       "path": ["localMeta", "semanticIndexingUseFileSearchScope"]
+    },
+    {
+      "key": "aiToolConfirmationAllowList",
+      "path": ["syncedMeta", "aiToolConfirmationAllowList"]
+    },
+    {
+      "key": "aiChatBackgroundNotificationsEnabled",
+      "path": ["syncedMeta", "aiChatBackgroundNotificationsEnabled"]
+    },
+    {
+      "key": "aiChatToolConfirmationMode",
+      "path": ["syncedMeta", "aiChatToolConfirmationMode"]
+    },
+    {
+      "key": "aiChatAutoReviewRules",
+      "path": ["syncedMeta", "aiChatAutoReviewRules"]
+    },
+    {
+      "key": "remoteAiChatEnabled",
+      "path": ["localMeta", "remoteAiChatEnabled"]
+    },
+    {
+      "key": "remoteAiChatKeepAvailable",
+      "path": ["localMeta", "remoteAiChatKeepAvailable"]
+    },
+    {
+      "key": "aiLocalSubscriptionsEnabled",
+      "path": ["localMeta", "aiLocalSubscriptionsEnabled"]
+    },
+    {
+      "key": "showAgentsInRootSearch",
+      "path": ["localMeta", "showAgentsInRootSearch"]
+    },
+    {
+      "key": "aiChatPreventIdleSleep",
+      "path": ["localMeta", "aiChatPreventIdleSleep"]
     }
   ],
   "macOSDefaults": [
-    { "key": "raycast_HasOpenedAIChat", "restoreType": "bool" },
-    { "key": "NSWindow Frame ai-chat-window", "restoreType": "string" }
+    {
+      "key": "raycast_HasOpenedAIChat",
+      "restoreType": "bool"
+    },
+    {
+      "key": "NSWindow Frame ai-chat-window",
+      "restoreType": "string"
+    }
   ],
   "aiDataQueries": [
-    { "key": "chatCount", "methodPath": ["ai", "chatGetAllIds"] },
+    {
+      "key": "chatCount",
+      "methodPath": ["ai", "chatGetAllIds"]
+    },
     {
       "key": "quickAiChatCount",
       "methodPath": ["ai", "chatGetAllInvalidationSnapshots"],
-      "filter": { "path": ["source"], "equals": "quick_ai" }
+      "filter": {
+        "path": ["source"],
+        "equals": "quick_ai"
+      }
     },
-    { "key": "commandCount", "methodPath": ["ai", "commandGetAll"] },
-    { "key": "modeCount", "methodPath": ["ai", "modeGetAll"] },
-    { "key": "transcriptionCount", "methodPath": ["ai", "transcriptionGetAll"] },
+    {
+      "key": "commandCount",
+      "methodPath": ["ai", "commandGetAll"]
+    },
+    {
+      "key": "modeCount",
+      "methodPath": ["ai", "modeGetAll"]
+    },
+    {
+      "key": "transcriptionCount",
+      "methodPath": ["ai", "transcriptionGetAll"]
+    },
     {
       "key": "transcriptionStyleCount",
       "methodPath": ["ai", "transcriptionStyleGetAll"]
     },
-    { "key": "mcpServerCount", "methodPath": ["settings", "allMcpServers"] },
-    { "key": "orgSkillCount", "methodPath": ["orgPacks", "listOrgSkills"] },
-    { "key": "orgAgentCount", "methodPath": ["orgPacks", "listOrgAiAgents"] }
+    {
+      "key": "mcpServerCount",
+      "methodPath": ["settings", "allMcpServers"]
+    },
+    {
+      "key": "orgSkillCount",
+      "methodPath": ["orgPacks", "listOrgSkills"]
+    },
+    {
+      "key": "orgAgentCount",
+      "methodPath": ["orgPacks", "listOrgAiAgents"]
+    },
+    {
+      "key": "scheduledMessageCount",
+      "methodPath": ["ai", "scheduledMessageGetAll"]
+    },
+    {
+      "key": "folderCount",
+      "methodPath": ["ai", "folderGetAll"]
+    }
   ]
 }

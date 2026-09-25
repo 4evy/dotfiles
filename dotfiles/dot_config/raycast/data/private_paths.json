@@ -5,7 +5,6 @@
   "nodeRuntime": "node/runtime",
   "nodeGlob": "node-v*/bin/node",
   "keyCacheName": ".raycast-key-cache",
-  "lastKeyName": "last_key",
   "aiDisableBackupName": "raycast-ai-disable-backup.json",
   "defaultsBin": "defaults",
   "defaultsDomain": "com.raycast.macos",

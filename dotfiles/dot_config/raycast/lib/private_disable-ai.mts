@@ -1,10 +1,6 @@
-import {
-  type AiDataQuery,
-  ENABLEMENT,
-  type ExtensionRule,
-  OP,
-  POLICY,
-} from "./config.mts";
+import { isDeepStrictEqual } from "node:util";
+
+import { type ExtensionRule, OP, POLICY, type StatusField } from "./config.mts";
 import type { RaycastDatabaseClient } from "./db.mts";
 import {
   deleteMacOSDefault,
@@ -12,17 +8,15 @@ import {
   readMacOSDefault,
   restoreMacOSDefault,
 } from "./macos.mts";
-import type { FrecencyRecord } from "./types.mts";
+import type { AiModel, FrecencyRecord } from "./types.mts";
 import {
   asRecord,
-  callPath,
-  clone,
   count,
-  errorMessage,
   getPath,
   isRecord,
   mapEntries,
   pathExists,
+  queryCount,
   readJson,
   writeJson,
 } from "./util.mts";
@@ -38,13 +32,14 @@ export type Snapshot = {
   version: number;
   createdAt: string;
   internalExtensions: Record<string, JsonObject>;
-  models: Record<string, { disabledAt?: string | null }>;
-  userDefaults: Record<string, unknown>;
+  models: Record<string, Pick<AiModel, "disabledAt">>;
   frecencyRecords: FrecencyRecord[];
   macOSDefaults: Record<string, MacOSDefaultValue>;
 };
 
-type Collection<K extends keyof Snapshot> = {
+type CollectionKey = Exclude<keyof Snapshot, "version" | "createdAt">;
+
+type Collection<K extends CollectionKey> = {
   key: K;
   snapshot: (db: RaycastDatabaseClient) => Promise<Snapshot[K]>;
   disable: (input: {
@@ -55,8 +50,15 @@ type Collection<K extends keyof Snapshot> = {
   restore: (input: { db: RaycastDatabaseClient; value: Snapshot[K] }) => Operation[];
 };
 
-function collection<K extends keyof Snapshot>(spec: Collection<K>): Collection<K> {
-  return spec;
+function collection<K extends CollectionKey>(spec: Collection<K>) {
+  return {
+    key: spec.key,
+    snapshot: spec.snapshot,
+    disable: (db: RaycastDatabaseClient, before: Snapshot, now: string) =>
+      spec.disable({ db, value: before[spec.key], now }),
+    restore: (db: RaycastDatabaseClient, backup: Snapshot) =>
+      spec.restore({ db, value: backup[spec.key] }),
+  };
 }
 
 function op(type: string, fields: JsonObject, apply: Operation["apply"]): Operation {
@@ -72,29 +74,48 @@ export function isRaycastAiItemId(itemId: unknown): itemId is string {
 
 function disabledInternalExtension(
   previous: Record<string, unknown>,
-  rule: ExtensionRule,
+  { id: _id, ...patch }: ExtensionRule,
 ): Record<string, unknown> {
   if (!previous.id) throw new Error("internal extension settings are missing an id");
 
-  return {
-    ...clone(previous),
-    enabled:
-      "enabled" in rule && rule.enabled === ENABLEMENT.PRESERVE
-        ? previous.enabled
-        : false,
-    syncedMeta: {
-      ...asRecord(previous.syncedMeta),
-      ...("syncedMeta" in rule ? rule.syncedMeta : {}),
-    },
-    localMeta: {
-      ...asRecord(previous.localMeta),
-      ...("localMeta" in rule ? rule.localMeta : {}),
-    },
+  // Raycast 2.5.1's backend Kzt enables content indexing whenever contentSearch
+  // is true and contentSearchEngine is not "native". Empty scopes alone do not
+  // disable it; the file-search policy selects the native engine explicitly.
+  return structuredClone({
+    ...previous,
+    ...patch,
+    syncedMeta: { ...asRecord(previous.syncedMeta), ...patch.syncedMeta },
+    localMeta: { ...asRecord(previous.localMeta), ...patch.localMeta },
     enabledFallbackCommandIds:
-      "enabledFallbackCommandIds" in rule
-        ? clone(rule.enabledFallbackCommandIds)
-        : clone(previous.enabledFallbackCommandIds ?? []),
-  };
+      patch.enabledFallbackCommandIds ?? previous.enabledFallbackCommandIds ?? [],
+  });
+}
+
+async function restoreInternalExtension(
+  db: RaycastDatabaseClient,
+  id: string,
+  previous: JsonObject,
+): Promise<void> {
+  const current = await db.settings.getInternalExtensionSettings(id);
+  // The native update method merges metadata, including null values. Replacing
+  // the row is necessary to remove preferences absent from the original backup.
+  if (current) await db.settings.deleteInternalExtensionSettings(id);
+  if (!previous.id) return;
+  try {
+    await db.settings.addInternalExtensionSettings(previous);
+  } catch (error) {
+    if (current) {
+      try {
+        await db.settings.addInternalExtensionSettings(current);
+      } catch (rollbackError) {
+        throw new AggregateError(
+          [error, rollbackError],
+          `failed to restore ${id} and recover its previous settings; retain the backup`,
+        );
+      }
+    }
+    throw error;
+  }
 }
 
 const COLLECTIONS = [
@@ -103,13 +124,17 @@ const COLLECTIONS = [
     snapshot: (db) =>
       mapEntries(POLICY.internalExtensions, async ({ id }) => [
         id,
-        clone((await db.settings.getInternalExtensionSettings(id)) ?? {}),
+        structuredClone((await db.settings.getInternalExtensionSettings(id)) ?? {}),
       ]),
     disable: ({ db, value }) =>
       POLICY.internalExtensions.flatMap((rule) => {
         const previous = value[rule.id];
-        if (!previous?.id) return [];
-        const next = disabledInternalExtension(previous, rule);
+        // Missing rows inherit the built-in enabled default. Persist the policy
+        // for fresh installations too, while recording absence for restore.
+        const next = disabledInternalExtension(
+          previous?.id ? previous : { id: rule.id, enabled: true },
+          rule,
+        );
         return [
           op(
             OP.INTERNAL_EXTENSION,
@@ -119,14 +144,17 @@ const COLLECTIONS = [
               clearedFallbackCommands:
                 "enabledFallbackCommandIds" in rule ? POLICY.fallbackCommandIds : [],
             },
-            () => db.settings.updateInternalExtensionSettings(rule.id, next),
+            () =>
+              previous?.id
+                ? db.settings.updateInternalExtensionSettings(rule.id, next)
+                : db.settings.addInternalExtensionSettings(next),
           ),
         ];
       }),
     restore: ({ db, value }) =>
       Object.entries(value).map(([id, previous]) =>
         op(OP.INTERNAL_EXTENSION, { id, enabled: previous.enabled }, () =>
-          db.settings.updateInternalExtensionSettings(id, previous),
+          restoreInternalExtension(db, id, previous),
         ),
       ),
   }),
@@ -140,9 +168,13 @@ const COLLECTIONS = [
         ]),
       ),
     disable: ({ db, value, now }) =>
-      Object.keys(value).map((id) =>
-        op(OP.MODEL, { id, disabledAt: now }, () => db.ai.modelSetDisabledAt(id, now)),
-      ),
+      Object.keys(value)
+        .filter((id) => value[id]?.disabledAt == null)
+        .map((id) =>
+          op(OP.MODEL, { id, disabledAt: now }, () =>
+            db.ai.modelSetDisabledAt(id, now),
+          ),
+        ),
     restore: ({ db, value }) =>
       Object.entries(value).map(([id, previous]) => {
         const disabledAt = previous.disabledAt ?? null;
@@ -150,29 +182,6 @@ const COLLECTIONS = [
           db.ai.modelSetDisabledAt(id, disabledAt),
         );
       }),
-  }),
-  collection({
-    key: "userDefaults",
-    snapshot: (db) =>
-      mapEntries(POLICY.modelUserDefaultKeys, async (key) => [
-        key,
-        await db.userDefaults.get(key),
-      ]),
-    disable: ({ db, value }) =>
-      Object.keys(value).map((key) =>
-        op(OP.USER_DEFAULT, { key, value: null }, () => db.userDefaults.delete(key)),
-      ),
-    restore: ({ db, value }) =>
-      Object.entries(value).map(([key, stored]) =>
-        op(OP.USER_DEFAULT, { key, value: stored }, () =>
-          stored == null
-            ? db.userDefaults.delete(key)
-            : db.userDefaults.set(
-                key,
-                typeof stored === "string" ? stored : JSON.stringify(stored),
-              ),
-        ),
-      ),
   }),
   collection({
     key: "frecencyRecords",
@@ -225,31 +234,16 @@ async function runOperations(
   return operations.map(({ apply: _apply, ...summary }) => summary);
 }
 
-type AnyCollection = (typeof COLLECTIONS)[number];
-
 export async function buildSnapshot(db: RaycastDatabaseClient): Promise<Snapshot> {
-  const snapshot = {
+  return {
     version: POLICY.backupVersion,
     createdAt: new Date().toISOString(),
+    ...Object.fromEntries(
+      await Promise.all(
+        COLLECTIONS.map(async (entry) => [entry.key, await entry.snapshot(db)]),
+      ),
+    ),
   } as Snapshot;
-
-  await Promise.all(
-    COLLECTIONS.map(async (entry) => {
-      Object.assign(snapshot, { [entry.key]: await entry.snapshot(db) });
-    }),
-  );
-  return snapshot;
-}
-
-function runCollection(
-  entry: AnyCollection,
-  db: RaycastDatabaseClient,
-  value: Snapshot[AnyCollection["key"]],
-  now?: string,
-): Operation[] {
-  return now === undefined
-    ? entry.restore({ db, value: value as never })
-    : entry.disable({ db, value: value as never, now });
 }
 
 export async function applyDisabled(
@@ -259,29 +253,57 @@ export async function applyDisabled(
 ): Promise<JsonObject[]> {
   const now = new Date().toISOString();
   return runOperations(
-    COLLECTIONS.flatMap((entry) => runCollection(entry, db, before[entry.key], now)),
+    COLLECTIONS.flatMap((entry) => entry.disable(db, before, now)),
     dryRun,
   );
 }
 
 function asSnapshot(value: unknown): Snapshot {
-  if (!isRecord(value) || typeof value.version !== "number") {
+  if (
+    !isRecord(value) ||
+    typeof value.version !== "number" ||
+    typeof value.createdAt !== "string"
+  ) {
     throw new Error("invalid Raycast AI disable backup");
   }
   if (value.version !== POLICY.backupVersion) {
     throw new Error(`unsupported backup version: ${value.version}`);
   }
-  return value as Snapshot;
-}
-
-function mergeMissing(target: JsonObject, source: JsonObject): boolean {
-  let changed = false;
-  for (const [key, value] of Object.entries(source)) {
-    if (target[key] !== undefined) continue;
-    target[key] = value;
-    changed = true;
+  for (const key of POLICY.mergeableBackupCollections) {
+    if (!isRecord(value[key])) {
+      throw new Error(`invalid backup collection: ${key}`);
+    }
   }
-  return changed;
+  for (const [id, settings] of Object.entries(
+    asRecord(value.internalExtensions) ?? {},
+  )) {
+    if (
+      !isRecord(settings) ||
+      (Object.keys(settings).length > 0 &&
+        (settings.id !== id || typeof settings.enabled !== "boolean"))
+    ) {
+      throw new Error(`invalid backup extension: ${id}`);
+    }
+    for (const key of [
+      "syncedMeta",
+      "localMeta",
+      "macosSyncedMeta",
+      "windowsSyncedMeta",
+    ]) {
+      if (settings[key] != null && !isRecord(settings[key])) {
+        throw new Error(`invalid backup metadata: ${id}.${key}`);
+      }
+    }
+  }
+  if (
+    !Array.isArray(value.frecencyRecords) ||
+    value.frecencyRecords.some(
+      (record) => !isRecord(record) || typeof record.itemId !== "string",
+    )
+  ) {
+    throw new Error("invalid backup collection: frecencyRecords");
+  }
+  return value as Snapshot;
 }
 
 export async function ensureBackup(
@@ -297,19 +319,25 @@ export async function ensureBackup(
   }
 
   const existing = asSnapshot(await readJson(file));
-  let changed = mergeMissing(existing as JsonObject, before as JsonObject);
-  for (const key of POLICY.mergeableBackupCollections) {
-    const incoming = asRecord(before[key as keyof Snapshot]);
-    if (!incoming) continue;
-    const slot = key as keyof Snapshot;
-    if (!asRecord(existing[slot])) existing[slot] = {} as never;
-    const target = asRecord(existing[slot]);
-    if (!target) continue;
-    changed = mergeMissing(target, incoming) || changed;
-  }
+  const savedIds = new Set(existing.frecencyRecords.map((record) => record.itemId));
+  // Existing values win: repeated disables must retain the original settings.
+  const merged: Snapshot = {
+    ...existing,
+    ...Object.fromEntries(
+      POLICY.mergeableBackupCollections.map((key) => [
+        key,
+        { ...asRecord(getPath(before, [key])), ...asRecord(getPath(existing, [key])) },
+      ]),
+    ),
+    frecencyRecords: [
+      ...existing.frecencyRecords,
+      ...before.frecencyRecords.filter((record) => !savedIds.has(record.itemId)),
+    ],
+  };
 
-  if (changed) await writeJson(file, existing);
-  return changed;
+  if (isDeepStrictEqual(existing, merged)) return false;
+  await writeJson(file, merged);
+  return true;
 }
 
 export async function restore(
@@ -323,33 +351,14 @@ export async function restore(
 
   const backup = asSnapshot(await readJson(file));
   return runOperations(
-    COLLECTIONS.flatMap((entry) =>
-      runCollection(entry, db, backup[entry.key] ?? emptyValue(entry.key)),
-    ),
+    COLLECTIONS.flatMap((entry) => entry.restore(db, backup)),
     dryRun,
   );
 }
 
-function emptyValue<K extends keyof Snapshot>(key: K): Snapshot[K] {
-  return (key === "frecencyRecords" ? [] : {}) as Snapshot[K];
-}
-
-async function queryAiData(
-  db: RaycastDatabaseClient,
-  query: AiDataQuery,
-): Promise<readonly [string, unknown]> {
-  try {
-    const records = await callPath(db, query.methodPath);
-    if (!("filter" in query) || !query.filter) return [query.key, count(records)];
-    if (!Array.isArray(records)) return [query.key, 0];
-    return [
-      query.key,
-      records.filter((item) => getPath(item, query.filter.path) === query.filter.equals)
-        .length,
-    ];
-  } catch (error) {
-    return [query.key, { error: errorMessage(error) }];
-  }
+function statusFieldValue(item: unknown, field: StatusField): unknown {
+  const value = getPath(item, field.path);
+  return field.count ? count(value) : (value ?? structuredClone(field.defaultValue));
 }
 
 export async function status(
@@ -367,8 +376,7 @@ export async function status(
             ...Object.fromEntries(
               POLICY.statusFields.map((field) => [
                 field.key,
-                getPath(item, field.path) ??
-                  clone("defaultValue" in field ? field.defaultValue : undefined),
+                statusFieldValue(item, field),
               ]),
             ),
           },
@@ -384,7 +392,7 @@ export async function status(
         rule.key,
         await readMacOSDefault(rule),
       ]),
-      mapEntries(POLICY.aiDataQueries, (query) => queryAiData(db, query)),
+      mapEntries(POLICY.aiDataQueries, (query) => queryCount(db, query)),
     ]);
 
   return {
