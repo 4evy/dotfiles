@@ -328,9 +328,6 @@ try {
   runMagick([canvas, "-strip", `PNG32:${temporary}`]);
   chmodSync(temporary, 0o644);
   renameSync(temporary, OUTPUT);
-} catch (error: unknown) {
-  rmSync(temporary, { force: true });
-  throw error;
 } finally {
   rmSync(work, { force: true, recursive: true });
 }
