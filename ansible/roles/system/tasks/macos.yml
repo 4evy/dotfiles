@@ -88,23 +88,6 @@
   tags:
     - tailscale
 
-- name: Install Tailscale SSH launch daemon helper
-  ansible.builtin.template:
-    src: macos/tailscale-ssh-helper.py.in
-    dest: /Library/Application Support/dotfiles/tailscale-ssh.py
-    owner: root
-    group: wheel
-    mode: "0755"
-    variable_start_string: "@"
-    variable_end_string: "@"
-  vars:
-    system_python_bin: "{{ dotfiles_bin_dir }}/python3.14"
-    system_tailscale_bin: "{{ platform_homebrew_prefix }}/bin/tailscale"
-  become: true
-  register: system_tailscale_ssh_helper_result
-  tags:
-    - tailscale
-
 - name: Install Tailscale SSH launch daemon definition
   ansible.builtin.template:
     src: macos/tailscale-ssh.plist.in
@@ -115,9 +98,8 @@
     variable_start_string: "@"
     variable_end_string: "@"
   vars:
+    system_tailscale_bin: "{{ platform_homebrew_prefix }}/bin/tailscale"
     system_tailscale_ssh_label: dev.4evy.tailscale-ssh
-    system_tailscale_ssh_helper: /Library/Application Support/dotfiles/tailscale-ssh.py
-    system_python_bin: "{{ dotfiles_bin_dir }}/python3.14"
   register: system_tailscale_ssh_plist
   become: true
   tags:
@@ -130,10 +112,17 @@
     state: >-
       {{
         'restarted'
-        if system_tailscale_ssh_helper_result is changed
-        or system_tailscale_ssh_plist is changed
+        if system_tailscale_ssh_plist is changed
         else 'started'
       }}
+  become: true
+  tags:
+    - tailscale
+
+- name: Remove the retired Tailscale SSH retry helper
+  ansible.builtin.file:
+    path: /Library/Application Support/dotfiles/tailscale-ssh.py
+    state: absent
   become: true
   tags:
     - tailscale
