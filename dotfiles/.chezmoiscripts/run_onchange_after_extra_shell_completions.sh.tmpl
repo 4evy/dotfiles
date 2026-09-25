@@ -1,0 +1,10 @@
+#!/bin/sh
+{{- $extraCompletions := include "dot_config/shell/private_completion-commands.json" }}
+# extra commands fingerprint: {{ $extraCompletions | sha256sum }}
+{{- range $completion := $extraCompletions | fromJson }}
+# extra completion fingerprint: {{ template "executable_fingerprint" (lookPath (index $completion 0)) }}
+{{- end }}
+# command fingerprint: {{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/extra-shell-completions") }}
+# helper source hash: {{ output "cat" (joinPath .chezmoi.workingTree "packages/dotfiles-python/src/workstation/local/shell_completions.py") | sha256sum }}
+set -eu
+{{ template "workstation_command.sh.tmpl" "extra-shell-completions" }}

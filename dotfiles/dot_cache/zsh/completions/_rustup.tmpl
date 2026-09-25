@@ -1,0 +1,3 @@
+{{- if lookPath "rustup" -}}
+{{ output "env" "SHELL=/bin/zsh" "rustup" "completions" "zsh" -}}
+{{- end -}}

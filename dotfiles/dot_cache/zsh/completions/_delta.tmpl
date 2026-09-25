@@ -1,0 +1,3 @@
+{{- if lookPath "delta" -}}
+{{ output "env" "SHELL=/bin/zsh" "delta" "--generate-completion" "zsh" -}}
+{{- end -}}

@@ -1,0 +1,3 @@
+{{- if lookPath "jj" -}}
+{{ output "env" "SHELL=/bin/bash" "jj" "util" "completion" "bash" -}}
+{{- end -}}

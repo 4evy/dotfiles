@@ -1,0 +1,3 @@
+{{- if lookPath "starship" -}}
+{{ output "env" "SHELL=/bin/zsh" "starship" "completions" "zsh" -}}
+{{- end -}}

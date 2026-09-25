@@ -24,6 +24,7 @@ node_modules/**
 .oh-my-bash/
 .oh-my-zsh/
 .fzf-tab-completion/
+.local/share/bash-completion/
 .local/bin/
 .local/libexec/external-cli-installer
 .local/share/applications/
@@ -36,6 +37,10 @@ node_modules/**
 .config/yazi/
 .ssh/config
 Library/
+{{ end }}
+
+{{ if not (lookPath "brew") }}
+.local/share/bash-completion/homebrew/
 {{ end }}
 
 {{ if ne .chezmoi.os "darwin" }}
@@ -64,4 +69,3 @@ Library/
 .config/systemd/
 .local/share/applications/
 {{ end }}
-

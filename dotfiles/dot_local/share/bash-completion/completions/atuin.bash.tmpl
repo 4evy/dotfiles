@@ -1,0 +1,3 @@
+{{- if lookPath "atuin" -}}
+{{ output "env" "SHELL=/bin/bash" "atuin" "gen-completions" "--shell" "bash" -}}
+{{- end -}}

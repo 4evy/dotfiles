@@ -13,12 +13,14 @@ DISABLE_AUTO_UPDATE="true"
 # shellcheck disable=SC2034
 plugins=(git)
 
-# Generated and package-provided completions live in bash-completion's standard
-# lazy-load directory. Point its eager compatibility scan at the deliberately
-# empty managed directory; the sync script indexes package files lazily.
+# Search generated completions first, then Homebrew's compatibility directory
+# through bash-completion's native lazy loader.
 _dotfiles_bash_completion_base="${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion"
 # shellcheck disable=SC2034
-BASH_COMPLETION_COMPAT_DIR="$_dotfiles_bash_completion_base/compat"
+BASH_COMPLETION_USER_DIR="${BASH_COMPLETION_USER_DIR:-$_dotfiles_bash_completion_base}:$_dotfiles_bash_completion_base/homebrew"
+# Disable the eager compatibility scan; packages are loaded on demand above.
+# shellcheck disable=SC2034
+BASH_COMPLETION_COMPAT_DIR="/dev/null"
 unset _dotfiles_bash_completion_base
 
 # Load Homebrew's supported Bash completion framework before Oh My Bash adds

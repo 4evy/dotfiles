@@ -1,0 +1,3 @@
+{{- if lookPath "starship" -}}
+{{ output "env" "SHELL=/bin/bash" "starship" "completions" "bash" -}}
+{{- end -}}

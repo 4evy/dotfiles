@@ -1,0 +1,6 @@
+{{- if lookPath "fzf" -}}
+{{- $bindings := output "fzf" "--zsh" | splitList "### completion.zsh ###" | first -}}
+{{- $restore := "  eval $__fzf_key_bindings_options" -}}
+{{- $withoutZle := printf "  __fzf_key_bindings_options=${__fzf_key_bindings_options/ zle on/}\n  __fzf_key_bindings_options=${__fzf_key_bindings_options/ zle off/}\n%s" $restore -}}
+{{ $bindings | replace $restore $withoutZle -}}
+{{- end -}}
