@@ -1,28 +1,14 @@
 {
-  "compilerOptions": {
-    "allowImportingTsExtensions": true,
-    "erasableSyntaxOnly": true,
-    "exactOptionalPropertyTypes": true,
-    "lib": ["ESNext"],
-    "module": "Preserve",
-    "moduleDetection": "force",
-    "moduleResolution": "bundler",
-    "noEmit": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
-    "noUncheckedIndexedAccess": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "target": "ESNext",
-    "types": ["bun"],
-    "verbatimModuleSyntax": true
-  },
+  "extends": "../tsconfig.json",
   "include": [
-    "dot_local/bin/executable_ghostty-dreamy-swirl.ts",
-    "dot_config/raycast/**/*.cts",
-    "dot_config/raycast/**/*.json",
-    "dot_config/raycast/**/*.mts"
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.mts",
+    "**/*.cts",
+    "**/*.js",
+    "**/*.jsx",
+    "**/*.mjs",
+    "**/*.cjs"
   ],
-  "exclude": ["**/private_*"]
+  "exclude": ["**/node_modules/**", "**/dist/**", "**/build/**", "**/tmp/**"]
 }

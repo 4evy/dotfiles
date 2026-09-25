@@ -13,13 +13,16 @@
     }
   },
   "scripts": {
-    "check": "bun run check:biome && bun run --sequential --workspaces check && bun run --cwd packages/hyper-window-tiling check",
+    "check": "bun run check:biome && bun x --no-install tsc -p tsconfig.json && bun run --sequential --workspaces check && bun run --cwd packages/hyper-window-tiling check",
     "check:biome": "bun x --no-install biome check .",
     "format": "bun x --no-install biome check --write .",
     "lint": "bun x --no-install biome lint .",
-    "lint:fix": "bun x --no-install biome lint --write ."
+    "lint:fix": "bun x --no-install biome lint --write .",
+    "typecheck": "bun x --no-install tsc -p tsconfig.json && bun run --sequential --workspaces typecheck && bun run --cwd packages/hyper-window-tiling typecheck"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.9"
+    "@biomejs/biome": "2.5.9",
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
   }
 }
