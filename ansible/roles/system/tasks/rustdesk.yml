@@ -1,5 +1,6 @@
 ---
 - name: Detect host tools used by the RustDesk integration
+  check_mode: false
   ansible.builtin.command:
     argv:
       - sh
@@ -14,6 +15,7 @@
   register: system_rustdesk_tools
 
 - name: Detect the active local desktop session
+  check_mode: false
   ansible.builtin.command:
     argv:
       - loginctl
@@ -26,6 +28,7 @@
   failed_when: false
 
 - name: Detect the active local desktop protocol
+  check_mode: false
   ansible.builtin.command:
     argv:
       - loginctl
