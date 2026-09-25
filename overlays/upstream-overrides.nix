@@ -4,6 +4,25 @@ let
   inherit (final) dotfilesSourcePins;
 in
 {
+  # These runtimes execute repository-owned Ansible modules and Solaar helpers.
+  ansible = final.unstable.python314Packages.toPythonApplication final.unstable.python314Packages.ansible-core;
+  ansible-lint = final.unstable.ansible-lint.override {
+    python3Packages = final.unstable.python314Packages;
+    inherit (final) ansible;
+  };
+  solaar =
+    (final.unstable.solaar.override {
+      python3Packages = final.unstable.python314Packages;
+    }).overrideAttrs
+      (previous: {
+        # Wrap our launcher with the same Python and GTK environment as Solaar.
+        postInstall = (previous.postInstall or "") + ''
+          install -Dm755 ${../dotfiles/dot_local/lib/python/solaar_no_tray.py} $out/bin/solaar-no-tray
+          substituteInPlace $out/bin/solaar-no-tray \
+            --replace-fail '#!/usr/bin/env python3.14' '#!${final.unstable.python314.interpreter}'
+        '';
+      });
+
   libtsm = prev.libtsm.overrideAttrs {
     version = builtins.head (
       builtins.match ".*version: '([^']+)'.*" (

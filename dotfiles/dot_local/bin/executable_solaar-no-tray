@@ -2,23 +2,12 @@
 # shellcheck shell=bash
 set -euo pipefail
 
-solaar_executable="$(command -v solaar)"
-solaar_python="$(head -n 1 "$solaar_executable")"
-solaar_python="${solaar_python#\#!}"
+# Nix wraps Solaar with the Python and GTK environment required by its package.
+solaar_executable="$(realpath "$(command -v solaar)")"
+solaar_helper="${solaar_executable%/*}/solaar-no-tray"
+if [[ -x "$solaar_helper" ]]; then
+	exec "$solaar_helper" "$@"
+fi
 
-exec "$solaar_python" -c '
-import sys
-
-from solaar import gtk
-
-original_window_init = gtk.ui.window.init
-
-
-def init_hidden_window(_show_window, hide_on_close):
-    original_window_init(False, hide_on_close)
-
-
-gtk.ui.window.init = init_hidden_window
-sys.argv = ["solaar", "--window=only"]
-gtk.main()
-'
+# Fedora's Solaar modules live in the system Python, not uv's isolated runtime.
+exec /usr/bin/python3.14 -s "$HOME/.local/lib/python/solaar_no_tray.py" "$@"
