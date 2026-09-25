@@ -25,7 +25,7 @@ file-types = [
 ]
 auto-format = true
 diagnostic-severity = "warning"
-formatter = { command = "shfmt", args = ["-i", "2", "-bn"] }
+formatter = { command = "shfmt", args = ["--filename", "%{buffer_name}"] }
 language-servers = ["bash-language-server"]
 
 [[language]]
@@ -86,17 +86,13 @@ auto-format = true
 formatter = { command = "nixfmt" }
 language-servers = ["nil"]
 
-[language-server.bash-language-server]
-command = "bash-language-server"
-args = ["start"]
-
 [language-server.rumdl]
 command = "helix-rumdl-lsp"
 
 [language-server.ruff]
 command = "ruff"
 args = ["server", "--preview"]
-[language-server.ruff.config.lint]
+[language-server.ruff.config.settings.lint]
 extendSelect = ["I"]
 
 [language-server.typescript-language-server]
@@ -120,7 +116,6 @@ args = [
   "vscode-css-language-server",
   "--stdio",
 ]
-config = { provideFormatter = true, css = { validate = { enable = true } } }
 
 [language-server.vscode-html-language-server]
 command = "bunx"
@@ -131,7 +126,6 @@ args = [
   "vscode-html-language-server",
   "--stdio",
 ]
-config = { provideFormatter = true }
 
 [language-server.vscode-json-language-server]
 command = "bunx"
@@ -142,15 +136,9 @@ args = [
   "vscode-json-language-server",
   "--stdio",
 ]
-config = { provideFormatter = true, json = { validate = { enable = true } } }
 
-[language-server.yaml-language-server]
-command = "yaml-language-server"
-args = ["--stdio"]
 [language-server.yaml-language-server.config.yaml]
 format = { enable = true }
-validation = true
-schemaStore = { enable = true, url = "https://www.schemastore.org/api/json/catalog.json" }
 
 [language-server.docker-langserver]
 command = "bunx"
@@ -162,15 +150,6 @@ args = [
   "--stdio",
 ]
 
-[language-server.taplo]
-command = "taplo"
-args = ["lsp", "stdio"]
-[language-server.taplo.config.formatter]
+[language-server.taplo.config.evenBetterToml.formatter]
 alignEntries = true
 columnWidth = 100
-
-[language-server.nil]
-command = "nil"
-
-[language-server.just-lsp]
-command = "just-lsp"

@@ -1,6 +1,7 @@
 {{- $t3 := .t3_chat -}}
 {{- $light := index $t3 `light` -}}
 {{- $dark := index $t3 `dark` -}}
+{{- $nixfmt := or (lookPath "vscode-nixfmt") (lookPath "nixfmt") "nixfmt" -}}
 {
   "files.associations": {
     "*.css": "css",
@@ -270,20 +271,17 @@
   "js/ts.updateImportsOnFileMove.enabled": "always",
   "python.languageServer": "None",
   "python.useEnvironmentsExtension": true,
-  "python.defaultInterpreterPath": "{{- if lookPath `python` -}}{{ lookPath `python` }}{{- else if lookPath `python3` -}}{{ lookPath `python3` }}{{- else -}}python{{- end -}}",
+  "python.defaultInterpreterPath": "{{- if lookPath `python3.14` -}}{{ lookPath `python3.14` }}{{- else -}}python3.14{{- end -}}",
   "python.experiments.enabled": false,
   "python-envs.terminal.autoActivationType": "shellStartup",
   "ty.importStrategy": "fromEnvironment",
-  "ty.path": ["{{- if lookPath `ty` -}}{{ lookPath `ty` }}{{- else -}}ty{{- end -}}"],
   "ruff.importStrategy": "fromEnvironment",
-  "ruff.path": [
-    "{{- if lookPath `ruff` -}}{{ lookPath `ruff` }}{{- else -}}ruff{{- end -}}"
-  ],
   "ruff.nativeServer": "on",
   "C_Cpp.codeAnalysis.clangTidy.path": "{{- if lookPath `clang-tidy` -}}{{ lookPath `clang-tidy` }}{{- else if stat `/opt/homebrew/opt/llvm/bin/clang-tidy` -}}/opt/homebrew/opt/llvm/bin/clang-tidy{{- else -}}clang-tidy{{- end -}}",
   "path-intellisense.autoSlashAfterDirectory": true,
   "path-intellisense.autoTriggerNextSuggestion": true,
   "markdownlint.run": "onSave",
+  "bashIde.shellcheckPath": "",
   "vscode-just.runInTerminal": true,
   "stylua.searchBinaryInPATH": true,
   "stylua.disableVersionCheck": true,
@@ -324,7 +322,8 @@
     "editor.formatOnSave": true,
     "editor.formatOnType": true
   },
-  "[javascript]": {
+{{- range $language := list "javascript" "typescript" "javascriptreact" "typescriptreact" }}
+  "[{{ $language }}]": {
     "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,
@@ -334,40 +333,13 @@
       "source.organizeImports.biome": "explicit"
     }
   },
-  "[typescript]": {
-    "editor.defaultFormatter": "biomejs.biome",
-    "editor.formatOnPaste": true,
-    "editor.formatOnSave": true,
-    "editor.formatOnType": true,
-    "editor.codeActionsOnSave": {
-      "source.fixAll.biome": "explicit",
-      "source.organizeImports.biome": "explicit"
-    }
-  },
-  "[javascriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome",
-    "editor.formatOnPaste": true,
-    "editor.formatOnSave": true,
-    "editor.formatOnType": true,
-    "editor.codeActionsOnSave": {
-      "source.fixAll.biome": "explicit",
-      "source.organizeImports.biome": "explicit"
-    }
-  },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome",
-    "editor.formatOnPaste": true,
-    "editor.formatOnSave": true,
-    "editor.formatOnType": true,
-    "editor.codeActionsOnSave": {
-      "source.fixAll.biome": "explicit",
-      "source.organizeImports.biome": "explicit"
-    }
-  },
-  "[html][css][scss][less][postcss]": {
+{{- end }}
+{{- range $language := list "html" "css" "scss" "less" "postcss" }}
+  "[{{ $language }}]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true
   },
+{{- end }}
   "[svelte]": {
     "editor.defaultFormatter": "svelte.svelte-vscode",
     "editor.formatOnSave": true
@@ -410,19 +382,19 @@
   },
   "nix.enableLanguageServer": true,
   "nix.serverPath": "{{- if lookPath `vscode-nixd` -}}{{ lookPath `vscode-nixd` }}{{- else if lookPath `nixd` -}}{{ lookPath `nixd` }}{{- else if lookPath `nil` -}}{{ lookPath `nil` }}{{- else -}}nixd{{- end -}}",
-  "nix.formatterPath": "{{- if lookPath `vscode-nixfmt` -}}{{ lookPath `vscode-nixfmt` }}{{- else if lookPath `nixfmt` -}}{{ lookPath `nixfmt` }}{{- else -}}nixfmt{{- end -}}",
+  "nix.formatterPath": "{{ $nixfmt }}",
   "nix.serverSettings": {
     "nil": {
       "formatting": {
         "command": [
-          "{{- if lookPath `vscode-nixfmt` -}}{{ lookPath `vscode-nixfmt` }}{{- else if lookPath `nixfmt` -}}{{ lookPath `nixfmt` }}{{- else -}}nixfmt{{- end -}}"
+          "{{ $nixfmt }}"
         ]
       }
     },
     "nixd": {
       "formatting": {
         "command": [
-          "{{- if lookPath `vscode-nixfmt` -}}{{ lookPath `vscode-nixfmt` }}{{- else if lookPath `nixfmt` -}}{{ lookPath `nixfmt` }}{{- else -}}nixfmt{{- end -}}"
+          "{{ $nixfmt }}"
         ]
       }
     }

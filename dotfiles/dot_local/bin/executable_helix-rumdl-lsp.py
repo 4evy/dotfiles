@@ -9,7 +9,6 @@ import sys
 import tempfile
 import threading
 from pathlib import Path
-from urllib.parse import unquote, urlparse
 
 sys.path.insert(0, str(Path.home() / ".local/lib/python"))
 from lsp_jsonrpc import (
@@ -24,11 +23,11 @@ REQUESTS_LOCK = threading.Lock()
 def is_temporary_uri(uri: object) -> bool:
     if not isinstance(uri, str):
         return False
-    parsed = urlparse(uri)
-    if parsed.scheme != "file":
+    try:
+        document = Path.from_uri(uri).resolve()
+    except ValueError:
         return False
-    document = Path(unquote(parsed.path)).resolve()
-    return document == TEMPORARY_DIRECTORY or TEMPORARY_DIRECTORY in document.parents
+    return document.is_relative_to(TEMPORARY_DIRECTORY)
 
 
 def track_client_request(body: bytes) -> None:
