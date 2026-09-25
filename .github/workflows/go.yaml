@@ -5,9 +5,7 @@ on:
   pull_request:
     paths: &go-paths
       - .github/workflows/go.yaml
-      - cmd/**/*.go
-      - go.mod
-      - go.sum
+      - packages/records/**
       - go.work
       - go.work.sum
       - packages/theme-run/**
