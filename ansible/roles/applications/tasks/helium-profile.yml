@@ -17,6 +17,7 @@
 - name: Download the GitHub avatar for the Helium profile
   ansible.builtin.get_url:
     url: https://github.com/4evy.png?size=256
+    force: true
     dest: "{{ applications_helium_root }}/github-profile-avatar"
     mode: "0644"
   register: applications_helium_profile_avatar_download
