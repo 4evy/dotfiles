@@ -167,7 +167,6 @@ module Raycast
 
   Profile = Data.define(
     :current_user,
-    :oauth_token,
     :avatar_url,
     :command_aliases,
   ).freeze
@@ -300,7 +299,6 @@ module Raycast
         "profile",
         "apply",
         JSON.generate(current_user),
-        JSON.generate(profile.oauth_token),
         exception: true,
       )
 
@@ -445,16 +443,13 @@ module Raycast
 
       data = JSON.load_file(path)
       current_user = require_object(data, "current_user")
-      oauth_token = require_object(data, "oauth_token")
       require_nonempty_string(current_user, "id", "current_user")
       require_nonempty_string(current_user, "name", "current_user")
-      require_nonempty_string(oauth_token, "access_token", "oauth_token")
       aliases = data.fetch("command_aliases", [])
       raise Error, "command_aliases must be an array of objects" unless aliases.is_a?(Array) && aliases.all?(Hash)
 
       Profile.new(
         current_user:,
-        oauth_token:,
         avatar_url:      data.fetch("avatar_url", ""),
         command_aliases: aliases,
       )

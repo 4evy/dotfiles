@@ -4,33 +4,22 @@ import { parseJsonObject, requiredString } from "./util.mts";
 
 export type RaycastProfilePayload = {
   currentUser: Record<string, unknown> & { id: string; name: string };
-  oauthToken: Record<string, unknown> & { access_token: string };
 };
 
 export const PROFILE_USER_DEFAULTS = PATHS.profileUserDefaults;
 
 export function parseProfilePayload(
   currentUser: string | undefined,
-  oauthToken: string | undefined,
 ): RaycastProfilePayload {
   const user = parseJsonObject(
     requiredString(currentUser, "current user JSON"),
     "current user",
   );
-  const token = parseJsonObject(
-    requiredString(oauthToken, "OAuth token JSON"),
-    "OAuth token",
-  );
-
   return {
     currentUser: {
       ...user,
       id: requiredString(user.id, "current user id"),
       name: requiredString(user.name, "current user name"),
-    },
-    oauthToken: {
-      ...token,
-      access_token: requiredString(token.access_token, "OAuth access_token"),
     },
   };
 }
@@ -43,15 +32,13 @@ export async function applyProfileDefaults(
     PROFILE_USER_DEFAULTS.currentUser,
     JSON.stringify(profile.currentUser),
   );
-  await db.userDefaults.set(
-    PROFILE_USER_DEFAULTS.oauthToken,
-    JSON.stringify(profile.oauthToken),
-  );
+  await db.userDefaults.delete(PROFILE_USER_DEFAULTS.oauthToken);
+  await db.userDefaults.delete("AuthSessionExpired");
 
   const stored = await db.userDefaults.get(PROFILE_USER_DEFAULTS.currentUser);
   if (typeof stored !== "string")
     throw new Error("CurrentUser was not stored as JSON text");
-  return parseProfilePayload(stored, JSON.stringify(profile.oauthToken)).currentUser;
+  return parseProfilePayload(stored).currentUser;
 }
 
 export function profileSummary(

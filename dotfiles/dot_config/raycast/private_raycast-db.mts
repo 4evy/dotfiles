@@ -262,14 +262,14 @@ const COMMANDS = new Map<string, Command>(
       },
     },
     profile: {
-      help: "Print or write CurrentUser and OAuthTokenResponse user defaults.",
-      usage: "profile [apply <current-user-json> <oauth-token-json> [--dry-run]]",
+      help: "Print the profile defaults or apply a local user without a session token.",
+      usage: "profile [apply <current-user-json> [--dry-run]]",
       run: async ({ dryRun, positionals }: Flags) => {
-        const [action, currentUser, oauthToken, ...unexpected] = positionals;
+        const [action, currentUser, ...unexpected] = positionals;
         if (unexpected.length > 0) throw new Error("too many profile arguments");
         if (!action) return withDatabase(async ({ db }) => profileDefaults(db));
         if (action !== "apply") throw new Error(`unknown profile action: ${action}`);
-        const profile = parseProfilePayload(currentUser, oauthToken);
+        const profile = parseProfilePayload(currentUser);
         if (dryRun) return { dryRun, profile };
         return withDatabase(async ({ db }) => {
           const stored = await applyProfileDefaults(db, profile);

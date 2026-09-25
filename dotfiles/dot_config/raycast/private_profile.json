@@ -17,13 +17,6 @@
       "renewal_date": "2099-12-31T23:59:59Z"
     }
   },
-  "oauth_token": {
-    "access_token": "rc_at_v1.eyJ0eXAiOiJhdCIsInYiOjEsInppcCI6IkRFRiIsImVuYyI6IkI2NFUiLCJjaGsiOiJTMjU2VDcyIn0.DcrBCcAwDAPAVTRAOpSDVQgYKfjR0O3be5-say5Fv9j0LiKaaEYNPFErB0IJH0Kezr-1fX8.tF6sZAzg7xlh",
-    "refresh_token": "rc_rt_v1.eyJ0eXAiOiJydCIsInYiOjEsInppcCI6IkRFRiIsImVuYyI6IkI2NFUiLCJjaGsiOiJTMjU2VDcyIn0.DcvBDcAgDAPAVTwAS1HiCiQUIwJtxy-f-93Vgt_OHYManciTeKs6E1wLRX7voCVkNzgfziMNSyhVijMQzfgD.iWoo5zt3NFM6",
-    "token_type": "Bearer",
-    "expires_in": 999999999,
-    "scope": "read write"
-  },
   "command_aliases": [
     {
       "id": "c:r:applications::*::application::=::/Applications/Ghostty.app",
