@@ -2,17 +2,10 @@
 name: Go
 
 on:
-  pull_request:
-    paths: &go-paths
-      - .github/workflows/go.yaml
-      - packages/records/**
-      - go.work
-      - go.work.sum
-      - packages/theme-run/**
+  pull_request: null
   push:
     branches:
       - master
-    paths: *go-paths
   workflow_dispatch: null
 
 concurrency:
@@ -35,34 +28,20 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Set Up Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+      - name: Set Up Check Tools
+        uses: ./.github/actions/setup-check-tools # zizmor: ignore[self-repository]
         with:
-          go-version-file: packages/records/go.mod
-          cache-dependency-path: |
-            packages/records/go.sum
-            packages/theme-run/go.sum
+          tools: just golangci-lint
 
-      - name: Check Formatting
-        run: >-
-          test -z
-          "$(find packages/records packages/theme-run -type f -name '*.go' -exec gofmt -l {} +)"
+      - name: Set Up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.work
+          cache-dependency-path: '**/go.sum'
 
-      - name: Test
-        run: |
-          go -C packages/records test ./...
-          go -C packages/theme-run test ./...
-
-      - name: Vet
-        run: |
-          go -C packages/records vet ./...
-          go -C packages/theme-run vet ./...
-
-      - name: Build Static theme-run
-        env:
-          CGO_ENABLED: 0
-        run: go -C packages/theme-run build -trimpath -o ../../theme-run ./cmd/theme-run
+      - name: Check Go Workspace
+        run: just go-check

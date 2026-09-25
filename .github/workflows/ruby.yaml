@@ -2,19 +2,10 @@
 name: Ruby
 
 on:
-  pull_request:
-    paths: &ruby-paths
-      - .tool-versions
-      - .github/workflows/ruby.yaml
-      - .rubocop.yml
-      - Formula/**
-      - Gemfile
-      - Gemfile.lock
-      - libexec/*.rb
+  pull_request: null
   push:
     branches:
       - master
-    paths: *ruby-paths
   workflow_dispatch: null
 
 concurrency:
@@ -36,18 +27,17 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
+      - name: Set Up Check Tools
+        uses: ./.github/actions/setup-check-tools # zizmor: ignore[self-repository]
+
       - name: Install Ruby
-        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
+        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
         with:
-          ruby-version: '4.0'
           bundler-cache: true
 
-      - name: Run RuboCop
-        run: bundle exec rubocop --format github
-
-      - name: Check Syntax
-        run: find Formula libexec -name '*.rb' -print0 | xargs -0 -n1 ruby -c
+      - name: Check Ruby
+        run: just ruby-check

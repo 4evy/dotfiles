@@ -2,24 +2,10 @@
 name: Python
 
 on:
-  pull_request:
-    paths: &python-paths
-      - .github/workflows/python.yaml
-      - .python-version
-      - .tool-versions
-      - pyproject.toml
-      - uv.lock
-      - '**/*.py'
-      - ansible/bootstrap.sh
-      - ansible/roles/system/templates/macos/tailscale-ssh-helper.py.in
-      - browser/helium.toml
-      - browser/settings/**
-      - dotfiles/.chezmoidata/t3_chat.json
-      - packages/dotfiles-python/assets/**
+  pull_request: null
   push:
     branches:
       - master
-    paths: *python-paths
   workflow_dispatch: null
 
 concurrency:
@@ -44,40 +30,20 @@ jobs:
       UV_LOCKED: "1"
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
+      - name: Set Up Check Tools
+        uses: ./.github/actions/setup-check-tools # zizmor: ignore[self-repository]
+
       - name: Install uv and Python
-        uses: astral-sh/setup-uv@d31148d669074a8d0a63714ba94f3201e7020bc3 # v8.3.0
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
           version-file: .tool-versions
 
-      - name: Verify Locked Environment
+      - name: Check Python
         env:
           UV_MALWARE_CHECK: "1"
-        run: |
-          uv lock --check
-          uv sync
-
-      - name: Run Ruff
-        run: uv run ruff check --output-format github .
-
-      - name: Check Cognitive Complexity
-        run: uv run complexipy --plain
-
-      - name: Run ty
-        run: uv run ty check --output-format github
-
-      - name: Check Python Dependencies
-        run: uv run deptry . --github-output
-
-      - name: Find Dead Python Code
-        run: uv run vulture
-
-      - name: Compile Python Sources
-        run: uv run python -m compileall -q ansible dotfiles packages
-
-      - name: Build Package
-        run: uv build --no-build-logs
+        run: just python-check

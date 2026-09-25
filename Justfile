@@ -28,7 +28,8 @@ nix_bin_dir := "/nix/var/nix/profiles/default/bin"
 nix_profile_bin_dir := home_directory() / ".nix-profile/bin"
 nixos_profile_bin_dir := "/run/current-system/sw/bin"
 
-export PATH := join_list([homebrew_gnu_path, homebrew_path, nix_bin_dir, nix_profile_bin_dir, nixos_profile_bin_dir, env("PATH", "")], PATH_VAR_SEP)
+# CI setup actions already put the selected runtimes first on PATH.
+export PATH := if env("CI", "") == "true" { env("PATH", "") } else { join_list([homebrew_gnu_path, homebrew_path, nix_bin_dir, nix_profile_bin_dir, nixos_profile_bin_dir, env("PATH", "")], PATH_VAR_SEP) }
 # Development recipes are reproducible by default; dependency changes must be
 # made explicitly with uv outside the task runner.
 export UV_LOCKED := "1"

@@ -2,67 +2,10 @@
 name: Nix
 
 on:
-  pull_request:
-    paths: &nix-paths
-      # Workflow and repository-wide check configuration.
-      - .github/actions/setup-nix/**
-      - .github/workflows/nix.yaml
-      - .ansible-lint
-      - .clang-format
-      - .editorconfig
-      - .luacheckrc
-      - .gitignore
-      - .markdownlint.json
-      - .shellcheckrc
-      - .yamllint
-      - .yamlfmt
-      - biome.jsonc
-      - pyproject.toml
-
-      # Inputs to the flake, NixOS configuration, and package checks that are
-      # not already covered by the formatter/linter extensions below.
-      - .dockerignore
-      - Justfile
-      - go.work
-      - go.work.sum
-      - '**/flake.lock'
-      - '**/Containerfile'
-      - ansible/roles/system/templates/macos/tailscale-ssh-helper.py.in
-      - bluebuild/files/system/**
-      - dotfiles/dot_config/autostart/1password.desktop
-      - dotfiles/dot_config/fontconfig/conf.d/**
-      - packages/kanata/kanata.kbd
-      - dotfiles/dot_local/bin/executable_*
-      - packages/dotfiles-python/assets/**
-      - packages/hyper-window-tiling/bun.lock
-      - packages/hyper-window-tiling/gnome/schemas/**
-      - packages/theme-run/**
-
-      # `nix flake check` includes treefmt and pre-commit checks, so changes to
-      # any file type checked by those tools are genuine inputs to this job.
-      - '**/*.bash'
-      - '**/*.c'
-      - '**/*.cjs'
-      - '**/*.css'
-      - '**/*.h'
-      - '**/*.js'
-      - '**/*.json'
-      - '**/*.jsonc'
-      - '**/*.lua'
-      - '**/*.md'
-      - '**/*.mjs'
-      - '**/*.nix'
-      - '**/*.py'
-      - '**/*.sh'
-      - '**/*.toml'
-      - '**/*.ts'
-      - '**/*.yaml'
-      - '**/*.yml'
-      - '**/*.zsh'
+  pull_request: null
   push:
     branches:
       - master
-    paths: *nix-paths
   workflow_dispatch: null
 
 concurrency:
@@ -84,81 +27,48 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     outputs:
-      build-native: ${{ steps.native-inputs.outputs.build }}
+      native-checks: ${{ steps.native-inputs.outputs.checks }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
           persist-credentials: false
+
+      - name: Set Up Check Tools
+        uses: ./.github/actions/setup-check-tools # zizmor: ignore[self-repository]
 
       - name: Set Up Nix
         uses: ./.github/actions/setup-nix # zizmor: ignore[self-repository]
 
       - name: Check Generated Bun Dependencies
-        run: |
-          generated=$(nix run .#bun2nix -- \
-            --lock-file packages/hyper-window-tiling/bun.lock \
-            --copy-prefix packages/hyper-window-tiling)
-          if ! diff -u \
-            packages/hyper-window-tiling/bun.nix \
-            <(printf '%s\n' "$generated"); then
-            echo "::error::packages/hyper-window-tiling/bun.nix is stale; run just bun-nix-update."
-            exit 1
-          fi
+        run: just bun-nix-check
 
-      - name: Materialize Flake Evaluation Inputs
-        run: |
-          nix eval --raw \
-            .#nixosConfigurations.nixos.config.system.build.toplevel.drvPath \
-            >/dev/null
+      - name: Check Flake and Repository
+        run: just nix-ci-check
 
-      - name: Check Flake
-        run: >-
-          nix flake check
-          --keep-going --no-build
-
-      - name: Build Repository Checks
-        run: >-
-          nix build
-          --keep-going --print-build-logs
-          .#checks.x86_64-linux.pre-commit
-          .#checks.x86_64-linux.treefmt
-
-      - name: Detect Native Check Inputs
+      - name: Discover Native Checks
         id: native-inputs
-        env:
-          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
-          EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [[ "$EVENT_NAME" == "workflow_dispatch" || "$BASE_SHA" =~ ^0+$ ]]; then
-            echo "build=true" >> "$GITHUB_OUTPUT"
-          elif git diff --quiet "$BASE_SHA" "$GITHUB_SHA" -- ':(exclude,glob)**/*.md'; then
-            echo "build=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "build=true" >> "$GITHUB_OUTPUT"
-          fi
+          checks=$(just --quiet nix-native-checks)
+          echo "checks=$checks" >> "$GITHUB_OUTPUT"
 
   # Omit `name` so skipped matrices do not expose an unevaluated matrix expression.
   native-checks: # zizmor: ignore[anonymous-definition] GitHub adds matrix values to the job ID.
     needs: checks
-    if: needs.checks.outputs.build-native == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        check:
-          - dotfiles-python
-          - equicord-settings
-          - hyper-window-tiling
-          - theme-run
-          - toshy-runtime
+        check: ${{ fromJSON(needs.checks.outputs.native-checks) }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Set Up Check Tools
+        uses: ./.github/actions/setup-check-tools # zizmor: ignore[self-repository]
 
       - name: Set Up Nix
         uses: ./.github/actions/setup-nix # zizmor: ignore[self-repository]
@@ -168,7 +78,4 @@ jobs:
       - name: Build Native Check
         env:
           CHECK: ${{ matrix.check }}
-        run: >-
-          nix build
-          --print-build-logs
-          ".#checks.x86_64-linux.${CHECK}"
+        run: just nix-build-check "$CHECK"

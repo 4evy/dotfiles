@@ -2,19 +2,10 @@
 name: Homebrew
 
 on:
-  pull_request:
-    paths: &homebrew-paths
-      - .github/workflows/homebrew.yaml
-      - Brewfile
-      - Formula/**
-      - LICENSE
-      - flake.lock
-      - packages/source-lock/**
-      - packages/theme-run/**
+  pull_request: null
   push:
     branches:
       - master
-    paths: *homebrew-paths
   workflow_dispatch: null
 
 concurrency:
@@ -36,22 +27,15 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Set Up Check Tools
+        uses: ./.github/actions/setup-check-tools # zizmor: ignore[self-repository]
 
       - name: Install Homebrew RubyGems
         run: brew install-bundler-gems
 
-      - name: Package theme-run Source
-        run: |
-          mkdir -p Sources
-          tar -cf Sources/theme-run-0.1.0.tar \
-            -C packages/theme-run go.mod go.sum README.md cmd internal \
-            -C ../.. LICENSE
-
-      - name: Check Formula Style
-        run: brew style Formula/*.rb
-
-      - name: Parse Brewfile
-        run: brew bundle list --file Brewfile --all >/dev/null
+      - name: Check Homebrew
+        run: just homebrew-check

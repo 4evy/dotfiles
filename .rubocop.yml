@@ -32,11 +32,6 @@ Metrics:
 Naming/PredicateMethod:
   Enabled: false
 
-# Homebrew formula filenames must match their hyphenated formula names.
-Naming/FileName:
-  Exclude:
-    - Formula/*.rb
-
 # All URI.open call sites validate URI::HTTP before opening.
 Security/Open:
   Enabled: false
