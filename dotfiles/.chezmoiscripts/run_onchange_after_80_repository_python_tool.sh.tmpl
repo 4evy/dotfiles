@@ -1,0 +1,10 @@
+{{- if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
+{{- $repo := .chezmoi.workingTree -}}
+#!/bin/sh
+# project metadata hash: {{ output "cat" (joinPath $repo "pyproject.toml") (joinPath $repo "uv.lock") | sha256sum }}
+# installer hash: {{ output "cat" (joinPath $repo "ansible/roles/bootstrap/tasks/python-tool.yml") | sha256sum }}
+# command fingerprint: {{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/terminal-t3-chat") }}
+set -eu
+export ANSIBLE_BECOME_ASK_PASS=false
+{{ template "ansible_reconcile.sh.tmpl" (dict "tags" "always,repo-tools" "required" false "label" "Repository command refresh") }}
+{{ end -}}

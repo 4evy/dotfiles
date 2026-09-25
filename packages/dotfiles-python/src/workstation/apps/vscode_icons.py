@@ -1,7 +1,3 @@
-#!/usr/bin/env python3.14
-"""Build and reinstall the T3 Chat theme after each dotfiles apply."""
-# Catppuccin source={{- if lookPath `code` -}}{{- $source := output `code` `--locate-extension` `catppuccin.catppuccin-vsc-icons` | trim -}}{{ $source }}{{ if $source }}@{{ (stat (joinPath $source `dist/mocha/theme.json`)).modTime }}{{ end }}{{- end }}
-
 import hashlib
 import json
 import re
@@ -12,6 +8,8 @@ from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from workstation.lib.theme import palettes
+
 UPSTREAM_ID = "catppuccin.catppuccin-vsc-icons"
 CUSTOM_ID = "t3-chat-catppuccin-icons"
 CUSTOM_NAME = "t3-chat-catppuccin-icons"
@@ -20,9 +18,7 @@ CUSTOM_EXTENSION_ID = f"{CUSTOM_PUBLISHER}.{CUSTOM_NAME}"
 LIGHT_PREFIX = "__t3_chat_light__"
 PALETTE_VARIABLE = re.compile(r"var\(--vscode-ctp-([a-z0-9-]+)\)")
 
-T3_CHAT = json.loads(
-    r"""{{ .t3_chat | toJson }}"""
-)
+T3_CHAT = palettes()
 
 type Association = str | dict[str, str]
 
@@ -74,7 +70,8 @@ def content_version(extension: Path) -> str:
     for path in sorted(extension.rglob("*")):
         if path.is_file():
             digest.update(path.relative_to(extension).as_posix().encode())
-            digest.update(path.read_bytes())
+            with path.open("rb") as source:
+                hashlib.file_digest(source, lambda: digest)
     return f"1.0.{int.from_bytes(digest.digest()[:4], byteorder='big')}"
 
 

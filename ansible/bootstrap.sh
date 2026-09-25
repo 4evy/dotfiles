@@ -76,6 +76,8 @@ readonly -a REQUIRED_REPOSITORY_FILES=(
 	"${PRIVATE_SETTINGS_FILE}"
 	"${MACOS_AGE_KEY_HELPER_FILE}"
 	'Justfile'
+	'pyproject.toml'
+	'uv.lock'
 	'packages/records/cmd/files.go'
 	'packages/records/cmd/main.go'
 	'packages/records/cmd/source.go'
@@ -589,18 +591,28 @@ install_python_runtime() {
 install_python_tools() {
 	local uv_executable="$1"
 	local python_executable="$2"
+	local repository_root="$3"
+	local constraints
+	if [[ -z "${temporary_directory}" ]]; then
+		create_temporary_directory
+	fi
+	constraints="${temporary_directory}/automation-constraints.txt"
+	"${uv_executable}" export --project "${repository_root}" --locked \
+		--only-group automation --no-hashes --no-annotate --no-header \
+		--output-file "${constraints}" || die 'failed to export locked automation tools'
 	local -a uv_args=(
 		--no-config tool install --python "${python_executable}"
 		--no-python-downloads --force --compile-bytecode
+		--constraints "${constraints}"
 	)
 
 	log 'Installing Python command-line tools'
 	if ! "${uv_executable}" "${uv_args[@]}" \
-		--with-executables-from ansible-core 'ansible>=14,<15'; then
-		die 'failed to install uv tool: ansible>=14,<15'
+		--with-executables-from ansible-core ansible; then
+		die 'failed to install uv tool: ansible'
 	fi
-	if ! "${uv_executable}" "${uv_args[@]}" 'ansible-lint>=26,<27'; then
-		die 'failed to install uv tool: ansible-lint>=26,<27'
+	if ! "${uv_executable}" "${uv_args[@]}" ansible-lint; then
+		die 'failed to install uv tool: ansible-lint'
 	fi
 }
 
@@ -869,7 +881,7 @@ main() {
 	fi
 
 	install_python_runtime "${uv_executable}" "${python_executable}"
-	install_python_tools "${uv_executable}" "${python_executable}"
+	install_python_tools "${uv_executable}" "${python_executable}" "${repository_root}"
 
 	PATH="${USER_EXECUTABLE_DIRECTORY}:${PATH}"
 	export PATH

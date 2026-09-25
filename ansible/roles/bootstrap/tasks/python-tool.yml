@@ -31,7 +31,7 @@
           - "{{ bootstrap_uv_command }}"
           - export
           - --locked
-          - --no-dev
+          - --no-default-groups
           - --no-emit-project
           - --no-hashes
           - --no-annotate

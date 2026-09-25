@@ -52,22 +52,18 @@ def _gnome_accent_apply() -> None:
         )
     if not gsettings_available():
         return
-    valid = output(
-        ("gsettings", "range", "org.gnome.desktop.interface", "accent-color"),
+    # gsettings validates the schema, range, and writability before setting.
+    run(
+        (
+            "gsettings",
+            "set",
+            "org.gnome.desktop.interface",
+            "accent-color",
+            "pink",
+        ),
         check=False,
+        capture=True,
     )
-    if "'pink'" in valid:
-        run(
-            (
-                "gsettings",
-                "set",
-                "org.gnome.desktop.interface",
-                "accent-color",
-                "pink",
-            ),
-            check=False,
-            capture=True,
-        )
 
 
 _GNOME_ACCENT_MODE = Group("Mode", validator=validators.LimitedChoice(max=1))

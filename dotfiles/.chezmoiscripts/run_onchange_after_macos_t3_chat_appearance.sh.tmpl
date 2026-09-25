@@ -1,0 +1,7 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+# command fingerprint: {{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/macos-t3-chat-appearance") }}
+# palette fingerprint: {{ .t3_chat | toJson | sha256sum }}
+set -eu
+{{ template "workstation_command.sh.tmpl" "macos-t3-chat-appearance" }}
+{{ end -}}

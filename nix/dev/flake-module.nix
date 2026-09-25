@@ -328,6 +328,7 @@
       };
 
       operationsShell = pkgs.mkShell {
+        inputsFrom = [ pythonShell ];
         packages =
           with pkgs;
           [
@@ -520,24 +521,15 @@
               ];
             };
 
-            ruff-format.includes = lib.mkAfter [
-              "*.py.in"
-              "bluebuild/files/system/usr/bin/open"
-              "dotfiles/dot_local/bin/executable_helix-rumdl-lsp"
-              "dotfiles/dot_local/bin/executable_vscode-just-lsp"
-            ];
-
             shfmt = {
               includes = lib.mkAfter [
                 "dotfiles/dot_local/bin/executable_*"
                 "bluebuild/files/system/usr/bin/*"
               ];
               excludes = [
+                "*.py"
                 "dotfiles/dot_local/bin/executable_ghostty-dreamy-swirl.ts"
                 "dotfiles/dot_local/bin/executable_sops-age-key-cache.rb"
-                "dotfiles/dot_local/bin/executable_helix-rumdl-lsp"
-                "dotfiles/dot_local/bin/executable_vscode-just-lsp"
-                "bluebuild/files/system/usr/bin/open"
               ];
             };
 

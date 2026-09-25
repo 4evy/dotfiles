@@ -1,0 +1,8 @@
+workstation_command="$CHEZMOI_HOME_DIR/.local/bin/{{ . }}"
+if [ -f "$workstation_command" ] && [ -x "$workstation_command" ]; then
+	"$workstation_command"
+elif command -v '{{ . }}' >/dev/null 2>&1; then
+	'{{ . }}'
+else
+	printf '%s\n' '{{ . }} skipped: command not found'
+fi

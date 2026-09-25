@@ -1,0 +1,10 @@
+cd "$CHEZMOI_WORKING_TREE"
+if command -v ansible-playbook >/dev/null 2>&1; then
+	set -- ansible-playbook
+elif command -v uvx >/dev/null 2>&1; then
+	set -- uvx --from ansible-core ansible-playbook
+else
+	printf '%s\n' '{{ .label }} {{ if .required }}failed{{ else }}skipped{{ end }}: ansible-playbook/uvx not found' >&2
+	exit {{ if .required }}1{{ else }}0{{ end }}
+fi
+exec "$@" ansible/site.yml --tags '{{ .tags }}'

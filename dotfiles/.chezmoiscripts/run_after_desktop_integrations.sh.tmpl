@@ -1,0 +1,3 @@
+#!/bin/sh
+set -eu
+{{ template "ansible_reconcile.sh.tmpl" (dict "tags" "always,hyper-window-tiling,sushi-preview,vicinae" "required" false "label" "Desktop integrations") }}

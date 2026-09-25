@@ -1,0 +1,10 @@
+{{- if eq .chezmoi.os "darwin" -}}
+{{- $repo := .chezmoi.workingTree -}}
+#!/bin/sh
+# palette hash: {{ output "cat" (joinPath $repo "dotfiles/.chezmoidata/t3_chat.json") | sha256sum }}
+# helper source hash: {{ output "cat" (joinPath $repo "packages/dotfiles-python/src/workstation/macos/raycast.py") | sha256sum }}
+# command fingerprint: {{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/raycast-t3-chat") }}
+# Raycast fingerprint: {{ template "executable_fingerprint" "/Applications/Raycast.app/Contents/MacOS/Raycast" }}
+set -eu
+{{ template "workstation_command.sh.tmpl" "raycast-t3-chat" }}
+{{ end -}}

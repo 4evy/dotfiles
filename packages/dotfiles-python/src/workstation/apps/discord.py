@@ -179,13 +179,13 @@ def _repair_macos(package_bin: Path) -> None:
     try:
         environment = {"HOME": os.fspath(Path.home())}
         result = run(
-            (equilotl, "--repair", "--branch", "stable"),
+            (equilotl, "--repair", "--location", app),
             check=False,
             env=environment,
         )
         if result.returncode != 0:
             result = run(
-                (equilotl, "--install", "--branch", "stable"),
+                (equilotl, "--install", "--location", app),
                 check=False,
                 env=environment,
             )

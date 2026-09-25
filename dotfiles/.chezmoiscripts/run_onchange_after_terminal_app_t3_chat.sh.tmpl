@@ -1,0 +1,8 @@
+{{- if eq .chezmoi.os "darwin" -}}
+{{- $repo := .chezmoi.workingTree -}}
+#!/bin/sh
+# command fingerprint: {{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/terminal-t3-chat") }}
+# helper source hash: {{ output "cat" (joinPath $repo "packages/dotfiles-python/src/workstation/macos/terminal.py") | sha256sum }}
+set -eu
+{{ template "workstation_command.sh.tmpl" "terminal-t3-chat" }}
+{{ end -}}

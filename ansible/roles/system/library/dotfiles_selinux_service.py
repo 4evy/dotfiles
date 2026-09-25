@@ -12,12 +12,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-try:
-    from ansible.module_utils.basic import (  # ty: ignore[unresolved-import]
-        AnsibleModule,
-    )
-except ModuleNotFoundError:
-    AnsibleModule = None  # type: ignore[assignment,misc]
+from ansible.module_utils.basic import AnsibleModule
 
 DOCUMENTATION = r"""
 ---
@@ -387,8 +382,6 @@ def reconcile(
 
 def main() -> None:
     """Run the module through Ansible's JSON transport."""
-    if AnsibleModule is None:
-        raise RuntimeError("dotfiles_selinux_service must be run by Ansible")
     module = AnsibleModule(
         argument_spec={
             "policy_module": {"type": "str", "required": True},

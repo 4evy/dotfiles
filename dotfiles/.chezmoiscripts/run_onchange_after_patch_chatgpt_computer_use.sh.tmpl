@@ -1,0 +1,10 @@
+{{- if eq .chezmoi.os "darwin" -}}
+{{- $repo := .chezmoi.workingTree -}}
+#!/bin/sh
+# Source fingerprint: {{ output "git" "-C" $repo "hash-object" (joinPath $repo "packages/chatgpt/patch-computer-use-policy.ts") (joinPath $repo "dotfiles/dot_local/bin/executable_patch-chatgpt-computer-use") (joinPath $repo "dotfiles/Library/LaunchAgents/dev.4evy.patch-chatgpt-computer-use.plist.tmpl") | sha256sum }}
+set -eu
+launch_domain="gui/$(id -u)"
+launch_plist="$CHEZMOI_HOME_DIR/Library/LaunchAgents/dev.4evy.patch-chatgpt-computer-use.plist"
+/bin/launchctl bootout "$launch_domain" "$launch_plist" >/dev/null 2>&1 || true
+exec /bin/launchctl bootstrap "$launch_domain" "$launch_plist"
+{{ end -}}

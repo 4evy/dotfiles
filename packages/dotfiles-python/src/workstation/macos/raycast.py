@@ -1,17 +1,11 @@
-{{- if eq .chezmoi.os "darwin" -}}
-{{- $repo := .chezmoi.workingTree -}}
-{{- $light := .t3_chat.light -}}
-{{- $dark := .t3_chat.dark -}}
-#!/usr/bin/env python3.14
-# palette hash: {{ output "cat" (joinPath $repo "dotfiles/.chezmoidata/t3_chat.json") | sha256sum }}
-# Raycast fingerprint: {{ template "executable_fingerprint" "/Applications/Raycast.app/Contents/MacOS/Raycast" }}
-from __future__ import annotations
-
 import json
 import shutil
 import subprocess
 import time
+from collections.abc import Sequence
 from pathlib import Path
+
+from workstation.lib.theme import palettes
 
 RAYCAST_APP = Path("/Applications/Raycast.app")
 DATABASE_CLI = Path.home() / ".config/raycast/raycast-db.mts"
@@ -31,15 +25,12 @@ THEME_ROLE_FIELDS = (
     ("magenta", "pink"),
 )
 THEME_FIELDS = ("name", "appearance", *(field for field, _role in THEME_ROLE_FIELDS))
-PALETTES = json.loads(r"""{{ .t3_chat | toJson }}""")
+PALETTES = palettes()
 THEMES = tuple(
     {
         "name": f"T3 Chat {appearance.title()}",
         "appearance": appearance,
-        **{
-            field: PALETTES[appearance][role]
-            for field, role in THEME_ROLE_FIELDS
-        },
+        **{field: PALETTES[appearance][role] for field, role in THEME_ROLE_FIELDS},
     }
     for appearance in ("light", "dark")
 )
@@ -71,9 +62,34 @@ def call_database(node: str, method: str, arguments: object = None) -> object:
 
 
 def require_theme_id(value: object, context: str) -> str:
-    if not isinstance(value, dict) or not isinstance(value.get("id"), str):
+    theme_id = value.get("id") if isinstance(value, dict) else None
+    if not isinstance(theme_id, str):
         raise TypeError(f"{context}: Raycast did not return a theme ID")
-    return value["id"]
+    return theme_id
+
+
+def upsert_theme(
+    node: str, installed: Sequence[object], desired: dict[str, str]
+) -> tuple[str, bool]:
+    current = next(
+        (
+            theme
+            for theme in installed
+            if isinstance(theme, dict)
+            and theme.get("name") == desired["name"]
+            and theme.get("appearance") == desired["appearance"]
+        ),
+        None,
+    )
+    if current is None:
+        created = call_database(node, "settings.addTheme", [desired])
+        return require_theme_id(created, f"create {desired['name']}"), True
+    theme_id = require_theme_id(current, f"inspect {desired['name']}")
+    if all(current.get(field) == desired[field] for field in THEME_FIELDS):
+        return theme_id, False
+    updated = call_database(node, "settings.updateTheme", [theme_id, desired])
+    require_theme_id(updated, f"update {desired['name']}")
+    return theme_id, True
 
 
 def apply_themes(node: str) -> bool:
@@ -84,31 +100,9 @@ def apply_themes(node: str) -> bool:
     changed = False
     active_ids: dict[str, str] = {}
     for desired in THEMES:
-        current = next(
-            (
-                theme
-                for theme in installed
-                if isinstance(theme, dict)
-                and theme.get("name") == desired["name"]
-                and theme.get("appearance") == desired["appearance"]
-            ),
-            None,
-        )
-        if current is None:
-            created = call_database(node, "settings.addTheme", [desired])
-            theme_id = require_theme_id(created, f"create {desired['name']}")
-            changed = True
-        else:
-            theme_id = require_theme_id(current, f"inspect {desired['name']}")
-            if any(current.get(field) != desired[field] for field in THEME_FIELDS):
-                updated = call_database(
-                    node,
-                    "settings.updateTheme",
-                    [theme_id, desired],
-                )
-                require_theme_id(updated, f"update {desired['name']}")
-                changed = True
+        theme_id, theme_changed = upsert_theme(node, installed, desired)
         active_ids[desired["appearance"]] = theme_id
+        changed |= theme_changed
 
     general = call_database(node, "settings.getGeneralSettings")
     if not isinstance(general, dict):
@@ -171,4 +165,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-{{ end -}}

@@ -64,7 +64,7 @@ unset _dotfiles_homebrew_prefix
 # selected JDK. Its bin directory is added from JAVA_HOME below.
 if [[ -z "${JAVA_HOME:-}" ]]; then
 {{- if eq .chezmoi.os "darwin" }}
-	_dotfiles_java_home="$(/usr/libexec/java_home -v 21 2>/dev/null || true)"
+	_dotfiles_java_home="${HOMEBREW_PREFIX:-}/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"
 {{- else }}
 	_dotfiles_java_home="${HOMEBREW_PREFIX:-}/opt/openjdk@21/libexec"
 {{- end }}
@@ -206,7 +206,9 @@ fi
 {{- end }}
 
 export BASH_ENV="${BASH_ENV:-$HOME/.bashenv}"
+export UV_PYTHON="${UV_PYTHON:-3.14}"
 export UV_PYTHON_PREFERENCE="${UV_PYTHON_PREFERENCE:-only-managed}"
+export RUMDL_CACHE_DIR="${RUMDL_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/rumdl}"
 export GLAMOUR_STYLE="${GLAMOUR_STYLE:-$HOME/.config/glamour/styles/t3-chat-dark.json}"
 _dotfiles_environment_loaded=1
 unset DOTFILES_ENVIRONMENT_LOADED

@@ -1,0 +1,13 @@
+{{- if eq .chezmoi.os "linux" -}}
+{{- $repo := .chezmoi.workingTree -}}
+#!/bin/sh
+# command fingerprint: {{ template "executable_fingerprint" (joinPath .chezmoi.homeDir ".local/bin/gnome-t3-chat-accent") }}
+# helper source hash: {{ output "cat" (joinPath $repo "packages/dotfiles-python/src/workstation/local/gnome.py") (joinPath $repo "packages/dotfiles-python/assets/desktop/t3_chat_palette.json") (joinPath $repo "packages/dotfiles-python/assets/desktop/gtk-3-accent.css.in") (joinPath $repo "packages/dotfiles-python/assets/desktop/gtk-4-accent.css.in") | sha256sum }}
+set -eu
+{{ template "workstation_command.sh.tmpl" "gnome-t3-chat-accent" }}
+if command -v systemctl >/dev/null 2>&1; then
+	systemctl --user disable --now gnome-black-rose-doll-accent.service >/dev/null 2>&1 || true
+	systemctl --user daemon-reload >/dev/null 2>&1 || true
+	systemctl --user enable --now gnome-t3-chat-accent.service >/dev/null 2>&1 || true
+fi
+{{ end -}}

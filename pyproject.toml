@@ -19,16 +19,24 @@ dependencies = [
 ]
 
 [project.scripts]
+extra-shell-completions = "workstation.local.shell_completions:main"
+raycast-t3-chat = "workstation.macos.raycast:main"
+sync-equicord-settings = "workstation.apps.equicord_settings:main"
+vscode-t3-chat-icons = "workstation.apps.vscode_icons:main"
 desktop-perf-audit = "workstation.local.desktop_audit:desktop_perf_audit_entrypoint"
 discord-equicord = "workstation.apps.discord:entrypoint"
 gnome-t3-chat-accent = "workstation.local.gnome:gnome_t3_chat_accent_entrypoint"
 jj-diff = "workstation.local.jj:jj_diff_entrypoint"
-jj-get = "workstation.local.jj:jj_get_entrypoint"
 macos-t3-chat-appearance = "workstation.macos.appearance:apply_appearance"
 phone-mirror = "workstation.local.phone_mirror:entrypoint"
 terminal-t3-chat = "workstation.macos.terminal:terminal_profile"
 
 [dependency-groups]
+automation = [
+  "ansible>=14,<15",
+  "ansible-core>=2.21,<2.22",
+  "ansible-lint>=26,<27",
+]
 dev = [
   "astral>=3.2,<4",
   "complexipy>=7,<8",
@@ -40,6 +48,7 @@ dev = [
 ]
 
 [tool.uv]
+default-groups = ["dev", "automation"]
 required-version = ">=0.11.26,<0.13"
 required-environments = [
   "sys_platform == 'darwin' and platform_machine == 'arm64'",
@@ -49,16 +58,10 @@ required-environments = [
 [tool.uv.pip]
 strict = true
 
-[tool.setuptools]
-package-dir = { workstation = "packages/dotfiles-python/src/workstation" }
-packages = [
-  "workstation",
-  "workstation.apps",
-  "workstation.lib",
-  "workstation.local",
-  "workstation.local.jj",
-  "workstation.macos",
-]
+[tool.setuptools.packages.find]
+where = ["packages/dotfiles-python/src"]
+include = ["workstation", "workstation.*"]
+namespaces = false
 
 [tool.setuptools.data-files]
 "share/dotfiles-python/desktop" = [
@@ -67,7 +70,6 @@ packages = [
 ]
 
 [tool.ruff]
-extend-exclude = ["ansible/roles/keyboard/files/toshy/slices"]
 force-exclude = true
 line-length = 88
 preview = true
@@ -148,6 +150,14 @@ known-first-party = ["workstation"]
 max-complexity = 10
 
 [tool.ruff.lint.per-file-ignores]
+# Toshy executes these slices inside its config namespace and supplies the API.
+"ansible/roles/keyboard/files/toshy/slices/*.py" = [
+  "runtime-import-in-type-checking-block",
+]
+# This variable name is Toshy's public configuration interface.
+"ansible/roles/keyboard/files/toshy/slices/kbtype_override.py" = [
+  "mixed-case-variable-in-global-scope",
+]
 "packages/dotfiles-python/src/workstation/macos/terminal.py" = [
   "get-attr-with-constant",
 ]
@@ -170,11 +180,13 @@ extra-paths = [
   "./",
   "./ansible/roles/keyboard/files/toshy",
   "./packages/dotfiles-python/src",
+  "./bluebuild/files/kmscon",
+  "./packages/source-lock",
+  "./dotfiles/dot_local/lib/python",
 ]
 
 [tool.ty.src]
-exclude = ["ansible/roles/keyboard/files/toshy/slices"]
-include = ["ansible", "dotfiles", "packages"]
+include = [".github", "ansible", "bluebuild", "dotfiles", "packages"]
 
 [tool.ty.rules]
 all = "error"
@@ -183,22 +195,34 @@ all = "error"
 error-on-warning = true
 
 [tool.vulture]
+exclude = ["*/node_modules/*", "*/__pycache__/*"]
 min_confidence = 100
-paths = ["ansible", "dotfiles", "packages"]
+paths = [".github", "ansible", "bluebuild", "dotfiles", "packages"]
 sort_by_size = true
 
 [tool.deptry]
-known_first_party = ["kmscon_files", "workstation"]
+root = [".github", "ansible", "bluebuild", "dotfiles", "packages"]
+# Keep first-party setup.py helpers in dependency discovery.
+exclude = [
+  "(^|.*/)(venv|\\.venv|\\.direnv|\\.git|\\.jj|node_modules|build|dist)(/|$)",
+]
+known_first_party = [
+  "kmscon_files",
+  "lsp_jsonrpc",
+  "source_lock",
+  "workstation",
+]
 
 [tool.deptry.per_rule_ignores]
-# Ansible injects its module runtime; Toshy injects xwaykeyz into its slices.
-DEP001 = ["ansible", "xwaykeyz"]
+# Solaar and Toshy supply their own deployment runtimes.
+DEP001 = ["solaar", "xwaykeyz"]
 # Cocoa is macOS-only and loaded dynamically through importlib.
 DEP002 = ["pyobjc-framework-Cocoa"]
-# Astral belongs to the separately deployed KMSCON role helper, not this wheel.
-DEP004 = ["astral"]
+# These dependencies belong to separately deployed helpers, not this wheel.
+DEP004 = ["ansible", "astral"]
 
 [tool.complexipy]
+exclude = ["**/node_modules/**", "**/__pycache__/**"]
 failed = true
 max-complexity-allowed = 15
-paths = ["ansible", "dotfiles", "packages"]
+paths = [".github", "ansible", "bluebuild", "dotfiles", "packages"]
