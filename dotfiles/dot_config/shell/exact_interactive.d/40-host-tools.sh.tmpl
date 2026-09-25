@@ -178,6 +178,7 @@ _dotfiles_start_ghidra_mcp_for_cxg() {
 		env \
 			GHIDRA_MCP_ALLOW_SCRIPTS="${GHIDRA_MCP_ALLOW_SCRIPTS:-1}" \
 			GHIDRA_MCP_STATE="$state_dir" \
+			GHIDRA_MCP_BRIDGE_TRANSPORT="streamable-http" \
 			JAVA_OPTS="${JAVA_OPTS:--Xmx4g -XX:+UseG1GC}" \
 			ghidra-mcp-headless >"$log_file" 2>&1 &
 	elif command -v nix >/dev/null 2>&1; then
@@ -188,6 +189,7 @@ _dotfiles_start_ghidra_mcp_for_cxg() {
 		env \
 			GHIDRA_MCP_ALLOW_SCRIPTS="${GHIDRA_MCP_ALLOW_SCRIPTS:-1}" \
 			GHIDRA_MCP_STATE="$state_dir" \
+			GHIDRA_MCP_BRIDGE_TRANSPORT="streamable-http" \
 			JAVA_OPTS="${JAVA_OPTS:--Xmx4g -XX:+UseG1GC}" \
 			nix run "github:euvlok/pkgs#legacyPackages.${nix_system}.ghidra-mcp-headless" >"$log_file" 2>&1 &
 	else
@@ -237,12 +239,7 @@ _dotfiles_stop_ghidra_mcp_for_cxg() {
 	fi
 
 	if [[ -n "$server_pid" ]]; then
-		# The serve wrapper waits for its foreground bridge before running traps,
-		# so TERM sent only to the wrapper can be deferred forever. Stop its
-		# children too, and never let cxg teardown wait without a deadline.
-		if command -v pkill >/dev/null 2>&1; then
-			pkill -TERM -P "$server_pid" >/dev/null 2>&1 || true
-		fi
+		# The launcher handles child shutdown; keep a deadline for stuck children.
 		kill "$server_pid" >/dev/null 2>&1 || true
 
 		deadline=$((SECONDS + timeout))

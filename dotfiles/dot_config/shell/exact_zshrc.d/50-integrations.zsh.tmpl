@@ -67,11 +67,11 @@ if [[ -t 0 && -t 1 && -n "$_atuin_bin" && -r "$HOME/.cache/atuin/init.zsh" ]]; t
   fi
   # shellcheck source=/dev/null
   source "$HOME/.cache/atuin/init.zsh"
-  _atuin_search() {
+  # Keep Atuin's widgets; only separate search results from the themed TUI.
+  __atuin_search_cmd() {
     emulate -L zsh
-    zle -I
 
-    local output result_file __atuin_status
+    local result_file __atuin_status
     result_file="$(mktemp)" || return 1
     # shellcheck disable=SC2153
     {
@@ -81,34 +81,11 @@ if [[ -t 0 && -t 1 && -n "$_atuin_bin" && -r "$HOME/.cache/atuin/init.zsh" ]]; t
         atuin search "$@" -i --result-file "$result_file" \
         </dev/tty >/dev/tty 2>/dev/tty
       __atuin_status=$?
-      output="$(<"$result_file")"
+      cat -- "$result_file"
+      return "$__atuin_status"
     } always {
       rm -f -- "$result_file"
     }
-
-    zle reset-prompt
-    if [[ -n "${zle_bracketed_paste[1]-}" ]]; then
-      print -rn -- "${zle_bracketed_paste[1]}" >/dev/tty
-    fi
-
-    if ((__atuin_status != 0)); then
-      [[ -n "$output" ]] && print -r -- "$output" >/dev/tty
-      return "$__atuin_status"
-    fi
-
-    if [[ -n "$output" ]]; then
-      # shellcheck disable=SC2034
-      RBUFFER=""
-      LBUFFER=$output
-
-      if [[ $LBUFFER == __atuin_accept__:* ]]; then
-        LBUFFER=${LBUFFER#__atuin_accept__:}
-        zle accept-line
-      fi
-    fi
   }
-  zle -N atuin-search _atuin_search
-  zle -N atuin-search-vicmd _atuin_search_vicmd
-  zle -N atuin-search-viins _atuin_search_viins
 fi
 unset _atuin_bin
