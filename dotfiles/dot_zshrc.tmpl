@@ -25,3 +25,11 @@ fi
 
 # Startup-only helpers are intentionally unavailable after initialization.
 unset -f _dotfiles_wrap_command _dotfiles_wrap_themed_command _dotfiles_command_path
+
+# Highlight after all framework, integration, and local widgets are installed.
+for _dotfiles_highlighting in \
+  "$HOME/.config/shell/zsh-syntax-highlighting.zsh" \
+  "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"; do
+  [[ -r "$_dotfiles_highlighting" ]] && source "$_dotfiles_highlighting"
+done
+unset _dotfiles_highlighting

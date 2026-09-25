@@ -3,7 +3,7 @@
 #      | / |                         | \ |
 #      | / | Oh My Zsh + plugins     | \ |
 #      | / | fzf-tab keeps Tab       | \ |
-#      | / | highlighting first      | \ |
+#      | / | completion plugins      | \ |
 #      |___|                         |___|
 #     (_____)───────────────────────(_____)
 # Starship owns the prompt; Atuin waits for a real TTY.
@@ -33,18 +33,10 @@ plugins=(
   copyfile
   fzf-tab
   zsh-autosuggestions
-  zsh-syntax-highlighting
 )
 
 # Make cached completions available before compinit.
 fpath=("$HOME/.cache/zsh/completions" "${fpath[@]}")
-
-# The highlighting plugin reads this palette when Oh My Zsh loads it.
-
-if [[ -r "$HOME/.config/shell/zsh-syntax-highlighting.zsh" ]]; then
-  # shellcheck source=/dev/null
-  source "$HOME/.config/shell/zsh-syntax-highlighting.zsh"
-fi
 
 if [[ -r "$ZSH/oh-my-zsh.sh" ]]; then
   # shellcheck source=/dev/null
