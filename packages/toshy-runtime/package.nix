@@ -2,6 +2,7 @@
   callPackage,
   dotfilesSourcePins,
   lib,
+  python314,
   symlinkJoin,
 }:
 let
@@ -9,7 +10,10 @@ let
   source = sourcePin.outPath;
   version = lib.removePrefix "Toshy_v" sourcePin.version;
   upstreamRuntime =
-    (callPackage "${source}/nix/toshy-runtime.nix" { toshySrc = source; }).overrideAttrs
+    (callPackage "${source}/nix/toshy-runtime.nix" {
+      toshySrc = source;
+      python3 = python314;
+    }).overrideAttrs
       {
         doCheck = false;
         doInstallCheck = false;

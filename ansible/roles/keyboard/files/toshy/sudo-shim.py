@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.14
 """Keep Toshy's nested sudo calls non-interactive under Ansible."""
 
 import os

@@ -11,6 +11,9 @@ let
   };
 
   packageArgs = {
+    toshy-runtime = {
+      inherit (final.unstable) python314;
+    };
     dotfiles-python = {
       inherit (final.unstable) python314Packages;
     };

@@ -1,9 +1,14 @@
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Protocol, cast
 
 if TYPE_CHECKING:
     from xwaykeyz.config_api import C, bind, keymap  # ty: ignore[unresolved-import]
 
-    cnfg: Any = None
+    class _NDConfig(Protocol):
+        screen_has_focus: bool
+
+    cnfg = cast("_NDConfig", None)
 
 
 _nd_filemanager_classes = {
@@ -51,60 +56,62 @@ _nd_terminal_classes = {
     "xfce4-terminal",
     "xterm",
 }
-_nd_enter_renames_next = True
-_nd_enter_last_filemanager_class = None
 
 
-def _nd_wm_class(ctx):
-    return (getattr(ctx, "wm_class", "") or "").casefold()
+@dataclass
+class _NDEnterState:
+    renames_next: bool = True
+    last_filemanager_class: str | None = None
 
 
-def _nd_is_filemanager(ctx):
+_nd_enter = _NDEnterState()
+
+
+def _nd_wm_class(ctx: object) -> str:
+    wm_class = getattr(ctx, "wm_class", "")
+    return wm_class.casefold() if isinstance(wm_class, str) else ""
+
+
+def _nd_is_filemanager(ctx: object) -> bool:
     return _nd_wm_class(ctx) in _nd_filemanager_classes
 
 
-def _nd_is_terminal(ctx):
+def _nd_is_terminal(ctx: object) -> bool:
     return _nd_wm_class(ctx) in _nd_terminal_classes
 
 
-def _nd_enter_to_rename(ctx):
-    global _nd_enter_renames_next, _nd_enter_last_filemanager_class
-
+def _nd_enter_to_rename(ctx: object) -> object:
     wm_class = _nd_wm_class(ctx)
     if (
-        _nd_enter_last_filemanager_class
-        and _nd_enter_last_filemanager_class != wm_class
+        _nd_enter.last_filemanager_class
+        and _nd_enter.last_filemanager_class != wm_class
     ):
-        _nd_enter_renames_next = True
-        _nd_enter_last_filemanager_class = None
+        _nd_enter.renames_next = True
+        _nd_enter.last_filemanager_class = None
 
-    if _nd_enter_renames_next:
-        _nd_enter_renames_next = False
-        _nd_enter_last_filemanager_class = wm_class
+    if _nd_enter.renames_next:
+        _nd_enter.renames_next = False
+        _nd_enter.last_filemanager_class = wm_class
         return C("F2")
 
-    _nd_enter_renames_next = True
-    _nd_enter_last_filemanager_class = None
+    _nd_enter.renames_next = True
+    _nd_enter.last_filemanager_class = None
     return C("Enter")
 
 
-def _nd_filemanager_passthrough(command):
-    def _command(ctx):
-        global _nd_enter_renames_next, _nd_enter_last_filemanager_class
-
-        _nd_enter_renames_next = False
-        _nd_enter_last_filemanager_class = _nd_wm_class(ctx)
+def _nd_filemanager_passthrough[T](command: T) -> Callable[[object], T]:
+    def _command(ctx: object) -> T:
+        _nd_enter.renames_next = False
+        _nd_enter.last_filemanager_class = _nd_wm_class(ctx)
         return command
 
     return _command
 
 
-def _nd_filemanager_reset(command):
-    def _command(_):
-        global _nd_enter_renames_next, _nd_enter_last_filemanager_class
-
-        _nd_enter_renames_next = True
-        _nd_enter_last_filemanager_class = None
+def _nd_filemanager_reset[T](command: T) -> Callable[[object], T]:
+    def _command(_: object) -> T:
+        _nd_enter.renames_next = True
+        _nd_enter.last_filemanager_class = None
         return command
 
     return _command

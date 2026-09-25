@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.14
 """Run Toshy's interactive installer predictably from Ansible."""
 
 import argparse

@@ -1,14 +1,22 @@
 import json
 import os
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from xwaykeyz.config_api import (  # ty: ignore[unresolved-import]
+        devices_api,
+        timeouts,
+    )
 
 
-def _nd_env_list(name, default=None):
+def _nd_env_list(name: str, default: Sequence[str] = ()) -> list[str]:
     value = os.environ.get(name)
     if value is None:
-        return list(default or [])
+        return list(default)
 
     value = value.strip()
-    if value == "" or value.casefold() in {"all", "auto", "none"}:
+    if not value or value.casefold() in {"all", "auto", "none"}:
         return []
 
     if value.startswith("["):
