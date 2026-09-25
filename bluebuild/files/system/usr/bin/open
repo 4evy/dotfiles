@@ -1,19 +1,9 @@
-#!/usr/bin/env python3.14
-from __future__ import annotations
-
-import os
-import sys
-from pathlib import Path
-
-xdg_open = Path("/usr/bin/xdg-open")
-if not xdg_open.is_file() or not os.access(xdg_open, os.X_OK):
-    print("open: /usr/bin/xdg-open is unavailable", file=sys.stderr)
-    raise SystemExit(127)
-
-environment = dict(os.environ)
-prefix = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
-environment["PATH"] = (
-    f"{prefix}:{environment['PATH']}" if environment.get("PATH") else prefix
-)
-executable = os.fspath(xdg_open)
-os.execve(executable, (executable, *sys.argv[1:]), environment)
+#!/bin/sh
+# Keep desktop launchers ahead of development environments on PATH.
+if [ ! -x /usr/bin/xdg-open ]; then
+    printf '%s\n' 'open: /usr/bin/xdg-open is unavailable' >&2
+    exit 127
+fi
+PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin${PATH:+:$PATH}"
+export PATH
+exec /usr/bin/xdg-open "$@"

@@ -14,7 +14,7 @@ metadata:
     org.opencontainers.image.source: https://github.com/4evy/dotfiles
 spec:
   tool-versions:
-    # Build preparation resolves this from source-bluebuild-cli in flake.lock.
+    # BlueBuild expands this from the environment supplied by build preparation.
     bluebuild: ${BLUEBUILD_CLI_REVISION}
   platforms:
     - linux/amd64

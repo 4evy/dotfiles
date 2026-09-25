@@ -34,9 +34,4 @@ modules:
           --mount=type=cache,id=spectrum-hyper-window-tiling-bun-v1,sharing=locked,target=/root/.bun/install/cache \
           cd /src && \
           bun install --frozen-lockfile && \
-          bun run build && \
-          install -D -m 0644 gnome/metadata.json /out/usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/metadata.json && \
-          install -D -m 0644 dist/gnome/extension.js /out/usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/extension.js && \
-          install -D -m 0644 gnome/schemas/org.gnome.shell.extensions.hyper-window-tiling.gschema.xml /out/usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/schemas/org.gnome.shell.extensions.hyper-window-tiling.gschema.xml && \
-          install -D -m 0644 kde/metadata.json /out/usr/share/kwin/scripts/hyper-window-tiling/metadata.json && \
-          install -D -m 0644 dist/kde/contents/code/main.js /out/usr/share/kwin/scripts/hyper-window-tiling/contents/code/main.js
+          bun run build

@@ -6,26 +6,22 @@ on:
     branches: [master]
     paths:
       - .dockerignore
-      - .github/actions/setup-nix/**
-      - .github/actions/spectrum-build/**
-      - .github/actions/spectrum-prepare/**
-      - .github/actions/spectrum-publish/**
+      - .python-version
+      - .tool-versions
+      - .github/actions/**
       - .github/workflows/spectrum.yaml
+      - Justfile
+      - just/**
       - bluebuild/**
       - files/dnf/**
       - dotfiles/.chezmoidata/t3_chat.json
       - recipes
       - flake.lock
       - flake.nix
-      - lib/flake.nix
-      - nix/dev/flake-module.nix
-      - packages/source-lock/**
-      - overlays/default.nix
-      - packages/bluebuild-v2/**
-      - packages/ghostty-patched/build.sh
-      - packages/hyper-window-tiling/**
-      - packages/kanata/**
-      - packages/kanata-with-cmd/build-linux.sh
+      - lib/**
+      - nix/**
+      - overlays/**
+      - packages/**
   workflow_dispatch:
 
 concurrency:

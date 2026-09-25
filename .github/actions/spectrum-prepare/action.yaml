@@ -10,6 +10,14 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Set Up Check Tools
+      uses: ./.github/actions/setup-check-tools # zizmor: ignore[self-repository]
+
+    - name: Install uv and Python
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      with:
+        version-file: .tool-versions
+
     - name: Maximize Build Space
       uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
 
@@ -60,42 +68,4 @@ runs:
         BLUEBUILD: ${{ steps.tools.outputs.bluebuild }}
         CHECK_JSONSCHEMA: ${{ steps.tools.outputs.validator }}
       shell: bash
-      run: |-
-        set -euo pipefail
-        python3 bluebuild/recipes/spectrum/prepare-sources.py
-        "$CHECK_JSONSCHEMA" \
-          --base-uri https://schema.blue-build.org/ \
-          --schemafile https://schema.blue-build.org/recipe-v2.json \
-          bluebuild/recipes/.spectrum.generated.yml
-        "$CHECK_JSONSCHEMA" \
-          --base-uri https://schema.blue-build.org/ \
-          --schemafile https://schema.blue-build.org/stage-v1.json \
-          bluebuild/recipes/spectrum/stages/*.yml
-        "$CHECK_JSONSCHEMA" \
-          --base-uri https://schema.blue-build.org/ \
-          --schemafile https://schema.blue-build.org/module-list-v1.json \
-          bluebuild/recipes/spectrum/modules/*.yml
-        # Upstream's feature-gated v2 parser works, but its validate
-        # subcommand still hardcodes the v1 schema.
-        "$BLUEBUILD" generate \
-          --skip-validation \
-          --output /tmp/Containerfile \
-          bluebuild/recipes/.spectrum.generated.yml
-        cli_revision=$(jq -r '.nodes[.nodes[.root].inputs["source-bluebuild-cli"]].locked.rev' flake.lock)
-        grep -Fq "COPY --from=ghcr.io/blue-build/cli:${cli_revision}-installer" /tmp/Containerfile
-        grep -Fq '/out/bluebuild /bins/bluebuild' /tmp/Containerfile
-        grep -Fq -- '--mount=type=cache,sharing=locked,dst=/var/cache/rpm-ostree,id=rpm-ostree-cache-spectrum-' /tmp/Containerfile
-        grep -Fq -- '--mount=type=cache,sharing=locked,dst=/var/cache/libdnf5,id=dnf-cache-spectrum-' /tmp/Containerfile
-        grep -Fq 'bluebuild/recipes/spectrum/sources/astral.json /src/sources.json' /tmp/Containerfile
-        grep -Fq 'bluebuild/recipes/spectrum/sources/ghostty.json /src/sources.json' /tmp/Containerfile
-        grep -Fq -- '--mount=type=cache,id=spectrum-ghostty-zig-global-v1,sharing=locked,target=/build/zig-cache' /tmp/Containerfile
-        grep -Fq -- '--mount=type=cache,id=spectrum-ghostty-zig-local-v1,sharing=locked,target=/build/source/.zig-cache' /tmp/Containerfile
-        ! grep -Fq 'flake.lock /src/' /tmp/Containerfile
-        expected=$(tr -d '\n' <bluebuild/recipes/spectrum.lock)
-        tagged=${expected%@*}
-        expected_arg="${tagged%:*}@${expected##*@}"
-        generated=$(sed -n 's/^ARG BASE_IMAGE="\([^"]*\)".*/\1/p' /tmp/Containerfile | head -n1)
-        if [[ "$generated" != "$expected_arg" ]]; then
-          printf 'generated base %s does not match lock %s\n' "$generated" "$expected_arg" >&2
-          exit 1
-        fi
+      run: just spectrum-generate /tmp/Containerfile

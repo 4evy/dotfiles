@@ -20,18 +20,7 @@ patches_repository=$(jq -er '.repository' "$PATCHES_LOCK")
 patches_revision=$(jq -er '.revision' "$PATCHES_LOCK")
 
 mkdir -p /build/source /build/zig "$PREFIX"
-python3 - "$SOURCE_LOCK" "$ZIG_PIN" <<'PYTHON'
-import json
-import sys
-from pathlib import Path
-
-sys.path.insert(0, "/src")
-from source_lock import download_file
-
-lock, name = sys.argv[1:]
-pin = json.loads(Path(lock).read_text())["pins"][name]
-download_file(pin, Path("/build/zig.tar.xz"))
-PYTHON
+python3.14 /src/download_source.py "$SOURCE_LOCK" "$ZIG_PIN" /build/zig.tar.xz
 tar -xJf /build/zig.tar.xz --strip-components=1 -C /build/zig
 
 git init -q /build/source

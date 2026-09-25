@@ -15,8 +15,28 @@ modules:
 
   - type: copy@v1
     from: hyper-window-tiling
-    src: /out/usr
-    dest: /usr
+    src: /src/gnome/metadata.json
+    dest: /usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/metadata.json
+
+  - type: copy@v1
+    from: hyper-window-tiling
+    src: /src/dist/gnome/extension.js
+    dest: /usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/extension.js
+
+  - type: copy@v1
+    from: hyper-window-tiling
+    src: /src/gnome/schemas/org.gnome.shell.extensions.hyper-window-tiling.gschema.xml
+    dest: /usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/schemas/org.gnome.shell.extensions.hyper-window-tiling.gschema.xml
+
+  - type: copy@v1
+    from: hyper-window-tiling
+    src: /src/kde/metadata.json
+    dest: /usr/share/kwin/scripts/hyper-window-tiling/metadata.json
+
+  - type: copy@v1
+    from: hyper-window-tiling
+    src: /src/dist/kde/contents/code/main.js
+    dest: /usr/share/kwin/scripts/hyper-window-tiling/contents/code/main.js
 
   - type: copy@v1
     from: kanata

@@ -14,6 +14,10 @@ modules:
     src: packages/source-lock/source_lock.py
     dest: /src/source_lock.py
 
+  - type: copy@v1
+    src: bluebuild/recipes/spectrum/install-astral.py
+    dest: /src/install-astral.py
+
   - type: dnf@v1
     source: ghcr.io/blue-build/modules/dnf:v1@sha256:4fa89e050fbbc397ec7c04ed11339a5f430cc339224facaa8b8ce65e07d39921
     install:
@@ -24,30 +28,4 @@ modules:
   - type: script@v2
     source: ghcr.io/blue-build/modules/script:v2@sha256:fa4455089da980cb871c804521786ffa74c534987df4251a90eba850fe4a7d86
     snippets:
-      - |-
-        python3 - <<'PYTHON'
-        import json
-        import shutil
-        import tarfile
-        import tempfile
-        import sys
-        from pathlib import Path
-
-        sys.path.insert(0, "/src")
-        from source_lock import download_file
-
-        pin = json.loads(Path("/src/sources.json").read_text())["pins"]["python-astral"]
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            temporary_path = Path(temporary_directory)
-            archive = temporary_path / "astral.tar.gz"
-            download_file(pin, archive)
-
-            with tarfile.open(archive) as source_archive:
-                source_archive.extractall(temporary_path, filter="data")
-            source = next(temporary_path.glob("astral-*/src/astral"))
-            destination = Path("/out/usr/lib/dotfiles/python/astral")
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copytree(source, destination)
-            version = source.parents[1].name.removeprefix("astral-")
-            (destination.parent / ".astral-version").write_text(f"{version}\n")
-        PYTHON
+      - python3.14 /src/install-astral.py

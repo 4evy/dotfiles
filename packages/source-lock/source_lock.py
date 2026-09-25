@@ -22,8 +22,7 @@ def file_nar_hash(path: Path) -> str:
     size = path.stat().st_size
     digest.update(struct.pack("<Q", size))
     with path.open("rb") as source:
-        while chunk := source.read(1024 * 1024):
-            digest.update(chunk)
+        hashlib.file_digest(source, lambda: digest)
     digest.update(b"\0" * (-size % 8))
     digest.update(token(b")"))
     return "sha256-" + base64.b64encode(digest.digest()).decode()

@@ -21,6 +21,10 @@ modules:
     src: packages/source-lock/source_lock.py
     dest: /src/source_lock.py
 
+  - type: copy@v1
+    src: packages/source-lock/download_source.py
+    dest: /src/download_source.py
+
   - type: dnf@v1
     source: ghcr.io/blue-build/modules/dnf:v1@sha256:4fa89e050fbbc397ec7c04ed11339a5f430cc339224facaa8b8ce65e07d39921
     install:

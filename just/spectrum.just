@@ -9,22 +9,41 @@ spectrum-validate: (doctor 'nix')
 _spectrum-validate: (doctor 'spectrum')
     generated=$(mktemp)
     trap 'rm -f "$generated"' EXIT
-    python3 bluebuild/recipes/spectrum/prepare-sources.py
-    check-jsonschema \
+    {{ just_command }} spectrum-generate "$generated"
+    locked=$(< bluebuild/recipes/spectrum.lock)
+    tagged=${locked%@*}
+    expected_arg="${tagged%:*}@${locked##*@}"
+    resolved=$(skopeo inspect --format '{{ "{{.Digest}}" }}' "docker://$expected_arg")
+    [[ "$locked" == *@$resolved ]] || {
+      printf 'base image lock mismatch: %s resolves to %s\n' "$locked" "$resolved" >&2
+      exit 1
+    }
+
+# Generate and validate the Containerfile used by local builds and CI.
+[group('spectrum')]
+[linux]
+spectrum-generate output:
+    generated={{ quote(output) }}
+    bluebuild=${BLUEBUILD:-bluebuild}
+    validator=${CHECK_JSONSCHEMA:-check-jsonschema}
+    uv run --no-project --python "$(cat .python-version)" python bluebuild/recipes/spectrum/prepare-sources.py
+    export BLUEBUILD_CLI_REVISION
+    BLUEBUILD_CLI_REVISION=$(jq -r '.nodes[.nodes[.root].inputs["source-bluebuild-cli"]].locked.rev' flake.lock)
+    "$validator" \
       --base-uri https://schema.blue-build.org/ \
       --schemafile https://schema.blue-build.org/recipe-v2.json \
-      bluebuild/recipes/.spectrum.generated.yml
-    check-jsonschema \
+      bluebuild/recipes/spectrum.yml
+    "$validator" \
       --base-uri https://schema.blue-build.org/ \
       --schemafile https://schema.blue-build.org/stage-v1.json \
       bluebuild/recipes/spectrum/stages/*.yml
-    check-jsonschema \
+    "$validator" \
       --base-uri https://schema.blue-build.org/ \
       --schemafile https://schema.blue-build.org/module-list-v1.json \
       bluebuild/recipes/spectrum/modules/*.yml
     # BlueBuild's feature-gated v2 parser is ready, but its validate command
     # still hardcodes the v1 schema. The official v2 schema is checked above.
-    bluebuild generate --skip-validation --output "$generated" bluebuild/recipes/.spectrum.generated.yml
+    "$bluebuild" generate --skip-validation --output "$generated" bluebuild/recipes/spectrum.yml
     cli_revision=$(jq -r '.nodes[.nodes[.root].inputs["source-bluebuild-cli"]].locked.rev' flake.lock)
     grep -Fq "COPY --from=ghcr.io/blue-build/cli:${cli_revision}-installer" "$generated"
     grep -Fq '/out/bluebuild /bins/bluebuild' "$generated"
@@ -42,14 +61,9 @@ _spectrum-validate: (doctor 'spectrum')
     locked=$(< bluebuild/recipes/spectrum.lock)
     tagged=${locked%@*}
     expected_arg="${tagged%:*}@${locked##*@}"
-    resolved=$(skopeo inspect "docker://$expected_arg" | jq -r .Digest)
-    [[ "$locked" == *@$resolved ]] || {
-      printf 'base image lock mismatch: %s resolves to %s\n' "$locked" "$resolved" >&2
-      exit 1
-    }
     grep -Fq "ARG BASE_IMAGE=\"$expected_arg\"" "$generated"
     grep -Fq -- '-Dcpu=baseline' "$generated"
-    ! grep -qw akmods bluebuild/recipes/.spectrum.generated.yml "$generated"
+    ! grep -qw akmods bluebuild/recipes/spectrum.yml "$generated"
 
 # Build the local Spectrum image from the BlueBuild recipe v2 definition.
 [group('spectrum')]
@@ -61,4 +75,6 @@ spectrum-build: (doctor 'nix')
 [linux]
 _spectrum-build: _spectrum-validate
     # Nix shells use /tmp, whose tmpfs quota can be smaller than an image layer.
-    TMPDIR=/var/tmp bluebuild build --skip-validation --no-sign bluebuild/recipes/.spectrum.generated.yml
+    export BLUEBUILD_CLI_REVISION
+    BLUEBUILD_CLI_REVISION=$(jq -r '.nodes[.nodes[.root].inputs["source-bluebuild-cli"]].locked.rev' flake.lock)
+    TMPDIR=/var/tmp bluebuild build --skip-validation --no-sign bluebuild/recipes/spectrum.yml

@@ -4,11 +4,30 @@ import json
 import shutil
 import subprocess
 from pathlib import Path
+from typing import NotRequired, TypedDict
 
 ROOT = Path(__file__).resolve().parents[3]
 
 
-def input_pin(lock: dict, name: str) -> dict:
+class SourcePin(TypedDict):
+    owner: str
+    repo: str
+    rev: str
+    ref: NotRequired[str | None]
+
+
+class LockNode(TypedDict):
+    inputs: dict[str, str]
+    locked: SourcePin
+    original: dict[str, str]
+
+
+class FlakeLock(TypedDict):
+    root: str
+    nodes: dict[str, LockNode]
+
+
+def input_pin(lock: FlakeLock, name: str) -> SourcePin:
     node_name = lock["nodes"][lock["root"]]["inputs"][name]
     node = lock["nodes"][node_name]
     return node["locked"] | {"ref": node["original"].get("ref")}
@@ -61,11 +80,6 @@ def main() -> None:
             sort_keys=True,
         )
         + "\n"
-    )
-    recipe = ROOT / "bluebuild/recipes/spectrum.yml"
-    cli_revision = input_pin(lock, "source-bluebuild-cli")["rev"]
-    (recipe.parent / ".spectrum.generated.yml").write_text(
-        recipe.read_text().replace("${BLUEBUILD_CLI_REVISION}", cli_revision)
     )
 
 
