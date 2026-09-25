@@ -1,10 +1,4 @@
 {
-  "$schema": "https://docs.fallow.tools/schemas/config.json",
-  "ignorePatterns": ["dist/**", "extension.js", "node_modules/**"],
-  "duplicates": {
-    "ignore": ["dist/**", "extension.js"]
-  },
-  "health": {
-    "ignore": ["dist/**", "extension.js"]
-  }
+  "$schema": "./node_modules/fallow/schema.json",
+  "ignorePatterns": ["extension.js"]
 }
