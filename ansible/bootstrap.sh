@@ -693,6 +693,7 @@ run_ansible_playbook() {
 		# contains only code, while the password stays in the environment.
 		create_temporary_directory
 		local become_password_helper="${temporary_directory}/become-password"
+		# shellcheck disable=SC2016
 		printf '%s\n' '#!/bin/sh' 'printf "%s\n" "$ANSIBLE_BECOME_PASS"' \
 			>"${become_password_helper}" ||
 			die 'could not create Ansible become password helper'
