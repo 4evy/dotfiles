@@ -241,7 +241,11 @@ SKY_CUA_SERVICE_PATH = "{{ joinPath $codexHome "computer-use/Codex Computer Use.
 {{- else }}
 NODE_REPL_TRUSTED_SERVICES = '{"browser":"{{ $browserService }}"}'
 {{- end }}
+{{- if eq .chezmoi.os "darwin" }}
+CODEX_CLI_PATH = "{{ joinPath $chatGPTResources "codex-cli/bin/codex" }}"
+{{- else }}
 CODEX_CLI_PATH = "{{ joinPath $chatGPTResources "codex" }}"
+{{- end }}
 
 # Expose ChatGPT's compatibility variants through an unreserved marketplace
 # name so standalone Codex sessions can load the bundled plugins.
