@@ -13,13 +13,13 @@ runs:
     - name: Set Up Check Tools
       uses: ./.github/actions/setup-check-tools # zizmor: ignore[self-repository]
 
+    - name: Maximize Build Space
+      uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
+
     - name: Install uv and Python
       uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       with:
         version-file: .tool-versions
-
-    - name: Maximize Build Space
-      uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
 
     - name: Set Up Determinate Nix
       uses: ./.github/actions/setup-nix # zizmor: ignore[self-repository]
