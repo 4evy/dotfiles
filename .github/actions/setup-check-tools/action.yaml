@@ -11,7 +11,43 @@ runs:
   using: composite
   steps:
     - name: Install Check Tools
-      uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
-      with:
-        install_args: ${{ inputs.tools }}
-        add_shims_to_path: false
+      shell: bash
+      env:
+        TOOLS: ${{ inputs.tools }}
+      run: | # zizmor: ignore[github-env] mise resolves pinned tools from .tool-versions.
+        set -euo pipefail
+
+        version=v2026.9.13
+        case "$(uname -s)-$(uname -m)" in
+          Linux-x86_64)
+            platform=linux-x64
+            checksum=a72f49916b33ba952ba398046c5cc91a58238f0b718fee1d938206ef2af21c6d
+            ;;
+          Darwin-arm64)
+            platform=macos-arm64
+            checksum=3977349e71eea611cf25717ddca753172cae6a92597a47bc4b9efada123b237e
+            ;;
+          Darwin-x86_64)
+            platform=macos-x64
+            checksum=820bda7a3547edf75dd9e9390846cc87219583bef4fe72666f35a4935d330f47
+            ;;
+          *)
+            echo 'Unsupported runner platform' >&2
+            exit 1
+            ;;
+        esac
+
+        mise_dir="$RUNNER_TEMP/mise-bin"
+        mkdir -p "$mise_dir"
+        mise_binary="$mise_dir/mise"
+        curl --fail --location --silent --show-error \
+          "https://github.com/jdx/mise/releases/download/$version/mise-$version-$platform" \
+          --output "$mise_binary"
+        printf '%s  %s\n' "$checksum" "$mise_binary" | shasum -a 256 --check
+        chmod +x "$mise_binary"
+
+        read -r -a tools <<< "$TOOLS"
+        "$mise_binary" install "${tools[@]}"
+        for tool in "${tools[@]}"; do
+          dirname "$("$mise_binary" which "$tool")" >> "$GITHUB_PATH"
+        done
