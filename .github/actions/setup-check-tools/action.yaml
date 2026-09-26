@@ -14,7 +14,7 @@ runs:
       shell: bash
       env:
         TOOLS: ${{ inputs.tools }}
-      run: | # zizmor: ignore[github-env] mise resolves pinned tools from .tool-versions.
+      run: |- # zizmor: ignore[github-env] mise resolves pinned tools from .tool-versions
         set -euo pipefail
 
         version=v2026.9.13
