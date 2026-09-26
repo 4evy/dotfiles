@@ -155,7 +155,7 @@ nix-check: (doctor 'fmt')
 check: lint nix-check
 
 # Match the current runner rather than duplicating its Nix system in workflows.
-nix_system := shell('nix eval --impure --raw --expr builtins.currentSystem')
+nix_system() := shell('nix eval --impure --raw --expr builtins.currentSystem')
 
 # Evaluate the system configuration before the flake's import-from-derivation
 # checks, then build the repository lint and formatting checks.
@@ -164,15 +164,15 @@ nix-ci-check:
     nix eval --raw .#nixosConfigurations.nixos.config.system.build.toplevel.drvPath >/dev/null
     nix flake check --keep-going --no-build
     nix build --keep-going --print-build-logs \
-      .#checks.{{ nix_system }}.pre-commit .#checks.{{ nix_system }}.treefmt
+      .#checks.{{ nix_system() }}.pre-commit .#checks.{{ nix_system() }}.treefmt
 
 # Exclude the complete OS build and the repository checks already run above.
 # Discover package checks from the flake instead of keeping a list in YAML.
 [group('check')]
 nix-native-checks:
-    nix eval --json .#checks.{{ nix_system }} --apply builtins.attrNames | \
+    nix eval --json .#checks.{{ nix_system() }} --apply builtins.attrNames | \
       jq -c 'map(select(. != "pre-commit" and . != "treefmt" and . != "nixos"))'
 
 [group('check')]
 nix-build-check name:
-    nix build --print-build-logs {{ quote('.#checks.' + nix_system + '.' + name) }}
+    nix build --print-build-logs {{ quote('.#checks.' + nix_system() + '.' + name) }}
