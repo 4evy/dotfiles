@@ -30,7 +30,7 @@ module CodexPlugins
   DESTINATION = (
     Pathname(Dir.home)/".codex/.tmp/compatibility-marketplaces"/MARKETPLACE
   ).freeze
-  CODEX = (SOURCE.parent.parent/"codex").freeze
+  CODEX = (SOURCE.parent.parent/"codex-cli/bin/codex").freeze
   PLUGINS = %w[
     codex-app-tools
     sites
