@@ -11,7 +11,6 @@ from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from itertools import count
 from pathlib import Path
-from typing import cast
 
 
 def first_executable(
@@ -76,20 +75,15 @@ class AppServer:
     async def receive(self, identifier: int) -> object:
         if self.process.stdout is None:
             raise RuntimeError("Codex app server has no output stream")
-        while True:
-            line = await self.process.stdout.readline()
-            if not line:
-                raise RuntimeError("Codex app server exited")
+        async for line in self.process.stdout:
             payload: object = json.loads(line)
-            response = (
-                cast("dict[str, object]", payload) if isinstance(payload, dict) else {}
-            )
+            response = payload if isinstance(payload, dict) else {}
             if "method" in response or response.get("id") != identifier:
-                await asyncio.sleep(0)
                 continue
             if "error" in response:
                 raise RuntimeError(response["error"])
             return response.get("result")
+        raise RuntimeError("Codex app server exited")
 
 
 @asynccontextmanager
@@ -124,8 +118,8 @@ async def app_server(real: Path) -> AsyncIterator[AppServer]:
             await process.communicate()
 
 
-async def launch_paths(server: AppServer) -> AsyncIterator[Path]:
-    yield Path.cwd()
+async def launch_paths(server: AppServer) -> set[Path]:
+    paths = {Path.cwd()}
     cursor: str | None = None
     seen_cursors: set[str] = set()
     while True:
@@ -147,11 +141,10 @@ async def launch_paths(server: AppServer) -> AsyncIterator[Path]:
                 "useStateDbOnly": True,
             },
         )
-        paths, next_cursor = parse_thread_page(result)
-        for path in paths:
-            yield path
+        page_paths, next_cursor = parse_thread_page(result)
+        paths.update(page_paths)
         if next_cursor is None:
-            return
+            return paths
         if next_cursor in seen_cursors:
             raise RuntimeError("Codex thread/list repeated a pagination cursor")
         seen_cursors.add(next_cursor)
@@ -161,18 +154,17 @@ async def launch_paths(server: AppServer) -> AsyncIterator[Path]:
 def parse_thread_page(result: object) -> tuple[list[Path], str | None]:
     if not isinstance(result, dict):
         raise TypeError("Codex thread/list returned an invalid response")
-    page = cast("dict[str, object]", result)
-    data = page.get("data")
+    data = result.get("data")
     if not isinstance(data, list):
         raise TypeError("Codex thread/list returned an invalid response")
-    cursor = page.get("nextCursor")
+    cursor = result.get("nextCursor")
     if cursor is not None and not isinstance(cursor, str):
         raise TypeError("Codex thread/list returned an invalid cursor")
     paths = []
-    for thread in cast("list[object]", data):
+    for thread in data:
         if not isinstance(thread, dict):
             continue
-        cwd = cast("dict[str, object]", thread).get("cwd")
+        cwd = thread.get("cwd")
         if isinstance(cwd, str) and (path := Path(cwd)).is_absolute():
             paths.append(path)
     return paths, cursor
@@ -188,7 +180,7 @@ async def trust_launch_projects(real: Path, home: Path) -> None:
         config = {}
 
     def untrusted_paths(paths: Iterable[Path]) -> list[Path]:
-        projects = {project_root(path, git) for path in set(paths) if path.is_dir()}
+        projects = {project_root(path, git) for path in paths if path.is_dir()}
         return [
             project
             for project in sorted(projects)
@@ -196,19 +188,11 @@ async def trust_launch_projects(real: Path, home: Path) -> None:
             != "trusted"
         ]
 
-    if "agents" not in sys.argv[1:]:
-        projects = await asyncio.to_thread(untrusted_paths, [Path.cwd()])
-        if not projects:
-            return
-        async with app_server(real) as server:
-            await trust_projects(server, projects)
-        return
-
     async with app_server(real) as server:
-        projects = await asyncio.to_thread(
-            untrusted_paths, [path async for path in launch_paths(server)]
-        )
+        paths = await launch_paths(server) if "agents" in sys.argv[1:] else {Path.cwd()}
+        projects = await asyncio.to_thread(untrusted_paths, paths)
         await trust_projects(server, projects)
+        await trust_hooks(server, Path.cwd())
 
 
 async def trust_projects(server: AppServer, projects: list[Path]) -> None:
@@ -232,6 +216,42 @@ async def trust_projects(server: AppServer, projects: list[Path]) -> None:
     )
 
 
+async def trust_hooks(server: AppServer, cwd: Path) -> None:
+    result = await server.request("hooks/list", {"cwds": [os.fspath(cwd)]})
+    if not isinstance(result, dict) or not isinstance(result.get("data"), list):
+        raise TypeError("Codex hooks/list returned an invalid response")
+    for entry in result["data"]:
+        if not isinstance(entry, dict) or entry.get("cwd") != os.fspath(cwd):
+            continue
+        if entry.get("errors"):
+            raise RuntimeError("Codex hooks/list could not load launch hooks")
+        hooks = entry.get("hooks")
+        if not isinstance(hooks, list):
+            raise TypeError("Codex hooks/list returned invalid hooks")
+        trust = {
+            hook["key"]: {"trusted_hash": hook["currentHash"]}
+            for hook in hooks
+            if isinstance(hook, dict)
+            and hook.get("trustStatus") in {"untrusted", "modified"}
+        }
+        if trust:
+            await server.request(
+                "config/batchWrite",
+                {
+                    "edits": [
+                        {
+                            "keyPath": "hooks.state",
+                            "mergeStrategy": "upsert",
+                            "value": trust,
+                        }
+                    ],
+                    "reloadUserConfig": True,
+                },
+            )
+        return
+    raise RuntimeError("Codex hooks/list did not include the launch directory")
+
+
 def main() -> None:
     wrapper = Path(sys.argv[0]).resolve()
     home = Path.home()
@@ -248,7 +268,8 @@ def main() -> None:
     if real is None:
         raise SystemExit("codex: real Codex binary not found")
 
-    if sys.stdin.isatty() and sys.stdout.isatty():
+    interactive = sys.stdin.isatty() and sys.stdout.isatty()
+    if interactive:
         try:
             asyncio.run(trust_launch_projects(real, home))
         except (
@@ -265,11 +286,13 @@ def main() -> None:
     # Both cx and direct Codex launches use this wrapper. Update the syntax theme
     # in the config file so CLI overrides do not disable the shared server
     theme_helper = home / ".local/libexec/codex-theme-defaults"
-    if theme_helper.is_file() and sys.stdin.isatty() and sys.stdout.isatty():
+    if theme_helper.is_file() and interactive:
         subprocess.run([sys.executable, theme_helper, real], check=False)
 
-    # We opt into running enabled hooks without per-definition trust prompts
-    os.execv(real, [os.fspath(real), "--dangerously-bypass-hook-trust", *sys.argv[1:]])
+    # Hook trust bypass is for automation and forces interactive sessions into
+    # embedded mode instead of the shared background server
+    hook_trust_flag = [] if interactive else ["--dangerously-bypass-hook-trust"]
+    os.execv(real, [os.fspath(real), *hook_trust_flag, *sys.argv[1:]])
 
 
 if __name__ == "__main__":
