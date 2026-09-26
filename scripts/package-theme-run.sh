@@ -11,6 +11,8 @@ trap 'rm -f "$source_list"' EXIT
 # Archive tracked module sources so file additions and removals need no manifest
 # update. Nix packaging metadata is not part of the Homebrew build.
 git -C "$repo_dir/packages/theme-run" ls-files -z -- . ':!package.nix' >"$source_list"
-COPYFILE_DISABLE=1 tar -cf "$output" \
-	-C "$repo_dir/packages/theme-run" --null -T "$source_list" \
-	-C "$repo_dir" LICENSE
+(
+	cd "$repo_dir/packages/theme-run"
+	COPYFILE_DISABLE=1 tar -cf "$output" --null -T "$source_list"
+)
+COPYFILE_DISABLE=1 tar -rf "$output" -C "$repo_dir" LICENSE
