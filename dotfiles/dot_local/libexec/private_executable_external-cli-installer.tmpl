@@ -24,9 +24,40 @@ if command -v bun >/dev/null 2>&1; then
 	}
 
 	queue_bun_package opencode-ai opencode-ai
-	queue_bun_package @openai/codex @openai/codex@alpha
 	if ((${#bun_packages[@]})); then
 		bun add --global "${bun_packages[@]}"
+	fi
+
+	readonly codex_package=@openai/codex@alpha
+	readonly codex_dir="$bun_global_dir/node_modules/@openai/codex"
+	readonly codex_bin="$codex_dir/bin/codex.js"
+	codex_available=$(bun pm --global view "$codex_package" version)
+	codex_installed=
+	if [[ -f $codex_dir/package.json ]]; then
+		codex_installed=$(jq -r '.version // empty' "$codex_dir/package.json")
+	fi
+	if [[ $codex_installed != "$codex_available" ]]; then
+		bun add --global "$codex_package"
+	fi
+
+	codex_version=$("$codex_bin" --version 2>/dev/null || :)
+	if [[ $codex_version != "codex-cli $codex_available" ]]; then
+		bun remove --global @openai/codex
+		bun add --global "$codex_package"
+		codex_version=$("$codex_bin" --version)
+	fi
+	if [[ $codex_version != "codex-cli $codex_available" ]]; then
+		printf 'Codex CLI version %s does not match package version %s\n' \
+			"$codex_version" "$codex_available" >&2
+		exit 1
+	fi
+
+	if daemon_state=$("$codex_bin" app-server daemon version 2>/dev/null); then
+		managed_codex_path=$(jq -r '.managedCodexPath // empty' <<<"$daemon_state")
+		managed_codex_version=$(jq -r '.managedCodexVersion // empty' <<<"$daemon_state")
+		if [[ -n $managed_codex_path && $managed_codex_version != "$codex_available" ]]; then
+			"$codex_bin" app-server daemon update --from-cli --yes
+		fi
 	fi
 fi
 
