@@ -688,8 +688,19 @@ run_ansible_playbook() {
 	# a potentially long playbook also narrows the lifetime of downloaded code.
 	log "Running Ansible playbook: ${ANSIBLE_PLAYBOOK}"
 	if [[ "${use_inferred_become_pass}" == 'true' ]]; then
+		# Ansible does not read ANSIBLE_BECOME_PASS as its own become
+		# credential. Give it an executable password file instead; the file
+		# contains only code, while the password stays in the environment.
+		create_temporary_directory
+		local become_password_helper="${temporary_directory}/become-password"
+		printf '%s\n' '#!/bin/sh' 'printf "%s\n" "$ANSIBLE_BECOME_PASS"' \
+			>"${become_password_helper}" ||
+			die 'could not create Ansible become password helper'
+		chmod 0700 "${become_password_helper}" ||
+			die 'could not make Ansible become password helper executable'
 		ANSIBLE_BECOME_ASK_PASS='false' \
 			ANSIBLE_BECOME_PASS="${inferred_ansible_become_pass}" \
+			ANSIBLE_BECOME_PASSWORD_FILE="${become_password_helper}" \
 			"${ansible_playbook_executable}" "${playbook_args[@]}"
 	elif [[ "${disable_become_prompt}" == 'true' ]]; then
 		ANSIBLE_BECOME_ASK_PASS='false' \
