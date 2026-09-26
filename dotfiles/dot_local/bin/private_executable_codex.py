@@ -8,7 +8,7 @@ import subprocess
 import sys
 import time
 import tomllib
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 
 
@@ -70,6 +70,39 @@ def launch_paths(home: Path) -> list[Path]:
     return paths
 
 
+def write_config_value(
+    server: subprocess.Popen[str],
+    identifier: int,
+    method: str,
+    params: Mapping[str, object],
+) -> None:
+    if server.stdin is None or server.stdout is None:
+        raise RuntimeError("Codex config writer has no input or output stream")
+    server.stdin.write(
+        json.dumps({
+            "jsonrpc": "2.0",
+            "id": identifier,
+            "method": method,
+            "params": params,
+        })
+        + "\n"
+    )
+    server.stdin.flush()
+    deadline = time.monotonic() + 5
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0 or not select.select([server.stdout], [], [], remaining)[0]:
+            raise TimeoutError("Codex config write timed out")
+        line = server.stdout.readline()
+        if not line:
+            raise RuntimeError("Codex config writer exited")
+        response = json.loads(line)
+        if response.get("id") == identifier:
+            break
+    if "error" in response:
+        raise RuntimeError(response["error"])
+
+
 def trust_launch_projects(real: Path, home: Path) -> None:
     git = shutil.which("git")
     projects = {project_root(path, git) for path in launch_paths(home)}
@@ -93,8 +126,6 @@ def trust_launch_projects(real: Path, home: Path) -> None:
         text=True,
     )
     try:
-        if server.stdin is None or server.stdout is None:
-            raise RuntimeError("Codex config writer has no input or output stream")
         requests = [
             ("initialize", {"clientInfo": {"name": "codex-launcher", "version": "1"}})
         ]
@@ -110,32 +141,7 @@ def trust_launch_projects(real: Path, home: Path) -> None:
             for project in untrusted
         )
         for identifier, (method, params) in enumerate(requests, start=1):
-            server.stdin.write(
-                json.dumps({
-                    "jsonrpc": "2.0",
-                    "id": identifier,
-                    "method": method,
-                    "params": params,
-                })
-                + "\n"
-            )
-            server.stdin.flush()
-            deadline = time.monotonic() + 5
-            while True:
-                remaining = deadline - time.monotonic()
-                if (
-                    remaining <= 0
-                    or not select.select([server.stdout], [], [], remaining)[0]
-                ):
-                    raise TimeoutError("Codex config write timed out")
-                line = server.stdout.readline()
-                if not line:
-                    raise RuntimeError("Codex config writer exited")
-                response = json.loads(line)
-                if response.get("id") == identifier:
-                    break
-            if "error" in response:
-                raise RuntimeError(response["error"])
+            write_config_value(server, identifier, method, params)
     finally:
         if server.poll() is None:
             server.terminate()
