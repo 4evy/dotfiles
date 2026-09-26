@@ -6,11 +6,12 @@ import shutil
 import subprocess
 import sys
 import tomllib
-from collections.abc import AsyncIterator, Iterable, Iterator, Mapping
+from collections.abc import AsyncIterator, Iterable, Iterator, Mapping, Sequence
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from itertools import count
 from pathlib import Path
+from typing import cast
 
 
 def first_executable(
@@ -77,7 +78,9 @@ class AppServer:
             raise RuntimeError("Codex app server has no output stream")
         async for line in self.process.stdout:
             payload: object = json.loads(line)
-            response = payload if isinstance(payload, dict) else {}
+            response = (
+                cast("dict[str, object]", payload) if isinstance(payload, dict) else {}
+            )
             if "method" in response or response.get("id") != identifier:
                 continue
             if "error" in response:
@@ -218,9 +221,10 @@ async def trust_projects(server: AppServer, projects: list[Path]) -> None:
 
 async def trust_hooks(server: AppServer, cwd: Path) -> None:
     result = await server.request("hooks/list", {"cwds": [os.fspath(cwd)]})
-    if not isinstance(result, dict) or not isinstance(result.get("data"), list):
+    data = result.get("data") if isinstance(result, dict) else None
+    if not isinstance(data, list):
         raise TypeError("Codex hooks/list returned an invalid response")
-    for entry in result["data"]:
+    for entry in data:
         if not isinstance(entry, dict) or entry.get("cwd") != os.fspath(cwd):
             continue
         if entry.get("errors"):
@@ -228,28 +232,40 @@ async def trust_hooks(server: AppServer, cwd: Path) -> None:
         hooks = entry.get("hooks")
         if not isinstance(hooks, list):
             raise TypeError("Codex hooks/list returned invalid hooks")
-        trust = {
-            hook["key"]: {"trusted_hash": hook["currentHash"]}
-            for hook in hooks
-            if isinstance(hook, dict)
-            and hook.get("trustStatus") in {"untrusted", "modified"}
-        }
+        trust = hook_trust_state(hooks)
         if trust:
-            await server.request(
-                "config/batchWrite",
-                {
-                    "edits": [
-                        {
-                            "keyPath": "hooks.state",
-                            "mergeStrategy": "upsert",
-                            "value": trust,
-                        }
-                    ],
-                    "reloadUserConfig": True,
-                },
-            )
+            await write_hook_trust(server, trust)
         return
     raise RuntimeError("Codex hooks/list did not include the launch directory")
+
+
+def hook_trust_state(hooks: Sequence[object]) -> dict[object, dict[str, object]]:
+    return {
+        cast("dict[str, object]", hook)["key"]: {
+            "trusted_hash": cast("dict[str, object]", hook)["currentHash"]
+        }
+        for hook in hooks
+        if isinstance(hook, dict)
+        and hook.get("trustStatus") in {"untrusted", "modified"}
+    }
+
+
+async def write_hook_trust(
+    server: AppServer, trust: dict[object, dict[str, object]]
+) -> None:
+    await server.request(
+        "config/batchWrite",
+        {
+            "edits": [
+                {
+                    "keyPath": "hooks.state",
+                    "mergeStrategy": "upsert",
+                    "value": trust,
+                }
+            ],
+            "reloadUserConfig": True,
+        },
+    )
 
 
 def main() -> None:
