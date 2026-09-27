@@ -31,7 +31,6 @@ const (
 	temporaryPattern   = "*"
 	pathPrefix         = "~/"
 	pathPrefixLength   = len(pathPrefix)
-	currentDirectory   = "."
 	lineSeparator      = "\n"
 	indentCharacters   = " \t"
 	assignmentFormat   = "%s = %c%s%c"
@@ -258,7 +257,7 @@ func executableCandidate(path string, skipPaths []string) (string, bool) {
 }
 
 func isPathLike(value string) bool {
-	return filepath.Dir(value) != currentDirectory
+	return strings.ContainsRune(value, os.PathSeparator)
 }
 
 func expandPath(value string, env Variables) string {

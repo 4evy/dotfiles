@@ -4,7 +4,7 @@ set -euo pipefail
 repo_dir=$(git rev-parse --show-toplevel)
 output=${1:-Sources/theme-run-0.1.0.tar}
 mkdir -p "$(dirname "$output")"
-output=$(cd "$(dirname "$output")" && pwd)/$(basename "$output")
+output=$(CDPATH='' cd -- "$(dirname -- "$output")" && pwd)/$(basename -- "$output")
 source_list=$(mktemp)
 trap 'rm -f "$source_list"' EXIT
 
