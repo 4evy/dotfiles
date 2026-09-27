@@ -6,13 +6,13 @@
     </clipPath>
   </defs>
   <g clip-path="url(#frame)">
-    <rect width="172" height="120" fill="#ff2e3f"/>
-    <rect x="172" width="172" height="120" fill="#f59e0b"/>
-    <rect x="344" width="171" height="120" fill="#ffca00"/>
-    <rect x="515" width="171" height="120" fill="#0dbe4e"/>
-    <rect x="686" width="171" height="120" fill="#08c0ef"/>
-    <rect x="857" width="171" height="120" fill="#009fff"/>
-    <rect x="1028" width="172" height="120" fill="#c635e4"/>
+    <rect width="172" height="120" fill="#f38ba8"/>
+    <rect x="172" width="172" height="120" fill="#fab387"/>
+    <rect x="344" width="171" height="120" fill="#f9e2af"/>
+    <rect x="515" width="171" height="120" fill="#a6e3a1"/>
+    <rect x="686" width="171" height="120" fill="#94e2d5"/>
+    <rect x="857" width="171" height="120" fill="#74c7ec"/>
+    <rect x="1028" width="172" height="120" fill="#cba6f7"/>
   </g>
-  <rect x="0.75" y="0.75" width="1198.5" height="118.5" rx="23.25" fill="none" stroke="#453440" stroke-opacity="0.7" stroke-width="1.5"/>
+  <rect x="0.75" y="0.75" width="1198.5" height="118.5" rx="23.25" fill="none" stroke="#313244" stroke-opacity="0.7" stroke-width="1.5"/>
 </svg>
