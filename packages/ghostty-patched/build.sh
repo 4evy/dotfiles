@@ -35,7 +35,8 @@ git -C /build/patches checkout --detach --quiet FETCH_HEAD
 patches="/build/patches/stacks/$PATCH_STACK/patches"
 test -s "$patches/series"
 
-while IFS= read -r patch_name; do
+while IFS= read -r patch_name || [[ -n $patch_name ]]; do
+	[[ -n $patch_name ]] || continue
 	git -C /build/source apply "$patches/$patch_name"
 done <"$patches/series"
 
