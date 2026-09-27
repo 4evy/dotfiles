@@ -32,7 +32,7 @@ if (($#)); then
 	exit
 fi
 
-if [[ ! -f $repository/justfile || ! -f $repository/secrets/records.yaml ]]; then
+if [[ ! -f $repository/Justfile || ! -f $repository/secrets/records.yaml ]]; then
 	printf '%s\n' "the dotfiles repository is unavailable at $repository" >&2
 	exit 1
 fi
@@ -42,7 +42,10 @@ chmod 700 "$records_workspace"
 cleanup() {
 	rm -rf -- "$records_workspace"
 }
-trap cleanup EXIT HUP INT TERM
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 (
 	cd "$repository"
