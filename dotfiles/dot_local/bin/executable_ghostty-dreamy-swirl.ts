@@ -5,44 +5,64 @@ import { chmodSync, mkdirSync, mkdtempSync, renameSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
-// Keep the composition in its original 1080p design space while rendering a
-// smaller texture. Ghostty uploads one decoded copy per terminal surface.
-const DESIGN_CANVAS = { height: 1080, width: 1920 } as const;
-const CANVAS = { height: 810, width: 1440 } as const;
-const RENDER_SCALE = CANVAS.width / DESIGN_CANVAS.width;
+// Ghostty scales and crops this centered texture separately for every pane
+// https://ghostty.org/docs/config/reference#background-image-fit
+// Near-native pixels keep glyph edges crisp in a typical wide window
+const IMAGE_SIZE = {
+  width: 2048,
+  height: (2048 * 9) / 16,
+} as const;
+const BASE_FONT_SIZE = Math.round(IMAGE_SIZE.width / 60);
+const MEDIUM_FONT_SIZE = Math.round((BASE_FONT_SIZE * 11) / 12);
+const SPARKLE_FONT_SIZE = Math.round((BASE_FONT_SIZE * 5) / 8);
+const FONT_SIZE_JITTER = Math.round(BASE_FONT_SIZE / 12);
+const MAX_ROTATION_DEGREES = 15;
 const DEFAULT_SEED = "25b38848";
+// Some color glyphs draw beyond Pango's logical cell before rotation
+const SPRITE_MARGIN_PIXELS = BASE_FONT_SIZE;
+const EDGE_MARGIN = BASE_FONT_SIZE * 2;
+const CANDIDATES_PER_PLACED_EMOJI = 4;
 const OUTPUT =
   process.argv[2] ??
-  join(homedir(), ".config/ghostty/backgrounds/t3-chat-emoji-corner.png");
+  join(homedir(), ".config/ghostty/backgrounds/t3-chat-emoji-scatter.png");
 const SEED = process.env.GHOSTTY_SWIRL_SEED ?? DEFAULT_SEED;
 
-type Family = "flag" | "heart" | "rainbow" | "sparkle";
+// Smaller hearts, rainbows, and sparkles leave more space between large flags
+const ROLE_STYLE = {
+  flag: {
+    fontSize: BASE_FONT_SIZE,
+    maxRotationDegrees: MAX_ROTATION_DEGREES - 1,
+  },
+  rainbow: {
+    fontSize: MEDIUM_FONT_SIZE,
+    maxRotationDegrees: MAX_ROTATION_DEGREES - 1,
+  },
+  heart: {
+    fontSize: MEDIUM_FONT_SIZE,
+    maxRotationDegrees: MAX_ROTATION_DEGREES,
+  },
+  sparkle: {
+    fontSize: SPARKLE_FONT_SIZE,
+    maxRotationDegrees: (MAX_ROTATION_DEGREES * 2) / 3,
+  },
+} as const;
+
+type Family = keyof typeof ROLE_STYLE;
 
 type Role = Readonly<{
-  angle: number;
   emoji: string;
   family: Family;
-  size: number;
 }>;
 
 type Point = Role & {
-  pointSize: number;
-  rotation: number;
-  swirl: 0 | 1;
+  renderedFontSize: number;
+  rotationDegrees: number;
   x: number;
   y: number;
 };
 
-type SwirlParameters = Readonly<{
-  centerX: number;
-  centerY: number;
-  inner: number;
-  outer: number;
-  start: number;
-  turns: number;
-  yScale: number;
-}>;
-
+// FNV-1a-style mixing over Unicode code points, not standard FNV byte input
+// https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
 function hashSeed(value: string): number {
   let hash = 2166136261;
   for (const character of value) {
@@ -52,6 +72,8 @@ function hashSeed(value: string): number {
   return hash >>> 0;
 }
 
+// Keep this generator's constants together so a seed keeps the same artwork
+// https://github.com/bryc/code/blob/master/jshash/PRNGs.md#mulberry32
 function mulberry32(initialSeed: number): () => number {
   let state = initialSeed;
   return (): number => {
@@ -69,22 +91,24 @@ const between = (minimum: number, maximum: number): number =>
 const integer = (minimum: number, maximum: number): number =>
   Math.floor(between(minimum, maximum + 1));
 
-function copies<const T extends Role>(count: number, role: T): T[] {
-  return Array.from({ length: count }, () => role);
-}
+const ROLE_COUNTS = [
+  { count: 4, emoji: "🏳️‍🌈", family: "flag" },
+  { count: 4, emoji: "🏳️‍⚧️", family: "flag" },
+  { count: 3, emoji: "🌈", family: "rainbow" },
+  { count: 4, emoji: "🩷", family: "heart" },
+  { count: 4, emoji: "💜", family: "heart" },
+  { count: 4, emoji: "💙", family: "heart" },
+  { count: 3, emoji: "🩵", family: "heart" },
+  { count: 2, emoji: "🤍", family: "heart" },
+  { count: 3, emoji: "✨", family: "sparkle" },
+] as const satisfies readonly { count: number; emoji: string; family: Family }[];
 
-const roles = [
-  ...copies(4, { emoji: "🏳️‍🌈", family: "flag", size: 27, angle: 14 }),
-  ...copies(4, { emoji: "🏳️‍⚧️", family: "flag", size: 27, angle: 14 }),
-  ...copies(3, { emoji: "🌈", family: "rainbow", size: 25, angle: 14 }),
-  ...copies(4, { emoji: "🩷", family: "heart", size: 25, angle: 15 }),
-  ...copies(4, { emoji: "💜", family: "heart", size: 25, angle: 15 }),
-  ...copies(4, { emoji: "💙", family: "heart", size: 25, angle: 15 }),
-  ...copies(3, { emoji: "🩵", family: "heart", size: 25, angle: 15 }),
-  ...copies(2, { emoji: "🤍", family: "heart", size: 25, angle: 15 }),
-  ...copies(3, { emoji: "✨", family: "sparkle", size: 17, angle: 10 }),
-] satisfies readonly Role[];
+const roles: Role[] = ROLE_COUNTS.flatMap(({ count, ...role }) =>
+  Array.from({ length: count }, () => role),
+);
 
+// Fisher-Yates uses one uniformly chosen remaining index per swap
+// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
 function shuffled<const T>(values: readonly T[]): T[] {
   const result = [...values];
   for (let index = result.length - 1; index > 0; index -= 1) {
@@ -98,136 +122,57 @@ function shuffled<const T>(values: readonly T[]): T[] {
   return result;
 }
 
-// Shuffle without allowing long runs of one visual family.
-function variedOrder<const T extends Role>(values: readonly T[]): T[] {
-  const remaining = shuffled(values);
-  const result: T[] = [];
-  while (remaining.length > 0) {
-    const recent = new Set(result.slice(-2).map(({ family }) => family));
-    let choices = remaining
-      .map((value, index) => ({ index, value }))
-      .filter(({ value }) => !recent.has(value.family));
-    if (choices.length === 0) {
-      choices = remaining.map((value, index) => ({ index, value }));
-    }
-    const choice = choices[integer(0, choices.length - 1)];
-    if (choice === undefined) throw new Error("failed to choose an emoji role");
-    result.push(choice.value);
-    remaining.splice(choice.index, 1);
+// Mitchell's best-candidate sampling chooses the most isolated of several
+// random candidates for each point, without putting the emojis on a grid
+// https://my.eng.utah.edu/~cs6958/papers/p157-mitchell.pdf
+// Wrap distances across the edges so candidates are not pulled to the border
+function nearestClearance(candidate: Point, placed: readonly Point[]): number {
+  let nearest = Number.POSITIVE_INFINITY;
+  for (const point of placed) {
+    const absoluteX = Math.abs(candidate.x - point.x);
+    const absoluteY = Math.abs(candidate.y - point.y);
+    const dx = Math.min(absoluteX, IMAGE_SIZE.width - absoluteX);
+    const dy = Math.min(absoluteY, IMAGE_SIZE.height - absoluteY);
+    const clearance =
+      Math.hypot(dx, dy) - candidate.renderedFontSize - point.renderedFontSize;
+    nearest = Math.min(nearest, clearance);
   }
-  return result;
+  return nearest;
 }
 
-function makeSwirl(
-  values: readonly Role[],
-  parameters: SwirlParameters,
-  swirl: 0 | 1,
-): Point[] {
-  return values.map((role, index) => {
-    const progress = index / Math.max(1, values.length - 1);
-    const theta =
-      parameters.start +
-      parameters.turns * Math.PI * 2 * progress +
-      between(-0.035, 0.035);
-    const radius =
-      parameters.outer +
-      (parameters.inner - parameters.outer) * progress +
-      between(-12, 12);
-    return {
+const points: Point[] = [];
+for (const role of shuffled(roles)) {
+  const style = ROLE_STYLE[role.family];
+  const renderedFontSize =
+    style.fontSize + integer(-FONT_SIZE_JITTER, FONT_SIZE_JITTER);
+  const rotationDegrees = integer(-style.maxRotationDegrees, style.maxRotationDegrees);
+  let best: Point | undefined;
+  let bestClearance = Number.NEGATIVE_INFINITY;
+
+  // Mitchell grows the candidate count with the number of placed points
+  const candidateCount = CANDIDATES_PER_PLACED_EMOJI * (points.length + 1);
+  for (let candidateIndex = 0; candidateIndex < candidateCount; candidateIndex += 1) {
+    const candidate: Point = {
       ...role,
-      pointSize: role.size + integer(-2, 2),
-      rotation: integer(-role.angle, role.angle),
-      swirl,
-      x: parameters.centerX + radius * Math.cos(theta),
-      y: parameters.centerY + parameters.yScale * radius * Math.sin(theta),
+      renderedFontSize,
+      rotationDegrees,
+      x: between(EDGE_MARGIN, IMAGE_SIZE.width - EDGE_MARGIN),
+      y: between(EDGE_MARGIN, IMAGE_SIZE.height - EDGE_MARGIN),
     };
-  });
-}
-
-const ordered = variedOrder(roles);
-const firstCount = 17;
-const points: Point[] = [
-  ...makeSwirl(
-    ordered.slice(0, firstCount),
-    {
-      centerX: between(1245, 1310),
-      centerY: between(805, 840),
-      inner: between(84, 102),
-      outer: between(365, 405),
-      start: between(2.48, 2.82),
-      turns: between(1.36, 1.53),
-      yScale: between(0.74, 0.82),
-    },
-    0,
-  ),
-  ...makeSwirl(
-    ordered.slice(firstCount),
-    {
-      centerX: between(1625, 1680),
-      centerY: between(805, 840),
-      inner: between(80, 98),
-      outer: between(235, 270),
-      start: between(0.25, 0.53),
-      turns: between(1.1, 1.28),
-      yScale: between(0.74, 0.82),
-    },
-    1,
-  ),
-];
-
-const proxyMultipliers = {
-  flag: 1.45,
-  rainbow: 1.2,
-} satisfies Partial<Record<Family, number>>;
-
-function proxyRadius(point: Point): number {
-  const multiplier =
-    point.family in proxyMultipliers
-      ? proxyMultipliers[point.family as keyof typeof proxyMultipliers]
-      : undefined;
-  return point.pointSize * (multiplier ?? 1.05);
-}
-
-// Resolve cross-swirl collisions while retaining both currents. Same-family
-// objects receive additional breathing room.
-for (let iteration = 0; iteration < 120; iteration += 1) {
-  for (let left = 0; left < points.length; left += 1) {
-    for (let right = left + 1; right < points.length; right += 1) {
-      const a = points[left];
-      const b = points[right];
-      if (a === undefined || b === undefined) continue;
-
-      let dx = b.x - a.x;
-      let dy = b.y - a.y;
-      let distance = Math.hypot(dx, dy);
-      const minimum =
-        proxyRadius(a) + proxyRadius(b) + (a.family === b.family ? 28 : 10);
-      if (distance >= minimum) continue;
-      if (distance < 0.001) {
-        dx = between(-1, 1);
-        dy = between(-1, 1);
-        distance = Math.hypot(dx, dy);
-      }
-      const push = (minimum - distance) * 0.52;
-      const unitX = dx / distance;
-      const unitY = dy / distance;
-      a.x -= unitX * push;
-      a.y -= unitY * push;
-      b.x += unitX * push;
-      b.y += unitY * push;
+    const clearance = nearestClearance(candidate, points);
+    if (clearance > bestClearance) {
+      best = candidate;
+      bestClearance = clearance;
     }
   }
-
-  for (const point of points) {
-    point.x = Math.max(850, Math.min(1890, point.x));
-    point.y = Math.max(545, Math.min(1025, point.y));
-  }
+  if (best === undefined) throw new Error("failed to place an emoji");
+  points.push(best);
 }
 
 const magick = spawnSync("magick", ["-version"], { stdio: "ignore" });
 if (magick.error !== undefined || magick.status !== 0) {
   console.error(
-    "ghostty dreamy swirl: ImageMagick is not installed; skipping generation",
+    "ghostty emoji scatter: ImageMagick is not installed; skipping generation",
   );
   process.exit(0);
 }
@@ -237,7 +182,7 @@ if (useNativeMacEmoji) {
   const pangoView = spawnSync("pango-view", ["--version"], { stdio: "ignore" });
   if (pangoView.error !== undefined || pangoView.status !== 0) {
     throw new Error(
-      "ghostty dreamy swirl: pango-view is required for color emoji on macOS",
+      "ghostty emoji scatter: pango-view is required for color emoji on macOS",
     );
   }
 }
@@ -256,14 +201,14 @@ const runMagick = (args: readonly string[]): void => runCommand("magick", args);
 
 const signed = (value: number): string => (value >= 0 ? `+${value}` : `${value}`);
 mkdirSync(dirname(OUTPUT), { recursive: true });
-const work = mkdtempSync(join(dirname(OUTPUT), ".dreamy-swirl."));
+const work = mkdtempSync(join(dirname(OUTPUT), ".emoji-scatter."));
 const temporary = join(work, "output.png");
 let canvas = join(work, "canvas.png");
 
 try {
   runMagick([
     "-size",
-    `${CANVAS.width}x${CANVAS.height}`,
+    `${IMAGE_SIZE.width}x${IMAGE_SIZE.height}`,
     "xc:none",
     "-colorspace",
     "sRGB",
@@ -273,9 +218,9 @@ try {
   for (const [index, point] of points.entries()) {
     const sprite = join(work, `sprite-${index}.png`);
     const next = join(work, `canvas-${index}.png`);
-    const pointSize = Math.max(1, Math.round(point.pointSize * RENDER_SCALE));
-    const offsetX = Math.round(point.x * RENDER_SCALE - CANVAS.width / 2);
-    const offsetY = Math.round(point.y * RENDER_SCALE - CANVAS.height / 2);
+    const pointSize = Math.max(1, point.renderedFontSize);
+    const offsetX = Math.round(point.x - IMAGE_SIZE.width / 2);
+    const offsetY = Math.round(point.y - IMAGE_SIZE.height / 2);
 
     if (useNativeMacEmoji) {
       const unrotated = join(work, `unrotated-${index}.png`);
@@ -284,8 +229,8 @@ try {
         `--text=${point.emoji}`,
         `--font=Noto Color Emoji ${pointSize}`,
         "--background=transparent",
-        // Prevent accents and rotated color glyphs from touching Pango's edge.
-        "--margin=8",
+        // Prevent accents and rotated color glyphs from touching Pango's edge
+        `--margin=${SPRITE_MARGIN_PIXELS}`,
         `--output=${unrotated}`,
       ]);
       runMagick([
@@ -293,7 +238,7 @@ try {
         "-background",
         "none",
         "-rotate",
-        `${point.rotation}`,
+        `${point.rotationDegrees}`,
         "-trim",
         "+repage",
         `PNG32:${sprite}`,
@@ -306,7 +251,7 @@ try {
         "-background",
         "none",
         "-rotate",
-        `${point.rotation}`,
+        `${point.rotationDegrees}`,
         "-trim",
         "+repage",
         `PNG32:${sprite}`,
@@ -332,4 +277,4 @@ try {
   rmSync(work, { force: true, recursive: true });
 }
 
-console.log(`ghostty dreamy swirl: generated ${OUTPUT} (seed ${SEED})`);
+console.log(`ghostty emoji scatter: generated ${OUTPUT} (seed ${SEED})`);
