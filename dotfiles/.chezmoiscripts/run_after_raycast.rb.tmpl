@@ -4,24 +4,31 @@
 
 require "pathname"
 
+home = Pathname(Dir.home)
+profile = home/".nix-profile"
+source = profile/"Applications/Raycast.app"
+manager = profile/"bin/raycast-manager"
+target = Pathname("/Applications/Raycast.app")
+config = home/".config/raycast/config.json"
 brew = Pathname("/opt/homebrew/bin/brew")
-brew_ruby = Pathname("/opt/homebrew/opt/ruby/bin/ruby")
-configurer = Pathname(Dir.home)/".local/libexec/private-application-configurer"
 
-unless brew.executable?
-  warn "raycast: warning: Homebrew not installed; skipping"
-  exit 0
+abort "raycast: missing Nix app #{source}; run just nix" unless source.directory?
+abort "raycast: missing Nix manager #{manager}; run just nix" unless manager.executable?
+abort "raycast: missing configuration #{config}" unless config.file?
+
+if target.symlink?
+  abort "raycast: #{target} points elsewhere" unless target.readlink == source
+elsif target.exist?
+  unless brew.executable? && system(brew.to_s, "list", "--cask", "raycast", out: File::NULL, err: File::NULL)
+    abort "raycast: #{target} is not the Homebrew installation"
+  end
+
+  system brew.to_s, "uninstall", "--cask", "raycast", exception: true
+  abort "raycast: Homebrew left #{target} in place" if target.exist? || target.symlink?
+  File.symlink(source, target)
+else
+  File.symlink(source, target)
 end
 
-unless brew_ruby.executable?
-  warn "raycast: error: Homebrew Ruby is not installed"
-  exit 1
-end
-
-unless configurer.file?
-  warn "raycast: error: missing private application configurer #{configurer}"
-  exit 1
-end
-
-exec brew_ruby.to_s, configurer.to_s, "configure", "--if-present"
+system manager.to_s, "configure", config.to_s, exception: true
 {{- end -}}

@@ -536,6 +536,26 @@
         "type": "github"
       }
     },
+    "raycast": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790511134,
+        "narHash": "sha256-FbfPvcP2bnDNeQGyXG677G2YTu/9fLTLdVkRPmn5huY=",
+        "owner": "4evy",
+        "repo": "raycast",
+        "rev": "dee705e85bcfaa0d53d44084df6e758ba43fa2f7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "4evy",
+        "repo": "raycast",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "browser": "browser",
@@ -548,6 +568,7 @@
         "nixpkgs": "nixpkgs_3",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "patches": "patches",
+        "raycast": "raycast",
         "sops-nix": "sops-nix",
         "source-bluebuild-cli": "source-bluebuild-cli",
         "source-browser": "source-browser",

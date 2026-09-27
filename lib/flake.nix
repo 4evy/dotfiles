@@ -43,16 +43,21 @@ let
       default = pkgs.dotfiles-python;
       dotfiles-nix-tools = pkgs.buildEnv {
         name = "dotfiles-nix-tools";
-        paths = with pkgs; [
-          deadnix
-          nh
-          nil
-          nix-output-monitor
-          nix-tree
-          nixd
-          nixfmt
-          statix
-        ];
+        paths =
+          (with pkgs; [
+            deadnix
+            nh
+            nil
+            nix-output-monitor
+            nix-tree
+            nixd
+            nixfmt
+            statix
+          ])
+          ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+            inputs.raycast.packages.${pkgs.stdenv.hostPlatform.system}.raycast
+            inputs.raycast.packages.${pkgs.stdenv.hostPlatform.system}.raycast-manager
+          ];
       };
       inherit (pkgs) dotfiles-python;
       equicord-settings = pkgs.callPackage ../packages/equicord-settings/package.nix {

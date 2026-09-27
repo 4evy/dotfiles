@@ -1,0 +1,27 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "pathname"
+
+brew = Pathname("/opt/homebrew/bin/brew")
+brew_ruby = Pathname("/opt/homebrew/opt/ruby/bin/ruby")
+configurer = Pathname(Dir.home)/".local/libexec/private-application-configurer"
+
+unless brew.executable?
+  warn "applications: warning: Homebrew not installed; skipping"
+  exit 0
+end
+
+unless brew_ruby.executable?
+  warn "applications: error: Homebrew Ruby is not installed"
+  exit 1
+end
+
+unless configurer.file?
+  warn "applications: error: missing private application configurer #{configurer}"
+  exit 1
+end
+
+exec brew_ruby.to_s, configurer.to_s, "configure"
+{{- end -}}

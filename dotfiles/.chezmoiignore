@@ -35,7 +35,6 @@ node_modules/**
 .config/ghostty/
 .config/helix/
 .config/kanata/
-.config/raycast/
 .config/yazi/
 .ssh/config
 Library/

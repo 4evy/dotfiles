@@ -133,6 +133,11 @@
       url = "github:4evy/patches";
     };
 
+    raycast = {
+      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:4evy/raycast";
+    };
+
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
     treefmt-nix.url = "github:numtide/treefmt-nix";
   };

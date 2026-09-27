@@ -221,9 +221,6 @@ if OS.mac?
   cask "itsycal"
   cask "libreoffice"
   cask "prismlauncher"
-  # Let the official cask adopt installations created by the retired local
-  # Raycast manager during the one-time migration.
-  cask "raycast", args: { force: true }
   cask "rustdesk"
   cask "shottr"
   cask "stats"

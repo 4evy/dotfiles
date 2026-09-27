@@ -20,7 +20,6 @@ dependencies = [
 
 [project.scripts]
 extra-shell-completions = "workstation.local.shell_completions:main"
-raycast-catppuccin-custom = "workstation.macos.raycast:main"
 sync-equicord-settings = "workstation.apps.equicord_settings:main"
 vscode-catppuccin-custom-icons = "workstation.apps.vscode_icons:main"
 desktop-perf-audit = "workstation.local.desktop_audit:desktop_perf_audit_entrypoint"

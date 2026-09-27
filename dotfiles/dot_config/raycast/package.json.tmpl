@@ -1,2 +1,0 @@
-{{- $workspace := include "package.json" | fromJson -}}
-{{ dict "name" "dotfiles-raycast-runtime" "private" true "type" "module" "dependencies" $workspace.dependencies | toPrettyJson }}
