@@ -528,6 +528,7 @@
               ];
               excludes = [
                 "*.py"
+                "dotfiles/dot_local/bin/executable_ghidra-macos"
                 "dotfiles/dot_local/bin/executable_ghostty-dreamy-swirl.ts"
                 "dotfiles/dot_local/bin/executable_sops-age-key-cache.rb"
               ];
