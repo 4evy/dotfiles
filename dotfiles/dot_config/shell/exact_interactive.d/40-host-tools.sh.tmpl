@@ -47,13 +47,13 @@ _dotfiles_ghidra_mcp_prune_refs() {
 
 	[[ -d "$refs_dir" ]] || return 0
 
-	while IFS= read -r ref; do
+	while IFS= read -r -d '' ref; do
 		pid=
 		IFS= read -r pid <"$ref" || pid=
 		if [[ -z "$pid" ]] || ! kill -0 "$pid" >/dev/null 2>&1; then
 			rm -f -- "$ref"
 		fi
-	done < <(find "$refs_dir" -type f -print 2>/dev/null)
+	done < <(find "$refs_dir" -type f -print0 2>/dev/null)
 }
 
 _dotfiles_ghidra_mcp_has_refs() {
@@ -73,7 +73,7 @@ _dotfiles_register_ghidra_mcp_for_cxg() {
 	mkdir -p "$refs_dir" || return
 
 	ref_file="$(mktemp "$refs_dir/ref.XXXXXX")" || return
-	printf '%s\n' "$$" >"$ref_file" || return
+	printf '%s\n' "$_dotfiles_cxg_owner_pid" >"$ref_file" || return
 
 	_dotfiles_cxg_ghidra_mcp_ref_file="$ref_file"
 	_dotfiles_cxg_ghidra_mcp_state_dir="$state_dir"
@@ -128,7 +128,7 @@ _dotfiles_acquire_ghidra_mcp_start_lock() {
 		sleep 1
 	done
 
-	printf '%s\n' "$$" >"$lock_dir/pid" || true
+	printf '%s\n' "$_dotfiles_cxg_owner_pid" >"$lock_dir/pid" || true
 	return 0
 }
 
@@ -145,6 +145,7 @@ _dotfiles_start_ghidra_mcp_for_cxg() {
 	local lock_dir
 	local lock_status
 	local nix_system
+	local nix_status
 	local pid_file
 
 	_dotfiles_cxg_ghidra_mcp_pid=
@@ -183,8 +184,9 @@ _dotfiles_start_ghidra_mcp_for_cxg() {
 			ghidra-mcp-headless >"$log_file" 2>&1 &
 	elif command -v nix >/dev/null 2>&1; then
 		nix_system=$(nix eval --impure --raw --expr builtins.currentSystem) || {
+			nix_status=$?
 			_dotfiles_release_ghidra_mcp_start_lock "$lock_dir"
-			return
+			return "$nix_status"
 		}
 		env \
 			GHIDRA_MCP_ALLOW_SCRIPTS="${GHIDRA_MCP_ALLOW_SCRIPTS:-1}" \
@@ -267,6 +269,15 @@ _dotfiles_stop_ghidra_mcp_for_cxg() {
 cxg() (
 	local -a codex_args
 	local cmd_status
+	local _dotfiles_cxg_owner_pid
+
+	# $$ still names the interactive shell; track this invocation's process
+	if [[ -n "${ZSH_VERSION:-}" ]]; then
+		zmodload zsh/system || exit
+		_dotfiles_cxg_owner_pid=${sysparams[pid]}
+	else
+		_dotfiles_cxg_owner_pid=$BASHPID
+	fi
 
 	trap '_dotfiles_stop_ghidra_mcp_for_cxg' EXIT
 	trap 'exit 129' HUP
