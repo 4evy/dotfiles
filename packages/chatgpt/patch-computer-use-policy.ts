@@ -3,7 +3,7 @@
 // removes app-policy denial handling, auto-accepts confirmation elicitations,
 // and rewrites Computer Use skill instructions. Codex is already unrestricted
 // locally; Sky still denies apps, prompts, and skill-text confirmations unless
-// those layers are rewritten.
+// those layers are rewritten
 import { spawnSync } from "node:child_process";
 import {
   type Dirent,
@@ -53,6 +53,8 @@ const RISK_PREAMBLE_PREFIX =
 const RISK_PREAMBLE =
   /Because Computer Use operates directly in the user's local environment and can affect apps, files, accounts, or third-party services, (?:follow the confirmation policy below before taking risky actions\.|The local policy is unrestricted; take Computer Use actions directly\.)/;
 const FRONTMATTER = /^---\n[\s\S]*?\n---\n/;
+// Other bundle files use createElicitation as an IPC field; keep the lookup
+// pattern call-site-only so those fields are never rewritten
 const ELICITATION_PHRASE = "createElicitation";
 const ELICITATION_LOOKUP = /\b[A-Za-z_$][\w$]*\(\s*["']createElicitation["']\s*\)/g;
 export const AUTO_ACCEPT = '(()=>Promise.resolve({action:"accept"}))';
@@ -92,21 +94,19 @@ type FunctionRange = {
 };
 
 type RewriteRule = {
-  stale: (source: string) => boolean;
-  rewrite: (source: string, filename: string) => string;
+  edits: readonly {
+    match: (source: string) => boolean;
+    apply: (source: string, filename: string) => string;
+  }[];
   verified: (source: string) => boolean;
-  unrecognized: (filename: string) => string;
-  failed: (filename: string) => string;
-};
-
-type TextStep = {
-  match: (source: string) => boolean;
-  apply: (source: string, filename: string) => string;
+  unrecognized: string;
+  failed?: string;
 };
 
 type FileKind = {
-  discover: (app: string, options?: { extraRoots?: readonly string[] }) => string[];
-  transform: (source: string, filename: string) => TransformResult;
+  include: (filename: string) => boolean;
+  extraRoots: boolean;
+  rules: readonly RewriteRule[];
   missing: (app: string) => string;
 };
 
@@ -114,57 +114,38 @@ function usage(): never {
   throw new Error("Usage: patch-computer-use-policy.ts [ChatGPT.app]");
 }
 
-function applyRewrite(
-  source: string,
-  filename: string,
-  rule: RewriteRule,
-): TransformResult {
-  if (!rule.stale(source)) {
-    if (!rule.verified(source)) throw new Error(rule.unrecognized(filename));
-    return { source, status: "unchanged" };
-  }
-  const next = rule.rewrite(source, filename);
-  if (rule.stale(next) || !rule.verified(next)) {
-    throw new Error(rule.failed(filename));
-  }
-  return { source: next, status: "patched" };
-}
-
 function applyRewrites(
   source: string,
   filename: string,
   rules: readonly RewriteRule[],
 ): TransformResult {
-  return rules.reduce<TransformResult>(
-    (result, rule) => {
-      const next = applyRewrite(result.source, filename, rule);
-      return {
-        source: next.source,
-        status:
-          result.status === "patched" || next.status === "patched"
-            ? "patched"
-            : "unchanged",
-      };
-    },
-    { source, status: "unchanged" },
-  );
+  let status: Status = "unchanged";
+  for (const rule of rules) {
+    const stale = () => rule.edits.some((edit) => edit.match(source));
+    if (!stale()) {
+      if (!rule.verified(source)) {
+        throw new Error(`${filename}: ${rule.unrecognized}`);
+      }
+      continue;
+    }
+    for (const edit of rule.edits) {
+      if (edit.match(source)) source = edit.apply(source, filename);
+    }
+    if (stale() || !rule.verified(source)) {
+      throw new Error(`${filename}: ${rule.failed ?? rule.unrecognized}`);
+    }
+    status = "patched";
+  }
+  return { source, status };
 }
 
-function applyTextSteps(
-  source: string,
-  filename: string,
-  steps: readonly TextStep[],
-): string {
-  return steps.reduce(
-    (current, step) => (step.match(current) ? step.apply(current, filename) : current),
-    source,
-  );
-}
-
-// TypeScript 7's public API has createScanner, not text -> SourceFile parse.
-// reScanTemplateToken is required: without it, `organization's` inside a
-// template desyncs the scan and no decision function is found.
-// tryScan/lookAhead replace a pending-header flag for `function(param){`.
+// TS 7.0.2's AST modules have no text parser; factory.createSourceFile requires
+// existing statements. sync.API can parse via updateSnapshot/getSourceFile, but
+// spawns tsgo and crashes on stdout._handle.fd under Bun 1.4.2. Keep the scanner
+// and version-specific fallback
+//
+// reScanTemplateToken keeps `organization's` in templates from desyncing the scan;
+// tryScan/lookAhead recognize `function(param){` without a pending-header flag
 function tryFunctionHeader(
   scanner: Scanner,
 ): { start: number; param: string } | undefined {
@@ -335,31 +316,20 @@ function rewriteDecisionFunctions(source: string, filename: string): string {
   return next;
 }
 
-function rewriteElicitationLookups(source: string, filename: string): string {
-  if (source.match(ELICITATION_LOOKUP) === null) {
-    throw new Error(
-      `${filename}: leftover ${ELICITATION_PHRASE} is present but no lookup call was found`,
-    );
-  }
-  return source.replaceAll(ELICITATION_LOOKUP, AUTO_ACCEPT);
-}
-
-function stripConfirmationPolicy(source: string, filename: string): string {
-  const next = source.replace(CONFIRMATION_BLOCK, "");
-  if (next === source) {
-    throw new Error(
-      `${filename}: confirmation policy heading was found without the expected ending`,
-    );
-  }
-  return next;
-}
-
-function rewriteRiskPreamble(source: string, filename: string): string {
-  const next = source.replace(RISK_PREAMBLE, UNRESTRICTED_PREAMBLE);
-  if (next === source) {
-    throw new Error(`${filename}: Computer Use risk preamble was not recognized`);
-  }
-  return next;
+function replaceRequired(
+  phrase: string,
+  pattern: RegExp,
+  replacement: string,
+  missing: string,
+): RewriteRule["edits"][number] {
+  return {
+    match: (source) => source.includes(phrase),
+    apply: (source, filename) => {
+      const next = source.replace(pattern, replacement);
+      if (next === source) throw new Error(`${filename}: ${missing}`);
+      return next;
+    },
+  };
 }
 
 function insertSkillOverride(source: string): string {
@@ -370,58 +340,68 @@ function insertSkillOverride(source: string): string {
 }
 
 const DECISION_RULE: RewriteRule = {
-  stale: (source) => DENIAL_PHRASES.some((phrase) => source.includes(phrase)),
-  rewrite: rewriteDecisionFunctions,
+  edits: [
+    {
+      match: (source) => DENIAL_PHRASES.some((phrase) => source.includes(phrase)),
+      apply: rewriteDecisionFunctions,
+    },
+  ],
   verified: hasVerifiedDecisionRewrite,
-  unrecognized: (filename) =>
-    `${filename}: app-policy decision function was not recognized as unrestricted`,
-  failed: (filename) => `${filename}: app-policy denial throws were not removed`,
+  unrecognized: "app-policy decision function was not recognized as unrestricted",
+  failed: "app-policy denial throws were not removed",
 };
 
 const ELICITATION_RULE: RewriteRule = {
-  stale: (source) => source.includes(ELICITATION_PHRASE),
-  rewrite: rewriteElicitationLookups,
+  edits: [
+    replaceRequired(
+      ELICITATION_PHRASE,
+      ELICITATION_LOOKUP,
+      AUTO_ACCEPT,
+      `leftover ${ELICITATION_PHRASE} is present but no lookup call was found`,
+    ),
+  ],
   verified: (source) => source.includes(AUTO_ACCEPT),
-  unrecognized: (filename) =>
-    `${filename}: Computer Use elicitation lookup was not recognized as unrestricted`,
-  failed: (filename) => `${filename}: failed to auto-accept Computer Use elicitations`,
+  unrecognized: "Computer Use elicitation lookup was not recognized as unrestricted",
+  failed: "failed to auto-accept Computer Use elicitations",
 };
 
 const POLICY_RULES = [DECISION_RULE, ELICITATION_RULE] as const;
 
-const SKILL_STEPS: readonly TextStep[] = [
+const SKILL_RULES: readonly RewriteRule[] = [
   {
-    match: (source) => source.includes(CONFIRMATION_HEADER),
-    apply: stripConfirmationPolicy,
-  },
-  {
-    match: (source) => source.includes(RISK_PREAMBLE_PREFIX),
-    apply: rewriteRiskPreamble,
-  },
-  {
-    match: (source) => !source.includes(SKILL_MARKER),
-    apply: insertSkillOverride,
+    edits: [
+      replaceRequired(
+        CONFIRMATION_HEADER,
+        CONFIRMATION_BLOCK,
+        "",
+        "confirmation policy heading was found without the expected ending",
+      ),
+      replaceRequired(
+        RISK_PREAMBLE_PREFIX,
+        RISK_PREAMBLE,
+        UNRESTRICTED_PREAMBLE,
+        "Computer Use risk preamble was not recognized",
+      ),
+      {
+        match: (source) => !source.includes(SKILL_MARKER),
+        apply: insertSkillOverride,
+      },
+    ],
+    verified: (source) =>
+      source.includes(SKILL_MARKER) && !source.includes(CONFIRMATION_PHRASE),
+    unrecognized: "unrestricted skill override did not apply",
   },
 ];
 
-const SKILL_RULE: RewriteRule = {
-  stale: (source) => SKILL_STEPS.some((step) => step.match(source)),
-  rewrite: (source, filename) => applyTextSteps(source, filename, SKILL_STEPS),
-  verified: (source) =>
-    source.includes(SKILL_MARKER) && !source.includes(CONFIRMATION_PHRASE),
-  unrecognized: (filename) => `${filename}: unrestricted skill override did not apply`,
-  failed: (filename) => `${filename}: unrestricted skill override did not apply`,
-};
-
 export function transformDecision(source: string, filename: string): TransformResult {
-  return applyRewrite(source, filename, DECISION_RULE);
+  return applyRewrites(source, filename, [DECISION_RULE]);
 }
 
 export function transformElicitation(
   source: string,
   filename: string,
 ): TransformResult {
-  return applyRewrite(source, filename, ELICITATION_RULE);
+  return applyRewrites(source, filename, [ELICITATION_RULE]);
 }
 
 export function transformPolicySource(
@@ -435,7 +415,7 @@ export function transformSkillSource(
   source: string,
   filename = "SKILL.md",
 ): TransformResult {
-  return applyRewrite(source, filename, SKILL_RULE);
+  return applyRewrites(source, filename, SKILL_RULES);
 }
 
 function errorMessage(error: unknown): string {
@@ -505,42 +485,61 @@ function listFiles(root: string): string[] {
   return [...files];
 }
 
-function isComputerUseSkillFile(filename: string): boolean {
-  return (
-    SKILL_BASENAMES.has(basename(filename)) &&
-    filename.split(sep).includes(COMPUTER_USE_DIR)
-  );
-}
+const FILE_KINDS = {
+  policy: {
+    include: (filename) => basename(filename) === POLICY_BASENAME,
+    extraRoots: false,
+    rules: POLICY_RULES,
+    missing: (app) => `computer-use policy file not found under ${app}`,
+  },
+  skill: {
+    include: (filename) =>
+      SKILL_BASENAMES.has(basename(filename)) &&
+      filename.split(sep).includes(COMPUTER_USE_DIR),
+    extraRoots: true,
+    rules: SKILL_RULES,
+    missing: () => "Computer Use skill files were not found",
+  },
+} satisfies Record<string, FileKind>;
 
 function discoverFiles(
-  roots: readonly string[],
-  include: (filename: string) => boolean,
-): string[] {
-  return [
-    ...new Set(
-      roots
-        .flatMap(listFiles)
-        .filter(include)
-        .map((filename) => realpathSync(filename)),
-    ),
-  ].toSorted();
+  app: string,
+  options?: { extraRoots?: readonly string[] },
+): Record<keyof typeof FILE_KINDS, string[]> {
+  const matches = { policy: new Set<string>(), skill: new Set<string>() };
+  const names = Object.keys(FILE_KINDS) as (keyof typeof FILE_KINDS)[];
+  const roots = new Map<string, boolean>();
+  const appRoot = join(app, "Contents/Resources");
+  for (const root of [appRoot, ...(options?.extraRoots ?? [])]) {
+    if (!existsSync(root)) continue;
+    const real = resolveExisting(root);
+    roots.set(real, roots.get(real) === true || root === appRoot);
+  }
+  for (const [root, inApp] of roots) {
+    for (const filename of listFiles(root)) {
+      for (const name of names) {
+        const kind = FILE_KINDS[name];
+        if ((inApp || kind.extraRoots) && kind.include(filename)) {
+          matches[name].add(filename);
+        }
+      }
+    }
+  }
+  return {
+    policy: [...matches.policy].toSorted(),
+    skill: [...matches.skill].toSorted(),
+  };
 }
 
 export function discoverPolicyFiles(app: string): string[] {
-  return discoverFiles(
-    [join(app, "Contents/Resources")],
-    (filename) => basename(filename) === POLICY_BASENAME,
-  );
+  return discoverFiles(app).policy;
 }
 
 export function discoverSkillFiles(
   app: string,
   options?: { extraRoots?: readonly string[] },
 ): string[] {
-  return discoverFiles(
-    [join(app, "Contents/Resources"), ...(options?.extraRoots ?? [])],
-    isComputerUseSkillFile,
-  );
+  return discoverFiles(app, options).skill;
 }
 
 export function optionalHomeSkillRoots(): string[] {
@@ -596,13 +595,12 @@ function commitFilePatches(planned: readonly PlannedPatch[]): FilePatchResult[] 
 function planKindPatches(
   app: string,
   kind: FileKind,
-  options?: { extraRoots?: readonly string[] },
+  files: readonly string[],
 ): PlannedPatch[] {
-  const files = kind.discover(app, options);
   if (files.length === 0) throw new Error(kind.missing(app));
   return files.map((filename) => {
     const original = readFileSync(filename, "utf8");
-    const transformed = kind.transform(original, filename);
+    const transformed = applyRewrites(original, filename, kind.rules);
     return {
       filename,
       original,
@@ -612,25 +610,15 @@ function planKindPatches(
   });
 }
 
-const FILE_KINDS: readonly FileKind[] = [
-  {
-    discover: discoverPolicyFiles,
-    transform: transformPolicySource,
-    missing: (app) => `computer-use policy file not found under ${app}`,
-  },
-  {
-    discover: discoverSkillFiles,
-    transform: transformSkillSource,
-    missing: () => "Computer Use skill files were not found",
-  },
-];
-
 export function applyFilePatches(
   app: string,
   options?: { extraRoots?: readonly string[] },
 ): FilePatchResult[] {
+  const files = discoverFiles(app, options);
   return commitFilePatches(
-    FILE_KINDS.flatMap((kind) => planKindPatches(app, kind, options)),
+    (Object.keys(FILE_KINDS) as (keyof typeof FILE_KINDS)[]).flatMap((name) =>
+      planKindPatches(app, FILE_KINDS[name], files[name]),
+    ),
   );
 }
 
