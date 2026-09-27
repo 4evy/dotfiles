@@ -3,7 +3,7 @@ determinate_nix_pkg_url := "https://install.determinate.systems/determinate-pkg/
 determinate_nix_team_id := "X3JQ4VPJZ6"
 nix_bin := nix_bin_dir / "nix"
 
-# Install Nix on Linux, accounting for immutable composefs hosts.
+# Install Nix on Linux, accounting for immutable composefs hosts
 [linux]
 _ensure-nix:
     if [[ ! -e /nix ]] &&
@@ -23,7 +23,7 @@ _ensure-nix:
         sh -s -- install "$plan" --determinate --no-confirm --no-modify-profile
     fi
 
-# Install the signed, notarized Determinate package recommended for macOS.
+# Install the signed, notarized Determinate package recommended for macOS
 [macos]
 _ensure-nix:
     if ! command -v nix >/dev/null 2>&1; then
@@ -44,27 +44,27 @@ _ensure-nix:
       sudo /usr/sbin/installer -verboseR -pkg "$pkg" -tgt /
     fi
 
-# Show the installed distribution, enabled features, and daemon status.
+# Show the installed distribution, enabled features, and daemon status
 [group('system')]
 determinate-status: (doctor 'nix') _ensure-nix
     nix --version
     determinate-nixd version
     determinate-nixd status
 
-# Upgrade installer-managed Determinate Nix (NixOS is updated through its flake lock).
+# Upgrade installer-managed Determinate Nix (NixOS is updated through its flake lock)
 [confirm('Upgrade this installer-managed Determinate Nix installation?')]
 [group('system')]
 determinate-upgrade: (doctor 'nix') _ensure-nix
     : {{ assert(!path_exists('/etc/NIXOS'), 'NixOS manages Determinate declaratively; update flake.lock and rebuild instead.') }}
     sudo determinate-nixd upgrade
 
-# Replace incorrect Nix expression hashes, prompting before each edit by default.
+# Replace incorrect Nix expression hashes, prompting before each edit by default
 [arg('args', help='Arguments forwarded to determinate-nixd fix hashes')]
 [group('dev')]
 determinate-fix-hashes *args: (doctor 'nix') _ensure-nix
     determinate-nixd fix hashes {{ quote(args) }}
 
-# Install Nix and reconcile only the repository-owned tool bundle.
+# Install Nix and reconcile only the repository-owned tool bundle
 [group('setup')]
 nix: (doctor 'nix') _ensure-nix
     if [[ -e /etc/NIXOS ]]; then

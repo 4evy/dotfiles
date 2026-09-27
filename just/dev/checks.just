@@ -94,24 +94,25 @@ ruby-check:
       ruby -c "$file" >/dev/null
     done
 
-# Discover modules from go.work so adding a module also adds its checks.
+# Let Go parse go.work, preserving module paths as individual Just arguments
+go_modules() := nul_split(shell('go work edit -json | jq -jer ' + quote('.Use[].DiskPath + "\u0000"')))
+
+# Discover modules from go.work so adding a module also adds its checks
 [group('check')]
-go-check:
-    workspace=$(go work edit -json)
-    module_paths=$(jq -er '.Use[].DiskPath' <<< "$workspace")
-    modules=()
-    while IFS= read -r module; do
-      modules+=("$module/...")
-      unformatted=$(find "$module" -type f -name '*.go' -exec gofmt -l {} +)
-      if [[ -n $unformatted ]]; then
-        printf 'Go files need formatting:\n%s\n' "$unformatted" >&2
-        exit 1
-      fi
-    done <<< "$module_paths"
-    go test "${modules[@]}"
-    go vet "${modules[@]}"
-    golangci-lint run "${modules[@]}"
+go-check: (_go-check go_modules())
+
+_go-check modules: *(_go-format *modules)
+    go test {{ quote(modules / '...') }}
+    go vet {{ quote(modules / '...') }}
+    golangci-lint run {{ quote(modules / '...') }}
     CGO_ENABLED=0 go build -o /dev/null ./packages/theme-run/cmd/theme-run
+
+_go-format module:
+    unformatted=$(find {{ quote(module) }} -type f -name '*.go' -exec gofmt -l {} +)
+    if [[ -n $unformatted ]]; then
+      printf 'Go files need formatting:\n%s\n' "$unformatted" >&2
+      exit 1
+    fi
 
 [group('dev')]
 bun-install:
@@ -129,10 +130,11 @@ homebrew-check: homebrew-source
     brew bundle list --file Brewfile --all >/dev/null
 
 [group('check')]
+[working-directory('.github/renovate')]
 renovate-check:
-    bun install --cwd .github/renovate --frozen-lockfile
-    bun run --cwd .github/renovate validate
-    bun run --cwd .github/renovate extract
+    bun install --frozen-lockfile
+    bun run validate
+    bun run extract
 
 # Lint repository source files and run project validation.
 _lint-deps: bun-install
@@ -155,7 +157,8 @@ nix-check: (doctor 'fmt')
 check: lint nix-check
 
 # Match the current runner rather than duplicating its Nix system in workflows.
-nix_system() := shell('nix eval --impure --raw --expr builtins.currentSystem')
+[private]
+nix_system := shell('nix eval --impure --raw --expr builtins.currentSystem')
 
 # Evaluate the system configuration before the flake's import-from-derivation
 # checks, then build the repository lint and formatting checks.
@@ -164,15 +167,15 @@ nix-ci-check:
     nix eval --raw .#nixosConfigurations.nixos.config.system.build.toplevel.drvPath >/dev/null
     nix flake check --keep-going --no-build
     nix build --keep-going --print-build-logs \
-      .#checks.{{ nix_system() }}.pre-commit .#checks.{{ nix_system() }}.treefmt
+      .#checks.{{ nix_system }}.pre-commit .#checks.{{ nix_system }}.treefmt
 
 # Exclude the complete OS build and the repository checks already run above.
 # Discover package checks from the flake instead of keeping a list in YAML.
 [group('check')]
 nix-native-checks:
-    nix eval --json .#checks.{{ nix_system() }} --apply builtins.attrNames | \
+    nix eval --json .#checks.{{ nix_system }} --apply builtins.attrNames | \
       jq -c 'map(select(. != "pre-commit" and . != "treefmt" and . != "nixos"))'
 
 [group('check')]
 nix-build-check name:
-    nix build --print-build-logs {{ quote('.#checks.' + nix_system() + '.' + name) }}
+    nix build --print-build-logs {{ quote('.#checks.' + nix_system + '.' + name) }}

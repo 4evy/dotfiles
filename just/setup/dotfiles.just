@@ -1,4 +1,4 @@
-# Apply chezmoi-managed dotfiles.
+# Apply chezmoi-managed dotfiles
 [arg('targets', help='Optional target paths to apply')]
 [group('setup')]
 apply *targets: (doctor 'apply')
@@ -7,7 +7,7 @@ apply *targets: (doctor 'apply')
       --refresh-externals=auto \
       {{ quote(if targets { ['apply', targets] } else { ['init', '--apply'] }) }}
 
-# Preview pending chezmoi-managed dotfile changes without refreshing externals.
+# Preview pending chezmoi-managed dotfile changes without refreshing externals
 [group('setup')]
 dotfiles-diff: (doctor 'apply')
     chezmoi \
@@ -15,7 +15,7 @@ dotfiles-diff: (doctor 'apply')
       --refresh-externals=never \
       diff
 
-# Apply Helium extensions and settings; quit Helium first so profile writes run.
+# Apply Helium extensions and settings; quit Helium first so profile writes run
 [group('setup')]
 helium: (doctor 'setup')
     ansible/bootstrap.sh --tags helium
@@ -25,12 +25,12 @@ helium: (doctor 'setup')
 setup: (doctor 'setup')
     ansible/bootstrap.sh --setup
 
-# Refresh userland, dotfiles, and host stages on an already-bootstrapped machine.
+# Refresh userland, dotfiles, and host stages on an already-bootstrapped machine
 [group('setup')]
 update: _userland apply _host
 
 _deps:
-    ansible-galaxy collection install {{ if !path_exists('.ansible/collections/ansible_collections/community/general/MANIFEST.json') || !path_exists('.ansible/collections/ansible_collections/community/sops/MANIFEST.json') { '--force' } }} \
+    uv run ansible-galaxy collection install {{ if !path_exists('.ansible/collections/ansible_collections/community/general/MANIFEST.json') || !path_exists('.ansible/collections/ansible_collections/community/sops/MANIFEST.json') { '--force' } }} \
       --requirements-file ansible/requirements.yml
 
 _userland:

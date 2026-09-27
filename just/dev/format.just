@@ -53,3 +53,14 @@ watch +args=['check']: (doctor 'watch')
 [group('check')]
 check-format: (doctor 'fmt')
     nix fmt -- --ci
+
+# Format the root Justfile and every imported recipe file without starting Nix
+[group('dev')]
+just-fmt: *(_just-format *git_files(['Justfile', '*.just']))
+
+# Check all Just files with the same native formatter
+[group('check')]
+just-check: *(_just-format *git_files(['Justfile', '*.just']) ['--check'])
+
+_just-format file flags=[]:
+    {{ quote([just_executable(), '--unstable', '--justfile', file, '--fmt', flags]) }}
