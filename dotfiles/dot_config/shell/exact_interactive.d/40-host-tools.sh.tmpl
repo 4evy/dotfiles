@@ -27,13 +27,12 @@ _dotfiles_ghidra_mcp_ready() {
 	local host="${GHIDRA_MCP_BRIDGE_HOST:-127.0.0.1}"
 	local port="${GHIDRA_MCP_BRIDGE_PORT:-8090}"
 
-	if command -v nc >/dev/null 2>&1; then
-		nc -z "$host" "$port" >/dev/null 2>&1
-		return
-	fi
-
 	if command -v curl >/dev/null 2>&1; then
-		curl --silent --show-error --max-time 1 --output /dev/null "http://$host:$port/mcp" >/dev/null 2>&1
+		curl --fail --silent --max-time 2 --noproxy '*' --output /dev/null \
+			--header 'Content-Type: application/json' \
+			--header 'Accept: application/json, text/event-stream' \
+			--data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"cxg","version":"1"}}}' \
+			"http://$host:$port/mcp"
 		return
 	fi
 
@@ -104,7 +103,7 @@ _dotfiles_wait_ghidra_mcp() {
 
 _dotfiles_acquire_ghidra_mcp_start_lock() {
 	local lock_dir=$1
-	local timeout="${GHIDRA_MCP_STARTUP_TIMEOUT_SEC:-60}"
+	local timeout="${GHIDRA_MCP_PREPARE_TIMEOUT_SEC:-600}"
 	local deadline=$((SECONDS + timeout))
 	local lock_pid
 
@@ -146,6 +145,7 @@ _dotfiles_start_ghidra_mcp_for_cxg() {
 	local lock_status
 	local nix_system
 	local nix_status
+	local package_path
 	local pid_file
 
 	_dotfiles_cxg_ghidra_mcp_pid=
@@ -188,12 +188,22 @@ _dotfiles_start_ghidra_mcp_for_cxg() {
 			_dotfiles_release_ghidra_mcp_start_lock "$lock_dir"
 			return "$nix_status"
 		}
+		printf '%s\n' "Preparing ghidra-mcp-headless with Nix; log: $log_file" >&2
+		package_path=$(nix build --no-link --print-out-paths \
+			"github:euvlok/pkgs#legacyPackages.${nix_system}.ghidra-mcp-headless" \
+			2>"$log_file") || {
+			nix_status=$?
+			printf '%s\n' "Failed to prepare ghidra-mcp-headless; log: $log_file" >&2
+			[[ ! -r "$log_file" ]] || tail -n 40 "$log_file" >&2
+			_dotfiles_release_ghidra_mcp_start_lock "$lock_dir"
+			return "$nix_status"
+		}
 		env \
 			GHIDRA_MCP_ALLOW_SCRIPTS="${GHIDRA_MCP_ALLOW_SCRIPTS:-1}" \
 			GHIDRA_MCP_STATE="$state_dir" \
 			GHIDRA_MCP_BRIDGE_TRANSPORT="streamable-http" \
 			JAVA_OPTS="${JAVA_OPTS:--Xmx4g -XX:+UseG1GC}" \
-			nix run "github:euvlok/pkgs#legacyPackages.${nix_system}.ghidra-mcp-headless" >"$log_file" 2>&1 &
+			"$package_path/bin/ghidra-mcp-headless" >"$log_file" 2>&1 &
 	else
 		_dotfiles_release_ghidra_mcp_start_lock "$lock_dir"
 		printf '%s\n' "ghidra-mcp-headless is not on PATH and nix is unavailable" >&2
