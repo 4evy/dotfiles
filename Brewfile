@@ -175,6 +175,7 @@ brew "4evy/dotfiles/browser-configurer"
 brew "fastfetch"
 brew "fzf"
 brew "ghidra"
+brew "ipsw" if OS.mac?
 brew "4evy/dotfiles/equilotl"
 brew "4evy/dotfiles/theme-run"
 
