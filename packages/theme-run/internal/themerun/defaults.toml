@@ -7,10 +7,10 @@ theme_environment = [
 ]
 theme_aliases = { dark = [
   "dark",
-  "t3-chat-dark",
+  "catppuccin-custom-dark",
 ], light = [
   "light",
-  "t3-chat-light",
+  "catppuccin-custom-light",
   "default",
   "adwaita",
 ] }

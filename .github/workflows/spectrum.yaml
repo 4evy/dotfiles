@@ -14,7 +14,7 @@ on:
       - just/**
       - bluebuild/**
       - files/dnf/**
-      - dotfiles/.chezmoidata/t3_chat.json
+      - dotfiles/.chezmoidata/catppuccin_custom.json
       - recipes
       - flake.lock
       - flake.nix

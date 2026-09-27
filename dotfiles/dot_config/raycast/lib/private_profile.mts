@@ -1,6 +1,8 @@
+import { z } from "zod";
+
 import { PATHS } from "./config.mts";
 import type { RaycastDatabaseClient } from "./types.mts";
-import { parseJsonObject, requiredString } from "./util.mts";
+import { requiredString } from "./util.mts";
 
 export type RaycastProfilePayload = {
   currentUser: Record<string, unknown> & { id: string; name: string };
@@ -11,16 +13,10 @@ export const PROFILE_USER_DEFAULTS = PATHS.profileUserDefaults;
 export function parseProfilePayload(
   currentUser: string | undefined,
 ): RaycastProfilePayload {
-  const user = parseJsonObject(
-    requiredString(currentUser, "current user JSON"),
-    "current user",
-  );
   return {
-    currentUser: {
-      ...user,
-      id: requiredString(user.id, "current user id"),
-      name: requiredString(user.name, "current user name"),
-    },
+    currentUser: z
+      .looseObject({ id: z.string().min(1), name: z.string().min(1) })
+      .parse(JSON.parse(requiredString(currentUser, "current user JSON"))),
   };
 }
 

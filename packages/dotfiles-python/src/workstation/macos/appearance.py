@@ -1,4 +1,4 @@
-"""T3 Chat integration with macOS appearance preferences."""
+"""Catppuccin Custom integration with macOS appearance preferences."""
 
 import sys
 import warnings

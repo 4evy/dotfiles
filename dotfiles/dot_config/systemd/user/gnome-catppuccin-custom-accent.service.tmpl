@@ -1,0 +1,15 @@
+[Unit]
+Description=Apply Catppuccin Custom GNOME accent colors
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+{{ if eq (get .chezmoi.osRelease "id") "nixos" -}}
+ExecStart=/run/current-system/sw/bin/gnome-catppuccin-custom-accent --watch
+{{ else -}}
+ExecStart=%h/.local/bin/gnome-catppuccin-custom-accent --watch
+{{ end -}}
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

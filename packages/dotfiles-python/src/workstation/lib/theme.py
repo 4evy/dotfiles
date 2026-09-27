@@ -1,4 +1,4 @@
-"""Shared access to the T3 Chat palette."""
+"""Shared access to the Catppuccin Custom palette."""
 
 from functools import cache
 
@@ -14,11 +14,11 @@ _PALETTES = TypeAdapter(dict[str, dict[str, Palette]])
 
 @cache
 def palettes() -> dict[str, Palette]:
-    """Load and validate the named T3 Chat palette variants once."""
+    """Load and validate the named Catppuccin Custom palette variants once."""
     data = _PALETTES.validate_json(
-        asset_path("desktop", "t3_chat_palette.json").read_bytes()
+        asset_path("desktop", "catppuccin_custom_palette.json").read_bytes()
     )
-    return data["t3_chat"]
+    return data["catppuccin_custom"]
 
 
 def rgb_components(color: str) -> Color:

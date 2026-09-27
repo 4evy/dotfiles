@@ -1,5 +1,5 @@
 /*
- * Semantic overrides and narrowly scoped exceptions for T3 Chat.
+ * Semantic overrides and narrowly scoped exceptions for Catppuccin Custom.
  * The generated native color ramps live in theme.nix; keep this
  * file free of Discord component selectors unless a semantic token cannot
  * express the fix.
@@ -9,249 +9,295 @@
   .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
   .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
 ) {
-  --brand-experiment: var(--t3-chat-brand);
-  --brand-experiment-500: var(--t3-chat-brand);
-  --control-brand-foreground: var(--t3-chat-brand);
-  --control-brand-foreground-new: var(--t3-chat-brand);
+  --brand-experiment: var(--catppuccin-custom-brand);
+  --brand-experiment-500: var(--catppuccin-custom-brand);
+  --control-brand-foreground: var(--catppuccin-custom-pink);
+  --control-brand-foreground-new: var(--catppuccin-custom-pink);
 
-  /* Text and icons follow T3 Chat's named foreground roles. */
-  --text-brand: var(--t3-chat-brand);
-  --text-link: var(--t3-chat-infoForeground);
-  --text-link-low-saturation: var(--t3-chat-infoForeground);
-  --text-feedback-critical: var(--t3-chat-critical-foreground);
-  --text-feedback-info: var(--t3-chat-infoForeground);
-  --text-feedback-positive: var(--t3-chat-positive-foreground);
-  --text-feedback-warning: var(--t3-chat-warningForeground);
-  --mention-foreground: var(--t3-chat-brand);
+  /* Text and icons follow Catppuccin Custom's named foreground roles. */
+  --text-brand: var(--catppuccin-custom-pink);
+  --text-link: var(--catppuccin-custom-infoForeground);
+  --text-link-low-saturation: var(--catppuccin-custom-infoForeground);
+  --text-feedback-critical: var(--catppuccin-custom-critical-foreground);
+  --text-feedback-info: var(--catppuccin-custom-infoForeground);
+  --text-feedback-positive: var(--catppuccin-custom-positive-foreground);
+  --text-feedback-warning: var(--catppuccin-custom-warningForeground);
+  --mention-foreground: var(--catppuccin-custom-pink);
 
-  --header-primary: var(--t3-chat-text);
-  --header-secondary: var(--t3-chat-secondaryLabel);
-  --text-normal: var(--t3-chat-text);
-  --text-default: var(--t3-chat-text);
-  --text-muted: var(--t3-chat-textMuted);
-  --text-subtle: var(--t3-chat-secondaryLabel);
-  --interactive-normal: var(--t3-chat-iconMuted);
-  --interactive-hover: var(--t3-chat-text);
-  --interactive-active: var(--t3-chat-text);
-  --interactive-muted: var(--t3-chat-placeholder);
-  --interactive-text-default: var(--t3-chat-iconMuted);
-  --interactive-text-hover: var(--t3-chat-text);
-  --interactive-text-active: var(--t3-chat-text);
-  --interactive-icon-default: var(--t3-chat-iconMuted);
-  --interactive-icon-hover: var(--t3-chat-text);
-  --interactive-icon-active: var(--t3-chat-text);
-  --channels-default: var(--t3-chat-sidebarMutedForeground);
-  --channel-icon: var(--t3-chat-iconMuted);
-  --icon-default: var(--t3-chat-text);
-  --icon-muted: var(--t3-chat-iconMuted);
-  --icon-subtle: var(--t3-chat-secondaryLabel);
-  --icon-strong: var(--t3-chat-text);
-  --icon-feedback-critical: var(--t3-chat-critical);
-  --icon-feedback-info: var(--t3-chat-info);
-  --icon-feedback-positive: var(--t3-chat-positive);
-  --icon-feedback-warning: var(--t3-chat-warning);
-  --channel-text-area-placeholder: var(--t3-chat-placeholder);
-  --input-icon-default: var(--t3-chat-iconMuted);
-  --input-placeholder-text-default: var(--t3-chat-placeholder);
-  --input-text-default: var(--t3-chat-text);
-  --input-text-error-default: var(--t3-chat-critical-foreground);
+  --header-primary: var(--catppuccin-custom-text);
+  --header-secondary: var(--catppuccin-custom-secondaryLabel);
+  --text-normal: var(--catppuccin-custom-text);
+  --text-default: var(--catppuccin-custom-text);
+  --text-muted: var(--catppuccin-custom-textMuted);
+  --text-subtle: var(--catppuccin-custom-secondaryLabel);
+  --interactive-normal: var(--catppuccin-custom-iconMuted);
+  --interactive-hover: var(--catppuccin-custom-text);
+  --interactive-active: var(--catppuccin-custom-text);
+  --interactive-muted: var(--catppuccin-custom-placeholder);
+  --interactive-text-default: var(--catppuccin-custom-iconMuted);
+  --interactive-text-hover: var(--catppuccin-custom-text);
+  --interactive-text-active: var(--catppuccin-custom-text);
+  --interactive-icon-default: var(--catppuccin-custom-iconMuted);
+  --interactive-icon-hover: var(--catppuccin-custom-text);
+  --interactive-icon-active: var(--catppuccin-custom-text);
+  --channels-default: var(--catppuccin-custom-sidebarMutedForeground);
+  --channel-icon: var(--catppuccin-custom-iconMuted);
+  --icon-default: var(--catppuccin-custom-text);
+  --icon-muted: var(--catppuccin-custom-iconMuted);
+  --icon-subtle: var(--catppuccin-custom-secondaryLabel);
+  --icon-strong: var(--catppuccin-custom-text);
+  --icon-feedback-critical: var(--catppuccin-custom-critical);
+  --icon-feedback-info: var(--catppuccin-custom-info);
+  --icon-feedback-positive: var(--catppuccin-custom-positive);
+  --icon-feedback-warning: var(--catppuccin-custom-warning);
+  --channel-text-area-placeholder: var(--catppuccin-custom-placeholder);
+  --input-icon-default: var(--catppuccin-custom-iconMuted);
+  --input-placeholder-text-default: var(--catppuccin-custom-placeholder);
+  --input-text-default: var(--catppuccin-custom-text);
+  --input-text-error-default: var(--catppuccin-custom-critical-foreground);
 
-  /* T3 Chat uses its message-action roles for solid controls. */
-  --control-primary-background-default: var(--t3-chat-messageAction);
-  --control-primary-background-hover: var(--t3-chat-messageActionHover);
-  --control-primary-background-active: var(--t3-chat-messageActionHover);
-  --control-primary-icon-default: var(--t3-chat-messageActionForeground);
-  --control-primary-icon-hover: var(--t3-chat-messageActionForeground);
-  --control-primary-icon-active: var(--t3-chat-messageActionForeground);
-  --control-primary-text-default: var(--t3-chat-messageActionForeground);
-  --control-primary-text-hover: var(--t3-chat-messageActionForeground);
-  --control-primary-text-active: var(--t3-chat-messageActionForeground);
-  --control-expressive-background-default: var(--t3-chat-messageAction);
-  --control-expressive-background-hover: var(--t3-chat-messageActionHover);
-  --control-expressive-background-active: var(--t3-chat-messageActionHover);
-  --control-expressive-icon-default: var(--t3-chat-messageActionForeground);
-  --control-expressive-icon-hover: var(--t3-chat-messageActionForeground);
-  --control-expressive-icon-active: var(--t3-chat-messageActionForeground);
-  --control-expressive-text-default: var(--t3-chat-messageActionForeground);
-  --control-expressive-text-hover: var(--t3-chat-messageActionForeground);
-  --control-expressive-text-active: var(--t3-chat-messageActionForeground);
+  /* Catppuccin Custom uses its message-action roles for solid controls. */
+  --control-primary-background-default: var(--catppuccin-custom-messageAction);
+  --control-primary-background-hover: var(--catppuccin-custom-messageActionHover);
+  --control-primary-background-active: var(--catppuccin-custom-messageActionHover);
+  --control-primary-icon-default: var(--catppuccin-custom-messageActionForeground);
+  --control-primary-icon-hover: var(--catppuccin-custom-messageActionForeground);
+  --control-primary-icon-active: var(--catppuccin-custom-messageActionForeground);
+  --control-primary-text-default: var(--catppuccin-custom-messageActionForeground);
+  --control-primary-text-hover: var(--catppuccin-custom-messageActionForeground);
+  --control-primary-text-active: var(--catppuccin-custom-messageActionForeground);
+  --control-expressive-background-default: var(--catppuccin-custom-messageAction);
+  --control-expressive-background-hover: var(--catppuccin-custom-messageActionHover);
+  --control-expressive-background-active: var(--catppuccin-custom-messageActionHover);
+  --control-expressive-icon-default: var(--catppuccin-custom-messageActionForeground);
+  --control-expressive-icon-hover: var(--catppuccin-custom-messageActionForeground);
+  --control-expressive-icon-active: var(--catppuccin-custom-messageActionForeground);
+  --control-expressive-text-default: var(--catppuccin-custom-messageActionForeground);
+  --control-expressive-text-hover: var(--catppuccin-custom-messageActionForeground);
+  --control-expressive-text-active: var(--catppuccin-custom-messageActionForeground);
 
-  --control-secondary-background-default: var(--t3-chat-toolbarControl);
-  --control-secondary-background-hover: var(--t3-chat-toolbarControlHover);
-  --control-secondary-background-active: var(--t3-chat-secondary);
-  --control-secondary-border-default: var(--t3-chat-border);
-  --control-secondary-border-hover: var(--t3-chat-input);
-  --control-secondary-border-active: var(--t3-chat-input);
-  --control-secondary-icon-default: var(--t3-chat-toolbarControlForeground);
-  --control-secondary-icon-hover: var(--t3-chat-toolbarControlForeground);
-  --control-secondary-icon-active: var(--t3-chat-toolbarControlForeground);
-  --control-secondary-text-default: var(--t3-chat-toolbarControlForeground);
-  --control-secondary-text-hover: var(--t3-chat-toolbarControlForeground);
-  --control-secondary-text-active: var(--t3-chat-toolbarControlForeground);
+  --control-secondary-background-default: var(--catppuccin-custom-toolbarControl);
+  --control-secondary-background-hover: var(--catppuccin-custom-toolbarControlHover);
+  --control-secondary-background-active: var(--catppuccin-custom-secondary);
+  --control-secondary-border-default: var(--catppuccin-custom-border);
+  --control-secondary-border-hover: var(--catppuccin-custom-input);
+  --control-secondary-border-active: var(--catppuccin-custom-input);
+  --control-secondary-icon-default: var(--catppuccin-custom-toolbarControlForeground);
+  --control-secondary-icon-hover: var(--catppuccin-custom-toolbarControlForeground);
+  --control-secondary-icon-active: var(--catppuccin-custom-toolbarControlForeground);
+  --control-secondary-text-default: var(--catppuccin-custom-toolbarControlForeground);
+  --control-secondary-text-hover: var(--catppuccin-custom-toolbarControlForeground);
+  --control-secondary-text-active: var(--catppuccin-custom-toolbarControlForeground);
 
-  --control-critical-primary-background-default: var(--t3-chat-error);
-  --control-critical-primary-background-hover: var(--t3-chat-error);
-  --control-critical-primary-background-active: var(--t3-chat-error);
-  --control-critical-primary-icon-default: var(--t3-chat-errorForeground);
-  --control-critical-primary-icon-hover: var(--t3-chat-errorForeground);
-  --control-critical-primary-icon-active: var(--t3-chat-errorForeground);
-  --control-critical-primary-text-default: var(--t3-chat-errorForeground);
-  --control-critical-primary-text-hover: var(--t3-chat-errorForeground);
-  --control-critical-primary-text-active: var(--t3-chat-errorForeground);
+  --control-critical-primary-background-default: var(--catppuccin-custom-error);
+  --control-critical-primary-background-hover: var(--catppuccin-custom-error);
+  --control-critical-primary-background-active: var(--catppuccin-custom-error);
+  --control-critical-primary-icon-default: var(--catppuccin-custom-accentForeground);
+  --control-critical-primary-icon-hover: var(--catppuccin-custom-accentForeground);
+  --control-critical-primary-icon-active: var(--catppuccin-custom-accentForeground);
+  --control-critical-primary-text-default: var(--catppuccin-custom-accentForeground);
+  --control-critical-primary-text-hover: var(--catppuccin-custom-accentForeground);
+  --control-critical-primary-text-active: var(--catppuccin-custom-accentForeground);
 
-  --control-connected-background-default: var(--t3-chat-success);
-  --control-connected-background-hover: var(--t3-chat-success);
-  --control-connected-background-active: var(--t3-chat-success);
-  --control-connected-icon-default: var(--t3-chat-accentForeground);
-  --control-connected-icon-hover: var(--t3-chat-accentForeground);
-  --control-connected-icon-active: var(--t3-chat-accentForeground);
-  --control-connected-text-default: var(--t3-chat-accentForeground);
-  --control-connected-text-hover: var(--t3-chat-accentForeground);
-  --control-connected-text-active: var(--t3-chat-accentForeground);
+  --control-connected-background-default: var(--catppuccin-custom-success);
+  --control-connected-background-hover: var(--catppuccin-custom-success);
+  --control-connected-background-active: var(--catppuccin-custom-success);
+  --control-connected-icon-default: var(--catppuccin-custom-accentForeground);
+  --control-connected-icon-hover: var(--catppuccin-custom-accentForeground);
+  --control-connected-icon-active: var(--catppuccin-custom-accentForeground);
+  --control-connected-text-default: var(--catppuccin-custom-accentForeground);
+  --control-connected-text-hover: var(--catppuccin-custom-accentForeground);
+  --control-connected-text-active: var(--catppuccin-custom-accentForeground);
 
-  --checkbox-background-selected-default: var(--t3-chat-messageAction);
-  --checkbox-background-selected-hover: var(--t3-chat-messageActionHover);
-  --checkbox-icon-active: var(--t3-chat-messageActionForeground);
-  --radio-background-selected-default: var(--t3-chat-messageAction);
-  --radio-background-selected-hover: var(--t3-chat-messageActionHover);
-  --radio-foreground-active: var(--t3-chat-messageAction);
-  --radio-thumb-background-active: var(--t3-chat-messageActionForeground);
-  --switch-background-selected-default: var(--t3-chat-messageAction);
-  --switch-background-selected-hover: var(--t3-chat-messageActionHover);
-  --switch-thumb-background-selected-default: var(--t3-chat-messageActionForeground);
+  --checkbox-background-selected-default: var(--catppuccin-custom-messageAction);
+  --checkbox-background-selected-hover: var(--catppuccin-custom-messageActionHover);
+  --checkbox-icon-active: var(--catppuccin-custom-messageActionForeground);
+  --radio-background-selected-default: var(--catppuccin-custom-messageAction);
+  --radio-background-selected-hover: var(--catppuccin-custom-messageActionHover);
+  --radio-foreground-active: var(--catppuccin-custom-messageAction);
+  --radio-thumb-background-active: var(--catppuccin-custom-messageActionForeground);
+  --switch-background-selected-default: var(--catppuccin-custom-messageAction);
+  --switch-background-selected-hover: var(--catppuccin-custom-messageActionHover);
+  --switch-thumb-background-selected-default: var(
+    --catppuccin-custom-messageActionForeground
+  );
 
-  --background-accent: var(--t3-chat-accentSurface);
-  --background-code: var(--t3-chat-codeBackground);
-  --text-code: var(--t3-chat-codeForeground);
-  --background-mod-muted: color-mix(in srgb, var(--t3-chat-text) 4%, transparent);
-  --background-mod-normal: color-mix(in srgb, var(--t3-chat-text) 8%, transparent);
-  --background-mod-subtle: color-mix(in srgb, var(--t3-chat-text) 6%, transparent);
-  --background-mod-strong: color-mix(in srgb, var(--t3-chat-text) 12%, transparent);
+  --background-accent: var(--catppuccin-custom-accentSurface);
+  --background-code: var(--catppuccin-custom-codeBackground);
+  --text-code: var(--catppuccin-custom-codeForeground);
+  --background-mod-muted: color-mix(
+    in srgb,
+    var(--catppuccin-custom-text) 4%,
+    transparent
+  );
+  --background-mod-normal: color-mix(
+    in srgb,
+    var(--catppuccin-custom-text) 8%,
+    transparent
+  );
+  --background-mod-subtle: color-mix(
+    in srgb,
+    var(--catppuccin-custom-text) 6%,
+    transparent
+  );
+  --background-mod-strong: color-mix(
+    in srgb,
+    var(--catppuccin-custom-text) 12%,
+    transparent
+  );
   --interactive-background-default: transparent;
-  --interactive-background-hover: var(--t3-chat-sidebarRowHover);
-  --interactive-background-selected: var(--t3-chat-sidebarRowSelected);
-  --interactive-background-active: var(--t3-chat-sidebarRowActive);
+  --interactive-background-hover: var(--catppuccin-custom-sidebarRowHover);
+  --interactive-background-selected: var(--catppuccin-custom-sidebarRowSelected);
+  --interactive-background-active: var(--catppuccin-custom-sidebarRowActive);
 
-  /* Preserve Discord's contrast ladder around T3 Chat's border roles. */
-  --border-muted: color-mix(in srgb, var(--t3-chat-border) 55%, transparent);
-  --border-subtle: color-mix(in srgb, var(--t3-chat-border) 75%, transparent);
-  --border-normal: var(--t3-chat-border);
-  --border-strong: var(--t3-chat-input);
-  --border-focus: var(--t3-chat-focus);
-  --border-feedback-positive: var(--t3-chat-positive);
-  --border-feedback-warning: var(--t3-chat-warning);
-  --border-feedback-critical: var(--t3-chat-critical);
-  --border-feedback-info: var(--t3-chat-info);
+  /* Preserve Discord's contrast ladder around Catppuccin Custom's border roles. */
+  --border-muted: color-mix(in srgb, var(--catppuccin-custom-border) 55%, transparent);
+  --border-subtle: color-mix(in srgb, var(--catppuccin-custom-border) 75%, transparent);
+  --border-normal: var(--catppuccin-custom-border);
+  --border-strong: var(--catppuccin-custom-input);
+  --border-focus: var(--catppuccin-custom-focus);
+  --border-feedback-positive: var(--catppuccin-custom-positive);
+  --border-feedback-warning: var(--catppuccin-custom-warning);
+  --border-feedback-critical: var(--catppuccin-custom-critical);
+  --border-feedback-info: var(--catppuccin-custom-info);
   --app-frame-border: var(--border-normal);
   --input-border-default: var(--border-normal);
   --input-border-hover: var(--border-normal);
   --input-border-active: var(--border-focus);
   --input-border-error-default: var(--border-feedback-critical);
   --input-border-readonly: var(--border-muted);
-  --border-voice-muted: var(--t3-chat-errorSurface);
+  --border-voice-muted: var(--catppuccin-custom-errorSurface);
 
   --background-feedback-positive: color-mix(
     in srgb,
-    var(--t3-chat-positive) 15%,
+    var(--catppuccin-custom-positive) 15%,
     transparent
   );
-  --background-feedback-warning: var(--t3-chat-warningSurface);
-  --background-feedback-critical: var(--t3-chat-errorSurface);
-  --background-feedback-info: color-mix(in srgb, var(--t3-chat-info) 15%, transparent);
-  --background-voice-muted: var(--t3-chat-errorSurface);
-  --text-status-offline: var(--t3-chat-placeholder);
-  --icon-status-offline: var(--t3-chat-placeholder);
-  --status-online: var(--t3-chat-positive);
-  --status-speaking: var(--t3-chat-positive);
-  --status-positive: var(--t3-chat-positive);
-  --status-warning: var(--t3-chat-warning);
-  --status-danger: var(--t3-chat-critical);
-  --status-positive-background: var(--t3-chat-positive);
-  --status-warning-background: var(--t3-chat-warning);
-  --status-danger-background: var(--t3-chat-critical);
-  --status-positive-text: var(--t3-chat-accentForeground);
-  --status-warning-text: var(--t3-chat-accentForeground);
-  --info-positive-foreground: var(--t3-chat-positive-foreground);
-  --info-warning-foreground: var(--t3-chat-warningForeground);
-  --info-danger-foreground: var(--t3-chat-critical-foreground);
-  --info-help-foreground: var(--t3-chat-infoForeground);
+  --background-feedback-warning: var(--catppuccin-custom-warningSurface);
+  --background-feedback-critical: var(--catppuccin-custom-errorSurface);
+  --background-feedback-info: color-mix(
+    in srgb,
+    var(--catppuccin-custom-info) 15%,
+    transparent
+  );
+  --background-voice-muted: var(--catppuccin-custom-errorSurface);
+  --text-status-offline: var(--catppuccin-custom-placeholder);
+  --icon-status-offline: var(--catppuccin-custom-placeholder);
+  --status-online: var(--catppuccin-custom-positive);
+  --status-speaking: var(--catppuccin-custom-positive);
+  --status-positive: var(--catppuccin-custom-positive);
+  --status-warning: var(--catppuccin-custom-warning);
+  --status-danger: var(--catppuccin-custom-critical);
+  --status-positive-background: var(--catppuccin-custom-positive);
+  --status-warning-background: var(--catppuccin-custom-warning);
+  --status-danger-background: var(--catppuccin-custom-critical);
+  --status-positive-text: var(--catppuccin-custom-accentForeground);
+  --status-warning-text: var(--catppuccin-custom-accentForeground);
+  --info-positive-foreground: var(--catppuccin-custom-positive-foreground);
+  --info-warning-foreground: var(--catppuccin-custom-warningForeground);
+  --info-danger-foreground: var(--catppuccin-custom-critical-foreground);
+  --info-help-foreground: var(--catppuccin-custom-infoForeground);
 
-  --message-reacted-background-default: var(--t3-chat-accentSurface);
-  --mention-background: color-mix(in srgb, var(--t3-chat-brand) 30%, transparent);
-  --message-mentioned-background-default: var(--t3-chat-warningSurface);
-  --message-mentioned-background-hover: var(--t3-chat-warningSurface);
-  --message-highlight-background-default: var(--t3-chat-updateSurface);
-  --message-highlight-background-hover: var(--t3-chat-updateSurface);
-  --message-automod-background-default: var(--t3-chat-errorSurface);
-  --message-automod-background-hover: var(--t3-chat-errorSurface);
+  --message-reacted-background-default: var(--catppuccin-custom-accentSurface);
+  --mention-background: color-mix(
+    in srgb,
+    var(--catppuccin-custom-brand) 30%,
+    transparent
+  );
+  --message-mentioned-background-default: var(--catppuccin-custom-warningSurface);
+  --message-mentioned-background-hover: var(--catppuccin-custom-warningSurface);
+  --message-highlight-background-default: var(--catppuccin-custom-updateSurface);
+  --message-highlight-background-hover: var(--catppuccin-custom-updateSurface);
+  --message-automod-background-default: var(--catppuccin-custom-errorSurface);
+  --message-automod-background-hover: var(--catppuccin-custom-errorSurface);
 
   /* Native rules build these from HSL channel-only foundations. */
   --content-inventory-media-seekbar-container: color-mix(
     in srgb,
-    var(--t3-chat-overlay2) 30%,
+    var(--catppuccin-custom-overlay2) 30%,
     transparent
   );
   --creator-revenue-info-box-background: color-mix(
     in srgb,
-    var(--t3-chat-teal) 15%,
+    var(--catppuccin-custom-teal) 15%,
     transparent
   );
-  --polls-victor-fill: var(--t3-chat-positive);
-  --polls-voted-fill: var(--t3-chat-brand);
+  --polls-victor-fill: var(--catppuccin-custom-positive);
+  --polls-voted-fill: var(--catppuccin-custom-brand);
 
   /* Profile widgets use a separate overlay palette from the base ramps. */
-  --user-profile-overlay-background: var(--t3-chat-surfaceRaised);
-  --user-profile-overlay-background-hover: var(--t3-chat-accentSurface);
-  --user-profile-background-hover: var(--t3-chat-accentSurface);
-  --user-profile-toolbar-background: var(--t3-chat-surfaceRaised);
-  --user-profile-activity-toolbar-background: var(--t3-chat-surfaceRaised);
-  --user-profile-border: var(--t3-chat-border);
-  --user-profile-toolbar-border: var(--t3-chat-border);
+  --user-profile-overlay-background: var(--catppuccin-custom-surfaceRaised);
+  --user-profile-overlay-background-hover: var(--catppuccin-custom-accentSurface);
+  --user-profile-background-hover: var(--catppuccin-custom-accentSurface);
+  --user-profile-toolbar-background: var(--catppuccin-custom-surfaceRaised);
+  --user-profile-activity-toolbar-background: var(--catppuccin-custom-surfaceRaised);
+  --user-profile-border: var(--catppuccin-custom-border);
+  --user-profile-toolbar-border: var(--catppuccin-custom-border);
 
   --profile-gradient-role-pill-background: color-mix(
     in srgb,
-    var(--t3-chat-overlay1) 50%,
+    var(--catppuccin-custom-overlay1) 50%,
     transparent
   );
-  --profile-gradient-role-pill-border: var(--t3-chat-overlay1);
+  --profile-gradient-role-pill-border: var(--catppuccin-custom-overlay1);
   --quest-home-tab-gradient-blurple-inner: color-mix(
     in srgb,
-    var(--t3-chat-brand) 30%,
+    var(--catppuccin-custom-brand) 30%,
     transparent
   );
   --quest-home-tab-gradient-blurple-outer: color-mix(
     in srgb,
-    var(--t3-chat-brand) 10%,
+    var(--catppuccin-custom-brand) 10%,
     transparent
   );
-  --expressive-gradient-tenure-badge-gold-end: var(--t3-chat-yellow);
-  --expressive-gradient-tenure-badge-opal-start: var(--t3-chat-teal);
-  --expressive-gradient-tenure-badge-opal-end: var(--t3-chat-blue);
-  --expressive-gradient-tenure-badge-platinum-start: var(--t3-chat-foam);
-  --expressive-gradient-tenure-badge-platinum-end: var(--t3-chat-sky);
-  --expressive-gradient-tenure-badge-ruby-start: var(--t3-chat-red);
-  --expressive-gradient-tenure-badge-ruby-end: var(--t3-chat-love);
-  --expressive-gradient-tenure-badge-silver-start: var(--t3-chat-overlay0);
-  --expressive-gradient-tenure-badge-silver-end: var(--t3-chat-overlay2);
+  --expressive-gradient-tenure-badge-gold-end: var(--catppuccin-custom-yellow);
+  --expressive-gradient-tenure-badge-opal-start: var(--catppuccin-custom-teal);
+  --expressive-gradient-tenure-badge-opal-end: var(--catppuccin-custom-blue);
+  --expressive-gradient-tenure-badge-platinum-start: var(--catppuccin-custom-foam);
+  --expressive-gradient-tenure-badge-platinum-end: var(--catppuccin-custom-sky);
+  --expressive-gradient-tenure-badge-ruby-start: var(--catppuccin-custom-red);
+  --expressive-gradient-tenure-badge-ruby-end: var(--catppuccin-custom-love);
+  --expressive-gradient-tenure-badge-silver-start: var(--catppuccin-custom-overlay0);
+  --expressive-gradient-tenure-badge-silver-end: var(--catppuccin-custom-overlay2);
 
-  --scrollbar-thin-thumb: var(--t3-chat-terminalScrollbar);
+  --scrollbar-thin-thumb: var(--catppuccin-custom-terminalScrollbar);
   --scrollbar-thin-track: transparent;
-  --scrollbar-auto-thumb: var(--t3-chat-terminalScrollbar);
+  --scrollbar-auto-thumb: var(--catppuccin-custom-terminalScrollbar);
   --scrollbar-auto-track: transparent;
-  --scrollbar-auto-scrollbar-color-thumb: var(--t3-chat-terminalScrollbar);
+  --scrollbar-auto-scrollbar-color-thumb: var(--catppuccin-custom-terminalScrollbar);
   --scrollbar-auto-scrollbar-color-track: transparent;
-  --opacity-blurple-8: color-mix(in srgb, var(--t3-chat-brand) 8%, transparent);
-  --opacity-blurple-16: color-mix(in srgb, var(--t3-chat-brand) 16%, transparent);
-  --opacity-blurple-24: color-mix(in srgb, var(--t3-chat-brand) 24%, transparent);
-  --opacity-blurple-32: color-mix(in srgb, var(--t3-chat-brand) 32%, transparent);
-  --opacity-blurple-60: color-mix(in srgb, var(--t3-chat-brand) 60%, transparent);
+  --opacity-blurple-8: color-mix(
+    in srgb,
+    var(--catppuccin-custom-brand) 8%,
+    transparent
+  );
+  --opacity-blurple-16: color-mix(
+    in srgb,
+    var(--catppuccin-custom-brand) 16%,
+    transparent
+  );
+  --opacity-blurple-24: color-mix(
+    in srgb,
+    var(--catppuccin-custom-brand) 24%,
+    transparent
+  );
+  --opacity-blurple-32: color-mix(
+    in srgb,
+    var(--catppuccin-custom-brand) 32%,
+    transparent
+  );
+  --opacity-blurple-60: color-mix(
+    in srgb,
+    var(--catppuccin-custom-brand) 60%,
+    transparent
+  );
 }
 
 /* MemberCount binds its labels directly to Discord's legacy color ramps. */
 .visual-refresh .vc-membercount-widget {
-  --color-online: var(--t3-chat-positive-foreground);
-  --color-total: var(--t3-chat-placeholder);
-  --color-voice: var(--t3-chat-placeholder);
+  --color-online: var(--catppuccin-custom-positive-foreground);
+  --color-total: var(--catppuccin-custom-placeholder);
+  --color-voice: var(--catppuccin-custom-placeholder);
 }
 
 /* Lazy profile-theme chunks redeclare these tokens on their theme root. */
@@ -262,66 +308,66 @@
   .user-profile-popout,
   .user-profile-sidebar.user-profile-sidebar-redesign
 ) {
-  --user-profile-overlay-background: var(--t3-chat-surfaceRaised);
-  --user-profile-overlay-background-hover: var(--t3-chat-accentSurface);
-  --user-profile-background-hover: var(--t3-chat-accentSurface);
-  --user-profile-note-background-focus: var(--t3-chat-accentSurface);
-  --user-profile-toolbar-background: var(--t3-chat-surfaceRaised);
-  --user-profile-activity-toolbar-background: var(--t3-chat-surfaceRaised);
-  --user-profile-border: var(--t3-chat-border);
-  --user-profile-toolbar-border: var(--t3-chat-border);
+  --user-profile-overlay-background: var(--catppuccin-custom-surfaceRaised);
+  --user-profile-overlay-background-hover: var(--catppuccin-custom-accentSurface);
+  --user-profile-background-hover: var(--catppuccin-custom-accentSurface);
+  --user-profile-note-background-focus: var(--catppuccin-custom-accentSurface);
+  --user-profile-toolbar-background: var(--catppuccin-custom-surfaceRaised);
+  --user-profile-activity-toolbar-background: var(--catppuccin-custom-surfaceRaised);
+  --user-profile-border: var(--catppuccin-custom-border);
+  --user-profile-toolbar-border: var(--catppuccin-custom-border);
 
-  --border-muted: color-mix(in srgb, var(--t3-chat-border) 55%, transparent);
-  --border-subtle: color-mix(in srgb, var(--t3-chat-border) 75%, transparent);
-  --border-normal: var(--t3-chat-border);
-  --border-strong: var(--t3-chat-input);
-  --border-focus: var(--t3-chat-focus);
-  --border-feedback-critical: var(--t3-chat-critical);
+  --border-muted: color-mix(in srgb, var(--catppuccin-custom-border) 55%, transparent);
+  --border-subtle: color-mix(in srgb, var(--catppuccin-custom-border) 75%, transparent);
+  --border-normal: var(--catppuccin-custom-border);
+  --border-strong: var(--catppuccin-custom-input);
+  --border-focus: var(--catppuccin-custom-focus);
+  --border-feedback-critical: var(--catppuccin-custom-critical);
   --app-frame-border: var(--border-normal);
   --input-border-default: var(--border-normal);
   --input-border-hover: var(--border-normal);
-  --input-border-active: var(--t3-chat-focus);
-  --input-border-error-default: var(--t3-chat-critical);
+  --input-border-active: var(--catppuccin-custom-focus);
+  --input-border-error-default: var(--catppuccin-custom-critical);
   --input-border-readonly: var(--border-muted);
 
-  --control-secondary-background-default: var(--t3-chat-toolbarControl);
-  --control-secondary-background-hover: var(--t3-chat-toolbarControlHover);
-  --control-secondary-background-active: var(--t3-chat-secondary);
-  --control-secondary-border-default: var(--t3-chat-border);
-  --control-secondary-border-hover: var(--t3-chat-input);
-  --control-secondary-border-active: var(--t3-chat-input);
+  --control-secondary-background-default: var(--catppuccin-custom-toolbarControl);
+  --control-secondary-background-hover: var(--catppuccin-custom-toolbarControlHover);
+  --control-secondary-background-active: var(--catppuccin-custom-secondary);
+  --control-secondary-border-default: var(--catppuccin-custom-border);
+  --control-secondary-border-hover: var(--catppuccin-custom-input);
+  --control-secondary-border-active: var(--catppuccin-custom-input);
 
   --profile-gradient-role-pill-background: color-mix(
     in srgb,
-    var(--t3-chat-overlay1) 50%,
+    var(--catppuccin-custom-overlay1) 50%,
     transparent
   );
-  --profile-gradient-role-pill-border: var(--t3-chat-overlay1);
+  --profile-gradient-role-pill-border: var(--catppuccin-custom-overlay1);
 }
 
 :is(
   .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
   .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
 ) {
-  --app-frame-background: var(--t3-chat-chrome);
-  --background-primary: var(--t3-chat-canvas);
-  --background-secondary: var(--t3-chat-sidebar);
-  --background-secondary-alt: var(--t3-chat-sidebarControlSurface);
-  --background-tertiary: var(--t3-chat-chrome);
-  --background-floating: var(--t3-chat-surfaceOverlay);
-  --background-mobile-primary: var(--t3-chat-canvas);
-  --background-mobile-secondary: var(--t3-chat-sidebar);
-  --background-base-low: var(--t3-chat-surface);
-  --background-base-lower: var(--t3-chat-canvas);
-  --background-base-lowest: var(--t3-chat-sidebar);
-  --background-surface-high: var(--t3-chat-surfaceRaised);
-  --background-surface-higher: var(--t3-chat-surfaceRaised);
-  --background-surface-highest: var(--t3-chat-surfaceRaised);
-  --background-gradient-highest: var(--t3-chat-canvas);
-  --channeltextarea-background: var(--t3-chat-surfaceRaised);
-  --chat-input-container-background: var(--t3-chat-surfaceRaised);
-  --t3-chat-composer: var(--t3-chat-surfaceRaised);
-  --t3-chat-composer-border: var(--t3-chat-input);
+  --app-frame-background: var(--catppuccin-custom-chrome);
+  --background-primary: var(--catppuccin-custom-canvas);
+  --background-secondary: var(--catppuccin-custom-sidebar);
+  --background-secondary-alt: var(--catppuccin-custom-sidebarControlSurface);
+  --background-tertiary: var(--catppuccin-custom-chrome);
+  --background-floating: var(--catppuccin-custom-surfaceOverlay);
+  --background-mobile-primary: var(--catppuccin-custom-canvas);
+  --background-mobile-secondary: var(--catppuccin-custom-sidebar);
+  --background-base-low: var(--catppuccin-custom-surface);
+  --background-base-lower: var(--catppuccin-custom-canvas);
+  --background-base-lowest: var(--catppuccin-custom-sidebar);
+  --background-surface-high: var(--catppuccin-custom-surfaceRaised);
+  --background-surface-higher: var(--catppuccin-custom-surfaceRaised);
+  --background-surface-highest: var(--catppuccin-custom-surfaceRaised);
+  --background-gradient-highest: var(--catppuccin-custom-canvas);
+  --channeltextarea-background: var(--catppuccin-custom-surfaceRaised);
+  --chat-input-container-background: var(--catppuccin-custom-surfaceRaised);
+  --catppuccin-custom-composer: var(--catppuccin-custom-surfaceRaised);
+  --catppuccin-custom-composer-border: var(--catppuccin-custom-input);
 }
 
 /* Native composer layers do not consistently consume their semantic token. */
@@ -331,8 +377,8 @@
   )
   div[class*="channelTextArea_"]
   div[class*="themedBackground_"] {
-  background: var(--t3-chat-composer) !important;
-  border-color: var(--t3-chat-composer-border) !important;
+  background: var(--catppuccin-custom-composer) !important;
+  border-color: var(--catppuccin-custom-composer-border) !important;
 }
 
 /* Mana switches write Discord's brand color into an inline style. */
@@ -361,7 +407,7 @@
   .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
   .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
 ) [class*="greenGlow_"] {
-  background: color-mix(in srgb, var(--t3-chat-positive) 10%, transparent);
+  background: color-mix(in srgb, var(--catppuccin-custom-positive) 10%, transparent);
 }
 
 :is(
@@ -369,7 +415,7 @@
     .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   [class*="greenGlow_"]:hover {
-  background: color-mix(in srgb, var(--t3-chat-positive) 20%, transparent);
+  background: color-mix(in srgb, var(--catppuccin-custom-positive) 20%, transparent);
 }
 
 :is(
@@ -377,7 +423,7 @@
     .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   [class*="redGlow_"] {
-  background: color-mix(in srgb, var(--t3-chat-critical) 10%, transparent);
+  background: color-mix(in srgb, var(--catppuccin-custom-critical) 10%, transparent);
 }
 
 :is(
@@ -385,7 +431,11 @@
     .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   [class*="redGlow_"]:hover {
-  background: color-mix(in srgb, var(--t3-chat-critical) 20%, transparent) !important;
+  background: color-mix(
+    in srgb,
+    var(--catppuccin-custom-critical) 20%,
+    transparent
+  ) !important;
 }
 
 /* Media and forum-card fades contain literal native neutral colors. */
@@ -395,8 +445,8 @@
 ) div[class^="overlay_"][class*="darkThemeGradient_"] {
   background: linear-gradient(
     0deg,
-    var(--t3-chat-base) 0,
-    color-mix(in srgb, var(--t3-chat-surface0) 50%, transparent) 50%,
+    var(--catppuccin-custom-base) 0,
+    color-mix(in srgb, var(--catppuccin-custom-surface0) 50%, transparent) 50%,
     transparent
   );
 }
@@ -408,9 +458,9 @@
   div[class^="textContentFooter_"] {
   background: linear-gradient(
     0deg,
-    var(--t3-chat-surface),
-    color-mix(in srgb, var(--t3-chat-surface) 97%, transparent) 36px,
-    color-mix(in srgb, var(--t3-chat-surfaceRaised) 40%, transparent)
+    var(--catppuccin-custom-surface),
+    color-mix(in srgb, var(--catppuccin-custom-surface) 97%, transparent) 36px,
+    color-mix(in srgb, var(--catppuccin-custom-surfaceRaised) 40%, transparent)
   ) !important;
 }
 
@@ -420,7 +470,7 @@
   )
   div[class^="textContentFooter_"]
   [class*="tagPill_"] {
-  background-color: var(--t3-chat-accentSurface);
+  background-color: var(--catppuccin-custom-accentSurface);
 }
 
 :is(
@@ -428,5 +478,5 @@
     .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   ::selection {
-  background: color-mix(in srgb, var(--t3-chat-brand) 42%, transparent);
+  background: color-mix(in srgb, var(--catppuccin-custom-brand) 42%, transparent);
 }

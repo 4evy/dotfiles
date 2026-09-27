@@ -47,7 +47,7 @@ def _gnome_accent_apply() -> None:
     for version in (3, 4):
         (config / f"gtk-{version}.0/black-rose-doll-accent.css").unlink(missing_ok=True)
         write_if_changed(
-            config / f"gtk-{version}.0/t3-chat-accent.css",
+            config / f"gtk-{version}.0/catppuccin-custom-accent.css",
             _gtk_accent_css(accent, accent_fg, gtk_version=version),
         )
     if not gsettings_available():
@@ -69,7 +69,7 @@ def _gnome_accent_apply() -> None:
 _GNOME_ACCENT_MODE = Group("Mode", validator=validators.LimitedChoice(max=1))
 
 
-def gnome_t3_chat_accent(
+def gnome_catppuccin_custom_accent(
     *,
     once: Annotated[
         bool,
@@ -102,11 +102,11 @@ def gnome_t3_chat_accent(
 
 
 _gnome_accent_app = App(
-    default_command=gnome_t3_chat_accent,
+    default_command=gnome_catppuccin_custom_accent,
     version_flags=[],
     result_action="return_none",
 )
 
 
-def gnome_t3_chat_accent_entrypoint() -> None:
+def gnome_catppuccin_custom_accent_entrypoint() -> None:
     _gnome_accent_app()

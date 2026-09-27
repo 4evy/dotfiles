@@ -1,0 +1,11 @@
+---
+name: Catppuccin Custom
+author: Evy
+description: Catppuccin Mocha and Latte with trans pink and sky blue accents.
+stylesheets:
+  - name: Catppuccin Custom — Dark
+    file: catppuccin-custom-dark.scss
+    description: Catppuccin Custom's dark surfaces with its pink accent.
+  - name: Catppuccin Custom — Light
+    file: catppuccin-custom-light.scss
+    description: Catppuccin Custom's light surfaces with its pink accent.

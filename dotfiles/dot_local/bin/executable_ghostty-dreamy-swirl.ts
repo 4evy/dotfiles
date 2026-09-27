@@ -24,7 +24,7 @@ const EDGE_MARGIN = BASE_FONT_SIZE * 2;
 const CANDIDATES_PER_PLACED_EMOJI = 4;
 const OUTPUT =
   process.argv[2] ??
-  join(homedir(), ".config/ghostty/backgrounds/t3-chat-emoji-scatter.png");
+  join(homedir(), ".config/ghostty/backgrounds/catppuccin-custom-emoji-scatter.png");
 const SEED = process.env.GHOSTTY_SWIRL_SEED ?? DEFAULT_SEED;
 
 // Smaller hearts, rainbows, and sparkles leave more space between large flags

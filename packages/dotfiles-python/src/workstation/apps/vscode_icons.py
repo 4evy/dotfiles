@@ -11,14 +11,14 @@ from tempfile import TemporaryDirectory
 from workstation.lib.theme import palettes
 
 UPSTREAM_ID = "catppuccin.catppuccin-vsc-icons"
-CUSTOM_ID = "t3-chat-catppuccin-icons"
-CUSTOM_NAME = "t3-chat-catppuccin-icons"
+CUSTOM_ID = "catppuccin-custom-catppuccin-icons"
+CUSTOM_NAME = "catppuccin-custom-catppuccin-icons"
 CUSTOM_PUBLISHER = "evy"
 CUSTOM_EXTENSION_ID = f"{CUSTOM_PUBLISHER}.{CUSTOM_NAME}"
-LIGHT_PREFIX = "__t3_chat_light__"
+LIGHT_PREFIX = "__catppuccin_custom_light__"
 PALETTE_VARIABLE = re.compile(r"var\(--vscode-ctp-([a-z0-9-]+)\)")
 
-T3_CHAT = palettes()
+CATPPUCCIN_CUSTOM = palettes()
 
 type Association = str | dict[str, str]
 
@@ -91,9 +91,9 @@ def build_vsix(extension: Path, destination: Path, *, version: str) -> None:
   <Metadata>
     <Identity Id="{CUSTOM_NAME}" Version="{version}"
       Publisher="{CUSTOM_PUBLISHER}" Language="en-US" />
-    <DisplayName>T3 Chat — Catppuccin Icons</DisplayName>
+    <DisplayName>Catppuccin Custom — Catppuccin Icons</DisplayName>
     <Description xml:space="preserve">
-      Catppuccin file icon shapes using the T3 Chat palette.
+      Catppuccin file icon shapes using the Catppuccin Custom palette.
     </Description>
     <Categories>Themes</Categories>
     <Properties>
@@ -149,7 +149,7 @@ def main() -> None:
             shutil.copytree(
                 unflavored,
                 extension / "icons" / variant,
-                copy_function=partial(copy_icon, palette=T3_CHAT[variant]),
+                copy_function=partial(copy_icon, palette=CATPPUCCIN_CUSTOM[variant]),
             )
 
         version = content_version(extension)
@@ -157,9 +157,9 @@ def main() -> None:
             extension / "package.json",
             {
                 "name": CUSTOM_NAME,
-                "displayName": "T3 Chat — Catppuccin Icons",
+                "displayName": "Catppuccin Custom — Catppuccin Icons",
                 "description": (
-                    "Catppuccin file icon shapes using the T3 Chat palette."
+                    "Catppuccin file icon shapes using the Catppuccin Custom palette."
                 ),
                 "version": version,
                 "publisher": CUSTOM_PUBLISHER,
@@ -169,7 +169,7 @@ def main() -> None:
                     "iconThemes": [
                         {
                             "id": CUSTOM_ID,
-                            "label": "T3 Chat — Catppuccin Icons",
+                            "label": "Catppuccin Custom — Catppuccin Icons",
                             "path": "./theme.json",
                         }
                     ]

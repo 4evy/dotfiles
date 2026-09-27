@@ -30,12 +30,12 @@ case "${TERMINAL_THEME:-}" in
 		# Starship runs several times per prompt. Select its managed profile once
 		# instead of putting theme-run in that hot path.
 		if [[ "${TERM_PROGRAM:-}" == "Apple_Terminal" ]]; then
-			export STARSHIP_CONFIG="$HOME/.config/starship-t3-chat-terminal-${TERMINAL_THEME}.toml"
+			export STARSHIP_CONFIG="$HOME/.config/starship-catppuccin-custom-terminal-${TERMINAL_THEME}.toml"
 			if [[ -t 1 ]]; then
-				printf '\e]50;SetProfile=T3 Chat %s\a' "${TERMINAL_THEME^}"
+				printf '\e]50;SetProfile=Catppuccin Custom %s\a' "${TERMINAL_THEME^}"
 			fi
 		else
-			export STARSHIP_CONFIG="$HOME/.config/starship-t3-chat-${TERMINAL_THEME}.toml"
+			export STARSHIP_CONFIG="$HOME/.config/starship-catppuccin-custom-${TERMINAL_THEME}.toml"
 		fi
 		;;
 esac

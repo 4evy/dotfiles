@@ -88,12 +88,6 @@ export function requiredString(value: unknown, label: string): string {
   return value;
 }
 
-export function parseJsonObject(text: string, label: string): Record<string, unknown> {
-  const value: unknown = JSON.parse(text);
-  if (!isRecord(value)) throw new Error(`${label} must be a JSON object`);
-  return value;
-}
-
 export function printJson(value: unknown): void {
   console.log(JSON.stringify(value, null, IO.JSON_INDENT));
 }

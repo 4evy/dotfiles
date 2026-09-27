@@ -88,12 +88,15 @@ def select_theme(binary: str) -> None:
     mode = result.stdout.strip()
     if mode not in {"light", "dark"}:
         raise ValueError("unknown terminal appearance")
-    desired = f"t3-chat-{mode}"
+    desired = f"catppuccin-custom-{mode}"
     config_path = (
         Path(os.environ.get("CODEX_HOME", Path.home() / ".codex")) / "config.toml"
     )
     current = tomllib.loads(config_path.read_text()).get("tui", {}).get("theme")
-    if current == desired or current not in {"t3-chat-light", "t3-chat-dark"}:
+    if current == desired or current not in {
+        "catppuccin-custom-light",
+        "catppuccin-custom-dark",
+    }:
         return
     server = AppServer(binary, 10)
     try:

@@ -15,8 +15,8 @@ programs = [
 [[integration]]
 name = "btop"
 strategy = "config"
-dark_theme = "t3_chat_dark"
-light_theme = "t3_chat_light"
+dark_theme = "catppuccin_custom_dark"
+light_theme = "catppuccin_custom_light"
 default_config = ".config/btop/btop.conf"
 assignment = "color_theme"
 config_flags = ["--config", "-c"]
@@ -29,57 +29,57 @@ quote = '"'
 [[integration]]
 name = "atuin"
 strategy = "environment"
-dark_theme = "t3-chat-dark"
-light_theme = "t3-chat-light"
+dark_theme = "catppuccin-custom-dark"
+light_theme = "catppuccin-custom-light"
 env = { ATUIN_CONFIG_DIR = "{home}/.config/atuin-{theme}", ATUIN_THEME_DIR = "{home}/.config/atuin/themes" }
 
 [[integration]]
 name = "bat"
 strategy = "environment"
-dark_theme = "T3 Chat Dark"
-light_theme = "T3 Chat Light"
+dark_theme = "Catppuccin Custom Dark"
+light_theme = "Catppuccin Custom Light"
 env = { BAT_THEME = "{theme}" }
 
 [[integration]]
 name = "delta"
 strategy = "environment"
-dark_theme = "t3-chat-dark"
-light_theme = "t3-chat-light"
+dark_theme = "catppuccin-custom-dark"
+light_theme = "catppuccin-custom-light"
 env = { DELTA_FEATURES = "{theme}" }
 
 [[integration]]
 name = "eza"
 strategy = "environment"
-dark_theme = "t3-chat-dark"
-light_theme = "t3-chat-light"
+dark_theme = "catppuccin-custom-dark"
+light_theme = "catppuccin-custom-light"
 env = { EZA_CONFIG_DIR = "{home}/.config/eza-{theme}" }
 
 [[integration]]
 name = "fzf"
 strategy = "environment"
-dark_theme = "t3-chat-dark"
-light_theme = "t3-chat-light"
+dark_theme = "catppuccin-custom-dark"
+light_theme = "catppuccin-custom-light"
 env = { FZF_DEFAULT_OPTS_FILE = "{home}/.config/fzf/{theme}.opts" }
 
 [[integration]]
 name = "gitui"
 strategy = "arguments"
-dark_theme = "t3-chat-dark"
-light_theme = "t3-chat-light"
+dark_theme = "catppuccin-custom-dark"
+light_theme = "catppuccin-custom-light"
 arguments = ["--theme", "{theme}.ron"]
 
 [[integration]]
 name = "glamour"
 strategy = "environment"
-dark_theme = "t3-chat-dark"
-light_theme = "t3-chat-light"
+dark_theme = "catppuccin-custom-dark"
+light_theme = "catppuccin-custom-light"
 env = { GLAMOUR_STYLE = "{home}/.config/glamour/styles/{theme}.json" }
 
 [[integration]]
 name = "starship"
 strategy = "environment"
-dark_theme = "t3-chat-dark"
-light_theme = "t3-chat-light"
+dark_theme = "catppuccin-custom-dark"
+light_theme = "catppuccin-custom-light"
 env = { STARSHIP_CONFIG = "{home}/.config/starship-{theme}.toml" }
 
 [[runner]]

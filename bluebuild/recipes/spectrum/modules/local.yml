@@ -56,5 +56,5 @@ modules:
     dest: /usr/libexec/dotfiles/kmscon
 
   - type: copy@v1
-    src: dotfiles/.chezmoidata/t3_chat.json
-    dest: /usr/share/dotfiles/t3_chat_palette.json
+    src: dotfiles/.chezmoidata/catppuccin_custom.json
+    dest: /usr/share/dotfiles/catppuccin_custom_palette.json

@@ -129,7 +129,8 @@ let
   scaleGroupDeclarations =
     steps: scales: concatMapAttrsStringSep "\n" (name: scaleDeclarations name steps) scales;
   paletteDeclarations =
-    colors: concatMapAttrsStringSep "\n" (role: color: "  --t3-chat-${role}: ${color};") colors;
+    colors:
+    concatMapAttrsStringSep "\n" (role: color: "  --catppuccin-custom-${role}: ${color};") colors;
 
   accentAnchors = variant: role: [
     (anchor 1 (if variant == "light" then palette.light.surface else palette.dark.text))
@@ -170,11 +171,11 @@ let
 
   variantDeclarations = variant: ''
     ${paletteDeclarations palette.${variant}}
-    --t3-chat-brand: var(--t3-chat-accent);
-    --t3-chat-positive: var(--t3-chat-success);
-    --t3-chat-positive-foreground: var(--t3-chat-successForeground);
-    --t3-chat-critical: var(--t3-chat-error);
-    --t3-chat-critical-foreground: var(--t3-chat-errorForeground);
+    --catppuccin-custom-brand: var(--catppuccin-custom-accent);
+    --catppuccin-custom-positive: var(--catppuccin-custom-success);
+    --catppuccin-custom-positive-foreground: var(--catppuccin-custom-successForeground);
+    --catppuccin-custom-critical: var(--catppuccin-custom-error);
+    --catppuccin-custom-critical-foreground: var(--catppuccin-custom-errorForeground);
 
     /* Discord's modern neutral, branded, and status foundations. */
     ${scaleGroupDeclarations modernSteps (modernScales variant)}
@@ -185,9 +186,9 @@ let
 in
 ''
   /*
-   * T3 Chat for Discord
+   * Catppuccin Custom for Discord
    *
-   * Generated from T3 Chat's application roles. Discord's native theme
+   * Generated from Catppuccin Custom's application roles. Discord's native theme
    * classes map semantic tokens onto these foundations, so new components
    * inherit the palette without component-class patches.
    */

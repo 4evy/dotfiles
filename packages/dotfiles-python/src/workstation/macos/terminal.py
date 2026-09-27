@@ -7,7 +7,7 @@ from workstation.lib.theme import palettes, rgb_components
 
 
 def terminal_profile() -> None:
-    """Install the T3 Chat light and dark profiles in Terminal.app."""
+    """Install the Catppuccin Custom light and dark profiles in Terminal.app."""
     if sys.platform != "darwin":
         return
     appkit = import_module("AppKit")
@@ -42,22 +42,22 @@ def terminal_profile() -> None:
         ("ANSIGreenColor", "green"),
         ("ANSIYellowColor", "yellow"),
         ("ANSIBlueColor", "blue"),
-        ("ANSIMagentaColor", "mauve"),
-        ("ANSICyanColor", "teal"),
+        ("ANSIMagentaColor", "pink"),
+        ("ANSICyanColor", "sky"),
         ("ANSIWhiteColor", "ansiWhite"),
         ("ANSIBrightBlackColor", "mutedForeground"),
         ("ANSIBrightRedColor", "red"),
         ("ANSIBrightGreenColor", "green"),
         ("ANSIBrightYellowColor", "yellow"),
         ("ANSIBrightBlueColor", "blue"),
-        ("ANSIBrightMagentaColor", "mauve"),
-        ("ANSIBrightCyanColor", "teal"),
+        ("ANSIBrightMagentaColor", "pink"),
+        ("ANSIBrightCyanColor", "sky"),
         ("ANSIBrightWhiteColor", "ansiWhite"),
     )
 
     def profile(variant: str) -> tuple[str, dict[str, object]]:
         palette = theme_palettes[variant]
-        name = f"T3 Chat {variant.title()}"
+        name = f"Catppuccin Custom {variant.title()}"
         values: dict[str, object] = {
             "name": name,
             "type": "Window Settings",
@@ -76,7 +76,7 @@ def terminal_profile() -> None:
             "TextBoldColor": color(palette["terminalCursor"]),
             "BackgroundColor": color(palette["terminalBackground"]),
             "CursorColor": color(palette["terminalCursor"]),
-            "SelectionColor": color(palette["terminalSelection"]),
+            "SelectionColor": color(palette["surface1"]),
         }
         values.update({key: color(palette[role]) for key, role in ansi_colors})
         return name, values
@@ -86,13 +86,17 @@ def terminal_profile() -> None:
     settings = dict(domain.get("Window Settings") or {})
     settings.pop("Black Rose Doll Dark", None)
     settings.pop("T3 Chat", None)
+    settings.pop("T3 Chat Light", None)
+    settings.pop("T3 Chat Dark", None)
+    settings.pop("Catppuccin Trans Light", None)
+    settings.pop("Catppuccin Trans Dark", None)
     for variant in ("light", "dark"):
         name, values = profile(variant)
         settings[name] = values
     current_variant = (
         "Dark" if defaults.stringForKey_("AppleInterfaceStyle") == "Dark" else "Light"
     )
-    default_name = f"T3 Chat {current_variant}"
+    default_name = f"Catppuccin Custom {current_variant}"
     domain.update({
         "Window Settings": settings,
         "Default Window Settings": default_name,

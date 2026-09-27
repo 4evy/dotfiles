@@ -20,16 +20,16 @@ dependencies = [
 
 [project.scripts]
 extra-shell-completions = "workstation.local.shell_completions:main"
-raycast-t3-chat = "workstation.macos.raycast:main"
+raycast-catppuccin-custom = "workstation.macos.raycast:main"
 sync-equicord-settings = "workstation.apps.equicord_settings:main"
-vscode-t3-chat-icons = "workstation.apps.vscode_icons:main"
+vscode-catppuccin-custom-icons = "workstation.apps.vscode_icons:main"
 desktop-perf-audit = "workstation.local.desktop_audit:desktop_perf_audit_entrypoint"
 discord-equicord = "workstation.apps.discord:entrypoint"
-gnome-t3-chat-accent = "workstation.local.gnome:gnome_t3_chat_accent_entrypoint"
+gnome-catppuccin-custom-accent = "workstation.local.gnome:gnome_catppuccin_custom_accent_entrypoint"
 jj-diff = "workstation.local.jj:jj_diff_entrypoint"
-macos-t3-chat-appearance = "workstation.macos.appearance:apply_appearance"
+macos-catppuccin-custom-appearance = "workstation.macos.appearance:apply_appearance"
 phone-mirror = "workstation.local.phone_mirror:entrypoint"
-terminal-t3-chat = "workstation.macos.terminal:terminal_profile"
+terminal-catppuccin-custom = "workstation.macos.terminal:terminal_profile"
 
 [dependency-groups]
 automation = [

@@ -2,12 +2,12 @@
 {{- if eq .chezmoi.os "darwin" -}}
 {{- $leader = "super+g" -}}
 {{- end -}}
-theme = light:t3-chat-light.conf,dark:t3-chat-dark.conf
-background-image = {{ .chezmoi.homeDir }}/.config/ghostty/backgrounds/t3-chat-emoji-scatter.png
+theme = light:catppuccin-custom-light.conf,dark:catppuccin-custom-dark.conf
+background-image = {{ .chezmoi.homeDir }}/.config/ghostty/backgrounds/catppuccin-custom-emoji-scatter.png
 background-image-opacity = 0.24
 background-image-position = center
 background-image-fit = cover
-custom-shader = {{ .chezmoi.homeDir }}/.config/ghostty/shaders/t3-chat-glow.glsl
+custom-shader = {{ .chezmoi.homeDir }}/.config/ghostty/shaders/catppuccin-custom-glow.glsl
 custom-shader-animation = false
 adjust-underline-position = 4
 confirm-close-surface = false

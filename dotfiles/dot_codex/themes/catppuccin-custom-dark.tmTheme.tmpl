@@ -1,0 +1,7 @@
+{{- $p := .catppuccin_custom.dark -}}
+{{- template "catppuccin_custom_tmtheme.tmTheme.tmpl" (dict
+  "root" .
+  "variant" "dark"
+  "diffAddedBg" $p.surface
+  "diffRemovedBg" $p.overlay
+) -}}

@@ -1,0 +1,28 @@
+{{- $root := index . "root" -}}
+{{- $variant := index . "variant" -}}
+{{- $theme := $root.catppuccin_custom -}}
+{{- $p := index $theme $variant -}}
+palette = 0={{ index $p "ansiBlack" }}
+palette = 1={{ index $p "red" }}
+palette = 2={{ index $p "green" }}
+palette = 3={{ index $p "yellow" }}
+palette = 4={{ index $p "blue" }}
+palette = 5={{ index $p "pink" }}
+palette = 6={{ index $p "sky" }}
+palette = 7={{ index $p "ansiWhite" }}
+palette = 8={{ index $p "mutedForeground" }}
+palette = 9={{ index $p "red" }}
+palette = 10={{ index $p "green" }}
+palette = 11={{ index $p "yellow" }}
+palette = 12={{ index $p "blue" }}
+palette = 13={{ index $p "pink" }}
+palette = 14={{ index $p "sky" }}
+palette = 15={{ index $p "ansiWhite" }}
+palette-generate = true
+background = {{ index $p "terminalBackground" }}
+foreground = {{ index $p "terminalForeground" }}
+cursor-color = {{ index $p "terminalCursor" }}
+cursor-text = {{ index $p "selectionForeground" }}
+selection-background = {{ index $p "terminalSelection" }}
+selection-foreground = {{ index $p "selectionForeground" }}
+split-divider-color = {{ index $p "focus" }}

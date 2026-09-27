@@ -1,4 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
+import { z } from "zod";
 
 import { type ExtensionRule, OP, POLICY, type StatusField } from "./config.mts";
 import type { RaycastDatabaseClient } from "./db.mts";
@@ -13,7 +14,6 @@ import {
   asRecord,
   count,
   getPath,
-  isRecord,
   mapEntries,
   pathExists,
   queryCount,
@@ -258,52 +258,51 @@ export async function applyDisabled(
   );
 }
 
-function asSnapshot(value: unknown): Snapshot {
-  if (
-    !isRecord(value) ||
-    typeof value.version !== "number" ||
-    typeof value.createdAt !== "string"
-  ) {
-    throw new Error("invalid Raycast AI disable backup");
-  }
-  if (value.version !== POLICY.backupVersion) {
-    throw new Error(`unsupported backup version: ${value.version}`);
-  }
-  for (const key of POLICY.mergeableBackupCollections) {
-    if (!isRecord(value[key])) {
-      throw new Error(`invalid backup collection: ${key}`);
-    }
-  }
-  for (const [id, settings] of Object.entries(
-    asRecord(value.internalExtensions) ?? {},
-  )) {
-    if (
-      !isRecord(settings) ||
-      (Object.keys(settings).length > 0 &&
-        (settings.id !== id || typeof settings.enabled !== "boolean"))
-    ) {
-      throw new Error(`invalid backup extension: ${id}`);
-    }
-    for (const key of [
-      "syncedMeta",
-      "localMeta",
-      "macosSyncedMeta",
-      "windowsSyncedMeta",
-    ]) {
-      if (settings[key] != null && !isRecord(settings[key])) {
-        throw new Error(`invalid backup metadata: ${id}.${key}`);
+const metadataSchema = z.record(z.string(), z.unknown()).nullish();
+const extensionSchema = z.looseObject({
+  syncedMeta: metadataSchema,
+  localMeta: metadataSchema,
+  macosSyncedMeta: metadataSchema,
+  windowsSyncedMeta: metadataSchema,
+});
+const snapshotSchema = z.looseObject({
+  version: z.literal(POLICY.backupVersion),
+  createdAt: z.string(),
+  internalExtensions: z
+    .record(z.string(), extensionSchema)
+    .superRefine((entries, ctx) => {
+      for (const [id, settings] of Object.entries(entries)) {
+        // An empty object records an extension absent when the backup was taken
+        if (
+          Object.keys(settings).length > 0 &&
+          (settings.id !== id || typeof settings.enabled !== "boolean")
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            path: [id],
+            message: "Invalid backup extension",
+          });
+        }
       }
-    }
-  }
-  if (
-    !Array.isArray(value.frecencyRecords) ||
-    value.frecencyRecords.some(
-      (record) => !isRecord(record) || typeof record.itemId !== "string",
-    )
-  ) {
-    throw new Error("invalid backup collection: frecencyRecords");
-  }
-  return value as Snapshot;
+    }),
+  models: z.record(
+    z.string(),
+    z.looseObject({ disabledAt: z.string().nullable().default(null) }),
+  ),
+  frecencyRecords: z.array(z.looseObject({ itemId: z.string() })),
+  macOSDefaults: z.record(
+    z.string(),
+    z.looseObject({
+      exists: z.boolean(),
+      key: z.string(),
+      restoreType: z.enum(["bool", "string"]),
+      value: z.union([z.boolean(), z.string(), z.null()]),
+    }),
+  ),
+});
+
+function asSnapshot(value: unknown): Snapshot {
+  return snapshotSchema.parse(value);
 }
 
 export async function ensureBackup(

@@ -5,5 +5,5 @@ Documentation=https://github.com/kmscon/kmscon
 [Service]
 Type=oneshot
 EnvironmentFile=-/etc/default/kmscon-dotfiles
-ExecStart=/usr/bin/python3.14 /usr/libexec/dotfiles/kmscon/kmscon-theme-config.py /usr/share/dotfiles/t3_chat_palette.json /etc/kmscon/kmscon.conf
+ExecStart=/usr/bin/python3.14 /usr/libexec/dotfiles/kmscon/kmscon-theme-config.py /usr/share/dotfiles/catppuccin_custom_palette.json /etc/kmscon/kmscon.conf
 ExecStartPost=/usr/bin/python3.14 /usr/libexec/dotfiles/kmscon/kmscon-refresh.py /etc/kmscon/kmscon.conf

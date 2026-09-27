@@ -1,6 +1,6 @@
-{{- $t3 := .t3_chat -}}
-{{- $light := index $t3 "light" -}}
-{{- $dark := index $t3 "dark" -}}
+{{- $theme := .catppuccin_custom -}}
+{{- $light := index $theme "light" -}}
+{{- $dark := index $theme "dark" -}}
 model = "gpt-6-sol"
 model_reasoning_effort = "low"
 plan_mode_reasoning_effort = "low"
@@ -45,7 +45,7 @@ show_tooltips = false
 {{- if lookPath "theme-run" -}}
 {{- $terminalTheme = output "theme-run" "--print-theme-no-terminal" | trim -}}
 {{- end }}
-theme = "t3-chat-{{ $terminalTheme }}"
+theme = "catppuccin-custom-{{ $terminalTheme }}"
 terminal_resize_reflow_max_rows = 0
 status_line = [
   "model-with-reasoning",
@@ -296,12 +296,12 @@ hide_full_access_warning = true
 # ChatGPT derives ~/.codex/computer-use/config.json from these desktop theme
 # values and the active locale; leave that generated file app-owned.
 [desktop]
-appearanceLightCodeThemeId = "t3-chat-light"
-appearanceDarkCodeThemeId = "t3-chat-dark"
+appearanceLightCodeThemeId = "catppuccin-custom-light"
+appearanceDarkCodeThemeId = "catppuccin-custom-dark"
 followUpQueueMode = "queue"
 
 [desktop.appearanceLightChromeTheme]
-accent = "{{ index $light "pink" }}"
+accent = "{{ index $light "accentPink" }}"
 accentSource = "custom"
 contrast = 45
 ink = "{{ index $light "text" }}"
@@ -318,7 +318,7 @@ diffRemovedBg = "{{ index $light "errorSurface" }}"
 skill = "{{ index $light "mauve" }}"
 
 [desktop.appearanceDarkChromeTheme]
-accent = "{{ index $dark "pink" }}"
+accent = "{{ index $dark "accentPink" }}"
 accentSource = "custom"
 contrast = 60
 ink = "{{ index $dark "text" }}"

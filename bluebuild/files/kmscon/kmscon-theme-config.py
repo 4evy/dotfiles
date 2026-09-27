@@ -29,7 +29,7 @@ ANSI_ROLE_MAP = {
     "yellow": "yellow",
     "blue": "blue",
     "magenta": "pink",
-    "cyan": "teal",
+    "cyan": "sky",
     "light-grey": "subtext0",
     "dark-grey": "surface2",
     "light-red": "red",
@@ -37,7 +37,7 @@ ANSI_ROLE_MAP = {
     "light-yellow": "yellow",
     "light-blue": "blue",
     "light-magenta": "pink",
-    "light-cyan": "teal",
+    "light-cyan": "sky",
     "white": "subtext1",
     "foreground": "terminalForeground",
     "background": "terminalBackground",
@@ -128,7 +128,7 @@ def render_config(
         role_map.update(LIGHT_ROLE_OVERRIDES)
     lines = [
         "# Managed by dotfiles.",
-        f"# Theme: t3-chat-{choice.name}",
+        f"# Theme: catppuccin-custom-{choice.name}",
         f"# Theme source: {choice.source}",
         "term=kmscon",
         "font-engine=freetype",
@@ -154,7 +154,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     with args.palette_json.open(encoding="utf-8") as handle:
-        palette = json.load(handle)["t3_chat"]
+        palette = json.load(handle)["catppuccin_custom"]
     output_path = args.output_config
     write_if_changed(output_path, render_config(palette))
     return 0

@@ -1,0 +1,21 @@
+{{- $theme := .catppuccin_custom -}}
+{{- $p := index $theme "dark" -}}
+[theme]
+name = "catppuccin-custom-dark"
+
+[colors]
+AlertInfo = "{{ index $p "sky" }}"
+AlertWarn = "{{ index $p "peach" }}"
+AlertError = "{{ index $p "red" }}"
+Annotation = "{{ index $p "pink" }}"
+Base = "{{ index $p "text" }}"
+Guidance = "{{ index $p "overlay2" }}"
+Important = "{{ index $p "pink" }}"
+Title = "{{ index $p "pink" }}"
+Muted = "{{ index $p "overlay1" }}"
+SyntaxCommand = "{{ index $p "blue" }}"
+SyntaxFlag = "{{ index $p "mauve" }}"
+SyntaxString = "{{ index $p "green" }}"
+SyntaxVariable = "{{ index $p "rosewater" }}"
+SyntaxOperator = "{{ index $p "sky" }}"
+SyntaxComment = "{{ index $p "overlay0" }}"

@@ -13,9 +13,9 @@ THEME_ROLE_FIELDS = (
     ("background", "base"),
     ("backgroundSecondary", "surface"),
     ("foreground", "text"),
-    ("accent", "love"),
-    ("selection", "rose"),
-    ("loader", "iris"),
+    ("accent", "pink"),
+    ("selection", "surface1"),
+    ("loader", "sky"),
     ("red", "red"),
     ("orange", "peach"),
     ("yellow", "yellow"),
@@ -28,7 +28,7 @@ THEME_FIELDS = ("name", "appearance", *(field for field, _role in THEME_ROLE_FIE
 PALETTES = palettes()
 THEMES = tuple(
     {
-        "name": f"T3 Chat {appearance.title()}",
+        "name": f"Catppuccin Custom {appearance.title()}",
         "appearance": appearance,
         **{field: PALETTES[appearance][role] for field, role in THEME_ROLE_FIELDS},
     }
@@ -148,19 +148,23 @@ def restart_raycast() -> None:
 
 def main() -> None:
     if not RAYCAST_APP.is_dir():
-        print("Raycast T3 Chat theme install skipped: Raycast is not installed")
+        print(
+            "Raycast Catppuccin Custom theme install skipped: Raycast is not installed"
+        )
         return
     node = shutil.which("node")
     if node is None or not DATABASE_CLI.is_file():
-        print("Raycast T3 Chat theme install skipped: database bridge not found")
+        print(
+            "Raycast Catppuccin Custom theme install skipped: database bridge not found"
+        )
         return
 
     if not apply_themes(node):
-        print("Raycast T3 Chat themes already current")
+        print("Raycast Catppuccin Custom themes already current")
         return
 
     restart_raycast()
-    print("Raycast T3 Chat light and dark themes installed")
+    print("Raycast Catppuccin Custom light and dark themes installed")
 
 
 if __name__ == "__main__":

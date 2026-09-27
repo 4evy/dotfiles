@@ -1,6 +1,6 @@
-{{- $t3 := .t3_chat -}}
-{{- $light := index $t3 `light` -}}
-{{- $dark := index $t3 `dark` -}}
+{{- $theme := .catppuccin_custom -}}
+{{- $light := index $theme `light` -}}
+{{- $dark := index $theme `dark` -}}
 {{- $nixfmt := or (lookPath "vscode-nixfmt") (lookPath "nixfmt") "nixfmt" -}}
 {
   "files.associations": {
@@ -28,7 +28,7 @@
   "workbench.preferredDarkColorTheme": "Catppuccin Mocha",
   "workbench.preferredLightColorTheme": "Catppuccin Latte",
   "workbench.colorTheme": "Catppuccin Mocha",
-  "workbench.iconTheme": "t3-chat-catppuccin-icons",
+  "workbench.iconTheme": "catppuccin-custom-catppuccin-icons",
   "catppuccin.accentColor": "pink",
   "catppuccin.bracketMode": "monochromatic",
   "catppuccin.extraBordersEnabled": true,
@@ -36,18 +36,18 @@
     "mocha": {
       "rosewater": "{{ index $dark `rosewater` }}",
       "flamingo": "{{ index $dark `flamingo` }}",
-      "pink": "{{ template `theme_color_mix` (dict `background` (index $dark `pink`) `foreground` (index $dark `rosewater`) `weight` 25) }}",
-      "mauve": "{{ template `theme_color_mix` (dict `background` (index $dark `mauve`) `foreground` (index $dark `rosewater`) `weight` 15) }}",
+      "pink": "{{ index $dark `pink` }}",
+      "mauve": "{{ index $dark `mauve` }}",
       "red": "{{ index $dark `red` }}",
-      "maroon": "{{ template `theme_color_mix` (dict `background` (index $dark `maroon`) `foreground` (index $dark `rosewater`) `weight` 45) }}",
+      "maroon": "{{ index $dark `maroon` }}",
       "peach": "{{ index $dark `peach` }}",
       "yellow": "{{ index $dark `yellow` }}",
       "green": "{{ index $dark `green` }}",
       "teal": "{{ index $dark `teal` }}",
       "sky": "{{ index $dark `sky` }}",
-      "sapphire": "{{ index $dark `info` }}",
+      "sapphire": "{{ index $dark `sapphire` }}",
       "blue": "{{ index $dark `blue` }}",
-      "lavender": "{{ template `theme_color_mix` (dict `background` (index $dark `lavender`) `foreground` (index $dark `rosewater`) `weight` 35) }}",
+      "lavender": "{{ index $dark `lavender` }}",
       "text": "{{ index $dark `text` }}",
       "subtext1": "{{ index $dark `subtext1` }}",
       "subtext0": "{{ index $dark `subtext0` }}",
@@ -62,20 +62,20 @@
       "crust": "{{ index $dark `crust` }}"
     },
     "latte": {
-      "rosewater": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `rose`) `weight` 75) }}",
+      "rosewater": "{{ index $light `rosewater` }}",
       "flamingo": "{{ index $light `flamingo` }}",
-      "pink": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `pink`) `weight` 90) }}",
-      "mauve": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `mauve`) `weight` 85) }}",
-      "red": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `red`) `weight` 80) }}",
+      "pink": "{{ index $light `pink` }}",
+      "mauve": "{{ index $light `mauve` }}",
+      "red": "{{ index $light `red` }}",
       "maroon": "{{ index $light `maroon` }}",
-      "peach": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `peach`) `weight` 55) }}",
-      "yellow": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `yellow`) `weight` 45) }}",
-      "green": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `green`) `weight` 60) }}",
-      "teal": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `teal`) `weight` 50) }}",
-      "sky": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `sky`) `weight` 55) }}",
-      "sapphire": "{{ index $light `infoForeground` }}",
-      "blue": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `blue`) `weight` 65) }}",
-      "lavender": "{{ template `theme_color_mix` (dict `background` (index $dark `crust`) `foreground` (index $light `lavender`) `weight` 70) }}",
+      "peach": "{{ index $light `peach` }}",
+      "yellow": "{{ index $light `yellow` }}",
+      "green": "{{ index $light `green` }}",
+      "teal": "{{ index $light `teal` }}",
+      "sky": "{{ index $light `sky` }}",
+      "sapphire": "{{ index $light `sapphire` }}",
+      "blue": "{{ index $light `blue` }}",
+      "lavender": "{{ index $light `lavender` }}",
       "text": "{{ index $light `text` }}",
       "subtext1": "{{ index $light `subtext1` }}",
       "subtext0": "{{ index $light `subtext0` }}",
@@ -88,68 +88,6 @@
       "base": "{{ index $light `base` }}",
       "mantle": "{{ index $light `mantle` }}",
       "crust": "{{ index $light `crust` }}"
-    }
-  },
-  "editor.tokenColorCustomizations": {
-    "[Catppuccin Latte]": {
-      "comments": "#737373",
-      "strings": "#199f43",
-      "numbers": "#1ca1c7",
-      "keywords": "#d32a61",
-      "functions": "#693acf",
-      "types": "#a631be",
-      "textMateRules": [
-        {
-          "scope": [
-            "variable.parameter",
-            "keyword.operator",
-            "punctuation"
-          ],
-          "settings": {
-            "foreground": "#636363"
-          }
-        },
-        {
-          "scope": [
-            "variable.other.constant",
-            "variable.language",
-            "entity.name.namespace"
-          ],
-          "settings": {
-            "foreground": "#d5901c"
-          }
-        }
-      ]
-    },
-    "[Catppuccin Mocha]": {
-      "comments": "#737373",
-      "strings": "#5ecc71",
-      "numbers": "#68cdf2",
-      "keywords": "#ff678d",
-      "functions": "#9d6afb",
-      "types": "#d568ea",
-      "textMateRules": [
-        {
-          "scope": [
-            "variable.parameter",
-            "keyword.operator",
-            "punctuation"
-          ],
-          "settings": {
-            "foreground": "#a3a3a3"
-          }
-        },
-        {
-          "scope": [
-            "variable.other.constant",
-            "variable.language",
-            "entity.name.namespace"
-          ],
-          "settings": {
-            "foreground": "#ffab16"
-          }
-        }
-      ]
     }
   },
   "workbench.colorCustomizations": {
@@ -178,6 +116,7 @@
       "terminal.foreground": "{{ index $dark `terminalForeground` }}",
       "terminalCursor.foreground": "{{ index $dark `terminalCursor` }}",
       "terminal.selectionBackground": "{{ index $dark `terminalSelection` }}",
+      "terminal.selectionForeground": "{{ index $dark `selectionForeground` }}",
       "terminal.ansiBlack": "{{ index $dark `ansiBlack` }}",
       "terminal.ansiBrightBlack": "{{ index $dark `ansiBlack` }}",
       "terminal.ansiRed": "{{ index $dark `red` }}",
@@ -188,10 +127,10 @@
       "terminal.ansiBrightYellow": "{{ index $dark `yellow` }}",
       "terminal.ansiBlue": "{{ index $dark `blue` }}",
       "terminal.ansiBrightBlue": "{{ index $dark `blue` }}",
-      "terminal.ansiMagenta": "{{ index $dark `mauve` }}",
-      "terminal.ansiBrightMagenta": "{{ index $dark `mauve` }}",
-      "terminal.ansiCyan": "{{ index $dark `teal` }}",
-      "terminal.ansiBrightCyan": "{{ index $dark `teal` }}",
+      "terminal.ansiMagenta": "{{ index $dark `pink` }}",
+      "terminal.ansiBrightMagenta": "{{ index $dark `pink` }}",
+      "terminal.ansiCyan": "{{ index $dark `sky` }}",
+      "terminal.ansiBrightCyan": "{{ index $dark `sky` }}",
       "terminal.ansiWhite": "{{ index $dark `ansiWhite` }}",
       "terminal.ansiBrightWhite": "{{ index $dark `ansiWhite` }}",
       "titleBar.activeBackground": "{{ index $dark `toolbar` }}",
@@ -208,7 +147,7 @@
       "statusBar.noFolderBackground": "{{ index $light `crust` }}",
       "statusBar.debuggingBackground": "{{ index $light `warning` }}",
       "statusBar.debuggingForeground": "{{ index $light `text` }}",
-      "editor.background": "{{ index $light `surfaceRaised` }}",
+      "editor.background": "{{ index $light `base` }}",
       "editor.foreground": "{{ index $light `codeForeground` }}",
       "editorLineNumber.foreground": "{{ index $light `placeholder` }}",
       "editorLineNumber.activeForeground": "{{ index $light `accent` }}",
@@ -225,6 +164,7 @@
       "terminal.foreground": "{{ index $light `terminalForeground` }}",
       "terminalCursor.foreground": "{{ index $light `terminalCursor` }}",
       "terminal.selectionBackground": "{{ index $light `terminalSelection` }}",
+      "terminal.selectionForeground": "{{ index $light `selectionForeground` }}",
       "terminal.ansiBlack": "{{ index $light `ansiBlack` }}",
       "terminal.ansiBrightBlack": "{{ index $light `ansiBlack` }}",
       "terminal.ansiRed": "{{ index $light `red` }}",
@@ -235,10 +175,10 @@
       "terminal.ansiBrightYellow": "{{ index $light `yellow` }}",
       "terminal.ansiBlue": "{{ index $light `blue` }}",
       "terminal.ansiBrightBlue": "{{ index $light `blue` }}",
-      "terminal.ansiMagenta": "{{ index $light `mauve` }}",
-      "terminal.ansiBrightMagenta": "{{ index $light `mauve` }}",
-      "terminal.ansiCyan": "{{ index $light `teal` }}",
-      "terminal.ansiBrightCyan": "{{ index $light `teal` }}",
+      "terminal.ansiMagenta": "{{ index $light `pink` }}",
+      "terminal.ansiBrightMagenta": "{{ index $light `pink` }}",
+      "terminal.ansiCyan": "{{ index $light `sky` }}",
+      "terminal.ansiBrightCyan": "{{ index $light `sky` }}",
       "terminal.ansiWhite": "{{ index $light `ansiWhite` }}",
       "terminal.ansiBrightWhite": "{{ index $light `ansiWhite` }}",
       "titleBar.activeBackground": "{{ index $light `toolbar` }}",

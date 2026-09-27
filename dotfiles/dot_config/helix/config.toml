@@ -1,7 +1,7 @@
 [theme]
-dark = "t3_chat_dark"
-light = "t3_chat_light"
-fallback = "t3_chat_dark"
+dark = "catppuccin_custom_dark"
+light = "catppuccin_custom_light"
+fallback = "catppuccin_custom_dark"
 
 [editor]
 auto-format = true

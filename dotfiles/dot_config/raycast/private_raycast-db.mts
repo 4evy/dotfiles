@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import process from "node:process";
 import { parseArgs } from "node:util";
+import { z } from "zod";
 
 import { assertSupportedNode, PATHS, runtimeReport } from "./lib/config.mts";
 import { type RaycastDatabaseClient, withDatabase } from "./lib/db.mts";
@@ -17,7 +18,7 @@ import {
   parseProfilePayload,
   profileSummary,
 } from "./lib/profile.mts";
-import { callPath, isRecord, printJson, requiredString, runCli } from "./lib/util.mts";
+import { callPath, printJson, runCli } from "./lib/util.mts";
 
 const FLAGS = { "dry-run": { type: "boolean" } } as const;
 
@@ -46,45 +47,40 @@ function parseJsonArgs(value: string | undefined): unknown[] {
   return parsed;
 }
 
-function parseAliasPayload(value: unknown): Array<{
-  id: string;
-  extensionId: string;
-  alias: string | null;
-  enabled?: boolean;
-}> {
-  if (!Array.isArray(value)) throw new Error("aliases payload must be a JSON array");
-
-  const ids = new Set<string>();
-  return value.map((entry, index) => {
-    const record = isRecord(entry)
-      ? entry
-      : (() => {
-          throw new Error(`alias entry ${index} must be an object`);
-        })();
-    const alias = record.alias;
-    if (alias !== null && typeof alias !== "string") {
-      throw new Error(`alias entry ${index} alias must be a string or null`);
-    }
-    if (typeof alias === "string" && /\s/.test(alias)) {
-      throw new Error(`alias entry ${index} alias cannot contain whitespace`);
-    }
-
-    const id = requiredString(record.id, `alias entry ${index} id`);
-    if (ids.has(id)) throw new Error(`duplicate alias command: ${id}`);
-    ids.add(id);
-    if (record.enabled !== undefined && typeof record.enabled !== "boolean") {
-      throw new Error(`alias entry ${index} enabled must be a boolean`);
-    }
-    return {
-      id,
-      extensionId: requiredString(
-        record.extensionId ?? record.extension_id,
-        `alias entry ${index} extensionId`,
-      ),
-      alias: alias === "" ? null : alias,
-      ...(typeof record.enabled === "boolean" ? { enabled: record.enabled } : {}),
-    };
+const aliasSchema = z.object({
+  id: z.string().min(1),
+  extensionId: z.string().min(1),
+  alias: z
+    .string()
+    .regex(/^\S*$/, "Alias cannot contain whitespace")
+    .nullable()
+    .transform((value) => (value === "" ? null : value)),
+  enabled: z.boolean().optional(),
+});
+const aliasesSchema = z
+  .array(
+    z.preprocess((value) => {
+      if (typeof value !== "object" || value === null || Array.isArray(value))
+        return value;
+      const record = value as Record<string, unknown>;
+      return { ...record, extensionId: record.extensionId ?? record.extension_id };
+    }, aliasSchema),
+  )
+  .superRefine((entries, ctx) => {
+    const ids = new Set<string>();
+    entries.forEach(({ id }, index) => {
+      if (ids.has(id))
+        ctx.addIssue({
+          code: "custom",
+          path: [index, "id"],
+          message: "Duplicate alias command",
+        });
+      ids.add(id);
+    });
   });
+
+function parseAliasPayload(value: unknown) {
+  return aliasesSchema.parse(value);
 }
 
 async function applyCommandAliases(
