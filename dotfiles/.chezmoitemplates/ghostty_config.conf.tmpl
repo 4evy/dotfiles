@@ -3,12 +3,10 @@
 {{- $leader = "super+g" -}}
 {{- end -}}
 theme = light:t3-chat-light.conf,dark:t3-chat-dark.conf
-background-image = {{ .chezmoi.homeDir }}/.config/ghostty/backgrounds/t3-chat-emoji-corner.png
+background-image = {{ .chezmoi.homeDir }}/.config/ghostty/backgrounds/t3-chat-emoji-scatter.png
 background-image-opacity = 0.24
-background-image-position = bottom-right
-{{- if eq .chezmoi.os "linux" }}
+background-image-position = center
 background-image-fit = cover
-{{- end }}
 custom-shader = {{ .chezmoi.homeDir }}/.config/ghostty/shaders/t3-chat-glow.glsl
 custom-shader-animation = false
 adjust-underline-position = 4
