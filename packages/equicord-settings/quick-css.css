@@ -121,6 +121,21 @@
   --switch-thumb-background-selected-default: var(
     --catppuccin-custom-messageActionForeground
   );
+  --togglebutton-background-selected: color-mix(
+    in srgb,
+    var(--catppuccin-custom-brand) 16%,
+    transparent
+  );
+  --togglebutton-background-selected-hover: color-mix(
+    in srgb,
+    var(--catppuccin-custom-brand) 24%,
+    transparent
+  );
+  --togglebutton-border-active: color-mix(
+    in srgb,
+    var(--catppuccin-custom-brand) 84%,
+    transparent
+  );
 
   --background-accent: var(--catppuccin-custom-accentSurface);
   --background-code: var(--catppuccin-custom-codeBackground);
@@ -199,6 +214,16 @@
   --info-help-foreground: var(--catppuccin-custom-infoForeground);
 
   --message-reacted-background-default: var(--catppuccin-custom-accentSurface);
+  --reaction-background-reacted-default: color-mix(
+    in srgb,
+    var(--catppuccin-custom-brand) 24%,
+    transparent
+  );
+  --reaction-background-reacted-hover: color-mix(
+    in srgb,
+    var(--catppuccin-custom-brand) 24%,
+    transparent
+  );
   --mention-background: color-mix(
     in srgb,
     var(--catppuccin-custom-brand) 30%,
