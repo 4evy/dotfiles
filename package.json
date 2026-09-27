@@ -22,7 +22,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.9",
+    "@catppuccin/palette": "1.8.0",
     "@types/bun": "catalog:",
+    "@types/culori": "4.0.1",
+    "culori": "4.0.2",
     "typescript": "catalog:"
   }
 }
