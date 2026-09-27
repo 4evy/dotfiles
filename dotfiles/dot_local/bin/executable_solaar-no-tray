@@ -3,10 +3,12 @@
 set -euo pipefail
 
 # Nix wraps Solaar with the Python and GTK environment required by its package.
-solaar_executable="$(realpath "$(command -v solaar)")"
-solaar_helper="${solaar_executable%/*}/solaar-no-tray"
-if [[ -x "$solaar_helper" ]]; then
-	exec "$solaar_helper" "$@"
+if solaar_executable="$(command -v solaar)" &&
+	solaar_executable="$(realpath -- "$solaar_executable")"; then
+	solaar_helper="${solaar_executable%/*}/solaar-no-tray"
+	if [[ -x "$solaar_helper" ]]; then
+		exec "$solaar_helper" "$@"
+	fi
 fi
 
 # Fedora's Solaar modules live in the system Python, not uv's isolated runtime.
