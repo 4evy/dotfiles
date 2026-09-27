@@ -1,0 +1,7 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+# Dependencies: {{ include "package.json" | sha256sum }}
+set -eu
+cd {{ joinPath .chezmoi.homeDir ".config/raycast" | quote }}
+bun install --production --ignore-scripts
+{{ end -}}
