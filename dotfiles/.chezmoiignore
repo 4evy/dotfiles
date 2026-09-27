@@ -12,6 +12,8 @@ package.json
 tsconfig.json
 node_modules/
 node_modules/**
+**/__pycache__/
+**/__pycache__/**
 
 {{ if eq .chezmoi.os "windows" }}
 .chezmoiexternal.toml.tmpl

@@ -218,8 +218,8 @@ known_first_party = [
 DEP001 = ["solaar", "xwaykeyz"]
 # Cocoa is macOS-only and loaded dynamically through importlib.
 DEP002 = ["pyobjc-framework-Cocoa"]
-# These dependencies belong to separately deployed helpers, not this wheel.
-DEP004 = ["ansible", "astral"]
+# Deployment helpers and repository checks use these outside the runtime wheel
+DEP004 = ["ansible", "astral", "defusedxml"]
 
 [tool.complexipy]
 exclude = ["**/node_modules/**", "**/__pycache__/**"]
