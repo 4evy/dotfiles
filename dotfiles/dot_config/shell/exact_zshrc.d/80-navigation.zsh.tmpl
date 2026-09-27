@@ -15,7 +15,10 @@ if [[ -n "$_broot_bin" && -r "$HOME/.cache/broot/init.zsh" ]]; then
   # shellcheck source=/dev/null
   source "$HOME/.cache/broot/init.zsh"
 elif [[ -n "$_broot_bin" ]]; then
-  eval "$("$_broot_bin" --print-shell-function zsh)"
+  if _dotfiles_init="$("$_broot_bin" --print-shell-function zsh)"; then
+    eval "$_dotfiles_init"
+  fi
+  unset _dotfiles_init
 fi
 unset _broot_bin
 

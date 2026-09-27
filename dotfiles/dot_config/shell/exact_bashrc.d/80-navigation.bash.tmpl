@@ -15,6 +15,9 @@ if [[ -n "$_broot_bin" && -r "$HOME/.cache/broot/init.bash" ]]; then
 	# shellcheck source=/dev/null
 	source "$HOME/.cache/broot/init.bash"
 elif [[ -n "$_broot_bin" ]]; then
-	eval "$("$_broot_bin" --print-shell-function bash)"
+	if _dotfiles_init="$("$_broot_bin" --print-shell-function bash)"; then
+		eval "$_dotfiles_init"
+	fi
+	unset _dotfiles_init
 fi
 unset _broot_bin

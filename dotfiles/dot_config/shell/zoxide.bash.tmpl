@@ -12,7 +12,10 @@ if [[ -n "$_zoxide_bin" ]]; then
 		# shellcheck source=/dev/null
 		source "$HOME/.cache/zoxide/init.bash"
 	else
-		eval "$("$_zoxide_bin" init bash --cmd cd)"
+		if _dotfiles_init="$("$_zoxide_bin" init bash --cmd cd)"; then
+			eval "$_dotfiles_init"
+		fi
+		unset _dotfiles_init
 	fi
 
 	if declare -F __zoxide_z >/dev/null 2>&1; then

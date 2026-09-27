@@ -3,14 +3,21 @@
 # Atuin provides bash-preexec; Starship must see it during initialization so
 # both tools share one preexec/precmd framework instead of competing PS0 hooks.
 _atuin_bin="$(_dotfiles_command_path atuin 2>/dev/null || true)"
-if [[ -t 0 && -t 1 && -n "$_atuin_bin" && -r "$HOME/.cache/atuin/init.bash" ]]; then
+if [[ -t 0 && -t 1 && -n "$_atuin_bin" ]]; then
 	if _dotfiles_command_path theme-run >/dev/null; then
 		_dotfiles_wrap_themed_command atuin
 	else
 		_dotfiles_wrap_command atuin "$_atuin_bin"
 	fi
-	# shellcheck source=/dev/null
-	source "$HOME/.cache/atuin/init.bash"
+	if [[ -r "$HOME/.cache/atuin/init.bash" ]]; then
+		# shellcheck source=/dev/null
+		source "$HOME/.cache/atuin/init.bash"
+	else
+		if _dotfiles_init="$("$_atuin_bin" init bash --disable-up-arrow)"; then
+			eval "$_dotfiles_init"
+		fi
+		unset _dotfiles_init
+	fi
 	__atuin_search_cmd() (
 		local -a search_args=("$@")
 		local result_file status
@@ -38,7 +45,10 @@ if [[ -n "$_starship_bin" && -r "$HOME/.cache/starship/init.bash" ]]; then
 	# shellcheck source=/dev/null
 	source "$HOME/.cache/starship/init.bash"
 elif [[ -n "$_starship_bin" ]]; then
-	eval "$("$_starship_bin" init bash)"
+	if _dotfiles_init="$("$_starship_bin" init bash)"; then
+		eval "$_dotfiles_init"
+	fi
+	unset _dotfiles_init
 fi
 unset _starship_bin
 _fzf_bin="$(_dotfiles_command_path fzf 2>/dev/null || true)"
@@ -52,7 +62,10 @@ if [[ -n "$_fzf_bin" ]]; then
 		# shellcheck source=/dev/null
 		source "$HOME/.cache/fzf/init.bash"
 	else
-		eval "$("$_fzf_bin" --bash)"
+		if _dotfiles_init="$("$_fzf_bin" --bash)"; then
+			eval "$_dotfiles_init"
+		fi
+		unset _dotfiles_init
 	fi
 fi
 unset _fzf_bin

@@ -25,6 +25,7 @@ _fzf_init() {
   fi
 
   init="$(
+    setopt pipefail
     "$fzf_bin" --zsh | sed \
       -e '/^### completion\.zsh ###$/,$d' \
       -e '/^  eval \$__fzf_key_bindings_options$/i\
@@ -55,18 +56,28 @@ if [[ -n "$_starship_bin" && -r "$HOME/.cache/starship/init.zsh" ]]; then
   # shellcheck source=/dev/null
   source "$HOME/.cache/starship/init.zsh"
 elif [[ -n "$_starship_bin" ]]; then
-  eval "$("$_starship_bin" init zsh)"
+  if _dotfiles_init="$("$_starship_bin" init zsh)"; then
+    eval "$_dotfiles_init"
+  fi
+  unset _dotfiles_init
 fi
 unset _starship_bin
 _atuin_bin="$(_dotfiles_command_path atuin 2>/dev/null || true)"
-if [[ -t 0 && -t 1 && -n "$_atuin_bin" && -r "$HOME/.cache/atuin/init.zsh" ]]; then
+if [[ -t 0 && -t 1 && -n "$_atuin_bin" ]]; then
   if _dotfiles_command_path theme-run >/dev/null; then
     _dotfiles_wrap_themed_command atuin
   else
     _dotfiles_wrap_command atuin "$_atuin_bin"
   fi
-  # shellcheck source=/dev/null
-  source "$HOME/.cache/atuin/init.zsh"
+  if [[ -r "$HOME/.cache/atuin/init.zsh" ]]; then
+    # shellcheck source=/dev/null
+    source "$HOME/.cache/atuin/init.zsh"
+  else
+    if _dotfiles_init="$("$_atuin_bin" init zsh --disable-up-arrow)"; then
+      eval "$_dotfiles_init"
+    fi
+    unset _dotfiles_init
+  fi
   # Keep Atuin's widgets; only separate search results from the themed TUI.
   __atuin_search_cmd() {
     emulate -L zsh

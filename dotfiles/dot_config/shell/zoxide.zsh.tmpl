@@ -11,7 +11,15 @@ if [[ -n "$_zoxide_bin" ]]; then
     # shellcheck source=/dev/null
     source "$HOME/.cache/zoxide/init.zsh"
   else
-    eval "$("$_zoxide_bin" init zsh)"
+    if _zoxide_init="$("$_zoxide_bin" init zsh)"; then
+      eval "$_zoxide_init"
+    fi
+    unset _zoxide_init
+  fi
+
+  if (( ! $+functions[__zoxide_z] || ! $+functions[__zoxide_zi] )); then
+    unset _zoxide_bin
+    return 0
   fi
 
   if (( $+functions[__zoxide_hook] )); then

@@ -5,8 +5,7 @@
 
 typeset -U path PATH fpath FPATH
 
-# Honor `zsh -f`: upstream still reads .zshenv with RCS unset, so keep all
-# user-managed initialization behind the option check it recommends.
+# Zsh skips this user file with RCS unset; also honor RCS when sourced manually
 if [[ -o rcs ]]; then
   # Fedora's /etc/zshrc sources /etc/profile.d for non-login shells. During the
   # SSH Bash-to-Zsh handoff, Bash has already printed Bluefin's MOTD, so shadow

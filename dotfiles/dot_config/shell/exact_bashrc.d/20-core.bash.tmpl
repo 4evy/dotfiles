@@ -1,9 +1,7 @@
 # 02 / shell options
 # Keep interactive pipelines, history, completion, and globbing predictable.
-# Probe options individually so the configuration stays quiet if an older
-# system Bash is used before the managed Bash is installed.
 set -o pipefail
-for _dotfiles_shopt_option in \
+shopt -s \
 	array_expand_once \
 	autocd \
 	cdspell \
@@ -19,10 +17,7 @@ for _dotfiles_shopt_option in \
 	histverify \
 	lithist \
 	no_empty_cmd_completion \
-	progcomp_alias; do
-	shopt -s "$_dotfiles_shopt_option" 2>/dev/null || true
-done
-unset _dotfiles_shopt_option
+	progcomp_alias
 
 # 03 / startup helpers
 # Resolve real binaries before generated init scripts replace command names.
@@ -84,7 +79,7 @@ if [[ -z "$_dotfiles_repo_path" ]]; then
 fi
 if [[ -d "$_dotfiles_repo_path" ]]; then
 	_dotfiles_repo_path="$(
-		cd -P -- "$_dotfiles_repo_path" 2>/dev/null &&
+		CDPATH='' builtin cd -P -- "$_dotfiles_repo_path" 2>/dev/null &&
 			pwd ||
 			printf '%s\n' "$_dotfiles_repo_path"
 	)"

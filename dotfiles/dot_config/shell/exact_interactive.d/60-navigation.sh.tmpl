@@ -22,7 +22,9 @@ python() { uv run python "$@"; }
 python3() { uv run python3 "$@"; }
 
 pip() {
-	[[ -z "$VIRTUAL_ENV" && ! -d ".venv" ]] && uv venv -q
+	if [[ -z "${VIRTUAL_ENV:-}" && ! -d .venv ]]; then
+		uv venv -q || return
+	fi
 	uv pip "$@"
 }
 
