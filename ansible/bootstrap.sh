@@ -3,9 +3,7 @@
 #
 # Prepare a fresh macOS or Linux host and run this repository's Ansible
 # playbook using system-provided command-line tools.
-# Resolve Bash through PATH for NixOS, which has no /bin/bash. Staying
-# compatible with macOS's Bash 3.2 avoids requiring a newer interpreter
-# before the bootstrap dependencies are installed.
+# Resolve Bash through PATH so the installed Homebrew Bash takes precedence
 
 set -euo pipefail
 
@@ -369,7 +367,7 @@ resolve_repository_root() {
 			die "failed to resolve script path: ${script_path}"
 	fi
 
-	script_dir="$(cd -P "$(dirname "${script_path}")" && pwd -P)" ||
+	script_dir="$(CDPATH='' cd -P -- "$(dirname -- "${script_path}")" && pwd -P)" ||
 		die 'failed to resolve script directory'
 	repository_root="$(cd -P "${script_dir}/.." && pwd -P)" ||
 		die 'failed to resolve repository directory'
@@ -468,7 +466,7 @@ ensure_homebrew() {
 	verify_sha256 "${HOMEBREW_INSTALLER_CHECKSUM}" "${installer_file}"
 
 	log "Installing Homebrew into ${homebrew_prefix}"
-	if ! NONINTERACTIVE=1 /bin/bash "${installer_file}"; then
+	if ! NONINTERACTIVE=1 "${BASH}" "${installer_file}"; then
 		die 'Homebrew installation failed'
 	fi
 
