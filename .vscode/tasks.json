@@ -99,28 +99,28 @@
       "label": "bun: check",
       "detail": "Run Biome and every Bun workspace type check.",
       "type": "process",
-      "command": "bun",
-      "args": ["run", "check"],
+      "command": "just",
+      "args": ["bun-check"],
       "inAgents": true,
       "group": "build",
       "problemMatcher": "$tsc"
     },
     {
-      "label": "ruby: lint",
-      "detail": "Run the repository RuboCop configuration.",
+      "label": "ruby: check",
+      "detail": "Run RuboCop and Ruby syntax checks using the repository recipe.",
       "type": "process",
-      "command": "bundle",
-      "args": ["exec", "rubocop", "libexec"],
+      "command": "just",
+      "args": ["ruby-check"],
       "inAgents": true,
       "group": "build",
       "problemMatcher": []
     },
     {
       "label": "nix: flake check (no build)",
-      "detail": "Evaluate all flake checks without building their derivations.",
+      "detail": "Evaluate all systems without building derivations, using the repository recipe.",
       "type": "process",
-      "command": "nix",
-      "args": ["flake", "check", "--keep-going", "--no-build"],
+      "command": "just",
+      "args": ["nix-check"],
       "inAgents": true,
       "group": "build",
       "problemMatcher": []
@@ -170,8 +170,71 @@
       "problemMatcher": []
     },
     {
+      "label": "python: check",
+      "detail": "Run Python lint, types, dependency, complexity, and packaging checks.",
+      "type": "process",
+      "command": "just",
+      "args": ["python-check"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "python: typecheck",
+      "detail": "Run ty with the repository Python configuration.",
+      "type": "process",
+      "command": "just",
+      "args": ["python-typecheck"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "go: check",
+      "detail": "Check formatting, test, vet, lint, and build the Go workspace.",
+      "type": "process",
+      "command": "just",
+      "args": ["go-check"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "github actions: check",
+      "detail": "Validate workflow syntax and security with actionlint and zizmor.",
+      "type": "process",
+      "command": "just",
+      "args": ["github-actions-check"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "records: check",
+      "detail": "Validate the encrypted records state.",
+      "type": "process",
+      "command": "just",
+      "args": ["records-check"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "homebrew: check",
+      "detail": "Check Homebrew formula style and the Brewfile.",
+      "type": "process",
+      "command": "just",
+      "args": ["homebrew-check"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "renovate: check",
+      "detail": "Validate Renovate configuration and dependency extraction.",
+      "type": "process",
+      "command": "just",
+      "args": ["renovate-check"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
       "label": "spectrum: validate",
-      "detail": "Validate the BlueBuild recipe and its pinned base image.",
+      "detail": "Validate the BlueBuild recipe and its pinned base image. Linux only; open the Linux checkout to run this task.",
       "type": "process",
       "command": "just",
       "args": ["spectrum-validate"],
@@ -181,7 +244,7 @@
     },
     {
       "label": "spectrum: build",
-      "detail": "Build the local Spectrum image on a supported Linux host.",
+      "detail": "Build the local Spectrum image on a supported Linux host. Linux only; open the Linux checkout to run this task.",
       "type": "process",
       "command": "just",
       "args": ["spectrum-build"],
@@ -204,7 +267,6 @@
         "status",
         "reboot",
         "install",
-        "build",
         "setup",
         "apply",
         "shell",
@@ -215,27 +277,34 @@
         "bun",
         "nix",
         "watch",
-        "check"
+        "check",
+        "records",
+        "sops"
       ]
     },
     {
       "id": "nixPackage",
       "type": "pickString",
-      "description": "Flake package to build for the current system",
+      "description": "Package output for this system (see lib/flake.nix; Linux-only outputs require the Linux checkout)",
       "default": "default",
       "options": [
         "default",
         "bluebuild-v2",
         "bun2nix",
         "check-jsonschema",
+        "dotfiles-nix-tools",
         "dotfiles-python",
         "equicord-settings",
         "hyper-window-tiling-gnome",
         "hyper-window-tiling-kde",
         "kmscon",
         "theme-run",
+        "toshy-runtime",
         "uresourced"
       ]
     }
-  ]
+  ],
+  "options": {
+    "cwd": "${workspaceFolder}"
+  }
 }
