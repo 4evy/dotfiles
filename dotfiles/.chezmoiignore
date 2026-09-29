@@ -54,6 +54,7 @@ Library/
 {{ end }}
 
 {{ if ne .chezmoi.os "linux" }}
+.config/environment.d/60-codex-cli.conf
 .config/Code/User/settings.json
 .local/bin/update-chatgpt-nix
 .local/share/flatpak/

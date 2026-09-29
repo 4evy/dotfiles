@@ -1,14 +1,18 @@
-# Select with `codex --profile review` for inspection-only work.
+# Select with `codex --profile review` for inspection-only work
 approval_policy = "never"
 default_permissions = ":read-only"
 web_search = "cached"
 
-# Connector tools run outside the filesystem sandbox, so disable them here.
+# Connector tools run outside the filesystem sandbox, so disable them here
 [apps._default]
 enabled = false
 
 [features]
 apps = false
+
+# Plugin MCP servers also run outside the filesystem sandbox
+[plugins."unified-computer-use@openai-bundled".mcp_servers.cua_repl]
+enabled = false
 
 {{- $onePasswordMcp := "" }}
 {{- if eq .chezmoi.os "darwin" }}
@@ -31,13 +35,7 @@ enabled = false
 enabled = false
 {{- end }}
 
-{{- $chatGPTResources := "" }}
-{{- if eq .chezmoi.os "darwin" }}
-{{- $chatGPTResources = "/Applications/ChatGPT.app/Contents/Resources" }}
-{{- else if and (eq .chezmoi.os "linux") (lookPath "chatgpt") }}
-{{- $chatGPTExecutable := output "readlink" "-f" (lookPath "chatgpt") | trim }}
-{{- $chatGPTResources = joinPath (dir (dir $chatGPTExecutable)) "lib/chatgpt/resources" }}
-{{- end }}
+{{- $chatGPTResources := includeTemplate "chatgpt_resources" . | trim }}
 {{- $nodeRepl := joinPath $chatGPTResources "cua_node/bin/node_repl" }}
 {{- if and $chatGPTResources (stat $nodeRepl) }}
 

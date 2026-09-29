@@ -1,0 +1,23 @@
+{{- $packageArch := "" -}}
+{{- $targetArch := "" -}}
+{{- if eq .chezmoi.arch "arm64" -}}
+{{- $packageArch = "arm64" -}}
+{{- $targetArch = "aarch64" -}}
+{{- else if eq .chezmoi.arch "amd64" -}}
+{{- $packageArch = "x64" -}}
+{{- $targetArch = "x86_64" -}}
+{{- end -}}
+{{- $targetOs := "" -}}
+{{- if eq .chezmoi.os "darwin" -}}
+{{- $targetOs = "apple-darwin" -}}
+{{- else if eq .chezmoi.os "linux" -}}
+{{- $targetOs = "unknown-linux-musl" -}}
+{{- end -}}
+{{- if and $packageArch $targetOs -}}
+{{- $package := printf "codex-%s-%s" .chezmoi.os $packageArch -}}
+{{- $target := printf "%s-%s" $targetArch $targetOs -}}
+{{- $native := joinPath .chezmoi.homeDir ".bun/install/global/node_modules/@openai" $package "vendor" $target "bin/codex" -}}
+{{- if stat $native -}}
+{{- $native -}}
+{{- end -}}
+{{- end -}}

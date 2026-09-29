@@ -1,0 +1,23 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+# CLI environment: {{ includeTemplate "codex_native_cli_path" . | trim }}
+# LaunchAgent: {{ include (joinPath .chezmoi.sourceDir "Library/LaunchAgents/dev.4evy.codex-cli-env.plist.tmpl") | sha256sum }}
+set -eu
+launch_domain="gui/$(id -u)"
+launch_plist="$CHEZMOI_HOME_DIR/Library/LaunchAgents/dev.4evy.codex-cli-env.plist"
+/bin/launchctl bootout "$launch_domain" "$launch_plist" >/dev/null 2>&1 || true
+exec /bin/launchctl bootstrap "$launch_domain" "$launch_plist"
+{{ else if and (eq .chezmoi.os "linux") (lookPath "systemctl") -}}
+#!/bin/sh
+# CLI environment: {{ includeTemplate "codex_native_cli_path" . | trim }}
+# Environment config: {{ include (joinPath .chezmoi.sourceDir "dot_config/environment.d/60-codex-cli.conf.tmpl") | sha256sum }}
+set -eu
+{{ lookPath "systemctl" }} --user daemon-reload
+{{ if lookPath "dbus-update-activation-environment" -}}
+DBUS_SESSION_BUS_ADDRESS=${DBUS_SESSION_BUS_ADDRESS:-"unix:path=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/bus"}
+export DBUS_SESSION_BUS_ADDRESS
+exec {{ lookPath "dbus-update-activation-environment" }} --systemd "CODEX_CLI_PATH={{ includeTemplate "codex_native_cli_path" . | trim }}"
+{{ else -}}
+exec {{ lookPath "systemctl" }} --user set-environment "CODEX_CLI_PATH={{ includeTemplate "codex_native_cli_path" . | trim }}"
+{{ end -}}
+{{ end -}}

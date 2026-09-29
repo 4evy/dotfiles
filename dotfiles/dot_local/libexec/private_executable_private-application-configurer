@@ -8,7 +8,7 @@ require "pathname"
 require "tempfile"
 
 # Synchronizes optional plugins from ChatGPT's bundled Codex marketplace into
-# the compatibility marketplace used by standalone Codex sessions.
+# the compatibility marketplace used by standalone Codex sessions
 # rubocop:disable Style/OneClassPerFile
 module CodexPlugins
   MARKETPLACE = "dotfiles-chatgpt-bundled"
@@ -21,7 +21,6 @@ module CodexPlugins
   DESTINATION = (
     Pathname(Dir.home)/".codex/.tmp/compatibility-marketplaces"/MARKETPLACE
   ).freeze
-  CODEX = (SOURCE.parent.parent/"codex-cli/bin/codex").freeze
   PLUGINS = %w[
     codex-app-tools
     sites
@@ -79,11 +78,11 @@ module CodexPlugins
     )
     (DESTINATION/".agents/plugins").mkpath
     write_manifest(DESTINATION, destination_manifest)
-    raise "ChatGPT Codex CLI not found: #{CODEX}" unless CODEX.file?
+    codex = codex_cli
 
     destination_entries.each do |entry|
       system(
-        CODEX.to_s,
+        codex.to_s,
         "plugin",
         "add",
         "#{entry.fetch('name')}@#{MARKETPLACE}",
@@ -92,6 +91,20 @@ module CodexPlugins
     end
     warn "private-application-configurer: bundled Codex plugins are current"
     true
+  end
+
+  def codex_cli
+    candidates = [
+      ENV.fetch("CODEX_CLI_PATH", nil),
+      (Pathname(Dir.home)/".bun/bin/codex").to_s,
+      (SOURCE.parent.parent/"codex-cli/bin/codex").to_s,
+    ]
+    candidates.compact.filter_map do |candidate|
+      next if candidate.strip.empty?
+
+      path = Pathname(candidate.strip)
+      path if path.file? && path.executable?
+    end.first || raise("No executable Codex CLI found")
   end
 
   def load_manifest(root)
@@ -121,7 +134,7 @@ module CodexPlugins
   end
 end
 
-# Makes Computer Use follow unrestricted local Codex config.
+# Makes Computer Use follow unrestricted local Codex config
 module ComputerUse
   PATCHER = Pathname(Dir.home)/".local/bin/patch-chatgpt-computer-use"
   APP = Pathname("/Applications/ChatGPT.app")

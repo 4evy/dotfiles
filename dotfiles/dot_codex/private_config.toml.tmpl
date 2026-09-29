@@ -1,6 +1,7 @@
 {{- $theme := .catppuccin_custom -}}
 {{- $light := index $theme "light" -}}
 {{- $dark := index $theme "dark" -}}
+{{- $nativeCli := includeTemplate "codex_native_cli_path" . | trim -}}
 model = "gpt-6.1-sol"
 model_reasoning_effort = "high"
 plan_mode_reasoning_effort = "high"
@@ -8,7 +9,12 @@ approval_policy = "never"
 default_permissions = "unrestricted"
 web_search = "live"
 check_for_update_on_startup = false
+suppress_unstable_features_warning = true
 tool_output_token_limit = 32768
+# Allow longer repository instruction chains across selected environments
+project_doc_max_bytes = 65536
+# Stop project configuration discovery at Git and standalone Jujutsu roots
+project_root_markers = [".git", ".jj"]
 
 {{- if eq .chezmoi.os "darwin" }}
 {{- $notifyClient := joinPath .chezmoi.homeDir ".codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient" }}
@@ -25,7 +31,7 @@ default_app_access = "allow"
 
 # Keep a custom root-write profile so ChatGPT does not classify the default as
 # its built-in Full access mode. Use `codex --profile safe` or `review` when a
-# task should run with narrower permissions.
+# task should run with narrower permissions
 [permissions.unrestricted]
 description = "Unrestricted access without the desktop Full access warning"
 
@@ -40,6 +46,7 @@ dangerously_allow_all_unix_sockets = true
 [tui]
 notification_condition = "always"
 show_tooltips = false
+question_esc_back = true
 {{- $terminalTheme := "light" -}}
 {{- if ne .chezmoi.os "darwin" -}}{{- $terminalTheme = "dark" -}}{{- end -}}
 {{- if lookPath "theme-run" -}}
@@ -54,7 +61,6 @@ status_line = [
   "five-hour-limit",
   "weekly-limit",
 ]
-status_line_use_colors = true
 
 [tui.keymap.global]
 {{- if eq .chezmoi.os "darwin" }}
@@ -197,21 +203,16 @@ enabled_tools = [
 ]
 {{- end }}
 
-{{- $chatGPTResources := "" }}
-{{- if eq .chezmoi.os "darwin" }}
-{{- $chatGPTResources = "/Applications/ChatGPT.app/Contents/Resources" }}
-{{- else if and (eq .chezmoi.os "linux") (lookPath "chatgpt") }}
-{{- $chatGPTExecutable := output "readlink" "-f" (lookPath "chatgpt") | trim }}
-{{- $chatGPTResources = joinPath (dir (dir $chatGPTExecutable)) "lib/chatgpt/resources" }}
-{{- end }}
+{{- $chatGPTResources := includeTemplate "chatgpt_resources" . | trim }}
 {{- $nodeRepl := joinPath $chatGPTResources "cua_node/bin/node_repl" }}
 {{- if and $chatGPTResources (stat $nodeRepl) }}
 {{- $codexHome := joinPath .chezmoi.homeDir ".codex" }}
 {{- $nodeModules := joinPath $chatGPTResources "cua_node/lib/node_modules" }}
+{{- $modernAutomation := and (eq .chezmoi.os "darwin") (stat (joinPath $nodeModules "@oai/cua-repl/bin/cua-repl.mjs")) }}
 {{- $browserService := joinPath $chatGPTResources "plugins/openai-bundled/plugins/browser/scripts/browser-service.mjs" }}
 
-# Keep ChatGPT's app-hosted automation available to standalone CLI sessions.
-# ChatGPT may refresh these values with config/batchWrite after an app update.
+# Keep ChatGPT's app-hosted automation available to standalone CLI sessions
+# ChatGPT may refresh these values with config/batchWrite after an app update
 [mcp_servers.node_repl]
 args = []
 {{- if eq .chezmoi.os "darwin" }}
@@ -227,12 +228,19 @@ NODE_REPL_NODE_MODULE_DIRS = "{{ $nodeModules }}"
 NODE_REPL_NODE_PATH = "{{ joinPath $chatGPTResources "cua_node/bin/node" }}"
 NODE_REPL_TRUSTED_CODE_PATHS = "{{ $codexHome }}:{{ $nodeModules }}"
 CODEX_HOME = "{{ $codexHome }}"
+{{- if $modernAutomation }}
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab,mcpapps"
+BROWSER_USE_TINYSKY_ENABLED = "1"
+{{- else }}
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 BROWSER_USE_TINYSKY_ENABLED = "0"
+{{- end }}
+{{- if not $modernAutomation }}
 NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
 NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
 {{- if eq .chezmoi.os "darwin" }}
 NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = "Control desktop apps on macOS through Computer Use."
+{{- end }}
 {{- end }}
 BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
 {{- if eq .chezmoi.os "darwin" }}
@@ -241,14 +249,16 @@ SKY_CUA_SERVICE_PATH = "{{ joinPath $codexHome "computer-use/Codex Computer Use.
 {{- else }}
 NODE_REPL_TRUSTED_SERVICES = '{"browser":"{{ $browserService }}"}'
 {{- end }}
-{{- if eq .chezmoi.os "darwin" }}
+{{- if $nativeCli }}
+CODEX_CLI_PATH = "{{ $nativeCli }}"
+{{- else if eq .chezmoi.os "darwin" }}
 CODEX_CLI_PATH = "{{ joinPath $chatGPTResources "codex-cli/bin/codex" }}"
 {{- else }}
 CODEX_CLI_PATH = "{{ joinPath $chatGPTResources "codex" }}"
 {{- end }}
 
 # Expose ChatGPT's compatibility variants through an unreserved marketplace
-# name so standalone Codex sessions can load the bundled plugins.
+# name so standalone Codex sessions can load the bundled plugins
 [marketplaces.dotfiles-chatgpt-bundled]
 source_type = "local"
 source = "{{ joinPath $codexHome ".tmp/compatibility-marketplaces/dotfiles-chatgpt-bundled" }}"
@@ -283,6 +293,16 @@ enabled = true
 
 [features]
 prevent_idle_sleep = true
+multi_agent_v2 = true
+
+# Experimental tool orchestration; keep direct tools available as well
+[features.code_mode]
+enabled = true
+default_exec_yield_time_ms = 10000
+
+# Expose task checklist updates for longer CLI sessions
+[tools.update_plan]
+enabled = true
 
 [apps._default]
 enabled = true
@@ -294,11 +314,12 @@ default_tools_approval_mode = "approve"
 hide_full_access_warning = true
 
 # ChatGPT derives ~/.codex/computer-use/config.json from these desktop theme
-# values and the active locale; leave that generated file app-owned.
+# values and the active locale; leave that generated file app-owned
 [desktop]
 appearanceLightCodeThemeId = "catppuccin-custom-light"
 appearanceDarkCodeThemeId = "catppuccin-custom-dark"
 followUpQueueMode = "queue"
+preventSleepWhileRunning = true
 
 [desktop.appearanceLightChromeTheme]
 accent = "{{ index $light "accentPink" }}"

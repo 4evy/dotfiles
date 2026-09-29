@@ -1,11 +1,15 @@
-# Select with `codex --profile safe` for normal project work with approvals.
+# Select with `codex --profile safe` for normal project work with approvals
 approval_policy = "on-request"
 default_permissions = ":workspace"
 web_search = "cached"
 
-# Keep read-only app calls frictionless, but require approval for writes.
+# Keep read-only app calls frictionless, but require approval for writes
 [apps._default]
 default_tools_approval_mode = "writes"
+
+# The desktop app contributes this server through its unified automation plugin
+[plugins."unified-computer-use@openai-bundled".mcp_servers.cua_repl]
+default_tools_approval_mode = "prompt"
 
 {{- $onePasswordMcp := "" }}
 {{- if eq .chezmoi.os "darwin" }}
@@ -15,7 +19,7 @@ default_tools_approval_mode = "writes"
 {{- end }}
 {{- if and $onePasswordMcp (stat $onePasswordMcp) }}
 
-# Secret access deserves an explicit prompt even when the tool is read-only.
+# Secret access deserves an explicit prompt even when the tool is read-only
 [mcp_servers.1password]
 default_tools_approval_mode = "prompt"
 {{- end }}
@@ -29,13 +33,7 @@ default_tools_approval_mode = "prompt"
 default_tools_approval_mode = "prompt"
 {{- end }}
 
-{{- $chatGPTResources := "" }}
-{{- if eq .chezmoi.os "darwin" }}
-{{- $chatGPTResources = "/Applications/ChatGPT.app/Contents/Resources" }}
-{{- else if and (eq .chezmoi.os "linux") (lookPath "chatgpt") }}
-{{- $chatGPTExecutable := output "readlink" "-f" (lookPath "chatgpt") | trim }}
-{{- $chatGPTResources = joinPath (dir (dir $chatGPTExecutable)) "lib/chatgpt/resources" }}
-{{- end }}
+{{- $chatGPTResources := includeTemplate "chatgpt_resources" . | trim }}
 {{- $nodeRepl := joinPath $chatGPTResources "cua_node/bin/node_repl" }}
 {{- if and $chatGPTResources (stat $nodeRepl) }}
 

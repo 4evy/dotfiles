@@ -1,0 +1,3 @@
+{{- if eq .chezmoi.os "linux" -}}
+CODEX_CLI_PATH="{{ includeTemplate "codex_native_cli_path" . | trim }}"
+{{ end -}}

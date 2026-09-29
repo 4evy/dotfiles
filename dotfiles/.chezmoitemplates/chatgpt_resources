@@ -1,0 +1,6 @@
+{{- if eq .chezmoi.os "darwin" -}}
+/Applications/ChatGPT.app/Contents/Resources
+{{- else if and (eq .chezmoi.os "linux") (lookPath "chatgpt") -}}
+{{- $executable := output "readlink" "-f" (lookPath "chatgpt") | trim -}}
+{{- joinPath (dir (dir $executable)) "lib/chatgpt/resources" -}}
+{{- end -}}
