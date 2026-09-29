@@ -78,7 +78,7 @@ sudo nixos-rebuild switch --flake .#nixos
 Requires macOS 27 or newer. From the cloned repo, I run:
 
 ``` bash
-./ansible/bootstrap.sh --setup
+./ansible/bootstrap.py setup
 ```
 
 The script asks for administrator and 1Password access when needed

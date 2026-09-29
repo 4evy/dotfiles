@@ -15,9 +15,9 @@ dotfiles-diff: (doctor 'apply')
       --refresh-externals=never \
       diff
 
-# Apply Helium extensions, settings, and the Catppuccin Custom theme
+# Apply Helium extensions, settings, and the Catppuccin Custom themes
 [group('setup')]
-helium: (doctor 'setup')
+helium: (doctor 'reconcile')
     #!/usr/bin/env bash
     set -euo pipefail
     if [ "$(uname)" = Darwin ]; then
@@ -43,23 +43,28 @@ helium: (doctor 'setup')
         exit 1
       fi
     fi
-    ansible/bootstrap.sh --tags helium
+    ansible/bootstrap.py run --tags helium
 
-[doc('Bootstrap userland, apply dotfiles, then apply host stages.')]
+# Prepare or repair the dependencies needed to run Ansible
+[group('setup')]
+bootstrap: (doctor 'setup')
+    ansible/bootstrap.py bootstrap
+
+[doc('Install userland, apply dotfiles, then configure the host.')]
 [group('setup')]
 setup: (doctor 'setup')
-    ansible/bootstrap.sh --setup
+    ansible/bootstrap.py setup
 
 # Refresh userland, dotfiles, and host stages on an already-bootstrapped machine
 [group('setup')]
-update: _userland apply _host
+update: bootstrap _userland apply _host
 
 _deps:
     uv run ansible-galaxy collection install {{ if !path_exists('.ansible/collections/ansible_collections/community/general/MANIFEST.json') || !path_exists('.ansible/collections/ansible_collections/community/sops/MANIFEST.json') { '--force' } }} \
       --requirements-file ansible/requirements.yml
 
 _userland:
-    DOTFILES_HOMEBREW_UPGRADE=1 ansible/bootstrap.sh --tags userland
+    DOTFILES_HOMEBREW_UPGRADE=1 ansible/bootstrap.py run --tags userland
 
 _host:
-    ansible/bootstrap.sh --tags host
+    ansible/bootstrap.py run --tags host

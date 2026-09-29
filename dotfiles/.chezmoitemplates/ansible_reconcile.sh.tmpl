@@ -1,2 +1,2 @@
 cd "$CHEZMOI_WORKING_TREE"
-exec "$CHEZMOI_WORKING_TREE/ansible/bootstrap.sh" --tags '{{ .tags }}'
+exec "$CHEZMOI_WORKING_TREE/ansible/bootstrap.py" run --tags '{{ .tags }}'

@@ -1,6 +1,6 @@
 import 'system/clean.just'
 
-doctor_setup_commands := ['bash', 'curl', 'git', 'sudo']
+doctor_setup_commands := ['python3', 'bash', 'curl', 'git', 'sudo']
 doctor_format_commands := ['git', 'nix']
 # uv supplies the Ansible tools from pyproject.toml and uv.lock
 doctor_ansible_commands := ['uv']
@@ -11,10 +11,10 @@ doctor_sops_commands := ['bash', 'sops'] ++ (if host_os == "macos" { ['op'] })
 doctor_records_commands := doctor_sops_commands ++ ['git', 'go']
 doctor_all_commands := doctor_lint_commands ++ doctor_sops_commands ++ ['bun', 'curl', 'shfmt', 'sudo', 'watchexec']
 
-doctor_commands(profile) := if profile == 'status' { if host_os == 'linux' { ['bootc', 'sudo'] } } else if profile == 'reboot' { if host_os == 'linux' { ['systemctl'] } } else if profile == 'install' { if host_os == 'linux' { ['bootc', 'sudo'] } } else if profile == 'spectrum' { ['bluebuild', 'check-jsonschema', 'jq', 'skopeo', 'uv'] } else if profile == 'setup' { doctor_setup_commands } else if profile == 'apply' { ['chezmoi', 'jq', 'ruby', doctor_records_commands] } else if profile == 'records' { doctor_records_commands } else if profile == 'sops' { doctor_sops_commands } else if profile == 'shell' { ['shellcheck', 'shfmt'] } else if profile == 'fmt' { doctor_format_commands } else if profile == 'lint' || profile == 'check' { doctor_lint_commands } else if profile == 'ansible' { doctor_ansible_commands } else if profile == 'bun' { ['bun'] } else if profile == 'nix' { ['bash', 'curl', 'jq', 'sudo'] } else if profile == 'watch' { ['watchexec'] } else if profile == 'all' { doctor_all_commands ++ (if host_os == 'linux' { ['bootc', 'systemctl'] }) }
+doctor_commands(profile) := if profile == 'status' { if host_os == 'linux' { ['bootc', 'sudo'] } } else if profile == 'reboot' { if host_os == 'linux' { ['systemctl'] } } else if profile == 'install' { if host_os == 'linux' { ['bootc', 'sudo'] } } else if profile == 'spectrum' { ['bluebuild', 'check-jsonschema', 'jq', 'skopeo', 'uv'] } else if profile == 'setup' { doctor_setup_commands } else if profile == 'reconcile' { ['python3', 'bash'] } else if profile == 'apply' { ['chezmoi', 'jq', 'ruby', doctor_records_commands] } else if profile == 'records' { doctor_records_commands } else if profile == 'sops' { doctor_sops_commands } else if profile == 'shell' { ['shellcheck', 'shfmt'] } else if profile == 'fmt' { doctor_format_commands } else if profile == 'lint' || profile == 'check' { doctor_lint_commands } else if profile == 'ansible' { doctor_ansible_commands } else if profile == 'bun' { ['bun'] } else if profile == 'nix' { ['bash', 'curl', 'jq', 'sudo'] } else if profile == 'watch' { ['watchexec'] } else if profile == 'all' { doctor_all_commands ++ (if host_os == 'linux' { ['bootc', 'systemctl'] }) }
 
 # Check one workflow's commands, or every workflow when omitted.
-[arg('profile', pattern=['status', 'reboot', 'install', 'build', 'setup', 'apply', 'records', 'sops', 'shell', 'spectrum', 'fmt', 'lint', 'ansible', 'bun', 'nix', 'watch', 'check', 'all'], help='Workflow to check')]
+[arg('profile', pattern=['status', 'reboot', 'install', 'build', 'setup', 'reconcile', 'apply', 'records', 'sops', 'shell', 'spectrum', 'fmt', 'lint', 'ansible', 'bun', 'nix', 'watch', 'check', 'all'], help='Workflow to check')]
 [group('system')]
 doctor $profile="all":
     host_os={{ quote(host_os) }}
