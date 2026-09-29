@@ -10,7 +10,8 @@ flags = [
   "--disable-search-engine-choice-screen",
   "--extension-mime-request-handling=always-prompt-for-install",
   "--omnibox-autocomplete-filtering=search",
-  "--set-color-scheme=dark",
+  "--set-user-color=245,179,192",
+  "--set-color-variant=tonal_spot",
 ]
 
 [browser.linux]
@@ -120,6 +121,23 @@ value = false
 [[browser.preferences.values]]
 path = "profile.using_custom_avatar"
 value = true
+
+[[browser.preferences.values]]
+path = "browser.theme.user_color2"
+# Chromium stores opaque #f5b3c0 as a signed ARGB integer
+value = -674880
+
+[[browser.preferences.values]]
+path = "browser.theme.color_variant2"
+value = 1
+
+[[browser.preferences.values]]
+path = "browser.theme.is_grayscale2"
+value = false
+
+[[browser.preferences.values]]
+path = "extensions.theme.id"
+value = "user_color_theme_id"
 
 [browser.helium]
 completed_onboarding = true
