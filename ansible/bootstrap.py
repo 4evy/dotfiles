@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Prepare or run workstation automation with Python 3.9+ and the standard library."""
+# /// script
+# requires-python = "==3.9.*"
+# dependencies = []
+# ///
+"""Prepare or run workstation automation with the Python 3.9 standard library."""
 
 from __future__ import annotations
 
@@ -14,20 +18,24 @@ import signal
 import subprocess
 import sys
 import tempfile
-from contextlib import suppress
+from collections.abc import Callable, Iterable
+from contextlib import ExitStack, suppress
+from dataclasses import dataclass
 from functools import partial
+from itertools import dropwhile
 from pathlib import Path
+from threading import Event, Thread
 from types import FrameType
 
 # Keep these independent of the workstation package and its development lockfile
 ANSIBLE_PACKAGE = "ansible==14.4.0"
 ANSIBLE_PYTHON = "3.14"
 MINIMUM_MACOS_MAJOR = 27
-HOMEBREW_REVISION = "525cea89e317348cda72711932734eb30613b559"
+HOMEBREW_REVISION = "0a396a4ee5b538f409de666af904fa0570b53949"
 HOMEBREW_URL = (
     f"https://raw.githubusercontent.com/Homebrew/install/{HOMEBREW_REVISION}/install.sh"
 )
-HOMEBREW_SHA256 = "71d25d14c32edd7adeaf4413ba671b28474ea08e4f6662cb1a73e85ff0eba368"
+HOMEBREW_SHA256 = "f31a38f097f3b5bbfdc110658e4a9876d0c023ccc9ef2e70527f5b8a762e505e"
 COLLECTIONS = ("ansible/posix", "community/general", "community/sops")
 BECOME_OPTIONS = frozenset({
     "-K",
@@ -71,17 +79,19 @@ def executable(path: Path) -> bool:
 
 
 class Workstation:
-    def __init__(self) -> None:
+    def __init__(self, resources: ExitStack) -> None:
+        self.resources = resources
+        self.sudo_ready = False
         self.system = platform.system()
         self.nixos = self.system == "Linux" and Path("/etc/NIXOS").exists()
         self.user_bin = Path.home() / ".local/bin"
         self.runtime_bin = (
             Path("/run/current-system/sw/bin") if self.nixos else self.user_bin
         )
-        self.brew_prefix = self.homebrew_prefix() if not self.nixos else None
+        self.brew_prefix = self.homebrew_prefix()
         self.env = os.environ.copy()
         paths = [self.runtime_bin]
-        if self.brew_prefix:
+        if not self.nixos:
             if self.system == "Darwin":
                 paths.extend(
                     self.brew_prefix / "opt" / package / "libexec/gnubin"
@@ -144,6 +154,13 @@ class Workstation:
         if not shutil.which("sudo", path=self.env["PATH"]):
             raise SetupError("privileged tasks require sudo")
         validate = partial(self.succeeds, "sudo", "-S", "-k", "-p", "", "-v")
+        password = (
+            self.env.get("DOTFILES_SUDO_PASSWORD")
+            or self.env.get("ANSIBLE_BECOME_PASS")
+            or self.env.get("ANSIBLE_BECOME_PASSWORD")
+        )
+        if password is not None and validate(stdin_text=password + "\n"):
+            return password
         # The local credential source is never printed or passed in argv
         try:
             password = Path("/etc/bleh").read_text(encoding="utf-8").rstrip("\n")
@@ -161,8 +178,53 @@ class Workstation:
         raise SetupError("failed to validate sudo credentials")
 
     def ensure_sudo(self) -> None:
-        if not self.succeeds("sudo", "-n", "-v"):
-            self.sudo_password()
+        if self.sudo_ready:
+            return
+        # Ignore cached timestamps so a long run does not outlive its credential
+        if not self.succeeds("sudo", "-n", "-k", "-v"):
+            password = self.sudo_password()
+            temp = self.resources.enter_context(
+                tempfile.TemporaryDirectory(prefix="dotfiles-sudo.")
+            )
+            helper = Path(temp) / "askpass"
+            helper.write_text(
+                '#!/bin/sh\nprintf "%s\\n" "${DOTFILES_SUDO_PASSWORD:?}"\n',
+                encoding="utf-8",
+            )
+            helper.chmod(0o700)
+            sudo = self.env.get("DOTFILES_REAL_SUDO") or shutil.which(
+                "sudo", path=self.env["PATH"]
+            )
+            if sudo is None:
+                raise SetupError("privileged tasks require sudo")
+            wrapper = Path(temp) / "sudo"
+            wrapper.write_text(
+                "#!/bin/sh\n"
+                '"$DOTFILES_REAL_SUDO" -A -v || exit "$?"\n'
+                '"$DOTFILES_REAL_SUDO" "$@"\n'
+                'exit "$?"\n',
+                encoding="utf-8",
+            )
+            wrapper.chmod(0o700)
+            # Keep the wrapper alive so both sudo calls share its parent-PID ticket
+            previous_env = self.env
+            self.env = dict(
+                self.env,
+                DOTFILES_SUDO_PASSWORD=password,
+                DOTFILES_REAL_SUDO=sudo,
+                SUDO_ASKPASS=str(helper),
+                PATH=os.pathsep.join((temp, self.env["PATH"])),
+            )
+            self.resources.callback(setattr, self, "env", previous_env)
+            self.command(sudo, "-A", "-v", stdout=subprocess.DEVNULL)
+            stop = Event()
+            worker = Thread(
+                target=refresh_sudo, args=(self.env.copy(), stop), daemon=True
+            )
+            worker.start()
+            self.resources.callback(worker.join)
+            self.resources.callback(stop.set)
+        self.sudo_ready = True
 
     def ensure_homebrew(self) -> None:
         brew = self.brew_prefix / "bin/brew"
@@ -239,16 +301,14 @@ class Workstation:
                 f"missing Ansible collections: {', '.join(missing)}; run just bootstrap"
             )
 
-    def bootstrap(self) -> None:
+    def install_collections(self) -> None:
         requirements = ROOT / "ansible/requirements.yml"
         if not requirements.is_file():
             raise SetupError(f"missing collection requirements: {requirements}")
-        if self.nixos:
-            for name in ("ansible-galaxy", "ansible-playbook"):
-                if not executable(self.runtime_bin / name):
-                    raise SetupError(f"rebuild NixOS first: missing {name}")
-        else:
-            self.install_runtime()
+        for name in ("ansible-galaxy", "ansible-playbook"):
+            if not executable(self.runtime_bin / name):
+                hint = "rebuild NixOS first" if self.nixos else "run bootstrap first"
+                raise SetupError(f"missing {name}; {hint}")
         log("Installing Ansible collections")
         args = [
             "collection",
@@ -265,7 +325,7 @@ class Workstation:
         self.require_runtime()
         log("Ansible dependencies are ready")
 
-    def install_runtime(self) -> None:
+    def prepare_homebrew(self) -> None:
         if self.system == "Darwin":
             version = self.output("sw_vers", "-productVersion")
             if int(version.split(".")[0]) < MINIMUM_MACOS_MAJOR:
@@ -276,6 +336,9 @@ class Workstation:
         brew = self.brew_prefix / "bin/brew"
         if self.output(brew, "--prefix") != str(self.brew_prefix):
             raise SetupError("Homebrew reported an unexpected prefix")
+
+    def install_uv(self) -> None:
+        brew = self.brew_prefix / "bin/brew"
         uv = self.brew_prefix / "bin/uv"
         if not executable(uv):
             self.command(
@@ -285,6 +348,9 @@ class Workstation:
                 "uv",
                 env=dict(self.env, HOMEBREW_NO_ASK="1"),
             )
+
+    def install_python(self) -> None:
+        uv = self.brew_prefix / "bin/uv"
         self.user_bin.mkdir(parents=True, exist_ok=True)
         log(f"Preparing Ansible's Python {ANSIBLE_PYTHON} runtime")
         self.command(uv, "--no-config", "python", "install", ANSIBLE_PYTHON)
@@ -296,6 +362,10 @@ class Workstation:
             "raise SystemExit(sys.version_info[:2] != expected)",
             ANSIBLE_PYTHON,
         )
+
+    def install_ansible(self) -> None:
+        uv = self.brew_prefix / "bin/uv"
+        python = self.user_bin / f"python{ANSIBLE_PYTHON}"
         log(f"Preparing {ANSIBLE_PACKAGE}")
         self.command(
             uv,
@@ -317,38 +387,30 @@ class Workstation:
     def run(self, args: list[str]) -> None:
         self.require_runtime()
         env = self.env.copy()
+        password = env.get("ANSIBLE_BECOME_PASS") or env.get("ANSIBLE_BECOME_PASSWORD")
+        if password:
+            env["ANSIBLE_BECOME_PASS"] = password
         option_names = {arg.partition("=")[0] for arg in args}
-        explicit = bool(BECOME_OPTIONS & option_names) or bool(
+        explicit = bool(password or BECOME_OPTIONS & option_names) or bool(
             env.get("ANSIBLE_BECOME_PASSWORD_FILE")
         )
-        password = env.get("ANSIBLE_BECOME_PASS") or env.get("ANSIBLE_BECOME_PASSWORD")
-        infer_password = (
-            not explicit
-            and not password
-            and not READ_ONLY_OPTIONS & option_names
-            and sys.stdin.isatty()
-            and not env.get("ANSIBLE_BECOME_ASK_PASS")
-        )
-        if infer_password and not self.succeeds("sudo", "-n", "-k", "-v"):
-            password = self.sudo_password()
-        if not explicit and not env.get("ANSIBLE_BECOME_ASK_PASS"):
+        ask_pass = env.get("ANSIBLE_BECOME_ASK_PASS", "").strip().lower() in {
+            "1",
+            "yes",
+            "true",
+            "on",
+            "y",
+            "t",
+        }
+        if not explicit and not ask_pass and not READ_ONLY_OPTIONS & option_names:
+            self.ensure_sudo()
+            env = self.env.copy()
+            if password := env.get("DOTFILES_SUDO_PASSWORD"):
+                env["ANSIBLE_BECOME_PASS"] = password
+        if not explicit and not ask_pass:
             env["ANSIBLE_BECOME_ASK_PASS"] = "false"  # ruff: ignore[hardcoded-password-string]
         log("Running Ansible playbook: ansible/site.yml")
-        with tempfile.TemporaryDirectory(prefix="dotfiles-ansible.") as temp:
-            if password is not None and not explicit:
-                # Only the helper code touches disk; the credential stays in memory
-                helper = Path(temp) / "become-password"
-                helper.write_text(
-                    '#!/bin/sh\nprintf "%s\\n" "$ANSIBLE_BECOME_PASS"\n',
-                    encoding="utf-8",
-                )
-                helper.chmod(0o700)
-                env.update(
-                    ANSIBLE_BECOME_PASS=password,
-                    ANSIBLE_BECOME_ASK_PASS="false",  # ruff: ignore[hardcoded-password-func-arg]
-                    ANSIBLE_BECOME_PASSWORD_FILE=str(helper),
-                )
-            self.command(self.playbook, "ansible/site.yml", *args, env=env)
+        self.command(self.playbook, "ansible/site.yml", *args, env=env)
 
     def private_settings_accessible(self, timeout: int) -> bool:
         env = dict(
@@ -396,35 +458,104 @@ class Workstation:
         if not self.private_settings_accessible(60):
             raise SetupError("private settings are still unavailable from 1Password")
 
-    def verify_setup_prerequisites(self) -> None:
+    def install_applications(self) -> None:
         if not executable(self.brew_prefix / "bin/just"):
             raise SetupError("the userland stage did not install just")
         if self.system == "Darwin":
             self.ensure_private_settings()
 
+        self.run(["--tags", "stage-30"])
+
     def apply_dotfiles(self) -> None:
+        self.ensure_sudo()
         just = (self.runtime_bin if self.nixos else self.brew_prefix / "bin") / "just"
         log("Applying chezmoi dotfiles")
         self.command(just, "--justfile", ROOT / "Justfile", "apply")
 
-    def setup(self) -> None:
-        userland = (
-            ()
-            if self.nixos
-            else (
-                partial(self.run, ["--tags", "stage-10,stage-20"]),
-                self.verify_setup_prerequisites,
-                partial(self.run, ["--tags", "stage-30"]),
+
+def refresh_sudo(env: dict[str, str], stop: Event) -> None:
+    # Refresh the terminal ticket for installers that call sudo by absolute path
+    sudo = env.get("DOTFILES_REAL_SUDO")
+    if sudo is None:
+        return
+    try:
+        while not stop.wait(30):
+            subprocess.run(
+                [sudo, "-A", "-v"],
+                env=env,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=10,
+                check=True,
             )
+    except (OSError, subprocess.SubprocessError):
+        print("warning: could not refresh sudo credentials", file=sys.stderr)
+
+
+@dataclass(frozen=True)
+class Step:
+    name: str
+    description: str
+    action: Callable[[Workstation], None]
+    nixos: bool = False
+
+
+BOOTSTRAP_STEPS = (
+    Step("homebrew", "Prepare Homebrew", Workstation.prepare_homebrew),
+    Step("uv", "Install uv", Workstation.install_uv),
+    Step("python", "Install Ansible's Python", Workstation.install_python),
+    Step("ansible", "Install Ansible", Workstation.install_ansible),
+    Step(
+        "collections",
+        "Install Ansible collections",
+        Workstation.install_collections,
+        True,
+    ),
+)
+SETUP_STEPS = (
+    *BOOTSTRAP_STEPS,
+    Step(
+        "userland",
+        "Install base tools",
+        partial(Workstation.run, args=["--tags", "stage-10,stage-20"]),
+    ),
+    Step("applications", "Install user applications", Workstation.install_applications),
+    Step("dotfiles", "Apply chezmoi dotfiles", Workstation.apply_dotfiles, True),
+    Step(
+        "host",
+        "Configure the host",
+        partial(Workstation.run, args=["--tags", "host"]),
+        True,
+    ),
+)
+
+
+def select_steps(host: Workstation, options: argparse.Namespace) -> Iterable[Step]:
+    steps = options.steps
+    if options.from_step:
+        steps = dropwhile(lambda step: step.name != options.from_step, steps)
+    if options.only:
+        steps = [step for step in steps if step.name in options.only]
+    unsupported = []
+    if host.nixos and options.only:
+        unsupported = [step.name for step in steps if not step.nixos]
+    if unsupported:
+        raise SetupError(
+            f"{', '.join(unsupported)} managed by NixOS; rebuild NixOS instead"
         )
-        steps = (
-            self.bootstrap,
-            *userland,
-            self.apply_dotfiles,
-            partial(self.run, ["--tags", "host"]),
-        )
-        for step in steps:
-            step()
+    if host.nixos:
+        steps = [step for step in steps if step.nixos]
+    return steps
+
+
+def execute_steps(host: Workstation, options: argparse.Namespace) -> None:
+    for step in select_steps(host, options):
+        if options.plan:
+            print(f"{step.name}: {step.description}")
+        else:
+            log(step.description)
+            step.action(host)
 
 
 def main() -> None:
@@ -433,27 +564,44 @@ def main() -> None:
         epilog="Use 'run --tags helium' for selected tasks; only bootstrap/setup install dependencies",
         allow_abbrev=False,
     )
-    subcommands = parser.add_subparsers(required=True)
-    commands = (
-        (Workstation.bootstrap, "Prepare or repair Ansible dependencies", False),
+    subcommands = parser.add_subparsers(dest="command", required=True)
+    for name, description, steps in (
+        ("bootstrap", "Prepare or repair Ansible dependencies", BOOTSTRAP_STEPS),
         (
-            Workstation.setup,
+            "setup",
             "Install userland, apply dotfiles, and configure the host",
-            False,
+            SETUP_STEPS,
         ),
-        (Workstation.run, "Pass arguments through to ansible-playbook", True),
-    )
-    for action, description, forward in commands:
-        subparser = subcommands.add_parser(
-            action.__name__,
-            help=description,
-            description=description,
-            add_help=not forward,
-            allow_abbrev=False,
+    ):
+        subparser = subcommands.add_parser(name, help=description, allow_abbrev=False)
+        subparser.set_defaults(steps=steps)
+        selection = subparser.add_mutually_exclusive_group()
+        names = [step.name for step in steps]
+        selection.add_argument(
+            "--only",
+            choices=names,
+            nargs="+",
+            help="Run only these steps, in setup order; prerequisites must already exist",
         )
-        subparser.set_defaults(action=action, forward=forward)
+        selection.add_argument(
+            "--from",
+            dest="from_step",
+            choices=names,
+            help="Resume at this step; earlier steps must already be complete",
+        )
+        subparser.add_argument(
+            "--plan",
+            action="store_true",
+            help="List selected steps without running commands",
+        )
+    subparser = subcommands.add_parser(
+        "run",
+        help="Pass arguments through to ansible-playbook",
+        add_help=False,
+        allow_abbrev=False,
+    )
     options, args = parser.parse_known_args()
-    if args and not options.forward:
+    if options.command != "run" and args:
         parser.error(
             f"unrecognized arguments: {' '.join(args)}; use run for Ansible options"
         )
@@ -463,7 +611,12 @@ def main() -> None:
         parser.error("Python 3.9 or newer is required")
     if os.geteuid() == 0:
         parser.error("do not run as root; privileged tasks use sudo")
-    options.action(Workstation(), **({"args": args} if options.forward else {}))
+    with ExitStack() as resources:
+        host = Workstation(resources)
+        if options.command == "run":
+            host.run(args)
+        else:
+            execute_steps(host, options)
 
 
 def interrupted(_signum: int, _frame: FrameType | None) -> None:

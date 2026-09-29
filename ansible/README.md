@@ -7,8 +7,11 @@ does not read `pyproject.toml` or `uv.lock`.
   collections. Ansible and Python versions are declared in `bootstrap.py`.
 - `just setup` prepares dependencies, installs userland, applies dotfiles, and
   configures the host.
-- `./ansible/bootstrap.py run --tags helium` runs selected tasks using the
-  installed runtime. Chezmoi hooks use this command without installing tools.
+- `just ansible --tags helium` runs selected tasks using the installed runtime.
+  Chezmoi hooks call `bootstrap.py run` without installing tools.
+
+Bootstrap and setup accept `--plan` to list steps, `--only STEP` to select them,
+and `--from STEP` to resume. Skipped prerequisites must already be installed.
 
 On NixOS, bootstrap uses the system Ansible and only installs collections.
 

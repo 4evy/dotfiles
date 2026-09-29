@@ -76,6 +76,9 @@ show-fixes = true
 target-version = "py314"
 unsafe-fixes = false
 
+[tool.ruff.per-file-target-version]
+"ansible/bootstrap.py" = "py39"
+
 [tool.ruff.lint]
 ignore = [
   # Ruff formatter conflicts: https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules

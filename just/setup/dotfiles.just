@@ -47,24 +47,27 @@ helium: (doctor 'reconcile')
 
 # Prepare or repair the dependencies needed to run Ansible
 [group('setup')]
-bootstrap: (doctor 'setup')
-    ansible/bootstrap.py bootstrap
+[positional-arguments]
+bootstrap *args:
+    ansible/bootstrap.py bootstrap "$@"
 
 [doc('Install userland, apply dotfiles, then configure the host.')]
 [group('setup')]
-setup: (doctor 'setup')
-    ansible/bootstrap.py setup
+[positional-arguments]
+setup *args:
+    ansible/bootstrap.py setup "$@"
 
 # Refresh userland, dotfiles, and host stages on an already-bootstrapped machine
 [group('setup')]
-update: bootstrap _userland apply _host
+update:
+    DOTFILES_HOMEBREW_UPGRADE=1 ansible/bootstrap.py setup
 
 _deps:
     uv run ansible-galaxy collection install {{ if !path_exists('.ansible/collections/ansible_collections/community/general/MANIFEST.json') || !path_exists('.ansible/collections/ansible_collections/community/sops/MANIFEST.json') { '--force' } }} \
       --requirements-file ansible/requirements.yml
 
-_userland:
-    DOTFILES_HOMEBREW_UPGRADE=1 ansible/bootstrap.py run --tags userland
-
-_host:
-    ansible/bootstrap.py run --tags host
+# Run selected Ansible tasks with the installed runtime
+[group('setup')]
+[positional-arguments]
+ansible *args:
+    ansible/bootstrap.py run "$@"
