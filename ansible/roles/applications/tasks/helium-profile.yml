@@ -106,3 +106,14 @@
             else {}
           )
       }}
+
+- name: Install the Catppuccin Custom Helium theme
+  ansible.builtin.command:
+    argv:
+      - "{{ ansible_facts['python']['executable'] }}"
+      - "{{ dotfiles_repo_root }}/scripts/helium-theme.py"
+      - "{{ applications_helium_platform }}"
+      - "{{ applications_helium_profile_dir }}"
+      - "--browser"
+      - "{{ applications_helium_linux_app_dir }}/helium"
+  changed_when: false

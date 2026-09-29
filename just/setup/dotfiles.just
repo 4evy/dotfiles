@@ -15,9 +15,34 @@ dotfiles-diff: (doctor 'apply')
       --refresh-externals=never \
       diff
 
-# Apply Helium extensions and settings; quit Helium first so profile writes run
+# Apply Helium extensions, settings, and the Catppuccin Custom theme
 [group('setup')]
 helium: (doctor 'setup')
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "$(uname)" = Darwin ]; then
+      if pgrep -f '^/Applications/Helium[.]app/Contents/MacOS/Helium([[:space:]]|$)' >/dev/null; then
+        osascript -e 'tell application "Helium" to quit'
+      fi
+      for attempt in $(seq 1 30); do
+        pgrep -f '^/Applications/Helium[.]app/Contents/MacOS/Helium([[:space:]]|$)' >/dev/null || break
+        sleep 1
+      done
+      if pgrep -f '^/Applications/Helium[.]app/Contents/MacOS/Helium([[:space:]]|$)' >/dev/null; then
+        echo 'Helium did not quit; profile settings cannot be applied' >&2
+        exit 1
+      fi
+    else
+      pkill -TERM -x helium || true
+      for attempt in $(seq 1 30); do
+        pgrep -x helium >/dev/null || break
+        sleep 1
+      done
+      if pgrep -x helium >/dev/null; then
+        echo 'Helium did not quit; profile settings cannot be applied' >&2
+        exit 1
+      fi
+    fi
     ansible/bootstrap.sh --tags helium
 
 [doc('Bootstrap userland, apply dotfiles, then apply host stages.')]

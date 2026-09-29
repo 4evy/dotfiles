@@ -1,0 +1,100 @@
+{
+  "manifest_version": 3,
+  "name": "Catppuccin Custom Dark",
+  "version": "1.12544.8553.13334",
+  "description": "Catppuccin Custom colors for Helium",
+  "theme": {
+    "colors": {
+      "frame": [
+        24,
+        24,
+        37
+      ],
+      "frame_inactive": [
+        24,
+        24,
+        37
+      ],
+      "background_tab": [
+        24,
+        24,
+        37
+      ],
+      "background_tab_inactive": [
+        24,
+        24,
+        37
+      ],
+      "toolbar": [
+        30,
+        30,
+        46
+      ],
+      "toolbar_text": [
+        205,
+        214,
+        244
+      ],
+      "toolbar_button_icon": [
+        245,
+        179,
+        192
+      ],
+      "bookmark_text": [
+        205,
+        214,
+        244
+      ],
+      "tab_text": [
+        245,
+        179,
+        192
+      ],
+      "tab_background_text": [
+        166,
+        173,
+        200
+      ],
+      "tab_background_text_inactive": [
+        166,
+        173,
+        200
+      ],
+      "omnibox_background": [
+        49,
+        50,
+        68
+      ],
+      "omnibox_text": [
+        205,
+        214,
+        244
+      ],
+      "ntp_background": [
+        30,
+        30,
+        46
+      ],
+      "ntp_text": [
+        205,
+        214,
+        244
+      ],
+      "ntp_link": [
+        145,
+        223,
+        255
+      ],
+      "ntp_header": [
+        245,
+        179,
+        192
+      ],
+      "button_background": [
+        49,
+        50,
+        68
+      ]
+    }
+  }
+}
