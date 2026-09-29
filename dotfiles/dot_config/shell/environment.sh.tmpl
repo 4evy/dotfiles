@@ -210,5 +210,20 @@ export UV_PYTHON="${UV_PYTHON:-3.14}"
 export UV_PYTHON_PREFERENCE="${UV_PYTHON_PREFERENCE:-only-managed}"
 export RUMDL_CACHE_DIR="${RUMDL_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/rumdl}"
 export GLAMOUR_STYLE="${GLAMOUR_STYLE:-$HOME/.config/glamour/styles/catppuccin-custom-dark.json}"
+
+# 05 / terminal color capability
+# Tailscale SSH accepts LC_* variables but drops COLORTERM, so carry the
+# client's color capability through LC_COLORTERM and restore it on arrival
+if [[ -z "${COLORTERM:-}" && -n "${SSH_CONNECTION:-}" ]]; then
+	case "${LC_COLORTERM:-}" in
+		truecolor | 24bit) export COLORTERM="$LC_COLORTERM" ;;
+	esac
+fi
+if [[ -n "${COLORTERM:-}" ]]; then
+	export LC_COLORTERM="$COLORTERM"
+else
+	unset LC_COLORTERM
+fi
+
 _dotfiles_environment_loaded=1
 unset DOTFILES_ENVIRONMENT_LOADED
