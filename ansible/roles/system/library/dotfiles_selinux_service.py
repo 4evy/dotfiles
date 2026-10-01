@@ -208,22 +208,18 @@ def write_if_changed(path: Path, content: str, mode: int = 0o644) -> bool:
     if path.is_file() and path.read_text(encoding="utf-8") == content:
         return False
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary: Path | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            "w",
-            encoding="utf-8",
-            dir=path.parent,
-            prefix=path.name,
-            delete=False,
-        ) as target:
-            temporary = Path(target.name)
-            target.write(content)
+    with tempfile.NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        dir=path.parent,
+        prefix=path.name,
+        delete_on_close=False,
+    ) as target:
+        target.write(content)
+        target.close()
+        temporary = Path(target.name)
         temporary.chmod(mode)
         temporary.replace(path)
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
     return True
 
 
