@@ -8,9 +8,9 @@
 let
   repositoryRoot = ../..;
   packageRoot = ./.;
-  packageMetadata = builtins.fromJSON (builtins.readFile (packageRoot + /package.json));
-  gnomeMetadata = builtins.fromJSON (builtins.readFile (packageRoot + /gnome/metadata.json));
-  kdeMetadata = builtins.fromJSON (builtins.readFile (packageRoot + /kde/metadata.json));
+  packageMetadata = lib.importJSON (packageRoot + /package.json);
+  gnomeMetadata = lib.importJSON (packageRoot + /gnome/metadata.json);
+  kdeMetadata = lib.importJSON (packageRoot + /kde/metadata.json);
   inherit (packageMetadata) version;
   extensionUuid = gnomeMetadata.uuid;
   pluginId = kdeMetadata.KPlugin.Id;
@@ -40,23 +40,39 @@ let
     runHook postBuild
   '';
 
+  mkTilingExtension = lib.extendMkDerivation {
+    constructDrv = stdenv.mkDerivation;
+    extendDrvArgs = _: args: {
+      inherit version src bunDeps;
+      strictDeps = true;
+
+      postUnpack = ''
+        sourceRoot="$sourceRoot/packages/hyper-window-tiling"
+      '';
+
+      nativeBuildInputs = [
+        bun
+        bun2nix.hook
+      ]
+      ++ (args.nativeBuildInputs or [ ]);
+      doCheck = false;
+      doInstallCheck = false;
+
+      meta = {
+        homepage = "https://github.com/4evy/dotfiles";
+        license = lib.licenses.mit;
+        maintainers = [ lib.maintainers._4evy ];
+        platforms = lib.platforms.linux;
+      }
+      // (args.meta or { });
+    };
+  };
+
 in
 {
-  gnome = stdenv.mkDerivation {
+  gnome = mkTilingExtension {
     pname = "gnome-shell-extension-hyper-window-tiling";
-    inherit version src;
-    strictDeps = true;
-
-    postUnpack = ''
-      sourceRoot="$sourceRoot/packages/hyper-window-tiling"
-    '';
-
-    nativeBuildInputs = [
-      bun
-      bun2nix.hook
-      glib
-    ];
-    inherit bunDeps;
+    nativeBuildInputs = [ glib ];
 
     buildPhase = buildPhaseFor "build:gnome";
 
@@ -73,34 +89,15 @@ in
       runHook postInstall
     '';
 
-    doCheck = false;
-    doInstallCheck = false;
-
     passthru = { inherit extensionUuid; };
 
     meta = {
       description = "Hyper-key window tiling extension for GNOME Shell";
-      homepage = "https://github.com/4evy/dotfiles";
-      license = lib.licenses.mit;
-      maintainers = [ lib.maintainers._4evy ];
-      platforms = lib.platforms.linux;
     };
   };
 
-  kde = stdenv.mkDerivation {
+  kde = mkTilingExtension {
     pname = "kwin-script-hyper-window-tiling";
-    inherit version src;
-    strictDeps = true;
-
-    postUnpack = ''
-      sourceRoot="$sourceRoot/packages/hyper-window-tiling"
-    '';
-
-    nativeBuildInputs = [
-      bun
-      bun2nix.hook
-    ];
-    inherit bunDeps;
 
     buildPhase = buildPhaseFor "build:kde";
 
@@ -115,17 +112,10 @@ in
       runHook postInstall
     '';
 
-    doCheck = false;
-    doInstallCheck = false;
-
     passthru.pluginId = pluginId;
 
     meta = {
       description = "Hyper-key window tiling script for KDE Plasma";
-      homepage = "https://github.com/4evy/dotfiles";
-      license = lib.licenses.mit;
-      maintainers = [ lib.maintainers._4evy ];
-      platforms = lib.platforms.linux;
     };
   };
 }
