@@ -2,16 +2,17 @@
 """Match the Codex syntax theme to the terminal appearance."""
 
 import argparse
-import json
+import asyncio
 import os
-import selectors
 import shutil
 import subprocess
 import sys
-import time
 import tomllib
 from pathlib import Path
 from typing import TypedDict, cast
+
+sys.path.insert(0, str(Path.home() / ".local/lib/python"))
+from codex_app_server import app_server
 
 
 class ConfigLayer(TypedDict):
@@ -20,65 +21,13 @@ class ConfigLayer(TypedDict):
     version: str
 
 
-class AppServer:
-    def __init__(self, binary: str, timeout: float) -> None:
-        self.deadline = time.monotonic() + timeout
-        self.process = subprocess.Popen(
-            [binary, "app-server", "--listen", "stdio://"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-        )
-        if self.process.stdin is None or self.process.stdout is None:
-            raise RuntimeError("app-server pipes are unavailable")
-        self.stdin = self.process.stdin
-        self.stdout = self.process.stdout
-        self.selector = selectors.DefaultSelector()
-        self.selector.register(self.stdout, selectors.EVENT_READ)
-        self.buffer = b""
-        self.request_id = 0
-
-    def send(self, message: dict[str, object]) -> None:
-        self.stdin.write(json.dumps(message).encode() + b"\n")
-        self.stdin.flush()
-
-    def request(self, method: str, params: dict[str, object]) -> dict[str, object]:
-        self.request_id += 1
-        self.send({"id": self.request_id, "method": method, "params": params})
-        while True:
-            while b"\n" in self.buffer:
-                line, self.buffer = self.buffer.split(b"\n", 1)
-                message = json.loads(line)
-                if message.get("id") == self.request_id:
-                    if "error" in message:
-                        raise RuntimeError(f"{method} failed")
-                    return message["result"]
-            remaining = self.deadline - time.monotonic()
-            if remaining <= 0 or not self.selector.select(remaining):
-                raise TimeoutError("theme selection timed out")
-            chunk = os.read(self.stdout.fileno(), 65536)
-            if not chunk:
-                raise RuntimeError("app-server disconnected")
-            self.buffer += chunk
-
-    def close(self) -> None:
-        self.selector.close()
-        self.process.terminate()
-        try:
-            self.process.wait(timeout=1)
-        except subprocess.TimeoutExpired:
-            self.process.kill()
-            self.process.wait()
-        self.stdin.close()
-        self.stdout.close()
-
-
-def select_theme(binary: str) -> None:
+async def select_theme(binary: str) -> None:
     """Match our custom syntax palette to the terminal without CLI overrides."""
     detector = shutil.which("theme-run")
     if detector is None:
         return
-    result = subprocess.run(
+    result = await asyncio.to_thread(
+        subprocess.run,
         [detector, "--print-theme"],
         capture_output=True,
         text=True,
@@ -98,14 +47,14 @@ def select_theme(binary: str) -> None:
         "catppuccin-custom-dark",
     }:
         return
-    server = AppServer(binary, 10)
-    try:
-        server.request(
-            "initialize",
-            {"clientInfo": {"name": "dotfiles_theme", "version": "1"}},
+    async with (
+        asyncio.timeout(10),
+        app_server(binary, client_name="dotfiles_theme") as server,
+    ):
+        result = cast(
+            "dict[str, object]",
+            await server.request("config/read", {"includeLayers": True}),
         )
-        server.send({"method": "initialized"})
-        result = server.request("config/read", {"includeLayers": True})
         layer = next(
             entry
             for entry in cast("list[ConfigLayer]", result["layers"])
@@ -113,7 +62,7 @@ def select_theme(binary: str) -> None:
         )
         if layer["config"].get("tui", {}).get("theme") != current:
             return
-        server.request(
+        await server.request(
             "config/batchWrite",
             {
                 "edits": [
@@ -127,8 +76,6 @@ def select_theme(binary: str) -> None:
                 "expectedVersion": layer["version"],
             },
         )
-    finally:
-        server.close()
 
 
 def main() -> None:
@@ -136,11 +83,12 @@ def main() -> None:
     parser.add_argument("binary", help="Real Codex binary (not the wrapper)")
     args = parser.parse_args()
     try:
-        select_theme(args.binary)
+        asyncio.run(select_theme(args.binary))
     except (
         OSError,
         ValueError,
         RuntimeError,
+        TimeoutError,
         KeyError,
         StopIteration,
         TypeError,

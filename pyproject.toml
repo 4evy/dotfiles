@@ -209,6 +209,7 @@ exclude = [
   "(^|.*/)(venv|\\.venv|\\.direnv|\\.git|\\.jj|node_modules|build|dist)(/|$)",
 ]
 known_first_party = [
+  "codex_app_server",
   "kmscon_files",
   "lsp_jsonrpc",
   "source_lock",
