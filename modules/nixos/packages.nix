@@ -40,7 +40,10 @@ in
         just
         yamllint
         ;
-      inherit (dotfilesPackages) dotfiles-python theme-run;
+      inherit (dotfilesPackages) theme-run;
+      # Include package entry points and a Python interpreter carrying the
+      # root project's dependencies for deployed standalone helpers.
+      dotfiles-python = dotfilesPackages.dotfiles-python.runtime;
 
       # Host/session spine and editor dependencies.
       inherit (pkgs.unstable)
@@ -148,7 +151,6 @@ in
         tree
         ty
         unzip
-        python314
         uv
         vulkan-tools
         watchexec

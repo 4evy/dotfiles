@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 """Validated environment settings for workstation commands."""
 
 from typing import ClassVar, Self

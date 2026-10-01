@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 class DotfilesError(RuntimeError):
     """A user-facing automation failure."""
 

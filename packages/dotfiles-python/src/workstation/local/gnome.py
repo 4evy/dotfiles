@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 """GNOME desktop commands."""
 
 import subprocess

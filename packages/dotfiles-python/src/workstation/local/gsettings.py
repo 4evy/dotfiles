@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 """Availability helpers for the GNOME settings command."""
 
 from workstation.lib.commands import which

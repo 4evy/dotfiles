@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 """Materialize Spectrum build inputs from the current flake lock."""
 
 import json

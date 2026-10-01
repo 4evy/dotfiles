@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 import os
 import sysconfig
 from contextlib import suppress

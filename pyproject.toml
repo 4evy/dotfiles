@@ -133,6 +133,8 @@ ignore = [
   "implicit-namespace-package",
   # Package initializers intentionally register Cyclopts command trees.
   "non-empty-init-module",
+  # Every source declares its Python version, including non-executable modules.
+  "shebang-not-executable",
   # Runtime import placement is deliberate; ty checks the annotations themselves.
   "typing-only-first-party-import",
   "typing-only-standard-library-import",
@@ -178,6 +180,7 @@ docstring-code-format = true
 preview = true
 
 [tool.ty.environment]
+python-version = "3.14"
 extra-paths = [
   "./",
   "./ansible/roles/keyboard/files/toshy",

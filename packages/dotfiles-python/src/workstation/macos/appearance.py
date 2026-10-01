@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 """Catppuccin Custom integration with macOS appearance preferences."""
 
 import sys

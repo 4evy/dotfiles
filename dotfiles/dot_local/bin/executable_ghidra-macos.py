@@ -15,6 +15,8 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import ProxyHandler, Request, build_opener
 
+from platformdirs.unix import Unix
+
 CACHE_DIRS = (
     Path("/System/Volumes/Preboot/Cryptexes/OS/System/Library/dyld"),
     Path("/System/Library/dyld"),
@@ -102,9 +104,7 @@ def select(query: str) -> CacheImage:
 
 def extract(image: CacheImage) -> Path:
     state = Path(
-        os.getenv("GHIDRA_MCP_STATE")
-        or Path(os.getenv("XDG_STATE_HOME") or Path.home() / ".local/state")
-        / "ghidra-mcp-headless"
+        os.getenv("GHIDRA_MCP_STATE") or Unix("ghidra-mcp-headless").user_state_path
     )
     cache_output = (
         state

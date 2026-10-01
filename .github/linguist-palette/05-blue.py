@@ -1,5 +1,5 @@
-# GitHub Linguist language-bar ballast.
-# Stripe: blue; classification: Python.
+#!/usr/bin/env python3.14
+# Stripe: blue; classification: Python. Byte ballast.
 # GitHub calculates repository language percentages from file bytes.
 # This minimal valid file intentionally fixes one native sidebar segment.
 # Keep its byte size stable; see the allowlist at the end of .gitattributes.

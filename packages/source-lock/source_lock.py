@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 """Read flake locks and verify downloads of non-executable file inputs."""
 
 import argparse

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3.14
 """Ensure a macOS application bundle has a stable local signing identity."""
 
 from __future__ import annotations

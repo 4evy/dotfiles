@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3.14
 """Reconcile the system role's SELinux policy-backed services."""
 
 from __future__ import annotations

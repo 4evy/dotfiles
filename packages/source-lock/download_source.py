@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 """Download a named file input from a projected flake lock."""
 
 import argparse

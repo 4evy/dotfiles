@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 """Apple Terminal profile provisioning."""
 
 import sys

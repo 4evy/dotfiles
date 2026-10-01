@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 """Shared access to the Catppuccin Custom palette."""
 
 from functools import cache

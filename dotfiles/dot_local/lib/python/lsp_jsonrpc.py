@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 """Byte-accurate stdio proxy for JSON-RPC language servers."""
 
 import atexit

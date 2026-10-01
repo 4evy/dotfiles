@@ -1,9 +1,8 @@
 ---
-- name: Link conventional Python command names to uv wrappers
+- name: Link conventional Python command names to the project runtime
   ansible.builtin.file:
-    # uv owns the versioned executable. Point the conventional aliases at that
-    # stable entry point instead of package console scripts, which can disappear
-    # when the repository Python package changes its exported commands.
+    # The versioned launcher executes the uv tool environment's interpreter,
+    # so standalone scripts see the same dependencies as package entry points.
     src: "{{ dotfiles_bin_dir }}/python3.14"
     dest: "{{ dotfiles_bin_dir }}/{{ item }}"
     state: link

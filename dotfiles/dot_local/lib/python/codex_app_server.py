@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 """Shared stdio client for Codex's newline-delimited app-server protocol."""
 
 import asyncio

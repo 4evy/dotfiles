@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 """Validated configuration and cached addresses for phone mirroring."""
 
 import ipaddress

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 """Plaintext-aware Jujutsu diff formatter."""
 
 import filecmp

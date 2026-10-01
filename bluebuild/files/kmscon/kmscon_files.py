@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.14
 """Small, durable file operations shared by KMSCON helpers."""
 
 import os

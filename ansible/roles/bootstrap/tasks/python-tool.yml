@@ -69,3 +69,14 @@
         content: "{{ bootstrap_dotfiles_python_tool_metadata }}"
         dest: "{{ dotfiles_cache_dir }}/dotfiles-python-tool.sha256"
         mode: "0644"
+
+- name: Launch standalone repository scripts in the project tool environment
+  ansible.builtin.copy:
+    content: |
+      #!/bin/sh
+      exec "{{ dotfiles_data_dir }}/uv-tools/dotfiles-python/bin/python3.14" "$@"
+    dest: "{{ dotfiles_bin_dir }}/python3.14"
+    mode: "0755"
+    follow: false
+  tags:
+    - python
