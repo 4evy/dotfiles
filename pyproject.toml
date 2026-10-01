@@ -206,7 +206,7 @@ sort_by_size = true
 root = [".github", "ansible", "bluebuild", "dotfiles", "packages"]
 # Keep first-party setup.py helpers in dependency discovery.
 exclude = [
-  "(^|.*/)(venv|\\.venv|\\.direnv|\\.git|\\.jj|node_modules|build|dist)(/|$)",
+  "(^|.*/)(venv|\\.venv|\\.direnv|\\.git|\\.jj|node_modules|zig-pkg|build|dist)(/|$)",
 ]
 known_first_party = [
   "codex_app_server",
