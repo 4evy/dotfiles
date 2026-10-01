@@ -1,26 +1,26 @@
 import os
-import shutil
-import subprocess
 import sys
-from filecmp import cmp
 from pathlib import Path
+
+from workstation.lib.commands import run, which
+from workstation.lib.files import is_executable, write_if_changed
 
 
 def main() -> None:
     home = Path(os.environ["CHEZMOI_HOME_DIR"])
     command = home / ".local/bin/discord-equicord"
     if not command.is_file():
-        command = Path(shutil.which("discord-equicord") or command)
-    if command.is_file() and os.access(command, os.X_OK):
-        subprocess.run((command, "--repair-only"), check=True)
+        command = which("discord-equicord") or command
+    if is_executable(command):
+        run((command, "--repair-only"))
 
-    nix = shutil.which("nix")
+    nix = which("nix")
     if nix is None:
         print("Equicord settings install skipped: nix is not available")
         raise SystemExit(0)
 
     repository = Path(os.environ["CHEZMOI_WORKING_TREE"])
-    result = subprocess.run(
+    result = run(
         (
             nix,
             "build",
@@ -29,9 +29,7 @@ def main() -> None:
             "path:.#equicord-settings",
         ),
         cwd=repository,
-        check=True,
-        capture_output=True,
-        text=True,
+        capture=True,
     )
     outputs = result.stdout.splitlines()
     if len(outputs) != 1:
@@ -47,8 +45,4 @@ def main() -> None:
     )
     settings.mkdir(parents=True, exist_ok=True)
     for name in ("settings.json", "quickCss.css"):
-        source = package / name
-        destination = settings / name
-        if not destination.is_file() or not cmp(source, destination, shallow=False):
-            source.copy(destination)
-        destination.chmod(0o644)
+        write_if_changed(settings / name, (package / name).read_bytes())
