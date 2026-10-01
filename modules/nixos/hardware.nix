@@ -33,10 +33,9 @@ in
           powerManagement.enable = true;
           powerManagement.finegrained = true;
           moduleParams.nvidia = {
-            # NVIDIA assumes that the CPU does not support PAT by default, but
-            # this is effectively never the case on supported hardware.
-            NVreg_UsePageAttributeTable = 1;
-            # This is sometimes needed for DDC/CI support.
+            # Keep suspend VRAM backups on disk instead of the default tmpfs
+            NVreg_TemporaryFilePath = "/var/tmp";
+            # This is sometimes needed for DDC/CI support
             # https://www.ddcutil.com/nvidia/
             NVreg_RegistryDwords = "RMUseSwI2c=0x01;RMI2cSpeed=100";
           };

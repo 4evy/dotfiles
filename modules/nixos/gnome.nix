@@ -12,7 +12,6 @@ let
     genAttrs'
     nameValuePair
     ;
-  inherit (lib.meta) getExe';
   inherit (lib.modules) mkIf mkMerge;
   inherit (lib.options) mkEnableOption;
   inherit (lib.gvariant)
@@ -35,11 +34,6 @@ let
       num: nameValuePair "${prefix}-${num}" (mkArray [ "${super}${modifierStr}${num}" ])
     );
 
-  sleepTargets = [
-    "systemd-suspend.service"
-    "systemd-hibernate.service"
-  ];
-
   copyousExtension = pkgs.gnomeExtensions.copyous;
   copyousExtensionUuid = copyousExtension.extensionUuid;
   toshyWindowContextExtension = pkgs.gnomeExtensions.focused-window-d-bus;
@@ -47,8 +41,6 @@ let
   hyperWindowTilingExtension = dotfilesPackages.hyper-window-tiling-gnome;
   hyperWindowTilingExtensionUuid = hyperWindowTilingExtension.passthru.extensionUuid;
 
-  gnomeShell = getExe' pkgs.gnome-shell "gnome-shell";
-  pkill = getExe' pkgs.procps "pkill";
 in
 {
   options.local.gnome.enable = mkEnableOption "GNOME";
@@ -85,34 +77,6 @@ in
           evince # Docs
           totem # Videos
           ;
-      };
-    })
-    # Fix for GNOME suspend/resume issues with NVIDIA GPUs
-    (mkIf (config.local.gnome.enable && config.local.nvidia.enable) {
-      systemd.services = {
-        gnome-suspend = {
-          description = "Suspend gnome shell";
-          before = sleepTargets ++ [
-            "nvidia-suspend.service"
-            "nvidia-hibernate.service"
-          ];
-          wantedBy = sleepTargets;
-          serviceConfig = {
-            Type = "oneshot";
-            ExecStart = "${pkill} -f -STOP ${gnomeShell}";
-          };
-        };
-        gnome-resume = {
-          description = "Resume gnome shell";
-          after = sleepTargets ++ [
-            "nvidia-resume.service"
-          ];
-          wantedBy = sleepTargets;
-          serviceConfig = {
-            Type = "oneshot";
-            ExecStart = "${pkill} -f -CONT ${gnomeShell}";
-          };
-        };
       };
     })
     (mkIf config.local.dconf.enable {

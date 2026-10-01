@@ -9,6 +9,8 @@ modules:
       - systemd.show_status=1
       - rd.systemd.show_status=1
       - loglevel=7
+      # Turing notebooks need explicit runtime D3 power management
+      - nvidia.NVreg_DynamicPowerManagement=0x02
 
   - type: systemd@v1
     source: ghcr.io/blue-build/modules/systemd:v1@sha256:765fe786f00ced8f7165ae46862cbc8a1f4406932afa357ac31acd6dd27d980f
