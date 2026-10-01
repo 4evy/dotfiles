@@ -68,6 +68,10 @@ open_transcript = "ctrl-t"
 {{- end }}
 open_external_editor = "ctrl-x"
 
+# Match omp queueing, including Ghostty's macOS Cmd+Enter alias
+[tui.keymap.composer]
+queue = "ctrl-shift-enter"
+
 {{- $onePasswordMcp := "" }}
 {{- if eq .chezmoi.os "darwin" }}
 {{- $onePasswordMcp = "/Applications/1Password.app/Contents/MacOS/1password-mcp" }}

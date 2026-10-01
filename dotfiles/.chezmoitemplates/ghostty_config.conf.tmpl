@@ -50,6 +50,8 @@ font-thicken = true
 # Keybindings
 keybind = clear
 {{- if eq .chezmoi.os "darwin" }}
+# Queue in omp and Codex with Cmd+Enter, leaving Tab shortcuts alone
+keybind = super+enter=text:\x1b[13;6u
 # Emit terminal-native Home/End sequences instead of legacy Ctrl+A/Ctrl+E.
 keybind = super+left=text:\x1bOH
 keybind = super+right=text:\x1bOF
@@ -194,6 +196,8 @@ keybind = ctrl+shift+t=new_tab
 keybind = ctrl+shift+n=new_window
 keybind = ctrl+shift+w=close_tab:this
 keybind = ctrl+enter=toggle_fullscreen
+# Send the same queue shortcut on both platforms
+keybind = ctrl+shift+enter=text:\x1b[13;6u
 keybind = performable:ctrl+shift+f=start_search
 keybind = performable:escape=end_search
 
