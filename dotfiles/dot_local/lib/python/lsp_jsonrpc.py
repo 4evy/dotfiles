@@ -1,6 +1,7 @@
 """Byte-accurate stdio proxy for JSON-RPC language servers."""
 
 import atexit
+import json
 import signal
 import subprocess
 import sys
@@ -10,6 +11,67 @@ from typing import BinaryIO, cast
 
 type MessageFilter = Callable[[bytes], bytes]
 type MessageObserver = Callable[[bytes], None]
+
+
+def _json_object(body: bytes) -> dict[str, object] | None:
+    try:
+        value: object = json.loads(body)
+    except json.JSONDecodeError, UnicodeDecodeError:
+        return None
+    return cast("dict[str, object]", value) if isinstance(value, dict) else None
+
+
+class DiagnosticFilter:
+    """Suppress push and pull diagnostics using one URI policy."""
+
+    def __init__(
+        self, suppress_uri: Callable[[object], bool], *, workspace: bool = False
+    ) -> None:
+        self.suppress_uri = suppress_uri
+        self.responses = {"textDocument/diagnostic": {"kind": "full", "items": []}}
+        if workspace:
+            self.responses["workspace/diagnostic"] = {"items": []}
+        self.requests: dict[int | str, str] = {}
+        self.lock = threading.Lock()
+
+    def observe(self, body: bytes) -> None:
+        message = _json_object(body)
+        if message is None:
+            return
+        method = message.get("method")
+        request_id = message.get("id")
+        if not isinstance(method, str) or method not in self.responses:
+            return
+        if not isinstance(request_id, (int, str)):
+            return
+        if method == "textDocument/diagnostic":
+            params = message.get("params")
+            document = params.get("textDocument") if isinstance(params, dict) else None
+            uri = document.get("uri") if isinstance(document, dict) else None
+            if not self.suppress_uri(uri):
+                return
+        with self.lock:
+            self.requests[request_id] = method
+
+    def filter(self, body: bytes) -> bytes:
+        message = _json_object(body)
+        if message is None:
+            return body
+        if message.get("method") == "textDocument/publishDiagnostics":
+            params = message.get("params")
+            if not isinstance(params, dict) or not self.suppress_uri(params.get("uri")):
+                return body
+            cast("dict[str, object]", params)["diagnostics"] = []
+        else:
+            request_id = message.get("id")
+            if not isinstance(request_id, (int, str)):
+                return body
+            with self.lock:
+                method = self.requests.pop(request_id, None)
+            if method is None or "result" not in message:
+                return body
+            message["result"] = self.responses[method]
+        return json.dumps(message, separators=(",", ":")).encode()
 
 
 def read_lsp_message(stream: BinaryIO) -> bytes | None:
