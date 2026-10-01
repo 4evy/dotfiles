@@ -72,8 +72,30 @@ def load_hidapi() -> ctypes.CDLL:
             ("patch", ctypes.c_int),
         ]
 
-    hidapi.hid_version.argtypes = []
-    hidapi.hid_version.restype = ctypes.POINTER(HidApiVersion)
+    signatures = {
+        "hid_version": (ctypes.POINTER(HidApiVersion), ()),
+        "hid_init": (ctypes.c_int, ()),
+        "hid_enumerate": (
+            ctypes.POINTER(DeviceInfo),
+            (ctypes.c_ushort, ctypes.c_ushort),
+        ),
+        "hid_free_enumeration": (None, (ctypes.POINTER(DeviceInfo),)),
+        "hid_open_path": (ctypes.c_void_p, (ctypes.c_char_p,)),
+        "hid_write": (
+            ctypes.c_int,
+            (ctypes.c_void_p, ctypes.c_char_p, ctypes.c_size_t),
+        ),
+        "hid_read_timeout": (
+            ctypes.c_int,
+            (ctypes.c_void_p, ctypes.c_char_p, ctypes.c_size_t, ctypes.c_int),
+        ),
+        "hid_close": (None, (ctypes.c_void_p,)),
+        "hid_error": (ctypes.c_wchar_p, (ctypes.c_void_p,)),
+    }
+    for name, (result_type, argument_types) in signatures.items():
+        function = getattr(hidapi, name)
+        function.restype = result_type
+        function.argtypes = argument_types
     version = hidapi.hid_version().contents
 
     fields = [
@@ -92,27 +114,6 @@ def load_hidapi() -> ctypes.CDLL:
     if version.major > 0 or version.minor >= 13:
         fields.append(("bus_type", ctypes.c_int))
     DeviceInfo._fields_ = fields
-
-    hidapi.hid_init.argtypes = []
-    hidapi.hid_init.restype = ctypes.c_int
-    hidapi.hid_enumerate.argtypes = [ctypes.c_ushort, ctypes.c_ushort]
-    hidapi.hid_enumerate.restype = ctypes.POINTER(DeviceInfo)
-    hidapi.hid_free_enumeration.argtypes = [ctypes.POINTER(DeviceInfo)]
-    hidapi.hid_open_path.argtypes = [ctypes.c_char_p]
-    hidapi.hid_open_path.restype = ctypes.c_void_p
-    hidapi.hid_write.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_size_t]
-    hidapi.hid_write.restype = ctypes.c_int
-    hidapi.hid_read_timeout.argtypes = [
-        ctypes.c_void_p,
-        ctypes.c_char_p,
-        ctypes.c_size_t,
-        ctypes.c_int,
-    ]
-    hidapi.hid_read_timeout.restype = ctypes.c_int
-    hidapi.hid_close.argtypes = [ctypes.c_void_p]
-    hidapi.hid_close.restype = None
-    hidapi.hid_error.argtypes = [ctypes.c_void_p]
-    hidapi.hid_error.restype = ctypes.c_wchar_p
 
     if hidapi.hid_init() != 0:
         raise HidApiError("hid_init failed")
@@ -161,8 +162,7 @@ def choose_path(devices: list[HidDevice], product_name: str | None) -> bytes | N
         return None
 
     priority = {0xFF43: 0, 0xFF0C: 1, 0x0001: 2, 0x000C: 3}
-    devices = sorted(devices, key=lambda d: priority.get(d["usage_page"], 9))
-    path = devices[0]["path"]
+    path = min(devices, key=lambda d: priority.get(d["usage_page"], 9))["path"]
     return path if isinstance(path, bytes) else None
 
 
