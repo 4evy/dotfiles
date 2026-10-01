@@ -72,6 +72,9 @@ jobs:
         with:
           version-file: .tool-versions
 
+      - name: Install Ruby
+        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
+
       - name: Run Renovate
         run: .github/renovate/node_modules/.bin/renovate
         env:
