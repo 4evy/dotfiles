@@ -55,8 +55,8 @@ in
           "vicinae.cachix.org-1:1kDrfienkGHPYbkpNj1mWTr7Fm1+zcenzgTizIcI3oc="
         ];
         nix-path = nixPathEntries;
-      }
-      // lib.attrsets.optionalAttrs config.nixpkgs.hostPlatform.isLinux { flake-registry = ""; };
+        flake-registry = lib.modules.mkIf config.nixpkgs.hostPlatform.isLinux "";
+      };
 
       channel.enable = false;
       # Opinionated: make flake registry and nix path match flake inputs

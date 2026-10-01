@@ -14,10 +14,9 @@ let
 
   # System and user units, native drop-ins, and their shared canonical policy
   # files stay one tree consumed directly by both NixOS and BlueBuild.
-  spectrumSystemdUnits = pkgs.runCommandLocal "spectrum-systemd-units" { } ''
-    mkdir -p "$out/lib/systemd"
-    ln -s ${rootfs}/usr/lib/systemd/* "$out/lib/systemd/"
-  '';
+  spectrumSystemdUnits = pkgs.linkFarm "spectrum-systemd-units" {
+    "lib/systemd" = "${rootfs}/usr/lib/systemd";
+  };
 in
 {
   environment.etc = {

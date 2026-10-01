@@ -6,7 +6,7 @@
 let
   repositoryRoot = ../..;
   packageRoot = ./.;
-  pyproject = builtins.fromTOML (builtins.readFile (repositoryRoot + /pyproject.toml));
+  pyproject = lib.importTOML (repositoryRoot + /pyproject.toml);
 in
 python314Packages.buildPythonApplication {
   pname = pyproject.project.name;

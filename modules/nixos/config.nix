@@ -1,11 +1,11 @@
 {
-  attrValues,
-  isx86_64,
+  config,
   pkgs,
+  ...
 }:
 {
   # General hardware configuration
-  environment.systemPackages = attrValues { inherit (pkgs) libva-utils; };
+  environment.systemPackages = [ pkgs.libva-utils ];
   environment.sessionVariables = {
     # It tells supported apps to use the Ozone/Wayland backend
     NIXOS_OZONE_WL = "1";
@@ -25,7 +25,7 @@
 
   hardware.graphics = {
     enable = true;
-    enable32Bit = isx86_64;
+    enable32Bit = config.nixpkgs.hostPlatform.isx86_64;
   };
 
   # Spectrum installs Solaar and its udev support for the shared Logitech

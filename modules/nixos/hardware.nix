@@ -8,20 +8,14 @@ let
   inherit (lib.attrsets) attrValues;
   inherit (lib.modules) mkIf mkMerge;
   inherit (lib.options) mkEnableOption;
-  inherit (config.nixpkgs.hostPlatform) isx86_64;
 in
 {
+  imports = [ ./config.nix ];
+
   options.local.nvidia.enable = mkEnableOption "NVIDIA";
   options.local.amd.enable = mkEnableOption "AMD";
 
   config = mkMerge [
-    (import ./config.nix {
-      inherit
-        attrValues
-        isx86_64
-        pkgs
-        ;
-    })
     (mkIf config.local.nvidia.enable {
       services.xserver.videoDrivers = [ "nvidia" ];
 

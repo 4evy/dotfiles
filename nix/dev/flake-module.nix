@@ -437,7 +437,7 @@
           biome = {
             enable = true;
             formatCommand = "format";
-            settings = lib.recursiveUpdate (builtins.fromJSON (builtins.readFile ../../biome.jsonc)) {
+            settings = lib.recursiveUpdate (lib.importJSON ../../biome.jsonc) {
               # treefmt already walks the Git worktree and passes the selected
               # files explicitly. The generated config lives in the Nix store,
               # where Biome cannot discover this checkout's ignore file.

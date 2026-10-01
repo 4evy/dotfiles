@@ -38,19 +38,15 @@ let
     "--wayland-text-input-version=3"
   ];
 
-  heliumConfigSource = fromTOML (builtins.readFile ../../browser/helium.toml);
-  heliumConfig = heliumConfigSource // {
-    browser = heliumConfigSource.browser // {
-      linux = heliumConfigSource.browser.linux // {
-        app_dir = toString heliumAppDir;
-        wrapper_flags = commandLineArgs;
-      };
+  heliumConfigSource = lib.importTOML ../../browser/helium.toml;
+  heliumConfig = lib.recursiveUpdate heliumConfigSource {
+    browser.linux = {
+      app_dir = toString heliumAppDir;
+      wrapper_flags = commandLineArgs;
     };
-    extension_settings = heliumConfigSource.extension_settings // {
-      files = map (
-        path: pkgs.writeText "helium-${baseNameOf path}" (builtins.readFile (../../browser + "/${path}"))
-      ) heliumConfigSource.extension_settings.files;
-    };
+    extension_settings.files = map (
+      path: pkgs.writeText "helium-${baseNameOf path}" (builtins.readFile (../../browser + "/${path}"))
+    ) heliumConfigSource.extension_settings.files;
   };
 
   heliumBrowser = pkgs.eupkgs.helium-browser;

@@ -6,7 +6,7 @@
 let
   sourcePin = dotfilesSourcePins.bluebuild-cli;
   src = sourcePin.outPath;
-  manifest = fromTOML (builtins.readFile (src + "/Cargo.toml"));
+  manifest = lib.importTOML (src + "/Cargo.toml");
   version = "${manifest.workspace.package.version}-unstable-${lib.substring 0 8 sourcePin.revision}";
 in
 rustPlatform.buildRustPackage {

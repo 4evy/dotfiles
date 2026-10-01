@@ -7,16 +7,12 @@
 let
   inherit (config.local.user) group home name;
 
-  dotfilesFontconfig = pkgs.linkFarm "dotfiles-fontconfig" [
-    {
-      name = "etc/fonts/conf.d/45-interface-fonts.conf";
-      path = ../../dotfiles/dot_config/fontconfig/conf.d/45-interface-fonts.conf;
-    }
-    {
-      name = "etc/fonts/conf.d/50-code-monospace.conf";
-      path = ../../dotfiles/dot_config/fontconfig/conf.d/50-code-monospace.conf;
-    }
-  ];
+  dotfilesFontconfig = pkgs.linkFarm "dotfiles-fontconfig" {
+    "etc/fonts/conf.d/45-interface-fonts.conf" =
+      ../../dotfiles/dot_config/fontconfig/conf.d/45-interface-fonts.conf;
+    "etc/fonts/conf.d/50-code-monospace.conf" =
+      ../../dotfiles/dot_config/fontconfig/conf.d/50-code-monospace.conf;
+  };
 
 in
 {

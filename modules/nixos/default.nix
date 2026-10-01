@@ -17,6 +17,10 @@ let
     };
 in
 {
+  _class = "nixos";
+
+  meta.maintainers = [ lib.maintainers._4evy ];
+
   imports = [
     ../cross
     ./desktop-packages.nix
