@@ -1,9 +1,8 @@
 import json
 import os
-import shutil
-import subprocess
 from pathlib import Path
 
+from workstation.lib.commands import run, which
 from workstation.lib.files import write_if_changed
 
 
@@ -13,16 +12,15 @@ def remove_owned(path: Path) -> None:
 
 
 def capture(command: tuple[str, ...], target: Path, shell: str) -> None:
-    executable = shutil.which(command[0])
+    executable = which(command[0])
     if executable is None:
         remove_owned(target)
         return
-    result = subprocess.run(
+    result = run(
         (executable, *command[1:]),
         check=False,
-        capture_output=True,
-        env={**os.environ, "SHELL": f"/bin/{shell}"},
-        text=True,
+        capture=True,
+        env={"SHELL": f"/bin/{shell}"},
     )
     if result.returncode != 0:
         print(f"failed to generate shell integration for {command[0]}")
