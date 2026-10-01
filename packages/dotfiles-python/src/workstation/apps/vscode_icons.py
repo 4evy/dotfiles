@@ -2,12 +2,12 @@ import hashlib
 import json
 import re
 import shutil
-import subprocess
 import zipfile
 from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from workstation.lib.commands import output, run, which
 from workstation.lib.theme import palettes
 
 UPSTREAM_ID = "catppuccin.catppuccin-vsc-icons"
@@ -121,12 +121,10 @@ def build_vsix(extension: Path, destination: Path, *, version: str) -> None:
 
 
 def main() -> None:
-    code = shutil.which("code")
+    code = which("code")
     if code is None:
         return
-    located = subprocess.check_output(
-        (code, "--locate-extension", UPSTREAM_ID), text=True
-    ).strip()
+    located = output((code, "--locate-extension", UPSTREAM_ID)).strip()
     if not located:
         return
 
@@ -178,7 +176,7 @@ def main() -> None:
         )
         vsix = temporary / f"{CUSTOM_EXTENSION_ID}-{version}.vsix"
         build_vsix(extension, vsix, version=version)
-        subprocess.run((code, "--install-extension", vsix, "--force"), check=True)
+        run((code, "--install-extension", vsix, "--force"))
 
 
 if __name__ == "__main__":
