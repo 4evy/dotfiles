@@ -179,18 +179,16 @@ def _repair_macos(package_bin: Path) -> None:
     _set_macos_asar_lock(resources, locked=False)
     try:
         environment = {"HOME": os.fspath(Path.home())}
-        result = run(
-            (equilotl, "--repair", "--location", app),
-            check=False,
-            env=environment,
-        )
-        if result.returncode != 0:
-            result = run(
-                (equilotl, "--install", "--location", app),
+        succeeded = any(
+            run(
+                (equilotl, operation, "--location", app),
                 check=False,
                 env=environment,
-            )
-        if result.returncode != 0 or not _macos_equicord_is_patched(resources):
+            ).returncode
+            == 0
+            for operation in ("--repair", "--install")
+        )
+        if not succeeded or not _macos_equicord_is_patched(resources):
             raise DotfilesError("discord-equicord: failed to patch Discord on macOS")
         # Allow the locally patched bundle to launch without replacing Discord's
         # signing identity: Krisp crashes when the host has an ad-hoc signature.
