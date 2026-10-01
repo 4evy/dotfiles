@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+
+repo=${DOTFILES_REPO:-}
+if [ -z "$repo" ]; then
+  if [ -d "$HOME/Developer/dotfiles" ]; then
+    repo=$HOME/Developer/dotfiles
+  elif [ -d "$HOME/dotfiles" ]; then
+    repo=$HOME/dotfiles
+  else
+    printf '%s\n' "omp: DOTFILES_REPO was not found" >&2
+    exit 1
+  fi
+fi
+
+bun=$(command -v bun)
+omp=$("$bun" pm bin --global)/omp
+if [ ! -x "$omp" ]; then
+  printf '%s\n' "omp: Bun's global OMP installation was not found: $omp" >&2
+  exit 1
+fi
+
+"$bun" "$repo/scripts/patch-omp-ui.ts" "$omp"
+exec "$bun" "$omp" "$@"

@@ -10,6 +10,7 @@
 README.md
 package.json
 tsconfig.json
+.omp/tsconfig.json
 node_modules/
 node_modules/**
 **/__pycache__/

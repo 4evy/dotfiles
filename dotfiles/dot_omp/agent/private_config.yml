@@ -1,0 +1,26 @@
+modelRoles:
+  default: openai-codex/gpt-6.1-sol
+defaultThinkingLevel: high
+hideThinkingBlock: false
+theme:
+  dark: catppuccin-custom-dark
+  light: catppuccin-custom-light
+statusLine:
+  preset: custom
+  # A flat trans-colored ribbon; quota and context precede optional counters
+  separator: pipe
+  transparent: true
+  contextLine: percentage
+  sessionAccent: false
+  compactThinkingLevel: false
+  leftSegments: [vim, model, mode, path]
+  # Context is current prompt occupancy; token_total accumulates across turns
+  # Cached re-reads are excluded from token_total
+  rightSegments: [context_pct, usage, cost, token_total]
+  segmentOptions:
+    path:
+      stripWorkPrefix: true
+      maxLength: 32
+setupVersion: 2
+dev:
+  autoqaConsent: granted

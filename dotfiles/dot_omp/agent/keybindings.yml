@@ -1,0 +1,7 @@
+app.editor.external:
+  - ctrl+x
+  - super+x
+  - ctrl+g
+# Queue with Ctrl+Shift+Enter or Ghostty's macOS Cmd+Enter alias
+app.message.followUp:
+  - ctrl+shift+enter

@@ -1,0 +1,98 @@
+{{- $root := index . "root" -}}
+{{- $variant := index . "variant" -}}
+{{- $p := index $root.catppuccin_custom $variant -}}
+{
+  "name": "catppuccin-custom-{{ $variant }}",
+  "vars": {{ $p | toJson }},
+  "colors": {
+    "accent": "pink",
+    "border": "border",
+    "borderAccent": "blue",
+    "borderMuted": "surface0",
+    "success": "success",
+    "error": "error",
+    "warning": "warning",
+    "muted": "textMuted",
+    "dim": "subtext0",
+    "text": "text",
+    "thinkingText": "textMuted",
+    "selectedBg": "highlightMed",
+    "userMessageBg": "messageSurface",
+    "userMessageText": "messageForeground",
+    "customMessageBg": "surface0",
+    "customMessageText": "text",
+    "customMessageLabel": "pink",
+    "toolPendingBg": "surface0",
+    "toolSuccessBg": "mantle",
+    "toolErrorBg": "mantle",
+    "toolTitle": "foam",
+    "toolOutput": "textMuted",
+    "mdHeading": "rose",
+    "mdLink": "foam",
+    "mdLinkUrl": "textMuted",
+    "mdCode": "rose",
+    "mdCodeBlock": "text",
+    "mdCodeBlockBorder": "border",
+    "mdQuote": "textMuted",
+    "mdQuoteBorder": "border",
+    "mdHr": "border",
+    "mdListBullet": "rose",
+    "toolDiffAdded": "green",
+    "toolDiffRemoved": "red",
+    "toolDiffContext": "textMuted",
+    "syntaxComment": "textMuted",
+    "syntaxKeyword": "iris",
+    "syntaxFunction": "rose",
+    "syntaxVariable": "text",
+    "syntaxString": "pine",
+    "syntaxNumber": "peach",
+    "syntaxType": "gold",
+    "syntaxOperator": "foam",
+    "syntaxPunctuation": "subtle",
+    "thinkingOff": "border",
+    "thinkingMinimal": "textMuted",
+    "thinkingLow": "blue",
+    "thinkingMedium": "pink",
+    "thinkingHigh": "text",
+    "thinkingXhigh": "pink",
+    "thinkingMax": "blue",
+    "bashMode": "green",
+    "pythonMode": "yellow",
+    "statusLineBg": "crust",
+    "statusLineSep": "border",
+    "statusLineModel": "blue",
+    "statusLinePath": "pink",
+    "statusLineGitClean": "text",
+    "statusLineGitDirty": "yellow",
+    "statusLineContext": "text",
+    "statusLineSpend": "foam",
+    "statusLineStaged": "green",
+    "statusLineDirty": "peach",
+    "statusLineUntracked": "foam",
+    "statusLineOutput": "pink",
+    "statusLineCost": "blue",
+    "statusLineSubagents": "iris"
+  },
+  "symbols": {
+    "overrides": {
+      "icon.model": "🏳️‍⚧️",
+      "icon.omp": "🏳️‍⚧️",
+      "icon.agents": "🏳️‍🌈"
+    }
+  },
+  "export": {
+    "pageBg": "base",
+    "cardBg": "mantle",
+    "infoBg": "surface0"
+  },
+  "terminal": {
+    "background": "terminalBackground",
+    "foreground": "terminalForeground",
+    "chrome": "chrome",
+    "widget": "surface",
+    "ansi": [
+      "ansiBlack", "red", "green", "yellow", "blue", "pink", "teal", "ansiWhite",
+      "subtext0", "red", "green", "yellow", "blue", "pink", "teal", "text"
+    ]
+  }
+}
