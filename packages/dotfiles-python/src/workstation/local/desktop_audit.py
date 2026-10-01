@@ -114,11 +114,8 @@ def _audit_flatpak_gl() -> None:
             ),
             check=False,
         )
-        pattern = re.compile(
-            r"nvidia|org\.freedesktop\.Platform\.(GL|VAAPI)", re.IGNORECASE
-        )
         console.print(
-            "\n".join(line for line in runtimes.splitlines() if pattern.search(line))
+            _matching_lines(runtimes, r"nvidia|org\.freedesktop\.Platform\.(GL|VAAPI)")
         )
 
 
