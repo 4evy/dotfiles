@@ -1,0 +1,60 @@
+diff --git a/dist/modules/platform/github/graphql.js b/dist/modules/platform/github/graphql.js
+index e65680eb241ed3d7bc54def77016ae636fa6c65e..d20c6c42cdedd57ab5486181933257a1dfa9bac2 100644
+--- a/dist/modules/platform/github/graphql.js
++++ b/dist/modules/platform/github/graphql.js
+@@ -11,6 +11,7 @@ query($owner: String!, $name: String!, $user: String) {
+     isArchived
+     nameWithOwner
+     hasIssuesEnabled
++    hasPullRequestsEnabled
+     hasVulnerabilityAlertsEnabled
+     autoMergeAllowed
+     mergeCommitAllowed
+diff --git a/dist/modules/platform/github/index.js b/dist/modules/platform/github/index.js
+index 06239b9c740b8b7291fe592f671e57b8386949ee..11485a3ec7030c249473e35e072d45441f36ccb8 100644
+--- a/dist/modules/platform/github/index.js
++++ b/dist/modules/platform/github/index.js
+@@ -394,6 +394,7 @@ async function initRepo({ repository, forkCreation, forkOrg, forkToken, gitUrl,
+ 		else logger.debug("Could not find allowed merge methods for repo");
+ 		config.autoMergeAllowed = repo.autoMergeAllowed;
+ 		config.hasIssuesEnabled = repo.hasIssuesEnabled;
++		config.hasPullRequestsEnabled = repo.hasPullRequestsEnabled;
+ 		config.hasVulnerabilityAlertsEnabled = repo.hasVulnerabilityAlertsEnabled;
+ 		config.mergeQueueEnabled[config.defaultBranch] = isNonEmptyObject(repo.mergeQueue);
+ 		const recentIssues = GithubIssue.array().catch([]).parse(res?.data?.repository?.issues?.nodes);
+@@ -579,6 +580,7 @@ async function fetchPr(prNo) {
+ 	}
+ }
+ async function getPr(prNo) {
++	if (config.hasPullRequestsEnabled === false) return null;
+ 	if (!prNo) return null;
+ 	let pr = (await getPrList()).find(({ number }) => number === prNo) ?? null;
+ 	if (pr) logger.debug("Returning PR from cache");
+@@ -591,6 +593,8 @@ function matchesState(state, desiredState) {
+ 	return state === desiredState;
+ }
+ async function getPrList() {
++	// Disabled PRs return 404; branch automerge does not need their history
++	if (config.hasPullRequestsEnabled === false) return [];
+ 	if (!config.prList) {
+ 		const repo = config.parentRepo ?? config.repository;
+ 		let username = config.renovateUsername;
+@@ -601,6 +605,7 @@ async function getPrList() {
+ 	return config.prList;
+ }
+ async function findPr({ branchName, prTitle, state = "all", includeOtherAuthors }) {
++	if (config.hasPullRequestsEnabled === false) return null;
+ 	logger.debug(`findPr(${branchName}, ${prTitle}, ${state})`);
+ 	if (includeOtherAuthors) {
+ 		const repo = config.parentRepo ?? config.repository;
+@@ -1212,6 +1217,10 @@ async function tryPrAutomerge(prNumber, prNodeId, platformPrOptions) {
+ 	}
+ }
+ async function createPr({ sourceBranch, targetBranch, prTitle: title, prBody: rawBody, labels, draftPR = false, platformPrOptions, milestone }) {
++	if (config.hasPullRequestsEnabled === false) {
++		logger.error({ sourceBranch }, "PR fallback blocked: pull requests are disabled");
++		throw new Error("pull-requests-disabled");
++	}
+ 	const body = sanitize(rawBody);
+ 	const base = targetBranch;
+ 	const head = `${config.repository.split("/")[0]}:${sourceBranch}`;

@@ -9,5 +9,8 @@
   },
   "devDependencies": {
     "renovate": "44.115.4"
+  },
+  "patchedDependencies": {
+    "renovate@44.115.4": "patches/renovate@44.115.4.patch"
   }
 }

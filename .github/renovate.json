@@ -114,6 +114,12 @@
   ],
   "packageRules": [
     {
+      "description": "Keep Renovate aligned with its disabled-PR compatibility patch",
+      "matchPackageNames": ["renovate"],
+      "matchFileNames": [".github/renovate/package.json"],
+      "enabled": false
+    },
+    {
       "description": "Keep module majors aligned with recipe types; update digests automatically",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/blue-build/modules/**"],

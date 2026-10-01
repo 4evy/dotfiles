@@ -9,6 +9,9 @@
       },
     },
   },
+  "patchedDependencies": {
+    "renovate@44.115.4": "patches/renovate@44.115.4.patch",
+  },
   "packages": {
     "@arcanis/slice-ansi": ["@arcanis/slice-ansi@1.1.1", "", { "dependencies": { "grapheme-splitter": "^1.0.4" } }, "sha512-xguP2WR2Dv0gQ7Ykbdb7BNCnPnIPB94uTi0Z2NvkRBEnhbwjOQ7QyQKJXrVQg4qDpiD9hA5l5cCwy/z2OXgc3w=="],
 
