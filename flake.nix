@@ -40,7 +40,7 @@
 
     source-equilotl = {
       flake = false;
-      url = "github:Equicord/Equilotl/v2.2.6";
+      url = "github:Equicord/Equilotl/v2.3.0";
     };
 
     source-ghostty-zig-aarch64-linux = {

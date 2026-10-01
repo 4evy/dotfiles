@@ -1,7 +1,7 @@
 {
   "name": "dotfiles-renovate",
   "private": true,
-  "packageManager": "bun@1.3.14",
+  "packageManager": "bun@1.4.2",
   "scripts": {
     "extract": "cd ../.. && LOG_LEVEL=warn .github/renovate/node_modules/.bin/renovate --platform=local --dry-run=extract --require-config=required",
     "renovate": "renovate",

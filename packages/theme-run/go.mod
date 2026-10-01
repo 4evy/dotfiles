@@ -4,7 +4,7 @@ go 1.27
 
 require (
 	github.com/alecthomas/kong v1.16.1
-	github.com/charmbracelet/ultraviolet v0.0.0-20260922123528-4e49372c11f9
+	github.com/charmbracelet/ultraviolet v0.0.0-20261001125412-878653296cfd
 	github.com/charmbracelet/x/ansi v0.11.8
 	github.com/go-ozzo/ozzo-validation/v4 v4.4.1
 	github.com/pelletier/go-toml/v2 v2.4.3
