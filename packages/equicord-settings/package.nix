@@ -1,5 +1,5 @@
 {
-  jq,
+  formats,
   lib,
   quickCss,
   runCommand,
@@ -8,7 +8,7 @@
 }:
 let
   quickCssFile = writeText "equicord-quick-css" quickCss;
-  settingsFile = writeText "equicord-settings.json" (builtins.toJSON settings);
+  settingsFile = (formats.json { }).generate "equicord-settings.json" settings;
 in
 runCommand "equicord-settings"
   {
@@ -19,11 +19,10 @@ runCommand "equicord-settings"
       maintainers = [ lib.maintainers._4evy ];
       platforms = lib.platforms.all;
     };
-    nativeBuildInputs = [ jq ];
     strictDeps = true;
   }
   ''
     mkdir -p "$out"
-    jq . ${settingsFile} > "$out/settings.json"
+    cp ${settingsFile} "$out/settings.json"
     cp ${quickCssFile} "$out/quickCss.css"
   ''

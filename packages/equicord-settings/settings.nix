@@ -2,14 +2,9 @@
 let
   inherit (lib.attrsets) mapAttrs' nameValuePair;
 
-  toUpper =
-    string:
-    lib.strings.concatStrings [
-      (lib.strings.toUpper (builtins.substring 0 1 string))
-      (builtins.substring 1 (builtins.stringLength string) string)
-    ];
+  capitalize = string: lib.toUpper (builtins.substring 0 1 string) + builtins.substring 1 (-1) string;
 
-  pluginJsonName = name: parseRules.pluginRenames.${name} or (toUpper name);
+  pluginJsonName = name: parseRules.pluginRenames.${name} or (capitalize name);
 
   pluginToJson =
     plugin:
@@ -18,36 +13,93 @@ let
       enabled = plugin.enable or true;
     };
 
+  enabledPlugins =
+    lib.genAttrs
+      [
+        "alwaysExpandRoles"
+        "betterGifPicker"
+        "betterSettings"
+        "betterUploadButton"
+        "biggerStreamPreview"
+        "clearUrls"
+        "crashHandler"
+        "disableCallIdle"
+        "dontRoundMyTimestamps"
+        "equicordHelper"
+        "favoriteEmojiFirst"
+        "fixCodeblockGap"
+        "fixImagesQuality"
+        "fixYoutubeEmbeds"
+        "forceOwnerCrown"
+        "fullSearchContext"
+        "fullVcpfp"
+        "gifPaste"
+        "greetStickerPicker"
+        "hideChatButtons"
+        "hideMedia"
+        "hideServers"
+        "homeTyping"
+        "imageFilename"
+        "implicitRelationships"
+        "lastActive"
+        "limitlessScreenshare"
+        "memberCount"
+        "mentionAvatars"
+        "messageLoggerEnhanced"
+        "mutualGroupDms"
+        "newGuildSettings"
+        "newPluginsManager"
+        "noBlockedMessages"
+        "noDevtoolsWarning"
+        "noF1"
+        "noMaskedUrlPaste"
+        "noMosaic"
+        "noPendingCount"
+        "noProfileThemes"
+        "noTypingAnimation"
+        "noUnblockToJump"
+        "onePingPerDm"
+        "pauseInvitesForever"
+        "pictureInPicture"
+        "platformIndicators"
+        "previewMessage"
+        "readAllNotificationsButton"
+        "relationshipNotifier"
+        "replyTimestamp"
+        "revealAllSpoilers"
+        "serverInfo"
+        "serverListIndicators"
+        "showBadgesInChat"
+        "showConnections"
+        "showHiddenThings"
+        "showTimeoutDuration"
+        "silentTyping"
+        "streamerModeOnStream"
+        "themeAttributes"
+        "translate"
+        "typingIndicator"
+        "typingTweaks"
+        "unindent"
+        "unlockedAvatarZoom"
+        "userVoiceShow"
+        "validReply"
+        "validUser"
+        "viewIcons"
+        "voiceChatDoubleClick"
+        "volumeBooster"
+        "youtubeAdblock"
+      ]
+      (_: {
+        enable = true;
+      });
+
   nixcordConfig = {
     useQuickCss = true;
-    plugins = {
-      alwaysExpandRoles.enable = true;
-      betterGifPicker.enable = true;
-      betterSettings.enable = true;
-      betterUploadButton.enable = true;
-      biggerStreamPreview.enable = true;
+    plugins = enabledPlugins // {
       callTimer = {
         enable = true;
         format = "human";
       };
-      clearUrls.enable = true;
-      crashHandler.enable = true;
-      disableCallIdle.enable = true;
-      dontRoundMyTimestamps.enable = true;
-      equicordHelper.enable = true;
-      favoriteEmojiFirst.enable = true;
-      fixCodeblockGap.enable = true;
-      fixImagesQuality.enable = true;
-      fixYoutubeEmbeds.enable = true;
-      forceOwnerCrown.enable = true;
-      fullSearchContext.enable = true;
-      fullVcpfp.enable = true;
-      gifPaste.enable = true;
-      greetStickerPicker.enable = true;
-      hideChatButtons.enable = true;
-      hideMedia.enable = true;
-      hideServers.enable = true;
-      homeTyping.enable = true;
       ignoreActivities = {
         enable = true;
         ignoreCompeting = true;
@@ -55,36 +107,12 @@ let
         ignorePlaying = true;
         ignoreWatching = true;
       };
-      imageFilename.enable = true;
-      implicitRelationships.enable = true;
-      lastActive.enable = true;
-      limitlessScreenshare.enable = true;
-      memberCount.enable = true;
-      mentionAvatars.enable = true;
       messageLogger = {
         enable = true;
         collapseDeleted = true;
         ignoreBots = true;
         ignoreSelf = true;
       };
-      messageLoggerEnhanced.enable = true;
-      mutualGroupDms.enable = true;
-      newGuildSettings.enable = true;
-      newPluginsManager.enable = true;
-      noBlockedMessages.enable = true;
-      noDevtoolsWarning.enable = true;
-      noF1.enable = true;
-      noMaskedUrlPaste.enable = true;
-      noMosaic.enable = true;
-      noPendingCount.enable = true;
-      noProfileThemes.enable = true;
-      noTypingAnimation.enable = true;
-      noUnblockToJump.enable = true;
-      onePingPerDm.enable = true;
-      pauseInvitesForever.enable = true;
-      pictureInPicture.enable = true;
-      platformIndicators.enable = true;
-      previewMessage.enable = true;
       questify = {
         enable = true;
         migrationVersion = 1;
@@ -184,31 +212,6 @@ let
         autoCompleteQuestsSimultaneously = true;
         resumeQuestIds = { };
       };
-      readAllNotificationsButton.enable = true;
-      relationshipNotifier.enable = true;
-      replyTimestamp.enable = true;
-      revealAllSpoilers.enable = true;
-      serverInfo.enable = true;
-      serverListIndicators.enable = true;
-      showBadgesInChat.enable = true;
-      showConnections.enable = true;
-      showHiddenThings.enable = true;
-      showTimeoutDuration.enable = true;
-      silentTyping.enable = true;
-      streamerModeOnStream.enable = true;
-      themeAttributes.enable = true;
-      translate.enable = true;
-      typingIndicator.enable = true;
-      typingTweaks.enable = true;
-      unindent.enable = true;
-      unlockedAvatarZoom.enable = true;
-      userVoiceShow.enable = true;
-      validReply.enable = true;
-      validUser.enable = true;
-      viewIcons.enable = true;
-      voiceChatDoubleClick.enable = true;
-      volumeBooster.enable = true;
-      youtubeAdblock.enable = true;
     };
   };
 
