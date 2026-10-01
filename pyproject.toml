@@ -37,13 +37,16 @@ automation = [
   "ansible-lint>=26,<27",
 ]
 dev = [
-  "astral>=3.2,<4",
+  { include-group = "kmscon" },
   "complexipy>=8,<9",
   "defusedxml>=0.7,<1",
   "deptry>=0.25.1,<0.26",
   "ruff>=0.16,<0.17",
   "ty>=0.0.57,<0.1",
   "vulture>=2.14,<3",
+]
+kmscon = [
+  "astral>=3.2,<4",
 ]
 
 [tool.uv]

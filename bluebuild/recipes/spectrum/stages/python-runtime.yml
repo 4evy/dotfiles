@@ -4,19 +4,15 @@ name: python-runtime
 # Use the final image's Fedora release and runtime libraries.
 from: ${BASE_IMAGE}
 modules:
-  # This projection contains only Astral's pin. Updating an unrelated flake
-  # source therefore leaves this stage's cache key intact.
+  # Export the image-only dependency group from the root project lock rather
+  # than maintaining a second Astral source/version manifest.
   - type: copy@v1
-    src: bluebuild/recipes/spectrum/sources/astral.json
-    dest: /src/sources.json
+    src: pyproject.toml
+    dest: /src/pyproject.toml
 
   - type: copy@v1
-    src: packages/source-lock/source_lock.py
-    dest: /src/source_lock.py
-
-  - type: copy@v1
-    src: bluebuild/recipes/spectrum/install-astral.py
-    dest: /src/install-astral.py
+    src: uv.lock
+    dest: /src/uv.lock
 
   - type: dnf@v1
     source: ghcr.io/blue-build/modules/dnf:v1@sha256:4fa89e050fbbc397ec7c04ed11339a5f430cc339224facaa8b8ce65e07d39921
@@ -24,8 +20,10 @@ modules:
       install-weak-deps: false
       packages:
         - python3
+        - uv
 
   - type: script@v2
     source: ghcr.io/blue-build/modules/script:v2@sha256:fa4455089da980cb871c804521786ffa74c534987df4251a90eba850fe4a7d86
     snippets:
-      - python3.14 /src/install-astral.py
+      - uv export --directory /src --locked --only-group kmscon --no-emit-project --no-header --no-annotate --output-file /tmp/kmscon-requirements.txt
+      - uv pip install --python /usr/bin/python3.14 --target /out/usr/lib/dotfiles/python --require-hashes --requirements /tmp/kmscon-requirements.txt

@@ -595,7 +595,6 @@
         "source-karabiner-vhid-package": "source-karabiner-vhid-package",
         "source-kmscon": "source-kmscon",
         "source-libtsm": "source-libtsm",
-        "source-python-astral": "source-python-astral",
         "source-toshy": "source-toshy",
         "source-uresourced": "source-uresourced",
         "source-yt-dlp-script": "source-yt-dlp-script",
@@ -808,18 +807,6 @@
         "ref": "main",
         "repo": "libtsm",
         "type": "github"
-      }
-    },
-    "source-python-astral": {
-      "flake": false,
-      "locked": {
-        "narHash": "sha256-HJGo+mSphVK/MjOh/iQBeukvUXwl1UJHphrzzcqJgbA=",
-        "type": "file",
-        "url": "https://files.pythonhosted.org/packages/source/a/astral/astral-3.2.tar.gz"
-      },
-      "original": {
-        "type": "file",
-        "url": "https://files.pythonhosted.org/packages/source/a/astral/astral-3.2.tar.gz"
       }
     },
     "source-toshy": {

@@ -26,7 +26,7 @@ spectrum-generate output:
     generated={{ quote(output) }}
     bluebuild=${BLUEBUILD:-bluebuild}
     validator=${CHECK_JSONSCHEMA:-check-jsonschema}
-    uv run --no-project --python "$(cat .python-version)" python bluebuild/recipes/spectrum/prepare-sources.py
+    uv run --locked python bluebuild/recipes/spectrum/prepare-sources.py
     export BLUEBUILD_CLI_REVISION
     BLUEBUILD_CLI_REVISION=$(jq -r '.nodes[.nodes[.root].inputs["source-bluebuild-cli"]].locked.rev' flake.lock)
     "$validator" \
@@ -49,7 +49,6 @@ spectrum-generate output:
     grep -Fq '/out/bluebuild /bins/bluebuild' "$generated"
     grep -Fq -- '--mount=type=cache,sharing=locked,dst=/var/cache/rpm-ostree,id=rpm-ostree-cache-spectrum-' "$generated"
     grep -Fq -- '--mount=type=cache,sharing=locked,dst=/var/cache/libdnf5,id=dnf-cache-spectrum-' "$generated"
-    grep -Fq 'bluebuild/recipes/spectrum/sources/astral.json /src/sources.json' "$generated"
     grep -Fq 'bluebuild/recipes/spectrum/sources/ghostty.json /src/sources.json' "$generated"
     grep -Fq 'bluebuild/recipes/spectrum/sources/kanata.json /src/sources.json' "$generated"
     grep -Fq 'packages/hyper-window-tiling/package.json /src/package.json' "$generated"

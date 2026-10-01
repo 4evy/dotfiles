@@ -49,7 +49,6 @@ def main() -> None:
     directory = ROOT / "bluebuild/recipes/spectrum/sources"
     directory.mkdir(exist_ok=True)
     groups = {
-        "astral": ["python-astral"],
         "ghostty": ["ghostty", "ghostty-zig-x86-64-linux"],
         "kanata": ["kanata-homebrew"],
     }

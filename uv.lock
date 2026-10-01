@@ -367,6 +367,9 @@ dev = [
     { name = "ty" },
     { name = "vulture" },
 ]
+kmscon = [
+    { name = "astral" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -395,6 +398,7 @@ dev = [
     { name = "ty", specifier = ">=0.0.57,<0.1" },
     { name = "vulture", specifier = ">=2.14,<3" },
 ]
+kmscon = [{ name = "astral", specifier = ">=3.2,<4" }]
 
 [[package]]
 name = "filelock"

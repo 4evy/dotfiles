@@ -83,11 +83,6 @@
       url = "github:kmscon/libtsm/main";
     };
 
-    source-python-astral = {
-      flake = false;
-      url = "file+https://files.pythonhosted.org/packages/source/a/astral/astral-3.2.tar.gz";
-    };
-
     source-toshy = {
       flake = false;
       url = "github:RedBearAK/Toshy/Toshy_v26.08.0";
