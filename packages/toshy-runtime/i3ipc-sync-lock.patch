@@ -1,0 +1,27 @@
+diff --git a/i3ipc/_private/sync.py b/i3ipc/_private/sync.py
+--- a/i3ipc/_private/sync.py
++++ b/i3ipc/_private/sync.py
+@@ -2,10 +2,12 @@
+ from Xlib.protocol import event
+ from Xlib import X
+ import random
++from threading import Lock
+ 
+ 
+ class Synchronizer:
+     def __init__(self):
++        self._lock = Lock()
+         self.display = display.Display()
+         self.screen = self.display.screen()
+         self.root = self.screen.root
+@@ -13,6 +15,10 @@ class Synchronizer:
+         self.send_window = self.root.create_window(-10, -10, 10, 10, 0, self.screen.root_depth)
+ 
+     def sync(self):
++        with self._lock:
++            self._sync()
++
++    def _sync(self):
+         rnd = random.randint(0, 2147483647)
+ 
+         message = event.ClientMessage(window=self.root,

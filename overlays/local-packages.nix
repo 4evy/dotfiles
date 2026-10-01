@@ -12,7 +12,26 @@ let
 
   packageArgs = {
     toshy-runtime = {
-      inherit (final.unstable) python314;
+      # Toshy replaces packageOverrides, so extend its interpreter's package set
+      # before applying upstream's pins without affecting other Python runtimes
+      inherit
+        (final.unstable.extend (
+          _final: prev: {
+            pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+              (_pyFinal: pyPrev: {
+                # Concurrent X11 sync calls can consume each other's replies
+                # Serialize request/reply pairs while keeping checks enabled
+                i3ipc = pyPrev.i3ipc.overridePythonAttrs (old: {
+                  patches = (old.patches or [ ]) ++ [
+                    ../packages/toshy-runtime/i3ipc-sync-lock.patch
+                  ];
+                });
+              })
+            ];
+          }
+        ))
+        python314
+        ;
     };
     dotfiles-python = {
       inherit (final.unstable) python314Packages;
