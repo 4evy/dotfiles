@@ -2,9 +2,10 @@
   description = "Cross-platform dotfiles packages and NixOS configuration";
 
   inputs = {
-    # Only browser's NixOS module is consumed; omit unused module inputs.
+    # Only browser's NixOS module is consumed; omit unused module inputs
     browser = {
       inputs = {
+        flake-parts.follows = "flake-parts";
         home-manager.follows = "";
         nix-darwin.follows = "";
         nixpkgs.follows = "";

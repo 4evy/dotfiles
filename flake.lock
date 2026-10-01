@@ -2,16 +2,19 @@
   "nodes": {
     "browser": {
       "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
         "home-manager": [],
         "nix-darwin": [],
         "nixpkgs": []
       },
       "locked": {
-        "lastModified": 1790412012,
-        "narHash": "sha256-Qgw10hXOJHMejvLvgGGCGkcOLe/JaEUW9dhrgs+9WMQ=",
+        "lastModified": 1790859600,
+        "narHash": "sha256-Z3++lSHjP661oKQWpS/c9ol3f5SgZzivkAtRse9W4nU=",
         "owner": "4evy",
         "repo": "browser",
-        "rev": "33224a8926d41f43a7a7fe5fa05d8eb98d8f81e4",
+        "rev": "0795f042e667f3377ec32fd79ee940db4cf5f85d",
         "type": "github"
       },
       "original": {
@@ -666,11 +669,11 @@
     "source-browser": {
       "flake": false,
       "locked": {
-        "lastModified": 1790412012,
-        "narHash": "sha256-Qgw10hXOJHMejvLvgGGCGkcOLe/JaEUW9dhrgs+9WMQ=",
+        "lastModified": 1790859600,
+        "narHash": "sha256-Z3++lSHjP661oKQWpS/c9ol3f5SgZzivkAtRse9W4nU=",
         "owner": "4evy",
         "repo": "browser",
-        "rev": "33224a8926d41f43a7a7fe5fa05d8eb98d8f81e4",
+        "rev": "0795f042e667f3377ec32fd79ee940db4cf5f85d",
         "type": "github"
       },
       "original": {
