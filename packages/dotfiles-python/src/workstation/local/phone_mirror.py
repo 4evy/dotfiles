@@ -11,7 +11,7 @@ from subprocess import CompletedProcess
 from typing import Annotated
 
 import psutil
-from cyclopts import App, Parameter, validators
+from cyclopts import App, Parameter
 from cyclopts.config import Env
 from pydantic import ValidationError
 
@@ -21,8 +21,6 @@ from workstation.lib.commands import exec_process, require_commands, run, which
 from workstation.lib.files import ensure_directory, write_if_changed
 from workstation.lib.paths import cache_path
 from workstation.local.phone_mirror_models import (
-    DEFAULT_NAME,
-    DEFAULT_PORT,
     Config,
     IPAddress,
     RunCommand,
@@ -415,37 +413,21 @@ class PhoneMirror:
         )
 
 
+_DEFAULT_CONFIG = Config()
+
+
 def mirror(
     *scrcpy_args: Annotated[str, Parameter(allow_leading_hyphen=True)],
-    name: Annotated[str, Parameter(help="Tailscale host name.")] = DEFAULT_NAME,
-    ip: Annotated[IPAddress | None, Parameter(help="Target IP address.")] = None,
-    port: Annotated[
-        int,
-        Parameter(
-            validator=validators.Number(gte=1, lte=65535),
-            help="ADB TCP/IP port passed to scrcpy.",
-        ),
-    ] = DEFAULT_PORT,
-    connect_only: Annotated[
-        bool,
-        Parameter(negative="", help="Connect without opening a mirror window."),
-    ] = False,
-    render_driver: str | None = "software",
-    sdl_video_driver: Annotated[
-        str | None,
-        Parameter(env_var="PHONE_MIRROR_SDL_VIDEODRIVER"),
-    ] = "x11",
+    config: Annotated[Config, Parameter(name="*")] = _DEFAULT_CONFIG,
 ) -> None:
     """Mirror an Android phone through scrcpy's native TCP/IP support."""
     PhoneMirror(
-        Config(
-            name=name,
-            ip=ip,
-            port=port,
-            connect_only=connect_only,
-            render_driver=render_driver or None,
-            sdl_video_driver=sdl_video_driver or None,
-            scrcpy_args=tuple(argument for argument in scrcpy_args if argument != "--"),
+        config.model_copy(
+            update={
+                "scrcpy_args": tuple(
+                    argument for argument in scrcpy_args if argument != "--"
+                )
+            }
         )
     ).run()
 
