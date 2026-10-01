@@ -46,7 +46,6 @@ def _gnome_accent_apply() -> None:
     accent, accent_fg = dark if "prefer-dark" in scheme else light
     config = user_config_home()
     for version in (3, 4):
-        (config / f"gtk-{version}.0/black-rose-doll-accent.css").unlink(missing_ok=True)
         write_if_changed(
             config / f"gtk-{version}.0/catppuccin-custom-accent.css",
             _gtk_accent_css(accent, accent_fg, gtk_version=version),

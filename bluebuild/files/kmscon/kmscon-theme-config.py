@@ -123,9 +123,11 @@ def render_config(
 ) -> str:
     choice = daylight_theme(now)
     colors = palette[choice.name]
-    role_map = dict(ANSI_ROLE_MAP)
-    if choice.name == "light":
-        role_map.update(LIGHT_ROLE_OVERRIDES)
+    role_map = (
+        ANSI_ROLE_MAP | LIGHT_ROLE_OVERRIDES
+        if choice.name == "light"
+        else ANSI_ROLE_MAP
+    )
     lines = [
         "# Managed by dotfiles.",
         f"# Theme: catppuccin-custom-{choice.name}",

@@ -37,27 +37,36 @@ def terminal_profile() -> None:
     if font is None:
         font = ns_font.monospacedSystemFontOfSize_weight_(15, 0)
 
-    ansi_colors = (
-        ("ANSIBlackColor", "ansiBlack"),
-        ("ANSIRedColor", "red"),
-        ("ANSIGreenColor", "green"),
-        ("ANSIYellowColor", "yellow"),
-        ("ANSIBlueColor", "blue"),
-        ("ANSIMagentaColor", "pink"),
-        ("ANSICyanColor", "sky"),
-        ("ANSIWhiteColor", "ansiWhite"),
-        ("ANSIBrightBlackColor", "mutedForeground"),
-        ("ANSIBrightRedColor", "red"),
-        ("ANSIBrightGreenColor", "green"),
-        ("ANSIBrightYellowColor", "yellow"),
-        ("ANSIBrightBlueColor", "blue"),
-        ("ANSIBrightMagentaColor", "pink"),
-        ("ANSIBrightCyanColor", "sky"),
-        ("ANSIBrightWhiteColor", "ansiWhite"),
-    )
+    archived_font = archived(font)
+    color_roles = {
+        "TextColor": "terminalForeground",
+        "TextBoldColor": "terminalCursor",
+        "BackgroundColor": "terminalBackground",
+        "CursorColor": "terminalCursor",
+        "SelectionColor": "surface1",
+        "ANSIBlackColor": "ansiBlack",
+        "ANSIRedColor": "red",
+        "ANSIGreenColor": "green",
+        "ANSIYellowColor": "yellow",
+        "ANSIBlueColor": "blue",
+        "ANSIMagentaColor": "pink",
+        "ANSICyanColor": "sky",
+        "ANSIWhiteColor": "ansiWhite",
+        "ANSIBrightBlackColor": "mutedForeground",
+        "ANSIBrightRedColor": "red",
+        "ANSIBrightGreenColor": "green",
+        "ANSIBrightYellowColor": "yellow",
+        "ANSIBrightBlueColor": "blue",
+        "ANSIBrightMagentaColor": "pink",
+        "ANSIBrightCyanColor": "sky",
+        "ANSIBrightWhiteColor": "ansiWhite",
+    }
 
     def profile(variant: str) -> tuple[str, dict[str, object]]:
         palette = theme_palettes[variant]
+        colors = {
+            role: color(palette[role]) for role in dict.fromkeys(color_roles.values())
+        }
         name = f"Catppuccin Custom {variant.title()}"
         values: dict[str, object] = {
             "name": name,
@@ -65,7 +74,7 @@ def terminal_profile() -> None:
             "ProfileCurrentVersion": 2.09,
             "columnCount": 120,
             "rowCount": 30,
-            "Font": archived(font),
+            "Font": archived_font,
             "FontAntialias": True,
             "FontHeightSpacing": 1,
             "FontWidthSpacing": 1,
@@ -73,24 +82,13 @@ def terminal_profile() -> None:
             "BackgroundBlurInactive": 0,
             "BackgroundSettingsForInactiveWindows": False,
             "DynamicANSIForegroundColors": False,
-            "TextColor": color(palette["terminalForeground"]),
-            "TextBoldColor": color(palette["terminalCursor"]),
-            "BackgroundColor": color(palette["terminalBackground"]),
-            "CursorColor": color(palette["terminalCursor"]),
-            "SelectionColor": color(palette["surface1"]),
         }
-        values.update({key: color(palette[role]) for key, role in ansi_colors})
+        values.update({key: colors[role] for key, role in color_roles.items()})
         return name, values
 
     defaults = ns_user_defaults.standardUserDefaults()
     domain = dict(defaults.persistentDomainForName_("com.apple.Terminal") or {})
     settings = dict(domain.get("Window Settings") or {})
-    settings.pop("Black Rose Doll Dark", None)
-    settings.pop("T3 Chat", None)
-    settings.pop("T3 Chat Light", None)
-    settings.pop("T3 Chat Dark", None)
-    settings.pop("Catppuccin Trans Light", None)
-    settings.pop("Catppuccin Trans Dark", None)
     for variant in ("light", "dark"):
         name, values = profile(variant)
         settings[name] = values

@@ -6,7 +6,6 @@
 set -eu
 {{ template "workstation_command.sh.tmpl" "gnome-catppuccin-custom-accent" }}
 if command -v systemctl >/dev/null 2>&1; then
-	systemctl --user disable --now gnome-black-rose-doll-accent.service >/dev/null 2>&1 || true
 	systemctl --user daemon-reload >/dev/null 2>&1 || true
 	systemctl --user enable --now gnome-catppuccin-custom-accent.service >/dev/null 2>&1 || true
 fi
