@@ -45,9 +45,7 @@ dev = [
   "ty>=0.0.57,<0.1",
   "vulture>=2.14,<3",
 ]
-kmscon = [
-  "astral>=3.2,<4",
-]
+kmscon = ["astral>=3.2,<4"]
 
 [tool.uv]
 default-groups = ["dev", "automation"]
