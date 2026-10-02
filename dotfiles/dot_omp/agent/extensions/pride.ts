@@ -1,6 +1,9 @@
-import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
-import { Text, type TUI } from "@oh-my-pi/pi-tui";
-import { node } from "@oh-my-pi/pi-tui/native/describe";
+import {
+  type ExtensionAPI,
+  type ExtensionContext,
+  Text,
+} from "@oh-my-pi/pi-coding-agent";
+import type { TUI } from "@oh-my-pi/pi-tui";
 import type { DescribeContext, NativeNode } from "@oh-my-pi/pi-tui/native/node";
 
 type Activity = "idle" | "waiting" | "streaming" | "working";
@@ -184,12 +187,15 @@ class PrideFlags extends Text {
     const text = this.getText();
     if (this.#native?.text !== text || this.#native.activity !== this.#activity) {
       // ANSI retains the RGB backgrounds of the half-block pixels
-      const described = node("ansi", {
-        text,
-        cols: WIDGET_COLUMNS,
-        role: "omp.pride.flags",
-        aria: `Trans, bisexual, and rainbow flags; ${this.#activity}`,
-      });
+      const described: NativeNode = {
+        k: "ansi",
+        p: {
+          text,
+          cols: WIDGET_COLUMNS,
+          role: "omp.pride.flags",
+          aria: `Trans, bisexual, and rainbow flags; ${this.#activity}`,
+        },
+      };
       this.#native = { text, activity: this.#activity, node: described };
     }
     return this.#native.node;
