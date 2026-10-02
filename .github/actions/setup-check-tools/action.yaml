@@ -40,7 +40,7 @@ runs:
         mise_dir="$RUNNER_TEMP/mise-bin"
         mkdir -p "$mise_dir"
         mise_binary="$mise_dir/mise"
-        curl --fail --location --silent --show-error \
+        curl --fail --location --retry 5 --silent --show-error \
           "https://github.com/jdx/mise/releases/download/$version/mise-$version-$platform" \
           --output "$mise_binary"
         printf '%s  %s\n' "$checksum" "$mise_binary" | shasum -a 256 --check
