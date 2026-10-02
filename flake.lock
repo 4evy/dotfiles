@@ -679,16 +679,16 @@
     "source-equilotl": {
       "flake": false,
       "locked": {
-        "lastModified": 1781193554,
-        "narHash": "sha256-BPc3j69lzCqDkgP7f0u+SBS9o166CA7xKeGjgXZv92w=",
+        "lastModified": 1789932691,
+        "narHash": "sha256-XpCSTWdH+BtbT5hTRAS1Xbt8v9+FZZtk7bH1mKq/wKY=",
         "owner": "Equicord",
         "repo": "Equilotl",
-        "rev": "c6bfed9c941883fb0aa48cc1ab6031ed69334c2a",
+        "rev": "1a3d96276611c81b99e76428427e730c25aee119",
         "type": "github"
       },
       "original": {
         "owner": "Equicord",
-        "ref": "v2.2.6",
+        "ref": "v2.3.0",
         "repo": "Equilotl",
         "type": "github"
       }
