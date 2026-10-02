@@ -43,11 +43,27 @@ done <"$patches/series"
 version="$VERSION_PREFIX.${revision:0:7}"
 (
 	cd /build/source
-	PATH="/build/zig:$PATH" ZIG_GLOBAL_CACHE_DIR=/build/zig-cache \
-		/build/zig/zig build \
-		-p "$PREFIX" \
-		"${build_arguments[@]}" \
-		"-Dversion-string=$version"
+	build_status=0
+	for attempt in 1 2 3; do
+		if PATH="/build/zig:$PATH" ZIG_GLOBAL_CACHE_DIR=/build/zig-cache \
+			/build/zig/zig build \
+			-p "$PREFIX" \
+			"${build_arguments[@]}" \
+			"-Dversion-string=$version"; then
+			build_status=0
+			break
+		else
+			build_status=$?
+		fi
+
+		if ((attempt < 3)); then
+			delay=$((attempt * 5))
+			printf 'Ghostty build failed (attempt %d/3); retrying in %d seconds\n' \
+				"$attempt" "$delay" >&2
+			sleep "$delay"
+		fi
+	done
+	exit "$build_status"
 )
 
 test -x "$ARTIFACT"
