@@ -1,6 +1,6 @@
 {
   config,
-  dotfilesPackages,
+  pkgs,
   lib,
   ...
 }:
@@ -27,7 +27,7 @@ in
     # per-user tmpfiles support instead of adding another module framework.
     systemd.user.tmpfiles.users.${user}.rules = [
       "d %S/toshy 0700 - - -"
-      "L+ %S/toshy/runtime - - - - ${dotfilesPackages.toshy-runtime}"
+      "L+ %S/toshy/runtime - - - - ${pkgs.toshy-runtime}"
     ];
   };
 }

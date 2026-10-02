@@ -1,5 +1,4 @@
 {
-  dotfilesPackages,
   lib,
   pkgs,
   ...
@@ -38,12 +37,12 @@ in
     # The system daemon still supplies ancestor allocations to whichever user
     # owns the active graphical session. Spectrum's shared user-unit drop-in
     # keeps the separate --user app-management daemon disabled by default.
-    dbus.packages = [ dotfilesPackages.uresourced ];
+    dbus.packages = [ pkgs.uresourced ];
     flatpak.enable = true;
 
     kmscon = {
       enable = true;
-      package = dotfilesPackages.kmscon;
+      package = pkgs.kmscon;
       useXkbConfig = true;
       config = {
         hwaccel = true;
@@ -68,7 +67,7 @@ in
   systemd = {
     oomd.enable = true;
     packages = [
-      dotfilesPackages.uresourced
+      pkgs.uresourced
       spectrumSystemdUnits
     ];
     services."user@".wants = [ "uresourced.service" ];

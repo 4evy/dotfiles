@@ -1,6 +1,5 @@
 {
   config,
-  dotfilesPackages,
   lib,
   pkgs,
   ...
@@ -31,7 +30,7 @@ in
     })
     (mkIf (config.local.kde.enable || config.local.kde.hyperWindowTiling.enable) {
       environment.systemPackages = [
-        dotfilesPackages.hyper-window-tiling-kde
+        pkgs.hyper-window-tiling-kde
       ];
     })
   ];

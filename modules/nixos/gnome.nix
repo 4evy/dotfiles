@@ -1,6 +1,5 @@
 {
   config,
-  dotfilesPackages,
   lib,
   pkgs,
   ...
@@ -38,7 +37,7 @@ let
   copyousExtensionUuid = copyousExtension.extensionUuid;
   toshyWindowContextExtension = pkgs.gnomeExtensions.focused-window-d-bus;
   toshyWindowContextExtensionUuid = toshyWindowContextExtension.extensionUuid;
-  hyperWindowTilingExtension = dotfilesPackages.hyper-window-tiling-gnome;
+  hyperWindowTilingExtension = pkgs.hyper-window-tiling-gnome;
   hyperWindowTilingExtensionUuid = hyperWindowTilingExtension.passthru.extensionUuid;
 
 in

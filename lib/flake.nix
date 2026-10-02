@@ -95,43 +95,35 @@ in
     module =
       {
         inputs,
-        moduleWithSystem,
         ...
       }:
       let
-        nixosModule = moduleWithSystem (
-          { config, ... }:
-          { ... }:
-          {
-            imports = [
-              ../modules/nixos
-              "${toshySource}/nix/nixos-module.nix"
-              inputs.browser.nixosModules.default
-              inputs.determinate.nixosModules.default
-              inputs.nixcord.nixosModules.nixcord
-              inputs.patches.nixosModules.default
-              inputs.vicinae.nixosModules.default
-            ];
+        nixosModule = { ... }: {
+          imports = [
+            ../modules/nixos
+            "${toshySource}/nix/nixos-module.nix"
+            inputs.browser.nixosModules.default
+            inputs.determinate.nixosModules.default
+            inputs.nixcord.nixosModules.nixcord
+            inputs.patches.nixosModules.default
+            inputs.vicinae.nixosModules.default
+          ];
 
-            # Keep every locally packaged program used by NixOS identical to
-            # the corresponding packages.<system> flake output. Consumers of
-            # this module do not have to recreate our overlay or package
-            # selection.
-            _module.args = {
-              inherit inputs;
-              dotfilesPackages = config.packages;
-              dotfilesEquicordSettings = equicordSettings;
-            };
-          }
-        );
+          _module.args = {
+            inherit inputs;
+            dotfilesEquicordSettings = equicordSettings;
+          };
+        };
+
+        nixosConfigurations = import ../hosts/linux {
+          inherit inputs;
+          inherit nixosModule;
+        };
       in
       {
         flake = {
+          inherit nixosConfigurations;
           nixosModules.default = nixosModule;
-          nixosConfigurations = import ../hosts/linux {
-            inherit inputs;
-            inherit nixosModule;
-          };
         };
       };
   };

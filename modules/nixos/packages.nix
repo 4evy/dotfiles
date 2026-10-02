@@ -1,5 +1,4 @@
 {
-  dotfilesPackages,
   inputs,
   lib,
   pkgs,
@@ -40,10 +39,10 @@ in
         just
         yamllint
         ;
-      inherit (dotfilesPackages) theme-run;
+      inherit (pkgs) theme-run;
       # Include package entry points and a Python interpreter carrying the
       # root project's dependencies for deployed standalone helpers.
-      dotfiles-python = dotfilesPackages.dotfiles-python.runtime;
+      dotfiles-python = pkgs.dotfiles-python.runtime;
 
       # Host/session spine and editor dependencies.
       inherit (pkgs.unstable)
