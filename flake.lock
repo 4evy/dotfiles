@@ -645,11 +645,11 @@
     "source-bluebuild-cli": {
       "flake": false,
       "locked": {
-        "lastModified": 1790544762,
-        "narHash": "sha256-8U/cxcb2Rxx5FEiXr5ob5u15U29Vn0JyBYfUOHiOesY=",
+        "lastModified": 1791061805,
+        "narHash": "sha256-gGiudh6pKrxSsrMSJ/pjjGsWEBeiak3qVZFU2HDopbE=",
         "owner": "blue-build",
         "repo": "cli",
-        "rev": "394cfac7597af1aee935032d093ce494150dec35",
+        "rev": "2591122d18d079b41df5ba419ed315e0cff03d1a",
         "type": "github"
       },
       "original": {
