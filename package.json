@@ -21,7 +21,7 @@
     "typecheck": "bun x --no-install tsc -p tsconfig.json && bun run --sequential --workspaces typecheck && bun run --cwd packages/hyper-window-tiling typecheck"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
+    "@biomejs/biome": "2.5.15",
     "@catppuccin/palette": "1.8.0",
     "@types/bun": "catalog:",
     "@types/culori": "4.0.1",
