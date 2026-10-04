@@ -17,19 +17,19 @@ runs:
       run: |- # zizmor: ignore[github-env] mise resolves pinned tools from .tool-versions
         set -euo pipefail
 
-        version=v2026.9.13
+        version=v2026.10.2
         case "$(uname -s)-$(uname -m)" in
           Linux-x86_64)
             platform=linux-x64
-            checksum=a72f49916b33ba952ba398046c5cc91a58238f0b718fee1d938206ef2af21c6d
+            checksum=8f5f6660336f572830e33cd9b378d3131e529a0d4c4f0c553776be90a1ba302a
             ;;
           Darwin-arm64)
             platform=macos-arm64
-            checksum=3977349e71eea611cf25717ddca753172cae6a92597a47bc4b9efada123b237e
+            checksum=66d49acecca413c8b334922584982a4907a10588912829873d6c55d0c6d42612
             ;;
           Darwin-x86_64)
             platform=macos-x64
-            checksum=820bda7a3547edf75dd9e9390846cc87219583bef4fe72666f35a4935d330f47
+            checksum=1c6b3d4aaeba8d3b8b57e2d06e4b7825a5134b7aa6e97313bd99db6f22bac21f
             ;;
           *)
             echo 'Unsupported runner platform' >&2
