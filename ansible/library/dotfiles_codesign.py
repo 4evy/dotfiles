@@ -1,4 +1,5 @@
-#!/usr/bin/env python3.14
+#!/usr/bin/python
+# Ansible rewrites this shebang using ansible_python_interpreter
 """Ensure a macOS application bundle has a stable local signing identity."""
 
 from __future__ import annotations

@@ -1,4 +1,5 @@
-#!/usr/bin/env python3.14
+#!/usr/bin/python
+# Ansible rewrites this shebang using ansible_python_interpreter
 """Reconcile the system role's SELinux policy-backed services."""
 
 from __future__ import annotations
