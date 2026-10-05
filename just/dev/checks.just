@@ -61,30 +61,32 @@ github-actions-check:
     zizmor --persona=pedantic .github/workflows .github/actions
 
 [group('check')]
-bun-check: (doctor 'bun')
+bun-check: (doctor 'bun') omp-patches-check
     bun run check
 
-# Check Hyper Window Tiling's Bun Nix expression against its lockfile.
+# Keep every independently locked Bun package's Nix cache in sync
 [group('check')]
 bun-nix-check:
-    generated=$(nix run .#bun2nix -- \
-      --lock-file packages/hyper-window-tiling/bun.lock \
-      --copy-prefix packages/hyper-window-tiling)
-    if ! diff -u \
-      packages/hyper-window-tiling/bun.nix \
-      <(printf '%s\n' "$generated"); then
-      printf 'packages/hyper-window-tiling/bun.nix is stale; run `just bun-nix-update`.\n' >&2
-      exit 1
-    fi
+    for package in packages/hyper-window-tiling packages/omp-helper packages/omp/upstream; do
+      generated=$(nix run .#bun2nix -- \
+        --lock-file "$package/bun.lock" \
+        --copy-prefix "$package")
+      if ! diff -u "$package/bun.nix" <(printf '%s\n' "$generated"); then
+        printf '%s/bun.nix is stale; run `just bun-nix-update`.\n' "$package" >&2
+        exit 1
+      fi
+    done
 
-# Update Hyper Window Tiling's Bun Nix expression from its lockfile.
+# Regenerate all independent dependency caches from their locked graphs
 [group('dev')]
 bun-nix-update:
-    nix run .#bun2nix -- \
-      --lock-file packages/hyper-window-tiling/bun.lock \
-      --copy-prefix packages/hyper-window-tiling \
-      --output-file packages/hyper-window-tiling/bun.nix
-    nix fmt -- packages/hyper-window-tiling/bun.nix
+    for package in packages/hyper-window-tiling packages/omp-helper packages/omp/upstream; do
+      nix run .#bun2nix -- \
+        --lock-file "$package/bun.lock" \
+        --copy-prefix "$package" \
+        --output-file "$package/bun.nix"
+    done
+    nix fmt -- packages/hyper-window-tiling/bun.nix packages/omp-helper/bun.nix packages/omp/upstream/bun.nix
 
 [group('check')]
 ruby-check:
@@ -118,6 +120,8 @@ _go-format module:
 bun-install:
     bun install --frozen-lockfile
     bun install --cwd packages/hyper-window-tiling --frozen-lockfile
+    bun install --cwd packages/omp-helper --frozen-lockfile --ignore-scripts
+    bun install --cwd packages/omp/upstream --frozen-lockfile --ignore-scripts
 
 # Build the same source archive used by the local Homebrew tap.
 [group('dev')]

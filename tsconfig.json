@@ -38,6 +38,7 @@
     "**/tmp/**",
     "dotfiles/**",
     "packages/hyper-window-tiling/**",
+    "packages/omp-helper/**",
     "zig-pkg/**",
     "zig-out/**",
     "target/**",
