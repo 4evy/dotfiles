@@ -14,7 +14,7 @@ indent_size = 4
 [{bluebuild/files/system/usr/bin/open,dotfiles/dot_local/bin/executable_helix-rumdl-lsp}]
 indent_size = 4
 
-[*.{zig,zon}]
+[*.{rs,zig,zon}]
 indent_size = 4
 
 [{Justfile,justfile,*.just}]

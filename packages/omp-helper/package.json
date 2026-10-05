@@ -1,0 +1,35 @@
+{
+  "name": "omp-helper",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "bun@1.4.2",
+  "type": "module",
+  "patchedDependencies": {
+    "@oh-my-pi/pi-coding-agent@18.6.0": "../omp/npm-patches/terminal-size.patch",
+    "@oh-my-pi/pi-tui@18.6.0": "../omp/npm-patches/tui-terminal-size.patch"
+  },
+  "scripts": {
+    "check": "bun run typecheck",
+    "typecheck": "bun x --no-install tsc --noEmit -p tsconfig.json && bun x --no-install tsc --noEmit -p gnome/tsconfig.json",
+    "package:native": "bun packaging/build.ts",
+    "package:deb": "bun packaging/build.ts --format deb",
+    "package:rpm": "bun packaging/build.ts --format rpm",
+    "package:pacman": "bun packaging/build.ts --format pacman",
+    "package:darwin": "bun packaging/build.ts --format darwin",
+    "build:gnome": "bun build gnome/extension.ts --format=esm --target=browser --external='gi://*' --external='resource:///*' --outfile=dist/gnome/extension.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.0",
+    "@oh-my-pi/pi-coding-agent": "18.6.0",
+    "@oh-my-pi/pi-natives": "18.6.0",
+    "@oh-my-pi/pi-tui": "18.6.0",
+    "@oh-my-pi/pi-utils": "18.6.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2",
+    "typescript": "7.0.2",
+    "@girs/gjs": "5.4.0",
+    "@girs/gnome-shell": "50.0.4"
+  }
+}

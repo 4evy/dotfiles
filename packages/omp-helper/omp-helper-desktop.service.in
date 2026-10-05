@@ -1,0 +1,15 @@
+[Unit]
+Description=OMP Wayland desktop helper
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=@PACKAGE@/bin/omp-helper-desktop daemon
+EnvironmentFile=@ENVIRONMENT_FILE@
+UMask=0077
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

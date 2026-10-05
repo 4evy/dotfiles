@@ -1,0 +1,6 @@
+{
+  "protocolMajor": 1,
+  "version": "1.0.0",
+  "platform": "linux",
+  "desktopExecutable": "bin/omp-helper-desktop"
+}

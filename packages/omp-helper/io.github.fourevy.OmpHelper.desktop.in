@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=OMP Helper
+Comment=Portal-backed desktop control for OMP
+Exec=@PACKAGE@/bin/omp-helper status
+Terminal=false
+NoDisplay=true
+DBusActivatable=false

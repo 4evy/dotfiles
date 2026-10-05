@@ -1,0 +1,83 @@
+[package]
+name = "omp-helper-desktop"
+version = "1.0.0"
+edition = "2024"
+rust-version = "1.96"
+license = "MIT"
+
+[dependencies]
+ashpd = { version = "=0.13.13", default-features = false, features = [
+  "tokio",
+  "remote_desktop",
+  "screencast",
+  "clipboard",
+  "open_uri",
+] }
+reis = { version = "=0.7.1", features = ["tokio"] }
+gstreamer = "=0.25.4"
+gstreamer-app = "=0.25.2"
+gstreamer-video = "=0.25.4"
+rmcp = { version = "=3.5.0", default-features = false, features = [
+  "macros",
+  "server",
+  "transport-async-rw",
+] }
+enigo = { version = "=0.6.1", default-features = false, features = ["wayland"] }
+wl-clipboard-rs = "=0.9.4"
+wayland-client = "=0.31.15"
+wayland-protocols-wlr = { version = "=0.3.12", features = ["client"] }
+smithay-client-toolkit = { version = "=0.21.1", default-features = false, features = [
+  "calloop",
+] }
+tokio-util = { version = "=0.7.19", features = ["rt"] }
+tokio = { version = "=1.53.2", features = [
+  "macros",
+  "rt-multi-thread",
+  "net",
+  "io-util",
+  "process",
+  "signal",
+  "sync",
+  "time",
+] }
+futures-util = "=0.3.34"
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+schemars = "=1.2.2"
+base64 = "=0.23.1"
+uuid = { version = "=1.27.0", features = ["v4"] }
+enumflags2 = "=0.7.12"
+zbus = { version = "=5.19.0", default-features = false, features = ["tokio"] }
+rustix = { version = "=1.1.5", features = ["process", "fs", "event"] }
+xkbcommon = "=0.9.0"
+tempfile = "=3.27.0"
+clap = { version = "=4.6.7", default-features = false, features = [
+  "std",
+  "derive",
+  "help",
+  "usage",
+  "error-context",
+] }
+dirs = "=7.0.0"
+scopeguard = { version = "=1.2.0", default-features = false }
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = "symbols"
+# Keep task panics isolated and allow cleanup guards to run
+panic = "unwind"
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+# Opt into full debug information with cargo build --profile debugging
+[profile.debugging]
+inherits = "dev"
+debug = "full"
+
+[profile.debugging.package."*"]
+debug = "full"

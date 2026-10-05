@@ -1,0 +1,7 @@
+{
+  "uuid": "omp-workspaces@4evy.local",
+  "name": "OMP isolated workspaces",
+  "description": "Mutter adapter for Rust-owned automated GUI launch leases. Requires GNOME 50 Wayland, a systemd user manager, cgroup v2, and static workspaces on every monitor. Unknown or remotely activated launchers fail closed. Install or upgrade takes effect at the next login.",
+  "shell-version": ["50"],
+  "version": 1
+}
