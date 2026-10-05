@@ -62,7 +62,7 @@ const ORGANIZATION_POLICY = "by your organization's policy";
 const SAFETY_REASONS = "for safety reasons";
 const DENIAL_PHRASES = [ORGANIZATION_POLICY, SAFETY_REASONS] as const;
 const DECISION_FUNCTION_LIMIT = 2000;
-const OPTIONAL_SKILL_PARENTS = [".codex/plugins/cache", ".codex/.tmp"] as const;
+const OPTIONAL_SKILL_PARENTS = ["plugins/cache", ".tmp"] as const;
 // Explicit template-aware pattern: `[^{}]*` cannot skip `${...}` in the throws.
 const DECISION_FALLBACK = new RegExp(
   String.raw`function\((\w+)\)\{const\{bundleIdentifier:\w+\}=\1\.target;switch\(\1\.decision\)\{` +
@@ -463,6 +463,14 @@ function listFiles(root: string): string[] {
       throw fsError("read", dir, error);
     }
     for (const entry of entries) {
+      if (
+        entry.isBlockDevice() ||
+        entry.isCharacterDevice() ||
+        entry.isFIFO() ||
+        entry.isSocket()
+      ) {
+        continue;
+      }
       const path = join(dir, entry.name);
       let real: string;
       try {
@@ -543,7 +551,8 @@ export function discoverSkillFiles(
 }
 
 export function optionalHomeSkillRoots(): string[] {
-  return OPTIONAL_SKILL_PARENTS.map((relative) => join(homedir(), relative));
+  const codexHome = process.env.CODEX_HOME ?? join(homedir(), ".codex");
+  return OPTIONAL_SKILL_PARENTS.map((relative) => join(codexHome, relative));
 }
 
 type PlannedPatch = {
