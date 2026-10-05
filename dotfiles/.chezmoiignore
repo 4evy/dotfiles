@@ -13,6 +13,8 @@ tsconfig.json
 .omp/tsconfig.json
 node_modules/
 node_modules/**
+.omp/agent/node_modules/
+.omp/agent/node_modules/**
 **/__pycache__/
 **/__pycache__/**
 

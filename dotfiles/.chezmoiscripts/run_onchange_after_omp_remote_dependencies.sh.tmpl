@@ -1,0 +1,13 @@
+{{- if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
+#!/bin/sh
+# Install at the agent root so extensions and shared libraries resolve dependencies
+# agent manifest hash: {{ include "dot_omp/agent/package.json" | sha256sum }}
+# agent lockfile hash: {{ include "dot_omp/agent/bun.lock" | sha256sum }}
+# bun fingerprint: {{ template "executable_fingerprint" (lookPath "bun") }}
+set -eu
+if ! command -v bun >/dev/null 2>&1; then
+	printf '%s\n' 'OMP agent dependency install requires Bun on PATH' >&2
+	exit 1
+fi
+exec bun install --cwd "$CHEZMOI_HOME_DIR/.omp/agent" --frozen-lockfile --production --ignore-scripts
+{{ end -}}

@@ -1,0 +1,18 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "omp-extension-remote",
+      "dependencies": {
+        "@tailnet/tailscaled": "0.1.2",
+        "zod": "4.6.5",
+      },
+    },
+  },
+  "packages": {
+    "@tailnet/tailscaled": ["@tailnet/tailscaled@0.1.2", "", {}, "sha512-zVmL05ubIeXaGZqwVb+RI8mfpirgxzSmtmQMcDDSbv+AFwio/G/oHPWYTKzsEV9kYMULhqA4N/WDqmu7Hwshgw=="],
+
+    "zod": ["zod@4.6.5", "", {}, "sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q=="],
+  }
+}
