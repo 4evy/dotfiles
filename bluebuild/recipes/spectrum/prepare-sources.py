@@ -1,6 +1,7 @@
 #!/usr/bin/env python3.14
-"""Materialize Spectrum build inputs from the current flake lock."""
+"""Materialize Spectrum source pins and native package identities."""
 
+import hashlib
 import json
 import shutil
 import subprocess
@@ -34,6 +35,61 @@ def input_pin(lock: FlakeLock, name: str) -> SourcePin:
     return node["locked"] | {"ref": node["original"].get("ref")}
 
 
+def prepare_omp() -> None:
+    """Give each native source snapshot a distinct RPM identity."""
+    paths = [
+        ROOT / ".dockerignore",
+        ROOT / "bluebuild/recipes/spectrum.yml",
+        ROOT / "bluebuild/recipes/spectrum/stages/omp.yml",
+        ROOT / "packages/omp/source.json",
+        ROOT / "packages/omp/broker-environment.patch",
+        ROOT / "packages/omp/immutable-update.patch",
+        ROOT / "packages/omp/upstream/package.json",
+        ROOT / "packages/omp/upstream/bun.lock",
+        ROOT / "packages/omp-helper/package.json",
+        ROOT / "packages/omp-helper/bun.lock",
+        ROOT / "packages/omp-helper/manifest.json",
+        ROOT / "packages/omp-helper/desktop/Cargo.toml",
+        ROOT / "packages/omp-helper/desktop/Cargo.lock",
+    ]
+    paths.extend((ROOT / "packages/omp-helper").glob("*.in"))
+    for directory in [
+        "packages/omp/patches",
+        "packages/omp/npm-patches",
+        "packages/omp-helper/packaging",
+        "packages/omp-helper/gateway",
+        "packages/omp-helper/gnome",
+        "packages/omp-helper/desktop/src",
+        "dotfiles/dot_omp/agent/lib/helper",
+        "dotfiles/dot_omp/agent/lib/desktop",
+    ]:
+        paths.extend(
+            path
+            for path in (ROOT / directory).rglob("*")
+            if path.is_file()
+            and not any(
+                part in {".DS_Store", "__pycache__", "node_modules", "target"}
+                for part in path.relative_to(ROOT).parts
+            )
+        )
+    digest = hashlib.sha256()
+    for path in sorted(paths):
+        content = path.read_bytes()
+        digest.update(str(path.relative_to(ROOT)).encode() + b"\0")
+        digest.update(str(len(content)).encode() + b"\0" + content)
+    source = json.loads(
+        (ROOT / "packages/omp-helper/packaging/source.json").read_text(encoding="utf-8")
+    )
+    metadata = {
+        "sourceDateEpoch": source["sourceDateEpoch"],
+        "sourceSha256": digest.hexdigest(),
+        "release": str(int(digest.hexdigest(), 16) or 1),
+    }
+    (ROOT / "bluebuild/recipes/spectrum/sources/omp.json").write_text(
+        json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+
 def main() -> None:
     nix = shutil.which("nix")
     if nix is None:
@@ -48,6 +104,7 @@ def main() -> None:
     )
     directory = ROOT / "bluebuild/recipes/spectrum/sources"
     directory.mkdir(exist_ok=True)
+    prepare_omp()
     groups = {
         "ghostty": ["ghostty", "ghostty-zig-x86-64-linux"],
         "kanata": ["kanata-homebrew"],

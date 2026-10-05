@@ -1,0 +1,102 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/stage-v1.json
+name: omp
+# Match the final image's Fedora release and runtime libraries
+from: ${BASE_IMAGE}
+modules:
+  - type: dnf@v1
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:4fa89e050fbbc397ec7c04ed11339a5f430cc339224facaa8b8ce65e07d39921
+    install:
+      install-weak-deps: false
+      packages:
+        - alsa-lib
+        - binutils
+        - ca-certificates
+        - curl
+        - dbus
+        - dbus-daemon
+        - gcc
+        - gcc-c++
+        - glib2-devel
+        - gstreamer1-devel
+        - gstreamer1-plugins-base-devel
+        - gstreamer1-plugins-good
+        - libxkbcommon-devel
+        - make
+        - patch
+        - pipewire-devel
+        - pipewire-gstreamer
+        - pkgconf-pkg-config
+        - systemd
+        - tar
+        - unzip
+        - util-linux-core
+        - wayland-devel
+        - xdg-desktop-portal
+        - xkeyboard-config
+        - xz
+
+  # Checksum-pinned standalone toolchains stay independent of local source
+  # inputs and never enter the final image except the bundled Bun binary
+  - type: containerfile
+    snippets:
+      - |-
+        RUN set -eu; \
+          mkdir -p /build/toolchains/bin /build/downloads; \
+          curl --fail --location --retry 3 \
+            https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-linux-x64-baseline.zip \
+            --output /build/downloads/bun.zip; \
+          printf '%s  %s\n' c678040f14fe0440eb839d37cbd0ce4c051a32da72806ac97de6a6aab6bf728f /build/downloads/bun.zip | sha256sum --check -; \
+          unzip -q /build/downloads/bun.zip -d /build/downloads; \
+          install -m 0755 /build/downloads/bun-linux-x64-baseline/bun /build/toolchains/bin/bun; \
+          curl --fail --location --retry 3 \
+            https://static.rust-lang.org/dist/rust-1.96.0-x86_64-unknown-linux-gnu.tar.xz \
+            --output /build/downloads/rust.tar.xz; \
+          printf '%s  %s\n' c295047583a56238ea06b43f849f4b877fa12bfd4c7103f8d9a74c94c9c4e108 /build/downloads/rust.tar.xz | sha256sum --check -; \
+          tar -xJf /build/downloads/rust.tar.xz -C /build/downloads; \
+          /build/downloads/rust-1.96.0-x86_64-unknown-linux-gnu/install.sh \
+            --prefix=/build/toolchains --disable-ldconfig \
+            --components=rustc,cargo,rust-std-x86_64-unknown-linux-gnu; \
+          curl --fail --location --retry 3 \
+            https://github.com/goreleaser/nfpm/releases/download/v2.47.0/nfpm_2.47.0_Linux_x86_64.tar.gz \
+            --output /build/downloads/nfpm.tar.gz; \
+          printf '%s  %s\n' 0660ca602b2d2d2ae4781a06c692b3eeb9d437ffea05b831d76e41f4a3188783 /build/downloads/nfpm.tar.gz | sha256sum --check -; \
+          tar -xzf /build/downloads/nfpm.tar.gz -C /build/toolchains/bin nfpm; \
+          rm -rf /build/downloads
+
+  - type: copy@v1
+    src: packages/omp
+    dest: /src/packages/omp
+
+  - type: copy@v1
+    src: packages/omp-helper
+    dest: /src/packages/omp-helper
+
+  - type: copy@v1
+    src: dotfiles/dot_omp/agent/lib/helper
+    dest: /src/dotfiles/dot_omp/agent/lib/helper
+
+  - type: copy@v1
+    src: dotfiles/dot_omp/agent/lib/desktop
+    dest: /src/dotfiles/dot_omp/agent/lib/desktop
+
+  - type: copy@v1
+    src: bluebuild/recipes/spectrum/sources/omp.json
+    dest: /src/omp-build.json
+
+  # Preparation hashes the source snapshot into a numeric RPM release
+  # RPM installation only owns /usr files; activation remains per-user
+  - type: containerfile
+    snippets:
+      - |-
+        RUN \
+          --mount=type=cache,id=spectrum-omp-bun-v1,sharing=locked,target=/build/bun-cache \
+          --mount=type=cache,id=spectrum-omp-cargo-registry-v1,sharing=locked,target=/build/cargo/registry \
+          --mount=type=cache,id=spectrum-omp-cargo-git-v1,sharing=locked,target=/build/cargo/git \
+          PATH=/build/toolchains/bin:$PATH \
+          BUN_INSTALL_CACHE_DIR=/build/bun-cache \
+          CARGO_HOME=/build/cargo \
+          SOURCE_DATE_EPOCH="$(/build/toolchains/bin/bun -p 'require("/src/omp-build.json").sourceDateEpoch')" \
+          bun run /src/packages/omp-helper/packaging/build.ts \
+            --format rpm --install-root /usr/lib/omp-helper --output /out \
+            --release "$(/build/toolchains/bin/bun -p 'require("/src/omp-build.json").release')"

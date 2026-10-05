@@ -146,6 +146,7 @@ in
                 "appindicatorsupport@rgcjonas.gmail.com"
                 copyousExtensionUuid
                 hyperWindowTilingExtensionUuid
+                "omp-workspaces@4evy.local"
                 "pip-on-top@rafostar.github.com"
                 toshyWindowContextExtensionUuid
               ];

@@ -40,6 +40,7 @@ in
         yamllint
         ;
       inherit (pkgs) theme-run;
+      inherit (pkgs) omp-runtime omp-helper;
       # Include package entry points and a Python interpreter carrying the
       # root project's dependencies for deployed standalone helpers.
       dotfiles-python = pkgs.dotfiles-python.runtime;
@@ -162,6 +163,7 @@ in
         yt-dlp
         zip
         zizmor
+        zstd
         ;
 
       inherit (pkgs.unstable.luaPackages) luacheck;

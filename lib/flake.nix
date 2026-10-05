@@ -70,6 +70,8 @@ let
         hyper-window-tiling-gnome
         hyper-window-tiling-kde
         kmscon
+        omp-runtime
+        omp-helper
         toshy-runtime
         uresourced
         ;

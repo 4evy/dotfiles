@@ -5,12 +5,20 @@ let
     bluebuild-v2 = ../packages/bluebuild-v2/package.nix;
     dotfiles-python = ../packages/dotfiles-python/package.nix;
     hyper-window-tiling = ../packages/hyper-window-tiling/package.nix;
+    omp-runtime = ../packages/omp/package.nix;
+    omp-helper = ../packages/omp-helper/package.nix;
     theme-run = ../packages/theme-run/package.nix;
     toshy-runtime = ../packages/toshy-runtime/package.nix;
     uresourced = ../packages/uresourced/package.nix;
   };
 
   packageArgs = {
+    omp-runtime = {
+      inherit (final.unstable) bun;
+    };
+    omp-helper = {
+      inherit (final.unstable) bun rustPlatform;
+    };
     toshy-runtime = {
       # Toshy replaces packageOverrides, so extend its interpreter's package set
       # before applying upstream's pins without affecting other Python runtimes

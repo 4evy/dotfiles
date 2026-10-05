@@ -43,6 +43,15 @@ modules:
     src: /out/usr
     dest: /usr
 
+  # Install the RPM rather than copying its files so per-user activation can
+  # verify ownership against the image's package database
+  - type: containerfile
+    snippets:
+      - |-
+        RUN --mount=type=bind,from=omp,source=/out,target=/run/omp-rpm,ro \
+          dnf -y --setopt=install_weak_deps=False install /run/omp-rpm/*.rpm \
+          && dnf clean all
+
   - type: copy@v1
     src: bluebuild/files/system
     dest: /

@@ -363,6 +363,7 @@
       }
       // lib.optionalAttrs isLinux {
         hyper-window-tiling = self'.packages.hyper-window-tiling-gnome;
+        inherit (self'.packages) omp-runtime omp-helper;
         toshy-runtime = self'.packages.toshy-runtime;
       }
       // lib.optionalAttrs (system == "x86_64-linux") {
@@ -388,6 +389,30 @@
             just
           ]);
           inherit (config.pre-commit) shellHook;
+        };
+      }
+      // lib.optionalAttrs isLinux {
+        omp-helper = pkgs.mkShell {
+          inputsFrom = [ self'.packages.omp-helper.desktop ];
+          packages = [
+            pkgs.unstable.rustc
+            pkgs.unstable.cargo
+            pkgs.unstable.clippy
+            pkgs.unstable.rustfmt
+            pkgs.unstable.bun
+            pkgs.pkg-config
+            pkgs.bun2nix
+          ];
+          XKB_CONFIG_ROOT = "${pkgs.xkeyboard_config}/share/X11/xkb";
+          GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPath "lib/gstreamer-1.0" [
+            pkgs.gst_all_1.gst-plugins-base
+            pkgs.gst_all_1.gst-plugins-good
+            pkgs.pipewire
+          ];
+          LD_LIBRARY_PATH = lib.makeLibraryPath [
+            pkgs.libxkbcommon
+            pkgs.wayland
+          ];
         };
       };
 
@@ -454,6 +479,11 @@
           nixfmt.enable = true;
           ruff-format.enable = true;
           rumdl-format.enable = true;
+          rustfmt = {
+            enable = true;
+            package = pkgs.unstable.rustfmt;
+            edition = "2024";
+          };
           shfmt = {
             enable = true;
             useEditorConfig = true;

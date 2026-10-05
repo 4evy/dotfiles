@@ -24,6 +24,7 @@ stages:
   - from-file: spectrum/stages/ghostty.yml
   - from-file: spectrum/stages/hyper-window-tiling.yml
   - from-file: spectrum/stages/kanata.yml
+  - from-file: spectrum/stages/omp.yml
 
 modules:
   # Put immutable, remote-heavy work first. Local source and configuration
