@@ -1,9 +1,9 @@
 module github.com/4evy/dotfiles/packages/records
 
-go 1.27
+go 1.27.1
 
 require (
-	github.com/go-ruby-shellwords/shellwords v0.0.0-20260916102720-dcaddc4ec112
+	github.com/go-ruby-shellwords/shellwords v0.0.0-20261005011640-317ed846c519
 	github.com/google/renameio/v2 v2.0.2
 	github.com/hashicorp/go-set/v3 v3.0.1
 	github.com/spf13/cobra v1.10.2

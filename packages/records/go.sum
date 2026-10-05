@@ -3,6 +3,8 @@ github.com/go-ruby-shellwords/shellwords v0.0.0-20260717074108-d7e869454d70 h1:d
 github.com/go-ruby-shellwords/shellwords v0.0.0-20260717074108-d7e869454d70/go.mod h1:gJ+9ba+y8+DKenwjZKbTLVSuX6Xp7V5R7pZ6NwtD6x0=
 github.com/go-ruby-shellwords/shellwords v0.0.0-20260916102720-dcaddc4ec112 h1:kj85uTSB28WFuN0NsNUlr7q42ZDKVkB0M6dOEn/UNuI=
 github.com/go-ruby-shellwords/shellwords v0.0.0-20260916102720-dcaddc4ec112/go.mod h1:gJ+9ba+y8+DKenwjZKbTLVSuX6Xp7V5R7pZ6NwtD6x0=
+github.com/go-ruby-shellwords/shellwords v0.0.0-20261005011640-317ed846c519 h1:23C0Vsr3blNe8Y8uvBn0WsFNzI5pwJJ3kpX1zSHI6ow=
+github.com/go-ruby-shellwords/shellwords v0.0.0-20261005011640-317ed846c519/go.mod h1:NrN90FqdcLdgPfhYd37AqMPkBv/iFHdwZvJGX4ctFgk=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/google/renameio/v2 v2.0.2 h1:qKZs+tfn+arruZZhQ7TKC/ergJunuJicWS6gLDt/dGw=
