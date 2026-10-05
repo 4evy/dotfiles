@@ -1,0 +1,25 @@
+diff --git a/packages/tui/src/status-line/segments.ts b/packages/tui/src/status-line/segments.ts
+--- a/packages/tui/src/status-line/segments.ts
++++ b/packages/tui/src/status-line/segments.ts
+@@ -1151,8 +1151,8 @@
+ 	resetUnit: "m" | "h",
+ 	integer: "round" | "floor",
+ ): string {
+-	const whole = integer === "floor" ? Math.floor(percent) : Math.round(percent);
+-	const pctText = theme.fg(pickUsageColor(percent), `${whole}%`);
++	const whole = integer === "floor" ? Math.floor(100 - percent) : Math.round(100 - percent);
++	const pctText = theme.fg(pickUsageColor(percent), `${whole}% left`);
+ 	const resetText = reset !== undefined ? theme.fg("muted", ` (${formatUsageReset(reset, resetUnit)})`) : "";
+ 	return `${label} ${pctText}${resetText}`;
+ }
+@@ -1165,8 +1165,8 @@
+ 	resetUnit: "m" | "h",
+ 	integer: "round" | "floor",
+ ): TspSpan[] {
+-	const whole = integer === "floor" ? Math.floor(percent) : Math.round(percent);
+-	const spans = [span(`${label} `), span(`${whole}%`, pickUsageColor(percent))];
++	const whole = integer === "floor" ? Math.floor(100 - percent) : Math.round(100 - percent);
++	const spans = [span(`${label} `), span(`${whole}% left`, pickUsageColor(percent))];
+ 	if (reset !== undefined) spans.push(span(` (${formatUsageReset(reset, resetUnit)})`, "muted"));
+ 	return spans;
+ }

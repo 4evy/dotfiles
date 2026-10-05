@@ -1,6 +1,11 @@
 #!/bin/sh
 set -eu
 
+# System packages already carry the pinned patches and native dependency closure
+if command -v omp-runtime >/dev/null 2>&1; then
+  exec omp-runtime "$@"
+fi
+
 repo=${DOTFILES_REPO:-}
 if [ -z "$repo" ]; then
   if [ -d "$HOME/Developer/dotfiles" ]; then
@@ -14,11 +19,35 @@ if [ -z "$repo" ]; then
 fi
 
 bun=$(command -v bun)
-omp=$("$bun" pm bin --global)/omp
+omp_bin=$("$bun" pm bin --global)
+omp=$omp_bin/omp
 if [ ! -x "$omp" ]; then
   printf '%s\n' "omp: Bun's global OMP installation was not found: $omp" >&2
   exit 1
 fi
 
-"$bun" "$repo/scripts/patch-omp-ui.ts" "$omp"
-exec "$bun" "$omp" "$@"
+patched_omp=$(sh "$repo/scripts/build-omp.sh")
+# Keep the updater targeting Bun's global installation, not this launcher
+export DOTFILES_REPO="$repo" PATH="$omp_bin:$PATH"
+
+if [ "${1-}" = update ]; then
+  "$bun" "$patched_omp" "$@"
+  for argument in "$@"; do
+    case "$argument" in
+    --check | --plugins | --help) exit 0 ;;
+    -[!-]*)
+      case "$argument" in
+      *[clh]*) exit 0 ;;
+      esac
+      ;;
+    esac
+  done
+  if ! sh "$repo/scripts/build-omp.sh" >/dev/null; then
+    printf '%s\n' "omp: the update finished, but building the patched version failed" >&2
+    exit 1
+  fi
+  printf '%s\n' "omp: patched build is ready" >&2
+  exit 0
+fi
+
+exec "$bun" "$patched_omp" "$@"

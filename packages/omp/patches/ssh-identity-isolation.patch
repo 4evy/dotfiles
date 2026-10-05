@@ -1,0 +1,25 @@
+diff --git a/packages/coding-agent/src/ssh/connection-manager.ts b/packages/coding-agent/src/ssh/connection-manager.ts
+--- a/packages/coding-agent/src/ssh/connection-manager.ts
++++ b/packages/coding-agent/src/ssh/connection-manager.ts
+@@ -262,11 +262,20 @@
+ 	}
+ }
+ 
++function identityControlPath(host: SSHConnectionTarget): string {
++	if (!host.keyPath) return CONTROL_PATH;
++	// OpenSSH's %C excludes IdentityFile, so explicit keys need isolated masters
++	const digest = new Bun.CryptoHasher("sha256")
++		.update(JSON.stringify([host.host, host.username ?? null, host.port ?? null, host.keyPath]))
++		.digest("hex");
++	return path.join(CONTROL_DIR, `k-${digest.slice(0, 32)}.sock`);
++}
++
+ function buildCommonArgs(host: SSHConnectionTarget, options?: SSHArgsOptions): string[] {
+ 	const args = options?.allowStdin ? [] : ["-n"];
+ 
+ 	if (supportsSshControlMaster(options?.platform)) {
+-		args.push("-o", "ControlMaster=auto", "-o", `ControlPath=${CONTROL_PATH}`, "-o", "ControlPersist=3600");
++		args.push("-o", "ControlMaster=auto", "-o", `ControlPath=${identityControlPath(host)}`, "-o", "ControlPersist=3600");
+ 	}
+ 
+ 	args.push("-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new");

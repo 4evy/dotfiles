@@ -1,0 +1,189 @@
+diff --git a/packages/coding-agent/src/tools/browser/launch.ts b/packages/coding-agent/src/tools/browser/launch.ts
+--- a/packages/coding-agent/src/tools/browser/launch.ts
++++ b/packages/coding-agent/src/tools/browser/launch.ts
+@@ -29,6 +29,7 @@
+ import stealthWorkerScript from "../puppeteer/13_stealth_worker.txt" with { type: "text" };
+ import { ToolError } from "@oh-my-pi/pi-tui/tools/tool-errors";
+ import { withDownload } from "../../downloads/activity";
++import { isolateBrowserLaunch } from "./workspace";
+ 
+ export const DEFAULT_VIEWPORT = { width: 1365, height: 768, deviceScaleFactor: 1.25 };
+ 
+@@ -537,14 +538,20 @@
+ 	}
+ 	try {
+ 		const executablePath = await ensureChromiumExecutable();
++		const ignored = new Set([...stealthIgnoreDefaultArgs(executablePath), ...(opts.ignoreDefaultArgs ?? [])]);
++		const isolation = process.platform === "linux" && !opts.headless
++			? await isolateBrowserLaunch(
++				executablePath ?? puppeteer.executablePath(),
++				(await puppeteer.defaultArgs({ headless: false, args: launchArgs })).filter(arg => !ignored.has(arg)),
++				false,
++			)
++			: undefined;
+ 		const browser = await puppeteer.launch({
+ 			headless: opts.headless,
+ 			defaultViewport: opts.headless ? initialViewport : null,
+-			executablePath,
+-			args: launchArgs,
+-			ignoreDefaultArgs: [
+-				...new Set([...stealthIgnoreDefaultArgs(executablePath), ...(opts.ignoreDefaultArgs ?? [])]),
+-			],
++			executablePath: isolation?.executablePath ?? executablePath,
++			args: isolation?.args ?? launchArgs,
++			ignoreDefaultArgs: isolation ? true : [...ignored],
+ 			protocolTimeout: BROWSER_PROTOCOL_TIMEOUT_MS,
+ 		});
+ 		return { browser, userDataDir };
+@@ -583,10 +590,11 @@
+ 		args: buildHeadlessLaunchArgs(vp),
+ 		userDataDir: opts.userDataDir,
+ 	});
+-	return {
++	return isolateBrowserLaunch(
+ 		executablePath,
+-		args: [...defaults.filter(arg => !ignored.has(arg)), "--no-startup-window", "--remote-debugging-port=0"],
+-	};
++		[...defaults.filter(arg => !ignored.has(arg)), "--no-startup-window", "--remote-debugging-port=0"],
++		opts.headless,
++	);
+ }
+ 
+ /**
+diff --git a/packages/coding-agent/src/tools/browser/registry.ts b/packages/coding-agent/src/tools/browser/registry.ts
+--- a/packages/coding-agent/src/tools/browser/registry.ts
++++ b/packages/coding-agent/src/tools/browser/registry.ts
+@@ -22,6 +22,7 @@
+ import { ensureSharedBrowser } from "./shared-daemon";
+ import type { TernKind } from "./tern/kind";
+ import { TernSocketClient } from "./tern/wire";
++import { isolateBrowserLaunch } from "./workspace";
+ 
+ export type PuppeteerBrowserKind =
+ 	| {
+@@ -281,6 +282,9 @@
+ 	}
+ 	const appArgs = kind.args ?? [];
+ 	const reused = await findReusableCdp(exe, { signal: opts.signal, appArgs });
++	if (reused && process.platform === "linux") {
++		throw new ToolError("An existing browser cannot be adopted into an isolated workspace; attach explicitly with app.cdp_url instead");
++	}
+ 	let cdpUrl: string;
+ 	let pid: number;
+ 	let subprocess: Subprocess | undefined;
+@@ -291,7 +295,8 @@
+ 	} else {
+ 		const port = await findFreeCdpPort();
+ 		const launchArgs = [...appArgs, `--remote-debugging-port=${port}`];
+-		const child = Bun.spawn([exe, ...launchArgs], {
++		const launch = await isolateBrowserLaunch(exe, launchArgs, false, true);
++		const child = Bun.spawn([launch.executablePath, ...launch.args], {
+ 			cwd: opts.cwd,
+ 			stdout: "ignore",
+ 			stderr: "ignore",
+diff --git a/packages/coding-agent/src/tools/browser/shared-daemon.ts b/packages/coding-agent/src/tools/browser/shared-daemon.ts
+--- a/packages/coding-agent/src/tools/browser/shared-daemon.ts
++++ b/packages/coding-agent/src/tools/browser/shared-daemon.ts
+@@ -36,7 +36,8 @@
+ 
+ /** Stable broker daemon name for the shared automation browser. */
+ export function sharedBrowserDaemonName(headless: boolean): string {
+-	return headless ? "omp.browser.headless" : "omp.browser.headed";
++	if (headless) return "omp.browser.headless";
++	return process.platform === "linux" ? "omp.browser.workspace" : "omp.browser.headed";
+ }
+ 
+ function wsEndpointOf(snapshot: DaemonSnapshot | undefined): string | undefined {
+diff --git a/packages/coding-agent/src/utils/browser-session.ts b/packages/coding-agent/src/utils/browser-session.ts
+--- a/packages/coding-agent/src/utils/browser-session.ts
++++ b/packages/coding-agent/src/utils/browser-session.ts
+@@ -8,6 +8,7 @@
+ import type { Browser } from "puppeteer-core";
+ import { gracefulKillTreeOnce } from "../tools/browser/attach";
+ import { ensureChromiumExecutable, loadPuppeteer, removeUserDataDir } from "../tools/browser/launch";
++import { isolateBrowserLaunch } from "../tools/browser/workspace";
+ 
+ const LOGIN_TIMEOUT_MS = 5 * 60_000;
+ 
+@@ -33,13 +34,26 @@
+ 		lifetime.throwIfAborted();
+ 		// Do not race launch: retain ownership even if cancellation happens before it resolves.
+ 		// Unlike general browser tooling, authentication keeps sandbox and TLS checks enabled.
++		const ignored: Record<string, true> = {
++			"--no-sandbox": true,
++			"--disable-setuid-sandbox": true,
++			"--ignore-certificate-errors": true,
++		};
++		const args = [`--user-data-dir=${userDataDir}`];
++		const isolation = process.platform === "linux"
++			? await isolateBrowserLaunch(
++				executablePath ?? puppeteer.executablePath(),
++				(await puppeteer.defaultArgs({ headless: false, args })).filter(arg => !Object.hasOwn(ignored, arg)),
++				false,
++			)
++			: undefined;
+ 		browser = await puppeteer.launch({
+-			executablePath,
++			executablePath: isolation?.executablePath ?? executablePath,
+ 			headless: false,
+ 			defaultViewport: null,
+-			pipe: true,
+-			ignoreDefaultArgs: ["--no-sandbox", "--disable-setuid-sandbox", "--ignore-certificate-errors"],
+-			args: [`--user-data-dir=${userDataDir}`],
++			pipe: !isolation,
++			ignoreDefaultArgs: isolation ? true : Object.keys(ignored),
++			args: isolation?.args ?? args,
+ 			signal: lifetime,
+ 			timeout: 30_000,
+ 		});
+diff --git a/packages/coding-agent/src/tools/browser/workspace.ts b/packages/coding-agent/src/tools/browser/workspace.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/coding-agent/src/tools/browser/workspace.ts
+@@ -0,0 +1,46 @@
++import * as fs from "node:fs/promises";
++import * as os from "node:os";
++import * as path from "node:path";
++import { ToolError } from "@oh-my-pi/pi-tui/tools/tool-errors";
++
++export interface WorkspaceBrowserLaunch {
++	executablePath: string;
++	args: string[];
++}
++
++export async function isolateBrowserLaunch(
++	executablePath: string,
++	args: string[],
++	headless: boolean,
++	rejectProfileReuse = false,
++): Promise<WorkspaceBrowserLaunch> {
++	if (process.platform !== "linux" || headless) return { executablePath, args };
++	const helper = path.join(
++		process.env.XDG_DATA_HOME ?? path.join(os.homedir(), ".local/share"),
++		"omp-helper/current/bin/omp-helper-desktop",
++	);
++	try {
++		await fs.access(helper, fs.constants.X_OK);
++	} catch {
++		throw new ToolError("Headed Linux browsers require an installed omp-helper with GNOME workspace isolation");
++	}
++	if (args.some(arg => arg.startsWith("--ozone-platform=") && arg !== "--ozone-platform=wayland")) {
++		throw new ToolError("Isolated Linux browsers require native Wayland, not X11");
++	}
++	const profile = args.find(arg => arg.startsWith("--user-data-dir="))?.slice("--user-data-dir=".length);
++	if (!profile || !path.isAbsolute(profile)) {
++		throw new ToolError("An isolated Linux browser requires a dedicated absolute --user-data-dir");
++	}
++	if (rejectProfileReuse) {
++		try {
++			await fs.lstat(path.join(profile, "SingletonLock"));
++			throw new ToolError("The requested browser profile is already in use; refusing to reuse a window outside the isolated workspace");
++		} catch (error) {
++			if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
++		}
++	}
++	return {
++		executablePath: helper,
++		args: ["workspace-run", "--", executablePath, ...args, "--ozone-platform=wayland"],
++	};
++}

@@ -1,0 +1,20 @@
+diff --git a/packages/coding-agent/src/cli/update-cli.ts b/packages/coding-agent/src/cli/update-cli.ts
+--- a/packages/coding-agent/src/cli/update-cli.ts
++++ b/packages/coding-agent/src/cli/update-cli.ts
+@@ -2226,6 +2226,16 @@ export async function runUpdateCommand(opts: {
+ 	check: boolean;
+ 	channel?: UpdateChannel;
+ }): Promise<void> {
++	if (!opts.check) {
++		console.error(
++			"This omp runtime is pinned and managed by the system; self-updates are disabled.\n" +
++				"Update the dotfiles omp source pin, then rebuild NixOS (nixos-rebuild switch) " +
++				"or rebuild and deploy your BlueBuild image (bootc upgrade).\n" +
++				"Use omp update --check to check releases or omp update --plugins to update user plugins.",
++		);
++		process.exitCode = 1;
++		return;
++	}
+ 	console.log(chalk.dim(`Current version: ${VERSION}`));
+ 	const persistedChannel = readPersistedChannel() ?? "stable";
+ 	const channel = opts.channel ?? persistedChannel;

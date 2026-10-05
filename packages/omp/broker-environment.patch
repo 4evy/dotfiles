@@ -1,0 +1,38 @@
+diff --git a/packages/coding-agent/src/launch/broker.ts b/packages/coding-agent/src/launch/broker.ts
+--- a/packages/coding-agent/src/launch/broker.ts
++++ b/packages/coding-agent/src/launch/broker.ts
+@@ -12,7 +12,6 @@
+ 	truncateTail,
+ 	truncateTailBytes,
+ } from "@oh-my-pi/pi-tui/tools/streaming-output";
+-import { workerEnvFromParent } from "../subprocess/worker-client";
+ import {
+ 	DAEMON_META_FILE,
+ 	DAEMON_SPEC_FILE,
+@@ -969,7 +968,7 @@
+ 		this.#persist(record);
+ 		const options = {
+ 			cwd: record.spec.cwd,
+-			env: workerEnvFromParent({ TERM: "xterm-256color", ...record.spec.env }),
++			env: { TERM: "xterm-256color", ...record.spec.env },
+ 			cols: terminalSize.columns,
+ 			rows: terminalSize.rows,
+ 		};
+@@ -1045,7 +1044,7 @@
+ 	#launchPipe(record: ManagedDaemon, generation: number): void {
+ 		const process = Bun.spawn([record.spec.application, ...record.spec.args], {
+ 			cwd: record.spec.cwd,
+-			env: workerEnvFromParent(record.spec.env),
++			env: record.spec.env,
+ 			stdin: "pipe",
+ 			stdout: "pipe",
+ 			stderr: "pipe",
+@@ -1070,7 +1069,7 @@
+ 		try {
+ 			const process = Bun.spawn([record.spec.application, ...record.spec.args], {
+ 				cwd: record.spec.cwd,
+-				env: workerEnvFromParent(record.spec.env),
++				env: record.spec.env,
+ 				stdio: ["ignore", output.fd, output.fd],
+ 				...DAEMON_SPAWN_OPTIONS,
+ 			});

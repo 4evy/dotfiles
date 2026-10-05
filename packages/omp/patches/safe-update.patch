@@ -1,0 +1,19 @@
+diff --git a/packages/coding-agent/src/cli/update-cli.ts b/packages/coding-agent/src/cli/update-cli.ts
+--- a/packages/coding-agent/src/cli/update-cli.ts
++++ b/packages/coding-agent/src/cli/update-cli.ts
+@@ -2274,6 +2274,15 @@
+ 	// symlink resolves to method "binary" and is replaced in place, keeping the
+ 	// same PATH entry live.
+ 	try {
++		// Check the exact selected release before any installer or channel mutation
++		const dotfilesRepo = process.env.DOTFILES_REPO;
++		if (!dotfilesRepo) throw new Error("DOTFILES_REPO is required to check update patches");
++		if (shouldForceBinaryUpdate(release)) {
++			throw new Error("Dotfiles patches require an npm release; leaving the current installation unchanged");
++		}
++		console.log(chalk.dim(`Checking dotfiles patches against ${release.version}...`));
++		await $`sh ${path.join(dotfilesRepo, "scripts/build-omp.sh")} --check-patches ${release.version}`;
++
+ 		const forceBinary = shouldForceBinaryUpdate(release);
+ 		const allowPrerelease = channel === "canary";
+ 		const target = await resolveUpdateTarget({ allowPackageManagers: !forceBinary });

@@ -1,0 +1,1341 @@
+diff --git a/dist/types/launch/protocol.d.ts b/dist/types/launch/protocol.d.ts
+index eb77422..f229752 100644
+--- a/dist/types/launch/protocol.d.ts
++++ b/dist/types/launch/protocol.d.ts
+@@ -1,11 +1,21 @@
+-import { type DaemonState, type DaemonSpec, type DaemonSnapshot } from "@oh-my-pi/pi-tui/tools/daemon";
++import { type DaemonState, type DaemonSpec, type DaemonSnapshot, type DaemonTerminalSize, type DaemonTerminalEvent, type DaemonTerminalReplay } from "@oh-my-pi/pi-tui/tools/daemon";
+ /**
+  * Cross-process daemon broker protocol shared by the tool, client, and broker.
+  */
+ export { DAEMON_BROKER_WORKER_ARG } from "../cli/worker-selectors.js";
+-/** Fixed dimensions negotiated with every supervised PTY. */
++/** Default dimensions negotiated when a supervised PTY has no explicit size */
+ export declare const DAEMON_PTY_COLUMNS = 120;
+ export declare const DAEMON_PTY_ROWS = 40;
++/** Maximum storage bytes returned by one incremental output request */
++export declare const DAEMON_OUTPUT_MAX_BYTES: number;
++/** Exact retained log bytes, with absolute storage offsets across rotation */
++export type DaemonOutput = {
++    data: string;
++    startCursor: number;
++    cursor: number;
++    availableStart: number;
++    availableEnd: number;
++};
+ /** Environment key carrying the broker's canonical project or synthetic global scope directory. */
+ export declare const DAEMON_PROJECT_DIR_ENV = "OMP_DAEMON_PROJECT_DIR";
+ /** Environment key carrying the broker's private runtime directory. */
+@@ -35,6 +45,12 @@ export type DaemonOperation = {
+     /** Ask an upgraded broker to replay PTY output; absent preserves legacy raw-text responses. */
+     renderTerminalRows?: boolean;
+     timeoutMs: number;
++} | {
++    op: "output";
++    name: string;
++    cursor: number;
++    follow: boolean;
++    timeoutMs: number;
+ } | {
+     op: "wait";
+     name: string;
+@@ -46,6 +62,7 @@ export type DaemonOperation = {
+     name: string;
+     data?: string;
+     signal?: DaemonSignal;
++    resize?: DaemonTerminalSize;
+ } | {
+     op: "stop";
+     name: string;
+@@ -82,10 +99,18 @@ export type DaemonRpcResult = {
+     terminalRows?: string[];
+     /** Raw PTY bytes returned by legacy brokers and to clients that did not request rendered rows. */
+     terminalText?: string;
++    /** Current geometry and replay geometry for the returned raw UTF-8 bytes */
++    terminalSize?: DaemonTerminalSize;
++    terminalReplay?: DaemonTerminalReplay;
+     cursor: number;
+     timedOut: boolean;
+     state: DaemonState;
+-} | {
++} | ({
++    op: "output";
++    name: string;
++    timedOut: boolean;
++    state: DaemonState;
++} & DaemonOutput) | {
+     op: "wait";
+     daemon: DaemonSnapshot;
+     matched?: string;
+@@ -140,6 +165,10 @@ export interface DaemonCompletionNotification {
+     daemon: DaemonSnapshot;
+ }
+ export type DaemonWireMessage = DaemonWireResponse | DaemonCompletionNotification;
++/** Validate terminal geometry before allocating or resizing a native PTY */
++export declare function parseDaemonTerminalSize(value: unknown, label?: string): DaemonTerminalSize;
++/** Decode persisted or wire replay events without losing their byte offsets */
++export declare function parseDaemonTerminalEvents(value: unknown): DaemonTerminalEvent[];
+ /** Decode and validate a daemon launch specification. */
+ export declare function parseDaemonSpec(value: unknown): DaemonSpec;
+ /** Decode and validate one daemon snapshot. */
+diff --git a/src/launch/broker.ts b/src/launch/broker.ts
+--- a/src/launch/broker.ts
++++ b/src/launch/broker.ts
+@@ -20,21 +20,30 @@ import {
+ 	readStoredDaemonRecord,
+ 	writeDaemonScopeMeta,
+ } from "./paths";
+-import type { DaemonReadySpec, DaemonSnapshot, DaemonSpec } from "@oh-my-pi/pi-tui/tools/daemon";
++import type {
++	DaemonReadySpec,
++	DaemonSnapshot,
++	DaemonSpec,
++	DaemonTerminalEvent,
++	DaemonTerminalReplay,
++} from "@oh-my-pi/pi-tui/tools/daemon";
+ import { hasLiveDaemonProjectPresence, pruneDeadDaemonRuntimeDirs } from "./presence";
+ import {
+ 	DAEMON_IDLE_GRACE_ENV,
++	DAEMON_OUTPUT_MAX_BYTES,
+ 	DAEMON_PROJECT_DIR_ENV,
+ 	DAEMON_PTY_COLUMNS,
+ 	DAEMON_PTY_ROWS,
+ 	DAEMON_RUNTIME_DIR_ENV,
+ 	type DaemonCompletionNotification,
+ 	type DaemonOperation,
++	type DaemonOutput,
+ 	type DaemonRpcResult,
+ 	type DaemonSignal,
+ 	type DaemonWireRequest,
+ 	parseDaemonSnapshot,
+ 	parseDaemonSpec,
++	parseDaemonTerminalEvents,
+ 	parseDaemonWireMessage,
+ 	parseDaemonWireRequest,
+ } from "./protocol";
+@@ -89,6 +98,8 @@ interface ManagedDaemon {
+ 	snapshot: DaemonSnapshot;
+ 	dir: string;
+ 	log?: DaemonLog;
++	logBytes: number;
++	terminalEvents: DaemonTerminalEvent[];
+ 	process?: ManagedProcess;
+ 	input?: Bun.FileSink;
+ 	pty?: PtySession;
+@@ -121,6 +132,7 @@ interface DaemonLogRead {
+ 	text: string;
+ 	terminalOutput: string;
+ 	cursor: number;
++	terminalReplay?: DaemonTerminalReplay;
+ }
+ 
+ function quoteShellArg(value: string): string {
+@@ -193,35 +205,72 @@ async function writeFileAtomic(filePath: string, content: string): Promise<void>
+ 	await fs.rename(tempPath, filePath);
+ }
+ 
+-async function fileTextSlice(filePath: string, head: boolean): Promise<string> {
++interface LogFileSlice {
++	text: string;
++	size: number;
++	start: number;
++}
++
++async function fileTextSlice(filePath: string, head: boolean): Promise<LogFileSlice> {
+ 	try {
+ 		const stat = await fs.stat(filePath);
+-		const file = Bun.file(filePath);
+-		if (stat.size <= LOG_READ_BYTES) return await file.text();
+-		return head
+-			? await file.slice(0, LOG_READ_BYTES).text()
+-			: await file.slice(Math.max(0, stat.size - LOG_READ_BYTES)).text();
++		const start = head ? 0 : Math.max(0, stat.size - LOG_READ_BYTES);
++		const end = head ? Math.min(stat.size, LOG_READ_BYTES) : stat.size;
++		const bytes = new Uint8Array(await Bun.file(filePath).slice(start, end).arrayBuffer());
++		let skip = 0;
++		// A retained window must not introduce replacement characters at UTF-8 edges
++		while (skip < bytes.length && (bytes[skip]! & 0xc0) === 0x80) skip++;
++		const text = new TextDecoder().decode(bytes.subarray(skip), { stream: true });
++		return { text, size: stat.size, start: start + skip };
++	} catch (error) {
++		if (isEnoent(error)) return { text: "", size: 0, start: 0 };
++		throw error;
++	}
++}
++
++async function terminalLogBytes(logPath: string, fallback: number): Promise<number> {
++	try {
++		// Persist the current file's origin only on rotation, not on every chunk
++		const [origin, stat] = await Promise.all([fs.readFile(`${logPath}.offset`, "utf8"), fs.stat(logPath)]);
++		const start = Number(origin);
++		if (!Number.isSafeInteger(start) || start < 0) throw new Error("Invalid terminal log byte origin");
++		return start + stat.size;
+ 	} catch (error) {
+-		if (isEnoent(error)) return "";
++		if (isEnoent(error)) return fallback;
+ 		throw error;
+ 	}
+ }
+ 
++function terminalReplayForRange(events: DaemonTerminalEvent[], start: number, end: number): DaemonTerminalReplay {
++	let terminalSize = { columns: DAEMON_PTY_COLUMNS, rows: DAEMON_PTY_ROWS };
++	const retained: DaemonTerminalEvent[] = [];
++	for (const event of events) {
++		if (event.offset <= start) terminalSize = event.terminalSize;
++		if (event.offset >= start && event.offset <= end) retained.push({ ...event, offset: event.offset - start });
++		if (event.offset > end) break;
++	}
++	return { terminalSize, events: retained };
++}
++
+ class DaemonLog {
+ 	readonly #path: string;
+ 	readonly #previousPath: string;
+ 	readonly #file: Bun.BunFile;
+ 	#writer: Bun.FileSink;
+ 	#currentBytes = 0;
++	#bytes: number;
++	#currentStart: number;
+ 	#queue: Promise<void> = Promise.resolve();
+ 	#closed = false;
+ 	#closing: Promise<void> | undefined;
+ 
+-	constructor(logPath: string, previousPath: string, file: Bun.BunFile, writer: Bun.FileSink) {
++	constructor(logPath: string, previousPath: string, file: Bun.BunFile, writer: Bun.FileSink, bytes = 0) {
+ 		this.#path = logPath;
+ 		this.#previousPath = previousPath;
+ 		this.#file = file;
+ 		this.#writer = writer;
++		this.#bytes = bytes;
++		this.#currentStart = bytes;
+ 	}
+ 
+ 	/** Opens an empty log for a newly started daemon, discarding output from any earlier daemon of the same name. */
+@@ -231,11 +280,12 @@ class DaemonLog {
+ 		const previousPath = path.join(dir, PREVIOUS_LOG_FILE);
+ 		await Promise.all([fs.rm(previousPath, { force: true }), fs.rm(logPath, { force: true })]);
+ 		const file = Bun.file(logPath);
++		await Bun.write(`${logPath}.offset`, "0");
+ 		return new DaemonLog(logPath, previousPath, file, file.writer());
+ 	}
+ 
+ 	/** Opens a log for a relaunch of the same daemon, keeping the prior generation's output as the previous log. */
+-	static async open(dir: string): Promise<DaemonLog> {
++	static async open(dir: string, bytes: number): Promise<DaemonLog> {
+ 		await fs.mkdir(dir, { recursive: true, mode: 0o700 });
+ 		const logPath = path.join(dir, LOG_FILE);
+ 		const previousPath = path.join(dir, PREVIOUS_LOG_FILE);
+@@ -246,12 +296,18 @@ class DaemonLog {
+ 			if (!isEnoent(error)) throw error;
+ 		}
+ 		const file = Bun.file(logPath);
+-		return new DaemonLog(logPath, previousPath, file, file.writer());
++		await Bun.write(`${logPath}.offset`, String(bytes));
++		return new DaemonLog(logPath, previousPath, file, file.writer(), bytes);
++	}
++
++	get byteLength(): number {
++		return this.#bytes;
+ 	}
+ 
+-	append(text: string): string {
++	append<T extends string | Uint8Array>(text: T): T {
+ 		if (text.length === 0 || this.#closed) return text;
+-		const bytes = Buffer.byteLength(text, "utf8");
++		const bytes = typeof text === "string" ? Buffer.byteLength(text, "utf8") : text.byteLength;
++		this.#bytes += bytes;
+ 		this.#queue = this.#queue.then(async () => {
+ 			if (this.#currentBytes > 0 && this.#currentBytes + bytes > MAX_LOG_BYTES) await this.#rotate();
+ 			this.#writer.write(text);
+@@ -261,10 +317,18 @@ class DaemonLog {
+ 		return text;
+ 	}
+ 
+-	read(head: boolean, lines: number, cursor: number, grep?: string): Promise<DaemonLogRead> {
++	read(
++		head: boolean,
++		lines: number,
++		cursor: number,
++		grep?: string,
++		terminalEvents?: DaemonTerminalEvent[],
++	): Promise<DaemonLogRead> {
++		const terminalBytes = this.#bytes;
++		const events = terminalEvents?.slice();
+ 		const snapshot = this.#queue.then(async () => {
+ 			await this.#writer.flush();
+-			return DaemonLog.readFiles(this.#path, this.#previousPath, head, lines, cursor, grep);
++			return DaemonLog.readFiles(this.#path, this.#previousPath, head, lines, cursor, grep, terminalBytes, events);
+ 		});
+ 		// Appends that arrive after this call queue behind the file snapshot, so its
+ 		// cursor can never include bytes that its terminal replay did not read. A read
+@@ -276,6 +340,62 @@ class DaemonLog {
+ 		return snapshot;
+ 	}
+ 
++	readOutput(cursor: number): Promise<DaemonOutput> {
++		const availableEnd = this.#bytes;
++		const snapshot = this.#queue.then(async () => {
++			await this.#writer.flush();
++			return DaemonLog.readOutputFiles(this.#path, this.#previousPath, cursor, availableEnd);
++		});
++		this.#queue = snapshot.then(() => undefined, () => undefined);
++		return snapshot;
++	}
++
++	static async readOutputFiles(
++		logPath: string,
++		previousPath: string,
++		requested: number,
++		availableEnd: number,
++	): Promise<DaemonOutput> {
++		const open = async (file: string) => {
++			try {
++				return await fs.open(file, "r");
++			} catch (error) {
++				if (isEnoent(error)) return undefined;
++				throw error;
++			}
++		};
++		const current = await open(logPath);
++		let previous: fs.FileHandle | undefined;
++		try {
++			previous = await open(previousPath);
++			const currentSize = current ? (await current.stat()).size : 0;
++			const previousSize = previous ? (await previous.stat()).size : 0;
++			const currentStart = availableEnd - currentSize;
++			const availableStart = currentStart - previousSize;
++			if (availableStart < 0 || requested > availableEnd)
++				throw new Error("Output cursor is outside the stored log range");
++			const startCursor = Math.max(requested, availableStart);
++			const cursor = Math.min(availableEnd, startCursor + DAEMON_OUTPUT_MAX_BYTES);
++			const bytes = Buffer.allocUnsafe(cursor - startCursor);
++			const read = async (file: fs.FileHandle, start: number, end: number, origin: number) => {
++				let offset = start;
++				while (offset < end) {
++					const result = await file.read(bytes, offset - startCursor, end - offset, offset - origin);
++					if (result.bytesRead === 0) throw new Error("Stored output changed during its snapshot");
++					offset += result.bytesRead;
++				}
++			};
++			if (previous && startCursor < currentStart)
++				await read(previous, startCursor, Math.min(cursor, currentStart), availableStart);
++			if (current && cursor > currentStart)
++				await read(current, Math.max(startCursor, currentStart), cursor, currentStart);
++			return { data: bytes.toString("base64"), startCursor, cursor, availableStart, availableEnd };
++		} finally {
++			await current?.close();
++			await previous?.close();
++		}
++	}
++
+ 	close(): Promise<void> {
+ 		this.#closed = true;
+ 		this.#closing ??= this.#queue.then(async () => {
+@@ -291,12 +411,29 @@ class DaemonLog {
+ 		lines: number,
+ 		cursor: number,
+ 		grep?: string,
++		terminalBytes = cursor,
++		terminalEvents?: DaemonTerminalEvent[],
+ 	): Promise<DaemonLogRead> {
+ 		const [previous, current] = await Promise.all([fileTextSlice(previousPath, head), fileTextSlice(logPath, head)]);
+-		const combined = `${previous}${previous && current && !previous.endsWith("\n") ? "\n" : ""}${current}`;
+-		const terminalOutput = head
+-			? truncateHeadBytes(combined, LOG_READ_BYTES).text
+-			: truncateTailBytes(combined, LOG_READ_BYTES).text;
++		const combined = terminalEvents
++			? previous.text + current.text
++			: `${previous.text}${previous.text && current.text && !previous.text.endsWith("\n") ? "\n" : ""}${current.text}`;
++		const truncated = head
++			? truncateHeadBytes(combined, LOG_READ_BYTES)
++			: truncateTailBytes(combined, LOG_READ_BYTES);
++		const terminalOutput = truncated.text;
++		const previousStart = terminalBytes - current.size - previous.size + previous.start;
++		const currentStart = terminalBytes - current.size + current.start;
++		const start = head
++			? previous.text
++				? previousStart
++				: currentStart
++			: (current.text
++					? currentStart + Buffer.byteLength(current.text, "utf8")
++					: previousStart + Buffer.byteLength(previous.text, "utf8")) - truncated.bytes;
++		const terminalReplay = terminalEvents
++			? terminalReplayForRange(terminalEvents, start, start + truncated.bytes)
++			: undefined;
+ 		let text = sanitizeText(terminalOutput);
+ 		if (grep) {
+ 			let pattern: RegExp;
+@@ -314,6 +451,7 @@ class DaemonLog {
+ 		return {
+ 			text: head ? truncateHead(text, options).content : truncateTail(text, options).content,
+ 			terminalOutput,
++			terminalReplay,
+ 			cursor,
+ 		};
+ 	}
+@@ -322,6 +460,8 @@ class DaemonLog {
+ 		await this.#writer.end();
+ 		await fs.rm(this.#previousPath, { force: true });
+ 		await fs.rename(this.#path, this.#previousPath);
++		this.#currentStart += this.#currentBytes;
++		await writeFileAtomic(`${this.#path}.offset`, String(this.#currentStart));
+ 		this.#writer = this.#file.writer();
+ 		this.#currentBytes = 0;
+ 	}
+@@ -657,6 +797,8 @@ class DaemonBroker {
+ 			}
+ 			case "logs":
+ 				return this.#logs(operation);
++			case "output":
++				return this.#output(operation);
+ 			case "wait":
+ 				return this.#wait(operation);
+ 			case "send":
+@@ -687,6 +829,9 @@ class DaemonBroker {
+ 		if (spec.detached && spec.pty) {
+ 			throw new Error("A detached daemon cannot allocate a PTY");
+ 		}
++		if (spec.terminalSize && (!spec.pty || spec.detached)) {
++			throw new Error("terminalSize requires a non-detached PTY");
++		}
+ 		if (
+ 			spec.pty &&
+ 			process.platform === "win32" &&
+@@ -739,6 +884,8 @@ class DaemonBroker {
+ 				},
+ 				dir,
+ 				log: await DaemonLog.create(dir),
++				logBytes: 0,
++				terminalEvents: [],
+ 				generation: 0,
+ 				stopRequested: false,
+ 				logReady: !spec.ready?.log,
+@@ -783,6 +930,10 @@ class DaemonBroker {
+ 		record.snapshot.state = record.spec.ready ? "starting" : "running";
+ 		record.snapshot.persist = record.spec.persist;
+ 		record.snapshot.detached = record.spec.detached;
++		record.snapshot.terminalSize =
++			record.spec.pty && !record.spec.detached
++				? (record.spec.terminalSize ?? { columns: DAEMON_PTY_COLUMNS, rows: DAEMON_PTY_ROWS })
++				: undefined;
+ 		record.snapshot.startedAt = Date.now();
+ 		record.snapshot.readyAt = undefined;
+ 		record.snapshot.exitedAt = undefined;
+@@ -812,11 +963,15 @@ class DaemonBroker {
+ 	async #launchPty(record: ManagedDaemon, generation: number): Promise<void> {
+ 		const session = new PtySession();
+ 		record.pty = session;
++		const terminalSize = record.spec.terminalSize ?? { columns: DAEMON_PTY_COLUMNS, rows: DAEMON_PTY_ROWS };
++		record.snapshot.terminalSize = terminalSize;
++		record.terminalEvents.push({ offset: record.log?.byteLength ?? record.logBytes, terminalSize, reset: true });
++		this.#persist(record);
+ 		const options = {
+ 			cwd: record.spec.cwd,
+ 			env: workerEnvFromParent({ TERM: "xterm-256color", ...record.spec.env }),
+-			cols: DAEMON_PTY_COLUMNS,
+-			rows: DAEMON_PTY_ROWS,
++			cols: terminalSize.columns,
++			rows: terminalSize.rows,
+ 		};
+ 		// Nothing plays terminal for a supervised PTY, so a program probing for
+ 		// cursor position or device attributes would block on the reply. Answer
+@@ -940,11 +1095,14 @@ class DaemonBroker {
+ 			for (;;) {
+ 				const { done, value } = await reader.read();
+ 				if (done) break;
+-				if (generation === record.generation)
+-					this.#onOutput(record, generation, decoder.decode(value, { stream: true }));
++				if (generation === record.generation) {
++					record.log?.append(value);
++					record.snapshot.outputBytes += value.byteLength;
++					this.#trackOutput(record, generation, sanitizeText(decoder.decode(value, { stream: true })));
++				}
+ 			}
+ 			const tail = decoder.decode();
+-			if (tail && generation === record.generation) this.#onOutput(record, generation, tail);
++			if (tail && generation === record.generation) this.#trackOutput(record, generation, sanitizeText(tail));
+ 		} finally {
+ 			reader.releaseLock();
+ 		}
+@@ -1106,6 +1264,7 @@ class DaemonBroker {
+ 		if (completion) record.pendingCompletions.push(completion);
+ 		this.#persist(record);
+ 		await record.log?.close();
++		record.logBytes = record.log?.byteLength ?? record.logBytes;
+ 		record.log = undefined;
+ 		await record.persistQueue;
+ 		if (
+@@ -1124,6 +1283,30 @@ class DaemonBroker {
+ 		this.#scheduleIdleShutdown();
+ 	}
+ 
++	async #output(operation: Extract<DaemonOperation, { op: "output" }>): Promise<DaemonRpcResult> {
++		const record = this.#record(operation.name);
++		if (record.spec.detached) throw new Error("Incremental output requires a supervised daemon");
++		const availableEnd = () => record.log?.byteLength ?? record.logBytes;
++		if (operation.cursor > availableEnd()) throw new Error("Output cursor exceeds the stored log");
++		let timedOut = false;
++		if (operation.follow && operation.cursor >= availableEnd() && !terminalState(record.snapshot.state)) {
++			timedOut = !(await this.#waitUntil(
++				record,
++				() => availableEnd() > operation.cursor || terminalState(record.snapshot.state),
++				operation.timeoutMs,
++			));
++		}
++		const output = record.log
++			? await record.log.readOutput(operation.cursor)
++			: await DaemonLog.readOutputFiles(
++					path.join(record.dir, LOG_FILE),
++					path.join(record.dir, PREVIOUS_LOG_FILE),
++					operation.cursor,
++					record.logBytes,
++				);
++		return { op: "output", name: record.snapshot.name, ...output, timedOut, state: record.snapshot.state };
++	}
++
+ 	async #logs(operation: Extract<DaemonOperation, { op: "logs" }>): Promise<DaemonRpcResult> {
+ 		const record = this.#record(operation.name);
+ 		await this.#refreshDetached(record);
+@@ -1139,7 +1322,13 @@ class DaemonBroker {
+ 		}
+ 		const lines = Math.max(1, Math.min(1_000, Math.floor(operation.lines)));
+ 		const output = record.log
+-			? await record.log.read(operation.head, lines, record.snapshot.outputBytes, operation.grep)
++			? await record.log.read(
++					operation.head,
++					lines,
++					record.snapshot.outputBytes,
++					operation.grep,
++					record.spec.pty ? record.terminalEvents : undefined,
++				)
+ 			: await DaemonLog.readFiles(
+ 					path.join(record.dir, LOG_FILE),
+ 					path.join(record.dir, PREVIOUS_LOG_FILE),
+@@ -1147,17 +1336,25 @@ class DaemonBroker {
+ 					lines,
+ 					record.snapshot.outputBytes,
+ 					operation.grep,
++					record.logBytes,
++					record.spec.pty ? record.terminalEvents.slice() : undefined,
+ 				);
+ 		const terminalOutput = record.spec.pty && operation.grep === undefined ? output.terminalOutput : undefined;
+ 		const terminalRows =
+ 			terminalOutput !== undefined && operation.renderTerminalRows === true
+-				? await renderTerminalOutput(terminalOutput, { head: operation.head, maxRows: lines })
++				? await renderTerminalOutput(terminalOutput, {
++						head: operation.head,
++						maxRows: lines,
++						replay: output.terminalReplay,
++					})
+ 				: undefined;
+ 		return {
+ 			op: "logs",
+ 			name: record.snapshot.name,
+ 			text: output.text,
+ 			terminalRows,
++			terminalSize: record.snapshot.terminalSize,
++			terminalReplay: terminalOutput === undefined ? undefined : output.terminalReplay,
+ 			terminalText:
+ 				terminalOutput !== undefined && (operation.renderTerminalRows !== true || terminalRows === undefined)
+ 					? terminalOutput
+@@ -1230,8 +1427,20 @@ class DaemonBroker {
+ 		if (terminalState(record.snapshot.state) || record.snapshot.state === "stopping") {
+ 			throw new Error(`Daemon ${operation.name} is ${record.snapshot.state}`);
+ 		}
+-		if (operation.data === undefined && operation.signal === undefined) {
+-			throw new Error("send requires data or signal");
++		if (operation.data === undefined && operation.signal === undefined && operation.resize === undefined) {
++			throw new Error("send requires data, signal, or resize");
++		}
++		if (operation.resize) {
++			if (!record.spec.pty || record.spec.detached || !record.pty) {
++				throw new Error(`Daemon ${operation.name} has no supervised PTY to resize`);
++			}
++			const terminalSize = operation.resize;
++			record.pty.resize(terminalSize.columns, terminalSize.rows);
++			record.spec = { ...record.spec, terminalSize };
++			record.snapshot.terminalSize = terminalSize;
++			record.terminalEvents.push({ offset: record.log?.byteLength ?? record.logBytes, terminalSize });
++			this.#persist(record);
++			await record.persistQueue;
+ 		}
+ 		if (operation.data !== undefined) {
+ 			if (record.pty) record.pty.write(operation.data);
+@@ -1265,6 +1474,7 @@ class DaemonBroker {
+ 			record.snapshot.exitedAt = Date.now();
+ 			this.#persist(record);
+ 			await record.log?.close();
++			record.logBytes = record.log?.byteLength ?? record.logBytes;
+ 			record.log = undefined;
+ 			return;
+ 		}
+@@ -1281,7 +1491,7 @@ class DaemonBroker {
+ 		const record = this.#record(name);
+ 		await this.#stopRecord(record, 2_000);
+ 		await record.log?.close();
+-		record.log = await DaemonLog.open(record.dir);
++		record.log = await DaemonLog.open(record.dir, record.logBytes);
+ 		record.stopRequested = false;
+ 		// Settled history does not need subscription writes, but a new generation
+ 		// must persist the owner's current capability for crash recovery.
+@@ -1301,7 +1511,7 @@ class DaemonBroker {
+ 		}
+ 		if (operation.mode === "detached") {
+ 			if (!record.spec.detached) {
+-				record.spec = { ...record.spec, detached: true, pty: false, persist: true };
++				record.spec = { ...record.spec, detached: true, pty: false, persist: true, terminalSize: undefined };
+ 				await this.#restart(operation.name);
+ 			}
+ 		} else {
+@@ -1338,6 +1548,8 @@ class DaemonBroker {
+ 	#serializeMetadata(record: ManagedDaemon): string {
+ 		return JSON.stringify({
+ 			daemon: { ...record.snapshot },
++			terminalLogBytes: record.log?.byteLength ?? record.logBytes,
++			terminalEvents: record.terminalEvents,
+ 			completionEvents: record.completionCapable,
+ 			completionSubscriptionId: record.completionSubscriptionId,
+ 			completionPending: record.pendingCompletions.length > 0,
+@@ -1431,10 +1643,25 @@ class DaemonBroker {
+ 				}
+ 				snapshot.persist = spec.persist;
+ 				snapshot.detached = spec.detached;
++				snapshot.terminalSize =
++					spec.pty && !spec.detached
++						? (snapshot.terminalSize ??
++							spec.terminalSize ?? { columns: DAEMON_PTY_COLUMNS, rows: DAEMON_PTY_ROWS })
++						: undefined;
+ 				const record: ManagedDaemon = {
+ 					spec,
+ 					snapshot,
+ 					dir,
++					logBytes: await terminalLogBytes(
++						path.join(dir, LOG_FILE),
++						"terminalLogBytes" in decoded &&
++							typeof decoded.terminalLogBytes === "number" &&
++							Number.isSafeInteger(decoded.terminalLogBytes) &&
++							decoded.terminalLogBytes >= 0
++							? decoded.terminalLogBytes
++							: snapshot.outputBytes,
++					),
++					terminalEvents: "terminalEvents" in decoded ? parseDaemonTerminalEvents(decoded.terminalEvents) : [],
+ 					generation: 0,
+ 					stopRequested: !detached || snapshot.state === "stopping",
+ 					logReady: detached && (!spec.ready?.log || snapshot.state === "ready"),
+diff --git a/src/launch/client.ts b/src/launch/client.ts
+--- a/src/launch/client.ts
++++ b/src/launch/client.ts
+@@ -104,6 +104,7 @@ function requestTimeoutMs(operation: DaemonOperation): number {
+ 			return (operation.spec.ready?.timeoutMs ?? CONNECT_TIMEOUT_MS) + 5_000;
+ 		case "wait":
+ 		case "logs":
++		case "output":
+ 		case "stop":
+ 			return operation.timeoutMs + 5_000;
+ 		default:
+diff --git a/src/launch/protocol.ts b/src/launch/protocol.ts
+--- a/src/launch/protocol.ts
++++ b/src/launch/protocol.ts
+@@ -4,16 +4,31 @@ import {
+ 	type DaemonReadySpec,
+ 	type DaemonSpec,
+ 	type DaemonSnapshot,
++	type DaemonTerminalSize,
++	type DaemonTerminalEvent,
++	type DaemonTerminalReplay,
+ } from "@oh-my-pi/pi-tui/tools/daemon";
+ /**
+  * Cross-process daemon broker protocol shared by the tool, client, and broker.
+  */
+ export { DAEMON_BROKER_WORKER_ARG } from "../cli/worker-selectors";
+ 
+-/** Fixed dimensions negotiated with every supervised PTY. */
++/** Default dimensions negotiated when a supervised PTY has no explicit size */
+ export const DAEMON_PTY_COLUMNS = 120;
+ export const DAEMON_PTY_ROWS = 40;
+ 
++/** Maximum storage bytes returned by one incremental output request */
++export const DAEMON_OUTPUT_MAX_BYTES = 256 * 1024;
++
++/** Exact retained log bytes, with absolute storage offsets across rotation */
++export type DaemonOutput = {
++	data: string;
++	startCursor: number;
++	cursor: number;
++	availableStart: number;
++	availableEnd: number;
++};
++
+ /** Environment key carrying the broker's canonical project or synthetic global scope directory. */
+ export const DAEMON_PROJECT_DIR_ENV = "OMP_DAEMON_PROJECT_DIR";
+ 
+@@ -43,8 +58,9 @@ export type DaemonOperation =
+ 			renderTerminalRows?: boolean;
+ 			timeoutMs: number;
+ 	  }
++	| { op: "output"; name: string; cursor: number; follow: boolean; timeoutMs: number }
+ 	| { op: "wait"; name: string; for: "ready" | "exit"; pattern?: string; timeoutMs: number }
+-	| { op: "send"; name: string; data?: string; signal?: DaemonSignal }
++	| { op: "send"; name: string; data?: string; signal?: DaemonSignal; resize?: DaemonTerminalSize }
+ 	| { op: "stop"; name: string; timeoutMs: number }
+ 	| { op: "restart"; name: string }
+ 	| { op: "mode"; name: string; mode: "persist" | "session" | "detached" }
+@@ -64,10 +80,14 @@ export type DaemonRpcResult =
+ 			terminalRows?: string[];
+ 			/** Raw PTY bytes returned by legacy brokers and to clients that did not request rendered rows. */
+ 			terminalText?: string;
++			/** Current geometry and replay geometry for the returned raw UTF-8 bytes */
++			terminalSize?: DaemonTerminalSize;
++			terminalReplay?: DaemonTerminalReplay;
+ 			cursor: number;
+ 			timedOut: boolean;
+ 			state: DaemonState;
+ 	  }
++	| ({ op: "output"; name: string; timedOut: boolean; state: DaemonState } & DaemonOutput)
+ 	| { op: "wait"; daemon: DaemonSnapshot; matched?: string; timedOut: boolean }
+ 	| { op: "send"; daemon: DaemonSnapshot }
+ 	| { op: "stop"; daemon: DaemonSnapshot }
+@@ -146,6 +166,75 @@ function optionalNumber(value: unknown, label: string): number | undefined {
+ 	return numberValue(value, label);
+ }
+ 
++function outputOffset(value: unknown, label: string): number {
++	const offset = numberValue(value, label);
++	if (!Number.isSafeInteger(offset) || offset < 0) throw new Error(`${label} must be a nonnegative safe integer`);
++	return offset;
++}
++
++function parseDaemonOutput(source: Record<string, unknown>, requested: number): DaemonOutput {
++	const data = rawString(source.data, "result.data");
++	const startCursor = outputOffset(source.startCursor, "result.startCursor");
++	const cursor = outputOffset(source.cursor, "result.cursor");
++	const availableStart = outputOffset(source.availableStart, "result.availableStart");
++	const availableEnd = outputOffset(source.availableEnd, "result.availableEnd");
++	if (
++		data.length > Math.ceil(DAEMON_OUTPUT_MAX_BYTES / 3) * 4 ||
++		!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u.test(data) ||
++		availableStart > availableEnd ||
++		startCursor !== Math.max(requested, availableStart) ||
++		startCursor > cursor ||
++		cursor > availableEnd ||
++		cursor - startCursor > DAEMON_OUTPUT_MAX_BYTES ||
++		Buffer.byteLength(data, "base64") !== cursor - startCursor
++	) throw new Error("Invalid bounded incremental output range");
++	return { data, startCursor, cursor, availableStart, availableEnd };
++}
++
++function terminalDimension(value: unknown, label: string, minimum: number, maximum: number): number {
++	if (typeof value !== "number" || !Number.isSafeInteger(value) || value < minimum || value > maximum) {
++		throw new Error(`${label} must be an integer from ${minimum} through ${maximum}`);
++	}
++	return value;
++}
++
++/** Validate terminal geometry before allocating or resizing a native PTY */
++export function parseDaemonTerminalSize(value: unknown, label = "terminalSize"): DaemonTerminalSize {
++	const source = record(value, label);
++	// Match native PTY bounds so screen replay uses the actual dimensions
++	return {
++		columns: terminalDimension(source.columns, `${label}.columns`, 20, 400),
++		rows: terminalDimension(source.rows, `${label}.rows`, 5, 200),
++	};
++}
++
++/** Decode persisted or wire replay events without losing their byte offsets */
++export function parseDaemonTerminalEvents(value: unknown): DaemonTerminalEvent[] {
++	if (!Array.isArray(value)) throw new Error("terminal events must be an array");
++	let previousOffset = 0;
++	return value.map(value => {
++		const source = record(value, "terminal event");
++		const offset = numberValue(source.offset, "terminal event.offset");
++		if (!Number.isSafeInteger(offset) || offset < previousOffset) {
++			throw new Error("terminal event.offset must be a nonnegative, ordered safe integer");
++		}
++		previousOffset = offset;
++		return {
++			offset,
++			terminalSize: parseDaemonTerminalSize(source.terminalSize),
++			reset: source.reset === undefined ? undefined : booleanValue(source.reset, "terminal event.reset"),
++		};
++	});
++}
++
++function terminalReplay(value: unknown): DaemonTerminalReplay {
++	const source = record(value, "terminal replay");
++	return {
++		terminalSize: parseDaemonTerminalSize(source.terminalSize),
++		events: parseDaemonTerminalEvents(source.events),
++	};
++}
++
+ function stringArray(value: unknown, label: string): string[] {
+ 	if (!Array.isArray(value)) throw new Error(`${label} must be an array of strings`);
+ 	const result: string[] = [];
+@@ -204,13 +293,18 @@ function readySpec(value: unknown): DaemonReadySpec {
+ export function parseDaemonSpec(value: unknown): DaemonSpec {
+ 	const source = record(value, "daemon spec");
+ 	const detached = source.detached === undefined ? false : booleanValue(source.detached, "spec.detached");
++	const pty = booleanValue(source.pty, "spec.pty");
++	const terminalSize =
++		source.terminalSize === undefined ? undefined : parseDaemonTerminalSize(source.terminalSize, "spec.terminalSize");
++	if (terminalSize && (!pty || detached)) throw new Error("terminalSize requires a non-detached PTY");
+ 	return {
+ 		name: stringValue(source.name, "spec.name"),
+ 		application: stringValue(source.application, "spec.application"),
+ 		args: stringArray(source.args, "spec.args"),
+ 		env: stringRecord(source.env, "spec.env"),
+ 		cwd: stringValue(source.cwd, "spec.cwd"),
+-		pty: booleanValue(source.pty, "spec.pty"),
++		pty,
++		terminalSize,
+ 		ready: source.ready === undefined ? undefined : readySpec(source.ready),
+ 		restart: restartPolicy(source.restart),
+ 		persist: booleanValue(source.persist, "spec.persist") || detached,
+@@ -239,6 +333,10 @@ export function parseDaemonSnapshot(value: unknown): DaemonSnapshot {
+ 		readyPending: source.readyPending === undefined ? undefined : readyPendingList(source.readyPending),
+ 		persist: booleanValue(source.persist, "daemon.persist"),
+ 		detached: source.detached === undefined ? false : booleanValue(source.detached, "daemon.detached"),
++		terminalSize:
++			source.terminalSize === undefined
++				? undefined
++				: parseDaemonTerminalSize(source.terminalSize, "daemon.terminalSize"),
+ 	};
+ }
+ 
+@@ -326,6 +424,14 @@ function parseDaemonOperation(value: unknown): DaemonOperation {
+ 						: booleanValue(source.renderTerminalRows, "operation.renderTerminalRows"),
+ 				timeoutMs: numberValue(source.timeoutMs, "operation.timeoutMs"),
+ 			};
++		case "output":
++			return {
++				op,
++				name: stringValue(source.name, "operation.name"),
++				cursor: outputOffset(source.cursor, "operation.cursor"),
++				follow: booleanValue(source.follow, "operation.follow"),
++				timeoutMs: terminalDimension(source.timeoutMs, "operation.timeoutMs", 0, 3_600_000),
++			};
+ 		case "wait": {
+ 			const target = stringValue(source.for, "operation.for");
+ 			if (target !== "ready" && target !== "exit") throw new Error("operation.for must be ready or exit");
+@@ -343,6 +449,8 @@ function parseDaemonOperation(value: unknown): DaemonOperation {
+ 				name: stringValue(source.name, "operation.name"),
+ 				data: optionalString(source.data, "operation.data"),
+ 				signal: source.signal === undefined ? undefined : daemonSignal(source.signal),
++				resize:
++					source.resize === undefined ? undefined : parseDaemonTerminalSize(source.resize, "operation.resize"),
+ 			};
+ 		case "stop":
+ 			return {
+@@ -389,10 +497,20 @@ export function parseDaemonRpcResult(operation: DaemonOperation, value: unknown)
+ 					source.terminalRows === undefined ? undefined : stringArray(source.terminalRows, "result.terminalRows"),
+ 				terminalText:
+ 					source.terminalText === undefined ? undefined : rawString(source.terminalText, "result.terminalText"),
++				terminalSize: source.terminalSize === undefined ? undefined : parseDaemonTerminalSize(source.terminalSize),
++				terminalReplay: source.terminalReplay === undefined ? undefined : terminalReplay(source.terminalReplay),
+ 				cursor: numberValue(source.cursor, "result.cursor"),
+ 				timedOut: booleanValue(source.timedOut, "result.timedOut"),
+ 				state: daemonState(source.state),
+ 			};
++		case "output":
++			return {
++				op: "output",
++				name: stringValue(source.name, "result.name"),
++				...parseDaemonOutput(source, operation.cursor),
++				timedOut: booleanValue(source.timedOut, "result.timedOut"),
++				state: daemonState(source.state),
++			};
+ 		case "wait":
+ 			return {
+ 				op: "wait",
+diff --git a/src/launch/services.ts b/src/launch/services.ts
+--- a/src/launch/services.ts
++++ b/src/launch/services.ts
+@@ -166,7 +166,11 @@ export async function renderServiceLogTerminalRows(
+ ): Promise<string[] | undefined> {
+ 	if (result.terminalRows !== undefined) return result.terminalRows;
+ 	if (result.terminalText === undefined) return undefined;
+-	return renderTerminalOutputIsolated(result.terminalText, { head: false, maxRows: lines });
++	return renderTerminalOutputIsolated(result.terminalText, {
++		head: false,
++		maxRows: lines,
++		replay: result.terminalReplay,
++	});
+ }
+ 
+ export async function serviceLogsWithRows(
+diff --git a/src/launch/terminal-output.ts b/src/launch/terminal-output.ts
+--- a/src/launch/terminal-output.ts
++++ b/src/launch/terminal-output.ts
+@@ -1,6 +1,7 @@
+ import { logger } from "@oh-my-pi/pi-utils";
+ import xterm, { type Terminal as XtermTerminal } from "@oh-my-pi/pi-utils/vterm";
+ import { readTerminalRows } from "@oh-my-pi/pi-tui/tools/terminal-output";
++import type { DaemonTerminalReplay } from "@oh-my-pi/pi-tui/tools/daemon";
+ import { DAEMON_PTY_COLUMNS, DAEMON_PTY_ROWS } from "./protocol";
+ 
+ const VIRTUAL_SCROLLBACK_ROWS = 4_096;
+@@ -9,9 +10,11 @@ const VIRTUAL_SCROLLBACK_ROWS = 4_096;
+ export interface TerminalOutputOptions {
+ 	head: boolean;
+ 	maxRows: number;
++	/** Replay geometry and resize events at UTF-8 offsets in the supplied output */
++	replay?: DaemonTerminalReplay;
+ }
+ 
+-function writeTerminal(terminal: XtermTerminal, output: string): Promise<void> {
++function writeTerminal(terminal: XtermTerminal, output: string | Uint8Array): Promise<void> {
+ 	const { promise, resolve } = Promise.withResolvers<void>();
+ 	terminal.write(output, resolve);
+ 	return promise;
+@@ -24,14 +27,39 @@ export async function renderTerminalOutput(
+ ): Promise<string[] | undefined> {
+ 	if (!output) return [];
+ 	const maxRows = Math.max(1, Math.floor(options.maxRows));
+-	const terminal = new xterm.Terminal({
+-		cols: DAEMON_PTY_COLUMNS,
+-		rows: DAEMON_PTY_ROWS,
++	const size = options.replay?.terminalSize;
++	const terminalOptions = {
++		cols: size?.columns ?? DAEMON_PTY_COLUMNS,
++		rows: size?.rows ?? DAEMON_PTY_ROWS,
+ 		scrollback: Math.max(VIRTUAL_SCROLLBACK_ROWS, maxRows),
+ 		allowProposedApi: true,
+-	});
++	};
++	let terminal = new xterm.Terminal(terminalOptions);
+ 	try {
+-		await writeTerminal(terminal, output);
++		const events = options.replay?.events;
++		if (events?.length) {
++			const bytes = Buffer.from(output, "utf8");
++			let offset = 0;
++			for (const event of events) {
++				if (event.offset > bytes.length) break;
++				if (event.offset > offset) await writeTerminal(terminal, bytes.subarray(offset, event.offset));
++				if (event.reset && event.offset > 0) {
++					// A new PTY must not inherit the prior generation's parser or screen
++					terminal.dispose();
++					terminal = new xterm.Terminal({
++						...terminalOptions,
++						cols: event.terminalSize.columns,
++						rows: event.terminalSize.rows,
++					});
++				} else {
++					terminal.resize(event.terminalSize.columns, event.terminalSize.rows);
++				}
++				offset = event.offset;
++			}
++			if (offset < bytes.length) await writeTerminal(terminal, bytes.subarray(offset));
++		} else {
++			await writeTerminal(terminal, output);
++		}
+ 		const rows = readTerminalRows(terminal, 0, terminal.buffer.active.length);
+ 		while (rows.at(-1) === "") rows.pop();
+ 		return options.head ? rows.slice(0, maxRows) : rows.slice(-maxRows);
+diff --git a/src/ssh/file-transfer.ts b/src/ssh/file-transfer.ts
+--- a/src/ssh/file-transfer.ts
++++ b/src/ssh/file-transfer.ts
+@@ -8,6 +8,7 @@
+  */
+ import { ptree } from "@oh-my-pi/pi-utils";
+ import { buildRemoteCommand, ensureConnection, ensureHostInfo, type SSHConnectionTarget } from "./connection-manager";
++import { boundedTransferBytes, isSameMachineSSH, requireZstd } from "./transfer-compression";
+ import { quotePosixPath, wrapInPosixShell } from "./utils";
+ 
+ /** Per-operation timeout for remote transfers (matches the ssh tool's grep window). */
+@@ -72,15 +73,33 @@
+ 	remotePath: string,
+ 	opts: RemoteFileReadOptions,
+ ): Promise<RemoteFileReadResult> {
+-	const shell = await ensurePosixRemote(target);
+-	const command = `head -c ${opts.maxBytes + 1} ${quotePosixPath(remotePath)}`;
++	if (!Number.isSafeInteger(opts.maxBytes) || opts.maxBytes < 0 || opts.maxBytes >= Number.MAX_SAFE_INTEGER) {
++		throw new Error("ssh://: maxBytes must be a nonnegative safe byte bound");
++	}
++	const shell = await ensurePosixRemote(target);
++	const signal = ptree.combineSignals(opts.signal, opts.timeoutMs ?? DEFAULT_TIMEOUT_MS);
++	const compressed = !(await isSameMachineSSH(target, { signal }));
++	if (compressed) requireZstd();
++	const read = `head -c ${opts.maxBytes + 1} ${quotePosixPath(remotePath)}`;
++	// Stage the bounded prefix so a producer failure cannot be hidden by a pipe
++	const command = compressed
++		? `command -v zstd >/dev/null 2>&1 || { echo 'ssh://: remote zstd is required' >&2; exit 1; }; ` +
++			`t=$(mktemp) || exit 1; trap 'rm -f -- "$t"' 0; ${read} > "$t" && zstd -q -c -- "$t"`
++		: read;
+ 	const args = await buildRemoteCommand(target, wrapInPosixShell(shell, command));
+-	using child = ptree.spawn(["ssh", ...args], {
+-		signal: ptree.combineSignals(opts.signal, opts.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+-	});
+-	// Drain stdout before awaiting exit so a full pipe can't deadlock the child.
+-	const raw = await child.bytes();
+-	await child.exitedCleanly;
++	using child = ptree.spawn(["ssh", ...args], { signal });
++	let raw: Uint8Array;
++	if (compressed) {
++		using decoder = ptree.spawn(["zstd", "-q", "-d", "-c", "-M64MB"], { stdin: child.stdout, signal });
++		[raw] = await Promise.all([
++			boundedTransferBytes(decoder.stdout, opts.maxBytes + 1),
++			decoder.exitedCleanly,
++			child.exitedCleanly,
++		]);
++	} else {
++		raw = await boundedTransferBytes(child.stdout, opts.maxBytes + 1);
++		await child.exitedCleanly;
++	}
+ 	const truncated = raw.length > opts.maxBytes;
+ 	return { bytes: truncated ? raw.subarray(0, opts.maxBytes) : raw, truncated };
+ }
+@@ -119,6 +138,9 @@
+ 	if (remotePath.endsWith("/")) {
+ 		throw new Error("ssh://: destination is a directory path (trailing '/'); ssh:// write requires a file path");
+ 	}
++	const signal = ptree.combineSignals(opts.signal, opts.timeoutMs ?? DEFAULT_TIMEOUT_MS);
++	const compressed = !(await isSameMachineSSH(target, { signal }));
++	if (compressed) requireZstd();
+ 	const dest = quotePosixPath(remotePath);
+ 	const tmp = quotePosixPath(`${remotePath}.omp-tmp.${crypto.randomUUID()}`);
+ 	// Stage stdin into the temp first (so the remote never blocks on an unread
+@@ -134,18 +156,21 @@
+ 	const command =
+ 		`t=${tmp}; trap 'rm -f -- "$t"' 0; ` +
+ 		`mkdir -p -- "$(dirname "$t")" && ` +
+-		`cat > "$t" && { ` +
++		`${compressed ? "zstd -q -d -c" : "cat"} > "$t" && { ` +
+ 		`if [ -d ${dest} ]; then echo 'ssh://: destination is a directory' >&2; exit 1; ` +
+ 		`elif [ -f ${dest} ] && [ ! -L ${dest} ]; then cat "$t" > ${dest} || exit 1; ` +
+ 		`elif [ -e ${dest} ] && [ ! -L ${dest} ]; then echo 'ssh://: destination is a special file (not a regular file)' >&2; exit 1; ` +
+ 		`else mv "$t" ${dest}; fi; ` +
+ 		`}`;
+ 	const args = await buildRemoteCommand(target, wrapInPosixShell(shell, command), { allowStdin: true });
+-	using child = ptree.spawn(["ssh", ...args], {
+-		stdin: content,
+-		signal: ptree.combineSignals(opts.signal, opts.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+-	});
+-	await child.exitedCleanly;
++	if (compressed) {
++		using encoder = ptree.spawn(["zstd", "-q", "-c"], { stdin: content, signal });
++		using child = ptree.spawn(["ssh", ...args], { stdin: encoder.stdout, signal });
++		await Promise.all([child.bytes(), child.exitedCleanly, encoder.exitedCleanly]);
++	} else {
++		using child = ptree.spawn(["ssh", ...args], { stdin: content, signal });
++		await Promise.all([child.bytes(), child.exitedCleanly]);
++	}
+ }
+ 
+ /** Classification of a remote path, used by the read handler's directory dispatch. */
+diff --git a/src/ssh/transfer-compression.ts b/src/ssh/transfer-compression.ts
+new file mode 100644
+--- /dev/null
++++ b/src/ssh/transfer-compression.ts
+@@ -0,0 +1,72 @@
++import { isIP } from "node:net";
++import { networkInterfaces } from "node:os";
++import { $which, ptree } from "@oh-my-pi/pi-utils";
++import { buildRemoteCommand, ensureConnection, ensureHostInfo, type SSHConnectionTarget } from "./connection-manager";
++import { wrapInPosixShell } from "./utils";
++
++function address(value: string): string {
++	const bare = (value.replace(/^\[|\]$/g, "").split("%")[0] ?? "").toLowerCase();
++	if (isIP(bare) === 6) {
++		const normalized = new URL(`http://[${bare}]/`).hostname.slice(1, -1);
++		const mapped = /^::ffff:([0-9a-f]+):([0-9a-f]+)$/.exec(normalized);
++		if (mapped) {
++			const high = Number.parseInt(mapped[1] ?? "", 16);
++			const low = Number.parseInt(mapped[2] ?? "", 16);
++			return `${high >>> 8}.${high & 255}.${low >>> 8}.${low & 255}`;
++		}
++		return normalized;
++	}
++	return bare;
++}
++
++/** Inspect the authenticated server's actual endpoint, not its OpenSSH alias */
++export async function isSameMachineSSH(
++	target: SSHConnectionTarget,
++	opts: { controlPath?: string; signal?: AbortSignal | undefined; timeoutMs?: number } = {},
++): Promise<boolean> {
++	await ensureConnection(target);
++	const info = await ensureHostInfo(target);
++	if (!info.transferShell) throw new Error("SSH transfer requires a verified POSIX shell");
++	const args = await buildRemoteCommand(target, wrapInPosixShell(info.transferShell, 'printf "%s\\n" "$SSH_CONNECTION"'));
++	if (opts.controlPath) args.unshift("-o", `ControlPath=${opts.controlPath}`);
++	using child = ptree.spawn(["ssh", ...args], {
++		signal: ptree.combineSignals(opts.signal, opts.timeoutMs ?? 30_000),
++	});
++	const connection = (await child.text()).trim().split(/\s+/);
++	await child.exitedCleanly;
++	const serverAddress = connection[2];
++	if (connection.length !== 4 || !serverAddress || !isIP(serverAddress.split("%")[0] ?? "")) {
++		throw new Error("SSH server did not report its actual endpoint in SSH_CONNECTION");
++	}
++	const endpoint = address(serverAddress);
++	if (endpoint === "::1" || (isIP(endpoint) === 4 && endpoint.startsWith("127."))) return true;
++	return Object.values(networkInterfaces()).some(entries =>
++		entries?.some(entry => address(entry.address) === endpoint),
++	);
++}
++
++export function requireZstd(): void {
++	if (!$which("zstd")) throw new Error("Remote file transfers require zstd on the local and remote PATH; no gzip fallback is used");
++}
++
++/** Drain without allowing a remote decoder to exceed the requested byte bound */
++export async function boundedTransferBytes(stream: ReadableStream<Uint8Array>, limit: number): Promise<Uint8Array> {
++	const reader = stream.getReader();
++	const chunks: Uint8Array[] = [];
++	let length = 0;
++	try {
++		while (true) {
++			const { done, value } = await reader.read();
++			if (done) break;
++			length += value.length;
++			if (length > limit) {
++				await reader.cancel("SSH transfer exceeded its byte bound");
++				throw new Error("SSH transfer exceeded its byte bound");
++			}
++			chunks.push(value);
++		}
++	} finally {
++		reader.releaseLock();
++	}
++	return Buffer.concat(chunks, length);
++}
+diff --git a/dist/types/ssh/transfer-compression.d.ts b/dist/types/ssh/transfer-compression.d.ts
+new file mode 100644
+--- /dev/null
++++ b/dist/types/ssh/transfer-compression.d.ts
+@@ -0,0 +1,10 @@
++import type { SSHConnectionTarget } from "./connection-manager.js";
++/** Inspect the authenticated server's actual endpoint, not its OpenSSH alias */
++export declare function isSameMachineSSH(target: SSHConnectionTarget, opts?: {
++    controlPath?: string;
++    signal?: AbortSignal | undefined;
++    timeoutMs?: number;
++}): Promise<boolean>;
++export declare function requireZstd(): void;
++/** Drain without allowing a remote decoder to exceed the requested byte bound */
++export declare function boundedTransferBytes(stream: ReadableStream<Uint8Array>, limit: number): Promise<Uint8Array>;
+diff --git a/src/tools/browser/launch.ts b/src/tools/browser/launch.ts
+--- a/src/tools/browser/launch.ts
++++ b/src/tools/browser/launch.ts
+@@ -29,6 +29,7 @@
+ import stealthWorkerScript from "../puppeteer/13_stealth_worker.txt" with { type: "text" };
+ import { ToolError } from "@oh-my-pi/pi-tui/tools/tool-errors";
+ import { withDownload } from "../../downloads/activity";
++import { isolateBrowserLaunch } from "./workspace";
+ 
+ export const DEFAULT_VIEWPORT = { width: 1365, height: 768, deviceScaleFactor: 1.25 };
+ 
+@@ -537,14 +538,20 @@
+ 	}
+ 	try {
+ 		const executablePath = await ensureChromiumExecutable();
++		const ignored = new Set([...stealthIgnoreDefaultArgs(executablePath), ...(opts.ignoreDefaultArgs ?? [])]);
++		const isolation = process.platform === "linux" && !opts.headless
++			? await isolateBrowserLaunch(
++				executablePath ?? puppeteer.executablePath(),
++				(await puppeteer.defaultArgs({ headless: false, args: launchArgs })).filter(arg => !ignored.has(arg)),
++				false,
++			)
++			: undefined;
+ 		const browser = await puppeteer.launch({
+ 			headless: opts.headless,
+ 			defaultViewport: opts.headless ? initialViewport : null,
+-			executablePath,
+-			args: launchArgs,
+-			ignoreDefaultArgs: [
+-				...new Set([...stealthIgnoreDefaultArgs(executablePath), ...(opts.ignoreDefaultArgs ?? [])]),
+-			],
++			executablePath: isolation?.executablePath ?? executablePath,
++			args: isolation?.args ?? launchArgs,
++			ignoreDefaultArgs: isolation ? true : [...ignored],
+ 			protocolTimeout: BROWSER_PROTOCOL_TIMEOUT_MS,
+ 		});
+ 		return { browser, userDataDir };
+@@ -583,10 +590,11 @@
+ 		args: buildHeadlessLaunchArgs(vp),
+ 		userDataDir: opts.userDataDir,
+ 	});
+-	return {
++	return isolateBrowserLaunch(
+ 		executablePath,
+-		args: [...defaults.filter(arg => !ignored.has(arg)), "--no-startup-window", "--remote-debugging-port=0"],
+-	};
++		[...defaults.filter(arg => !ignored.has(arg)), "--no-startup-window", "--remote-debugging-port=0"],
++		opts.headless,
++	);
+ }
+ 
+ /**
+diff --git a/src/tools/browser/registry.ts b/src/tools/browser/registry.ts
+--- a/src/tools/browser/registry.ts
++++ b/src/tools/browser/registry.ts
+@@ -22,6 +22,7 @@
+ import { ensureSharedBrowser } from "./shared-daemon";
+ import type { TernKind } from "./tern/kind";
+ import { TernSocketClient } from "./tern/wire";
++import { isolateBrowserLaunch } from "./workspace";
+ 
+ export type PuppeteerBrowserKind =
+ 	| {
+@@ -281,6 +282,9 @@
+ 	}
+ 	const appArgs = kind.args ?? [];
+ 	const reused = await findReusableCdp(exe, { signal: opts.signal, appArgs });
++	if (reused && process.platform === "linux") {
++		throw new ToolError("An existing browser cannot be adopted into an isolated workspace; attach explicitly with app.cdp_url instead");
++	}
+ 	let cdpUrl: string;
+ 	let pid: number;
+ 	let subprocess: Subprocess | undefined;
+@@ -291,7 +295,8 @@
+ 	} else {
+ 		const port = await findFreeCdpPort();
+ 		const launchArgs = [...appArgs, `--remote-debugging-port=${port}`];
+-		const child = Bun.spawn([exe, ...launchArgs], {
++		const launch = await isolateBrowserLaunch(exe, launchArgs, false, true);
++		const child = Bun.spawn([launch.executablePath, ...launch.args], {
+ 			cwd: opts.cwd,
+ 			stdout: "ignore",
+ 			stderr: "ignore",
+diff --git a/src/tools/browser/shared-daemon.ts b/src/tools/browser/shared-daemon.ts
+--- a/src/tools/browser/shared-daemon.ts
++++ b/src/tools/browser/shared-daemon.ts
+@@ -36,7 +36,8 @@
+ 
+ /** Stable broker daemon name for the shared automation browser. */
+ export function sharedBrowserDaemonName(headless: boolean): string {
+-	return headless ? "omp.browser.headless" : "omp.browser.headed";
++	if (headless) return "omp.browser.headless";
++	return process.platform === "linux" ? "omp.browser.workspace" : "omp.browser.headed";
+ }
+ 
+ function wsEndpointOf(snapshot: DaemonSnapshot | undefined): string | undefined {
+diff --git a/src/utils/browser-session.ts b/src/utils/browser-session.ts
+--- a/src/utils/browser-session.ts
++++ b/src/utils/browser-session.ts
+@@ -8,6 +8,7 @@
+ import type { Browser } from "puppeteer-core";
+ import { gracefulKillTreeOnce } from "../tools/browser/attach";
+ import { ensureChromiumExecutable, loadPuppeteer, removeUserDataDir } from "../tools/browser/launch";
++import { isolateBrowserLaunch } from "../tools/browser/workspace";
+ 
+ const LOGIN_TIMEOUT_MS = 5 * 60_000;
+ 
+@@ -33,13 +34,26 @@
+ 		lifetime.throwIfAborted();
+ 		// Do not race launch: retain ownership even if cancellation happens before it resolves.
+ 		// Unlike general browser tooling, authentication keeps sandbox and TLS checks enabled.
++		const ignored: Record<string, true> = {
++			"--no-sandbox": true,
++			"--disable-setuid-sandbox": true,
++			"--ignore-certificate-errors": true,
++		};
++		const args = [`--user-data-dir=${userDataDir}`];
++		const isolation = process.platform === "linux"
++			? await isolateBrowserLaunch(
++				executablePath ?? puppeteer.executablePath(),
++				(await puppeteer.defaultArgs({ headless: false, args })).filter(arg => !Object.hasOwn(ignored, arg)),
++				false,
++			)
++			: undefined;
+ 		browser = await puppeteer.launch({
+-			executablePath,
++			executablePath: isolation?.executablePath ?? executablePath,
+ 			headless: false,
+ 			defaultViewport: null,
+-			pipe: true,
+-			ignoreDefaultArgs: ["--no-sandbox", "--disable-setuid-sandbox", "--ignore-certificate-errors"],
+-			args: [`--user-data-dir=${userDataDir}`],
++			pipe: !isolation,
++			ignoreDefaultArgs: isolation ? true : Object.keys(ignored),
++			args: isolation?.args ?? args,
+ 			signal: lifetime,
+ 			timeout: 30_000,
+ 		});
+diff --git a/src/tools/browser/workspace.ts b/src/tools/browser/workspace.ts
+new file mode 100644
+--- /dev/null
++++ b/src/tools/browser/workspace.ts
+@@ -0,0 +1,46 @@
++import * as fs from "node:fs/promises";
++import * as os from "node:os";
++import * as path from "node:path";
++import { ToolError } from "@oh-my-pi/pi-tui/tools/tool-errors";
++
++export interface WorkspaceBrowserLaunch {
++	executablePath: string;
++	args: string[];
++}
++
++export async function isolateBrowserLaunch(
++	executablePath: string,
++	args: string[],
++	headless: boolean,
++	rejectProfileReuse = false,
++): Promise<WorkspaceBrowserLaunch> {
++	if (process.platform !== "linux" || headless) return { executablePath, args };
++	const helper = path.join(
++		process.env.XDG_DATA_HOME ?? path.join(os.homedir(), ".local/share"),
++		"omp-helper/current/bin/omp-helper-desktop",
++	);
++	try {
++		await fs.access(helper, fs.constants.X_OK);
++	} catch {
++		throw new ToolError("Headed Linux browsers require an installed omp-helper with GNOME workspace isolation");
++	}
++	if (args.some(arg => arg.startsWith("--ozone-platform=") && arg !== "--ozone-platform=wayland")) {
++		throw new ToolError("Isolated Linux browsers require native Wayland, not X11");
++	}
++	const profile = args.find(arg => arg.startsWith("--user-data-dir="))?.slice("--user-data-dir=".length);
++	if (!profile || !path.isAbsolute(profile)) {
++		throw new ToolError("An isolated Linux browser requires a dedicated absolute --user-data-dir");
++	}
++	if (rejectProfileReuse) {
++		try {
++			await fs.lstat(path.join(profile, "SingletonLock"));
++			throw new ToolError("The requested browser profile is already in use; refusing to reuse a window outside the isolated workspace");
++		} catch (error) {
++			if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
++		}
++	}
++	return {
++		executablePath: helper,
++		args: ["workspace-run", "--", executablePath, ...args, "--ozone-platform=wayland"],
++	};
++}
+diff --git a/dist/types/tools/browser/workspace.d.ts b/dist/types/tools/browser/workspace.d.ts
+new file mode 100644
+--- /dev/null
++++ b/dist/types/tools/browser/workspace.d.ts
+@@ -0,0 +1,5 @@
++export interface WorkspaceBrowserLaunch {
++    executablePath: string;
++    args: string[];
++}
++export declare function isolateBrowserLaunch(executablePath: string, args: string[], headless: boolean, rejectProfileReuse?: boolean): Promise<WorkspaceBrowserLaunch>;
+diff --git a/src/ssh/connection-manager.ts b/src/ssh/connection-manager.ts
+--- a/src/ssh/connection-manager.ts
++++ b/src/ssh/connection-manager.ts
+@@ -262,11 +262,20 @@
+ 	}
+ }
+ 
++function identityControlPath(host: SSHConnectionTarget): string {
++	if (!host.keyPath) return CONTROL_PATH;
++	// OpenSSH's %C excludes IdentityFile, so explicit keys need isolated masters
++	const digest = new Bun.CryptoHasher("sha256")
++		.update(JSON.stringify([host.host, host.username ?? null, host.port ?? null, host.keyPath]))
++		.digest("hex");
++	return path.join(CONTROL_DIR, `k-${digest.slice(0, 32)}.sock`);
++}
++
+ function buildCommonArgs(host: SSHConnectionTarget, options?: SSHArgsOptions): string[] {
+ 	const args = options?.allowStdin ? [] : ["-n"];
+ 
+ 	if (supportsSshControlMaster(options?.platform)) {
+-		args.push("-o", "ControlMaster=auto", "-o", `ControlPath=${CONTROL_PATH}`, "-o", "ControlPersist=3600");
++		args.push("-o", "ControlMaster=auto", "-o", `ControlPath=${identityControlPath(host)}`, "-o", "ControlPersist=3600");
+ 	}
+ 
+ 	args.push("-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new");

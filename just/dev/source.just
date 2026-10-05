@@ -36,3 +36,13 @@ _lint-shell-files:
     done
     ((${#shell_files[@]} == 0)) && exit
     shellcheck -x "${shell_files[@]}"
+
+# Refresh npm source hunks from the corresponding OMP source patches
+[group('dev')]
+omp-patches-sync:
+    bun scripts/sync-omp-patches.ts
+
+# Keep source and npm patches aligned without downloading upstream
+[group('check')]
+omp-patches-check:
+    bun scripts/sync-omp-patches.ts --check

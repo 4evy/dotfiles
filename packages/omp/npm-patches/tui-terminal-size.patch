@@ -1,0 +1,91 @@
+diff --git a/src/tools/daemon.ts b/src/tools/daemon.ts
+--- a/src/tools/daemon.ts
++++ b/src/tools/daemon.ts
+@@ -14,7 +14,26 @@ export interface DaemonReadySpec {
+ 	timeoutMs: number;
+ }
+ 
+-/** Immutable launch specification retained for restart and inspection. */
++/** Dimensions of a supervised PTY, each an integer from 1 through 1000 */
++export interface DaemonTerminalSize {
++	columns: number;
++	rows: number;
++}
++
++/** A resize or new PTY generation at a UTF-8 byte offset in terminal output */
++export interface DaemonTerminalEvent {
++	offset: number;
++	terminalSize: DaemonTerminalSize;
++	reset?: boolean;
++}
++
++/** Geometry at the start of retained output and changes within that output */
++export interface DaemonTerminalReplay {
++	terminalSize: DaemonTerminalSize;
++	events: DaemonTerminalEvent[];
++}
++
++/** Launch specification retained for restart and inspection */
+ export interface DaemonSpec {
+ 	name: string;
+ 	application: string;
+@@ -22,6 +41,8 @@ export interface DaemonSpec {
+ 	env: Record<string, string>;
+ 	cwd: string;
+ 	pty: boolean;
++	/** Initial geometry; runtime resizing updates it for subsequent restarts */
++	terminalSize?: DaemonTerminalSize;
+ 	ready?: DaemonReadySpec;
+ 	restart: DaemonRestartPolicy;
+ 	persist: boolean;
+@@ -48,4 +69,6 @@ export interface DaemonSnapshot {
+ 	readyPending?: ("log" | "port")[];
+ 	persist: boolean;
+ 	detached: boolean;
++	/** Current PTY geometry; absent for pipe-backed and detached daemons */
++	terminalSize?: DaemonTerminalSize;
+ }
+diff --git a/dist/types/tools/daemon.d.ts b/dist/types/tools/daemon.d.ts
+--- a/dist/types/tools/daemon.d.ts
++++ b/dist/types/tools/daemon.d.ts
+@@ -10,7 +10,23 @@
+     host?: string;
+     timeoutMs: number;
+ }
+-/** Immutable launch specification retained for restart and inspection. */
++/** Dimensions of a supervised PTY, each an integer from 1 through 1000 */
++export interface DaemonTerminalSize {
++    columns: number;
++    rows: number;
++}
++/** A resize or new PTY generation at a UTF-8 byte offset in terminal output */
++export interface DaemonTerminalEvent {
++    offset: number;
++    terminalSize: DaemonTerminalSize;
++    reset?: boolean;
++}
++/** Geometry at the start of retained output and changes within that output */
++export interface DaemonTerminalReplay {
++    terminalSize: DaemonTerminalSize;
++    events: DaemonTerminalEvent[];
++}
++/** Launch specification retained for restart and inspection */
+ export interface DaemonSpec {
+     name: string;
+     application: string;
+@@ -18,6 +34,8 @@
+     env: Record<string, string>;
+     cwd: string;
+     pty: boolean;
++    /** Initial geometry; runtime resizing updates it for subsequent restarts */
++    terminalSize?: DaemonTerminalSize;
+     ready?: DaemonReadySpec;
+     restart: DaemonRestartPolicy;
+     persist: boolean;
+@@ -43,4 +61,6 @@
+     readyPending?: ("log" | "port")[];
+     persist: boolean;
+     detached: boolean;
++    /** Current PTY geometry; absent for pipe-backed and detached daemons */
++    terminalSize?: DaemonTerminalSize;
+ }

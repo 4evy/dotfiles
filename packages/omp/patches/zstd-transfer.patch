@@ -1,0 +1,168 @@
+diff --git a/packages/coding-agent/src/ssh/file-transfer.ts b/packages/coding-agent/src/ssh/file-transfer.ts
+--- a/packages/coding-agent/src/ssh/file-transfer.ts
++++ b/packages/coding-agent/src/ssh/file-transfer.ts
+@@ -8,6 +8,7 @@
+  */
+ import { ptree } from "@oh-my-pi/pi-utils";
+ import { buildRemoteCommand, ensureConnection, ensureHostInfo, type SSHConnectionTarget } from "./connection-manager";
++import { boundedTransferBytes, isSameMachineSSH, requireZstd } from "./transfer-compression";
+ import { quotePosixPath, wrapInPosixShell } from "./utils";
+ 
+ /** Per-operation timeout for remote transfers (matches the ssh tool's grep window). */
+@@ -72,15 +73,33 @@
+ 	remotePath: string,
+ 	opts: RemoteFileReadOptions,
+ ): Promise<RemoteFileReadResult> {
+-	const shell = await ensurePosixRemote(target);
+-	const command = `head -c ${opts.maxBytes + 1} ${quotePosixPath(remotePath)}`;
++	if (!Number.isSafeInteger(opts.maxBytes) || opts.maxBytes < 0 || opts.maxBytes >= Number.MAX_SAFE_INTEGER) {
++		throw new Error("ssh://: maxBytes must be a nonnegative safe byte bound");
++	}
++	const shell = await ensurePosixRemote(target);
++	const signal = ptree.combineSignals(opts.signal, opts.timeoutMs ?? DEFAULT_TIMEOUT_MS);
++	const compressed = !(await isSameMachineSSH(target, { signal }));
++	if (compressed) requireZstd();
++	const read = `head -c ${opts.maxBytes + 1} ${quotePosixPath(remotePath)}`;
++	// Stage the bounded prefix so a producer failure cannot be hidden by a pipe
++	const command = compressed
++		? `command -v zstd >/dev/null 2>&1 || { echo 'ssh://: remote zstd is required' >&2; exit 1; }; ` +
++			`t=$(mktemp) || exit 1; trap 'rm -f -- "$t"' 0; ${read} > "$t" && zstd -q -c -- "$t"`
++		: read;
+ 	const args = await buildRemoteCommand(target, wrapInPosixShell(shell, command));
+-	using child = ptree.spawn(["ssh", ...args], {
+-		signal: ptree.combineSignals(opts.signal, opts.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+-	});
+-	// Drain stdout before awaiting exit so a full pipe can't deadlock the child.
+-	const raw = await child.bytes();
+-	await child.exitedCleanly;
++	using child = ptree.spawn(["ssh", ...args], { signal });
++	let raw: Uint8Array;
++	if (compressed) {
++		using decoder = ptree.spawn(["zstd", "-q", "-d", "-c", "-M64MB"], { stdin: child.stdout, signal });
++		[raw] = await Promise.all([
++			boundedTransferBytes(decoder.stdout, opts.maxBytes + 1),
++			decoder.exitedCleanly,
++			child.exitedCleanly,
++		]);
++	} else {
++		raw = await boundedTransferBytes(child.stdout, opts.maxBytes + 1);
++		await child.exitedCleanly;
++	}
+ 	const truncated = raw.length > opts.maxBytes;
+ 	return { bytes: truncated ? raw.subarray(0, opts.maxBytes) : raw, truncated };
+ }
+@@ -119,6 +138,9 @@
+ 	if (remotePath.endsWith("/")) {
+ 		throw new Error("ssh://: destination is a directory path (trailing '/'); ssh:// write requires a file path");
+ 	}
++	const signal = ptree.combineSignals(opts.signal, opts.timeoutMs ?? DEFAULT_TIMEOUT_MS);
++	const compressed = !(await isSameMachineSSH(target, { signal }));
++	if (compressed) requireZstd();
+ 	const dest = quotePosixPath(remotePath);
+ 	const tmp = quotePosixPath(`${remotePath}.omp-tmp.${crypto.randomUUID()}`);
+ 	// Stage stdin into the temp first (so the remote never blocks on an unread
+@@ -134,18 +156,21 @@
+ 	const command =
+ 		`t=${tmp}; trap 'rm -f -- "$t"' 0; ` +
+ 		`mkdir -p -- "$(dirname "$t")" && ` +
+-		`cat > "$t" && { ` +
++		`${compressed ? "zstd -q -d -c" : "cat"} > "$t" && { ` +
+ 		`if [ -d ${dest} ]; then echo 'ssh://: destination is a directory' >&2; exit 1; ` +
+ 		`elif [ -f ${dest} ] && [ ! -L ${dest} ]; then cat "$t" > ${dest} || exit 1; ` +
+ 		`elif [ -e ${dest} ] && [ ! -L ${dest} ]; then echo 'ssh://: destination is a special file (not a regular file)' >&2; exit 1; ` +
+ 		`else mv "$t" ${dest}; fi; ` +
+ 		`}`;
+ 	const args = await buildRemoteCommand(target, wrapInPosixShell(shell, command), { allowStdin: true });
+-	using child = ptree.spawn(["ssh", ...args], {
+-		stdin: content,
+-		signal: ptree.combineSignals(opts.signal, opts.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+-	});
+-	await child.exitedCleanly;
++	if (compressed) {
++		using encoder = ptree.spawn(["zstd", "-q", "-c"], { stdin: content, signal });
++		using child = ptree.spawn(["ssh", ...args], { stdin: encoder.stdout, signal });
++		await Promise.all([child.bytes(), child.exitedCleanly, encoder.exitedCleanly]);
++	} else {
++		using child = ptree.spawn(["ssh", ...args], { stdin: content, signal });
++		await Promise.all([child.bytes(), child.exitedCleanly]);
++	}
+ }
+ 
+ /** Classification of a remote path, used by the read handler's directory dispatch. */
+diff --git a/packages/coding-agent/src/ssh/transfer-compression.ts b/packages/coding-agent/src/ssh/transfer-compression.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/coding-agent/src/ssh/transfer-compression.ts
+@@ -0,0 +1,72 @@
++import { isIP } from "node:net";
++import { networkInterfaces } from "node:os";
++import { $which, ptree } from "@oh-my-pi/pi-utils";
++import { buildRemoteCommand, ensureConnection, ensureHostInfo, type SSHConnectionTarget } from "./connection-manager";
++import { wrapInPosixShell } from "./utils";
++
++function address(value: string): string {
++	const bare = (value.replace(/^\[|\]$/g, "").split("%")[0] ?? "").toLowerCase();
++	if (isIP(bare) === 6) {
++		const normalized = new URL(`http://[${bare}]/`).hostname.slice(1, -1);
++		const mapped = /^::ffff:([0-9a-f]+):([0-9a-f]+)$/.exec(normalized);
++		if (mapped) {
++			const high = Number.parseInt(mapped[1] ?? "", 16);
++			const low = Number.parseInt(mapped[2] ?? "", 16);
++			return `${high >>> 8}.${high & 255}.${low >>> 8}.${low & 255}`;
++		}
++		return normalized;
++	}
++	return bare;
++}
++
++/** Inspect the authenticated server's actual endpoint, not its OpenSSH alias */
++export async function isSameMachineSSH(
++	target: SSHConnectionTarget,
++	opts: { controlPath?: string; signal?: AbortSignal | undefined; timeoutMs?: number } = {},
++): Promise<boolean> {
++	await ensureConnection(target);
++	const info = await ensureHostInfo(target);
++	if (!info.transferShell) throw new Error("SSH transfer requires a verified POSIX shell");
++	const args = await buildRemoteCommand(target, wrapInPosixShell(info.transferShell, 'printf "%s\\n" "$SSH_CONNECTION"'));
++	if (opts.controlPath) args.unshift("-o", `ControlPath=${opts.controlPath}`);
++	using child = ptree.spawn(["ssh", ...args], {
++		signal: ptree.combineSignals(opts.signal, opts.timeoutMs ?? 30_000),
++	});
++	const connection = (await child.text()).trim().split(/\s+/);
++	await child.exitedCleanly;
++	const serverAddress = connection[2];
++	if (connection.length !== 4 || !serverAddress || !isIP(serverAddress.split("%")[0] ?? "")) {
++		throw new Error("SSH server did not report its actual endpoint in SSH_CONNECTION");
++	}
++	const endpoint = address(serverAddress);
++	if (endpoint === "::1" || (isIP(endpoint) === 4 && endpoint.startsWith("127."))) return true;
++	return Object.values(networkInterfaces()).some(entries =>
++		entries?.some(entry => address(entry.address) === endpoint),
++	);
++}
++
++export function requireZstd(): void {
++	if (!$which("zstd")) throw new Error("Remote file transfers require zstd on the local and remote PATH; no gzip fallback is used");
++}
++
++/** Drain without allowing a remote decoder to exceed the requested byte bound */
++export async function boundedTransferBytes(stream: ReadableStream<Uint8Array>, limit: number): Promise<Uint8Array> {
++	const reader = stream.getReader();
++	const chunks: Uint8Array[] = [];
++	let length = 0;
++	try {
++		while (true) {
++			const { done, value } = await reader.read();
++			if (done) break;
++			length += value.length;
++			if (length > limit) {
++				await reader.cancel("SSH transfer exceeded its byte bound");
++				throw new Error("SSH transfer exceeded its byte bound");
++			}
++			chunks.push(value);
++		}
++	} finally {
++		reader.releaseLock();
++	}
++	return Buffer.concat(chunks, length);
++}
