@@ -12,11 +12,13 @@ if [[ "${TERM:-}" == "xterm-ghostty" ]]; then
   fi
 fi
 
-# Detect once without writing a query into the shell's input stream. Theme-aware
-# wrappers inherit this value; standalone launcher calls can still use Kitty or
-# OSC detection when no theme environment is available.
+# Detect without writing terminal replies into the shell's input stream
+# Remember locally detected values so prompt hooks can refresh them later
 if [[ -z "${TERMINAL_THEME:-}" ]] \
   && command -v theme-run >/dev/null 2>&1; then
+  if [[ -z "${LC_TERMINAL_THEME:-}${COLOR_SCHEME:-}${THEME:-}${SSH_CONNECTION:-}${SSH_TTY:-}" ]]; then
+    typeset -g _dotfiles_terminal_theme_auto=1
+  fi
   _dotfiles_terminal_theme="$(theme-run --print-theme-no-terminal 2>/dev/null)" || _dotfiles_terminal_theme=
   case "$_dotfiles_terminal_theme" in
     dark | light) export TERMINAL_THEME="$_dotfiles_terminal_theme" ;;
@@ -24,24 +26,44 @@ if [[ -z "${TERMINAL_THEME:-}" ]] \
   unset _dotfiles_terminal_theme
 fi
 
-# OpenSSH and Tailscale SSH accept LC_* environment variables. Mirror the
-# detected client appearance so remote shells inherit it before consulting the
-# remote desktop's theme.
-case "${TERMINAL_THEME:-}" in
-  dark | light)
-    export LC_TERMINAL_THEME="$TERMINAL_THEME"
-    # Starship runs several times per prompt. Select its managed profile once
-    # instead of putting theme-run in that hot path.
-    if [[ "${TERM_PROGRAM:-}" == "Apple_Terminal" ]]; then
-      export STARSHIP_CONFIG="$HOME/.config/starship-catppuccin-custom-terminal-${TERMINAL_THEME}.toml"
-      if [[ -t 1 ]]; then
-        printf '\e]50;SetProfile=Catppuccin Custom %s\a' "${(C)TERMINAL_THEME}"
+# Keep the exported SSH appearance and Starship profile in sync with the shell
+_dotfiles_apply_terminal_theme() {
+  case "${TERMINAL_THEME:-}" in
+    dark | light)
+      export LC_TERMINAL_THEME="$TERMINAL_THEME"
+      if [[ "${TERM_PROGRAM:-}" == "Apple_Terminal" ]]; then
+        export STARSHIP_CONFIG="$HOME/.config/starship-catppuccin-custom-terminal-${TERMINAL_THEME}.toml"
+        if [[ -t 1 ]]; then
+          printf '\e]50;SetProfile=Catppuccin Custom %s\a' "${(C)TERMINAL_THEME}"
+        fi
+      else
+        export STARSHIP_CONFIG="$HOME/.config/starship-catppuccin-custom-${TERMINAL_THEME}.toml"
       fi
-    else
-      export STARSHIP_CONFIG="$HOME/.config/starship-catppuccin-custom-${TERMINAL_THEME}.toml"
-    fi
-    ;;
-esac
+      ;;
+  esac
+}
+_dotfiles_apply_terminal_theme
+
+{{ if eq .chezmoi.os "darwin" -}}
+# Refresh automatic local themes before prompts and commands; ignore our
+# previous exports when detecting, but retain explicit theme overrides
+_dotfiles_refresh_terminal_theme() {
+  [[ "${_dotfiles_terminal_theme_auto:-}" == 1 ]] || return 0
+  [[ -z "${SSH_CONNECTION:-}${SSH_TTY:-}" ]] || return 0
+  local next_theme
+  next_theme="$(env -u TERMINAL_THEME -u LC_TERMINAL_THEME \
+    theme-run --print-theme-no-terminal 2>/dev/null)" || return 0
+  case "$next_theme" in
+    dark | light)
+      if [[ "$next_theme" != "${TERMINAL_THEME:-}" ]]; then
+        export TERMINAL_THEME="$next_theme"
+        _dotfiles_apply_terminal_theme
+      fi
+      ;;
+  esac
+  return 0
+}
+{{ end -}}
 
 if [[ -n "${GHOSTTY_RESOURCES_DIR:-}" ]] \
   && [[ -r "${GHOSTTY_RESOURCES_DIR}/shell-integration/zsh/ghostty-integration" ]]; then

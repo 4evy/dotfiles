@@ -48,8 +48,8 @@ zstyle ':fzf-tab:*' switch-group '<' '>'
 # fresh-machine fallback.
 _starship_bin="$(_dotfiles_command_path starship 2>/dev/null || true)"
 if [[ -n "$_starship_bin" ]]; then
-  # 10-terminal selected STARSHIP_CONFIG once; keep Starship's prompt-time
-  # calls on the direct binary path.
+  # 10-terminal maintains STARSHIP_CONFIG; keep Starship's prompt-time calls
+  # on the direct binary path
   _dotfiles_wrap_command starship "$_starship_bin"
 fi
 if [[ -n "$_starship_bin" && -r "$HOME/.cache/starship/init.zsh" ]]; then
@@ -100,3 +100,13 @@ if [[ -t 0 && -t 1 && -n "$_atuin_bin" ]]; then
   }
 fi
 unset _atuin_bin
+
+{{ if eq .chezmoi.os "darwin" -}}
+# Register after integrations have captured command status and duration
+# Starship reads the refreshed profile when it renders the prompt
+autoload -Uz add-zsh-hook
+add-zsh-hook -d precmd _dotfiles_refresh_terminal_theme
+add-zsh-hook -d preexec _dotfiles_refresh_terminal_theme
+add-zsh-hook precmd _dotfiles_refresh_terminal_theme
+add-zsh-hook preexec _dotfiles_refresh_terminal_theme
+{{ end -}}
