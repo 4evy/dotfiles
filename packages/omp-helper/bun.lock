@@ -13,7 +13,7 @@
         "zod": "4.6.5",
       },
       "devDependencies": {
-        "@girs/gjs": "5.4.0",
+        "@girs/gjs": "5.5.0",
         "@girs/gnome-shell": "50.0.4",
         "@types/bun": "1.4.2",
         "typescript": "7.0.2",
@@ -65,7 +65,7 @@
 
     "@girs/giounix-2.0": ["@girs/giounix-2.0@4.9.0", "", { "dependencies": { "@girs/gio-2.0": "^4.9.0", "@girs/gjs": "^4.9.0", "@girs/glib-2.0": "^4.9.0", "@girs/gmodule-2.0": "^4.9.0", "@girs/gobject-2.0": "^4.9.0" } }, "sha512-OCinDBCoAvDFrXmIWDUYzXG5AMXnzhQH77ua1r81RiXfkzYLVh5mbVavTviE/k0OY+MDqWQUb5zkC2w8vfNkfg=="],
 
-    "@girs/gjs": ["@girs/gjs@5.4.0", "", { "dependencies": { "@girs/cairo-1.0": "^5.4.0", "@girs/gio-2.0": "^5.4.0", "@girs/glib-2.0": "^5.4.0", "@girs/gobject-2.0": "^5.4.0" } }, "sha512-b2/Gp/Gqf42VXmaFIT3q40Impf0X60N7mDPD8/nVlGBH9T+N53fGgqlefhV/TO8PHHZYKIsK4X8gUhdm4eybFw=="],
+    "@girs/gjs": ["@girs/gjs@5.5.0", "", { "dependencies": { "@girs/cairo-1.0": "^5.5.0", "@girs/gio-2.0": "^5.5.0", "@girs/glib-2.0": "^5.5.0", "@girs/gobject-2.0": "^5.5.0" } }, "sha512-qj4XtXgQ3ObmgRnHjtQcEfMtBrgNu46ntjp/oYdmzFaKREXXkmeViwRjp8e7x7xNy49BGHXZPA95A7oY59JlmQ=="],
 
     "@girs/gl-1.0": ["@girs/gl-1.0@4.9.0", "", { "dependencies": { "@girs/gjs": "^4.9.0", "@girs/gobject-2.0": "^4.9.0" } }, "sha512-3mYwXT28bx9ZDlMFliC9NucTRqzSEAManl4GhOP9o/mFUi+VieAbAbtkWLVQvIGfiTnietjZPgeI4JcobozgHA=="],
 
@@ -641,8 +641,6 @@
 
     "@girs/atk-1.0/@girs/gobject-2.0": ["@girs/gobject-2.0@4.9.0", "", { "dependencies": { "@girs/gjs": "^4.9.0", "@girs/glib-2.0": "^4.9.0" } }, "sha512-zEkMERp6u2APCkq1mFnkykxDS9Hqsawun0hiJ5L1fyFv0MWMscVvocyunS8zvsSiu2bsIqqj6F2t0qfNNsZIIg=="],
 
-    "@girs/cairo-1.0/@girs/gjs": ["@girs/gjs@5.5.0", "", { "dependencies": { "@girs/cairo-1.0": "^5.5.0", "@girs/gio-2.0": "^5.5.0", "@girs/glib-2.0": "^5.5.0", "@girs/gobject-2.0": "^5.5.0" } }, "sha512-qj4XtXgQ3ObmgRnHjtQcEfMtBrgNu46ntjp/oYdmzFaKREXXkmeViwRjp8e7x7xNy49BGHXZPA95A7oY59JlmQ=="],
-
     "@girs/clutter-18/@girs/cairo-1.0": ["@girs/cairo-1.0@4.9.0", "", { "dependencies": { "@girs/gjs": "^4.9.0", "@girs/glib-2.0": "^4.9.0", "@girs/gobject-2.0": "^4.9.0" } }, "sha512-4k48vMxVsHVNFz2Ow/tqtqaImhHBDbVUMy1gTO1+O3Pst2VZs9xHlKZsnsepWTs1NNvR1/ppqCS1MXjfrGr0ag=="],
 
     "@girs/clutter-18/@girs/gio-2.0": ["@girs/gio-2.0@4.9.0", "", { "dependencies": { "@girs/gjs": "^4.9.0", "@girs/glib-2.0": "^4.9.0", "@girs/gmodule-2.0": "^4.9.0", "@girs/gobject-2.0": "^4.9.0" } }, "sha512-3n39vbeOmX1CggTz4vTn+xKpa9wpVe39/gLwoBY6kaXE40OLy6xmNQMB6Nhyutj00acb22fDUx81q6UgQ9gvVg=="],
@@ -721,8 +719,6 @@
 
     "@girs/gdm-1.0/@girs/gobject-2.0": ["@girs/gobject-2.0@4.9.0", "", { "dependencies": { "@girs/gjs": "^4.9.0", "@girs/glib-2.0": "^4.9.0" } }, "sha512-zEkMERp6u2APCkq1mFnkykxDS9Hqsawun0hiJ5L1fyFv0MWMscVvocyunS8zvsSiu2bsIqqj6F2t0qfNNsZIIg=="],
 
-    "@girs/gio-2.0/@girs/gjs": ["@girs/gjs@5.5.0", "", { "dependencies": { "@girs/cairo-1.0": "^5.5.0", "@girs/gio-2.0": "^5.5.0", "@girs/glib-2.0": "^5.5.0", "@girs/gobject-2.0": "^5.5.0" } }, "sha512-qj4XtXgQ3ObmgRnHjtQcEfMtBrgNu46ntjp/oYdmzFaKREXXkmeViwRjp8e7x7xNy49BGHXZPA95A7oY59JlmQ=="],
-
     "@girs/giounix-2.0/@girs/gio-2.0": ["@girs/gio-2.0@4.9.0", "", { "dependencies": { "@girs/gjs": "^4.9.0", "@girs/glib-2.0": "^4.9.0", "@girs/gmodule-2.0": "^4.9.0", "@girs/gobject-2.0": "^4.9.0" } }, "sha512-3n39vbeOmX1CggTz4vTn+xKpa9wpVe39/gLwoBY6kaXE40OLy6xmNQMB6Nhyutj00acb22fDUx81q6UgQ9gvVg=="],
 
     "@girs/giounix-2.0/@girs/gjs": ["@girs/gjs@4.9.0", "", { "dependencies": { "@girs/cairo-1.0": "^4.9.0", "@girs/gio-2.0": "^4.9.0", "@girs/glib-2.0": "^4.9.0", "@girs/gobject-2.0": "^4.9.0" } }, "sha512-RxEqCV2ANcz1SrF7nh54mUpe9Oq9YA5HuG+5q/pWToULvCr/sKtMbpNSRsAaS/xgpP7y2qGjX68YVhPjk/gHXg=="],
@@ -736,10 +732,6 @@
     "@girs/gl-1.0/@girs/gjs": ["@girs/gjs@4.9.0", "", { "dependencies": { "@girs/cairo-1.0": "^4.9.0", "@girs/gio-2.0": "^4.9.0", "@girs/glib-2.0": "^4.9.0", "@girs/gobject-2.0": "^4.9.0" } }, "sha512-RxEqCV2ANcz1SrF7nh54mUpe9Oq9YA5HuG+5q/pWToULvCr/sKtMbpNSRsAaS/xgpP7y2qGjX68YVhPjk/gHXg=="],
 
     "@girs/gl-1.0/@girs/gobject-2.0": ["@girs/gobject-2.0@4.9.0", "", { "dependencies": { "@girs/gjs": "^4.9.0", "@girs/glib-2.0": "^4.9.0" } }, "sha512-zEkMERp6u2APCkq1mFnkykxDS9Hqsawun0hiJ5L1fyFv0MWMscVvocyunS8zvsSiu2bsIqqj6F2t0qfNNsZIIg=="],
-
-    "@girs/glib-2.0/@girs/gjs": ["@girs/gjs@5.5.0", "", { "dependencies": { "@girs/cairo-1.0": "^5.5.0", "@girs/gio-2.0": "^5.5.0", "@girs/glib-2.0": "^5.5.0", "@girs/gobject-2.0": "^5.5.0" } }, "sha512-qj4XtXgQ3ObmgRnHjtQcEfMtBrgNu46ntjp/oYdmzFaKREXXkmeViwRjp8e7x7xNy49BGHXZPA95A7oY59JlmQ=="],
-
-    "@girs/gmodule-2.0/@girs/gjs": ["@girs/gjs@5.5.0", "", { "dependencies": { "@girs/cairo-1.0": "^5.5.0", "@girs/gio-2.0": "^5.5.0", "@girs/glib-2.0": "^5.5.0", "@girs/gobject-2.0": "^5.5.0" } }, "sha512-qj4XtXgQ3ObmgRnHjtQcEfMtBrgNu46ntjp/oYdmzFaKREXXkmeViwRjp8e7x7xNy49BGHXZPA95A7oY59JlmQ=="],
 
     "@girs/gnome-shell/@girs/gio-2.0": ["@girs/gio-2.0@4.9.0", "", { "dependencies": { "@girs/gjs": "^4.9.0", "@girs/glib-2.0": "^4.9.0", "@girs/gmodule-2.0": "^4.9.0", "@girs/gobject-2.0": "^4.9.0" } }, "sha512-3n39vbeOmX1CggTz4vTn+xKpa9wpVe39/gLwoBY6kaXE40OLy6xmNQMB6Nhyutj00acb22fDUx81q6UgQ9gvVg=="],
 
@@ -780,8 +772,6 @@
     "@girs/gnomedesktop-4.0/@girs/gmodule-2.0": ["@girs/gmodule-2.0@4.9.0", "", { "dependencies": { "@girs/gjs": "^4.9.0", "@girs/glib-2.0": "^4.9.0", "@girs/gobject-2.0": "^4.9.0" } }, "sha512-vH75DrILqwaSu2TBgoEeiQlJywLpjGGHSFcT+IQA+iiF+91I2Kqi3KHE9AidxpG226HaRvW+ZNWFECdEV4tPVw=="],
 
     "@girs/gnomedesktop-4.0/@girs/gobject-2.0": ["@girs/gobject-2.0@4.9.0", "", { "dependencies": { "@girs/gjs": "^4.9.0", "@girs/glib-2.0": "^4.9.0" } }, "sha512-zEkMERp6u2APCkq1mFnkykxDS9Hqsawun0hiJ5L1fyFv0MWMscVvocyunS8zvsSiu2bsIqqj6F2t0qfNNsZIIg=="],
-
-    "@girs/gobject-2.0/@girs/gjs": ["@girs/gjs@5.5.0", "", { "dependencies": { "@girs/cairo-1.0": "^5.5.0", "@girs/gio-2.0": "^5.5.0", "@girs/glib-2.0": "^5.5.0", "@girs/gobject-2.0": "^5.5.0" } }, "sha512-qj4XtXgQ3ObmgRnHjtQcEfMtBrgNu46ntjp/oYdmzFaKREXXkmeViwRjp8e7x7xNy49BGHXZPA95A7oY59JlmQ=="],
 
     "@girs/graphene-1.0/@girs/gjs": ["@girs/gjs@4.9.0", "", { "dependencies": { "@girs/cairo-1.0": "^4.9.0", "@girs/gio-2.0": "^4.9.0", "@girs/glib-2.0": "^4.9.0", "@girs/gobject-2.0": "^4.9.0" } }, "sha512-RxEqCV2ANcz1SrF7nh54mUpe9Oq9YA5HuG+5q/pWToULvCr/sKtMbpNSRsAaS/xgpP7y2qGjX68YVhPjk/gHXg=="],
 

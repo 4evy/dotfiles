@@ -17,7 +17,7 @@ reis = { version = "=0.7.1", features = ["tokio"] }
 gstreamer = "=0.25.4"
 gstreamer-app = "=0.25.2"
 gstreamer-video = "=0.25.4"
-rmcp = { version = "=3.5.0", default-features = false, features = [
+rmcp = { version = "=3.5.1", default-features = false, features = [
   "macros",
   "server",
   "transport-async-rw",
