@@ -11,6 +11,7 @@ import (
 
 	uv "github.com/charmbracelet/ultraviolet"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/nanmu42/limitio"
 )
 
 const (
@@ -172,25 +173,6 @@ func probeTerminal(query string, timeout time.Duration) (Theme, bool) {
 	}
 }
 
-type limitedBuffer struct {
-	bytes.Buffer
-	limit int
-}
-
-var errOutputLimit = errors.New("helper output limit exceeded")
-
-func (b *limitedBuffer) Write(input []byte) (int, error) {
-	remaining := b.limit - b.Len()
-	if remaining <= 0 {
-		return 0, errOutputLimit
-	}
-	if len(input) > remaining {
-		_, _ = b.Buffer.Write(input[:remaining])
-		return remaining, errOutputLimit
-	}
-	return b.Buffer.Write(input)
-}
-
 func commandMode(runtime Runtime, env Variables, argv []string) (Theme, bool) {
 	output, err := runCommandOutput(runtime, env, argv)
 	if err != nil {
@@ -208,10 +190,9 @@ func runCommandOutput(runtime Runtime, env Variables, argv []string) (string, er
 	command := exec.CommandContext(ctx, argv[0], argv[1:]...)
 	command.Env = envList(env)
 	command.WaitDelay = time.Duration(runtime.HelperTimeoutMS) * time.Millisecond
-	stdout := &limitedBuffer{limit: runtime.HelperOutputLimitBytes}
-	stderr := &limitedBuffer{limit: runtime.HelperOutputLimitBytes}
-	command.Stdout = stdout
-	command.Stderr = stderr
+	var stdout, stderr bytes.Buffer
+	command.Stdout = limitio.NewWriter(&stdout, runtime.HelperOutputLimitBytes, false)
+	command.Stderr = limitio.NewWriter(&stderr, runtime.HelperOutputLimitBytes, false)
 	if err := command.Run(); err != nil {
 		return "", err
 	}
