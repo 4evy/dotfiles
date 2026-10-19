@@ -8,8 +8,6 @@
 # first-class source for editor, OS, provisioning, and application behavior.
 *.json linguist-detectable
 *.jsonc linguist-detectable
-*.ini linguist-detectable
-*.kdl linguist-detectable
 *.plist linguist-detectable
 *.tmTheme linguist-detectable
 *.toml linguist-detectable
@@ -18,64 +16,24 @@
 *.yml linguist-detectable
 .gitattributes linguist-detectable -linguist-vendored
 .gitignore linguist-detectable -linguist-vendored
-.dockerignore linguist-detectable
+.containerignore linguist-detectable
 
-# Classify chezmoi templates and extension-less scripts by their rendered
-# language so they contribute alongside the matching source files.
-*.bash.tmpl linguist-language=Shell
-*.conf.tmpl linguist-language=INI linguist-detectable
+# Classify native shell entry points and substitution inputs by language
+dotfiles/home/.bash* linguist-language=Shell
+dotfiles/home/.zsh* linguist-language=Shell
+dotfiles/home/.gitconfig linguist-language=gitconfig linguist-detectable
 *.css.in linguist-language=CSS
-*.gitconfig.tmpl linguist-language=gitconfig linguist-detectable
-*.glsl.tmpl linguist-language=GLSL
-*.ghostty.tmpl linguist-language=INI linguist-detectable
-# Linguist has no HJSON entry; JSON5 is the closest supported data syntax.
-*.hjson.tmpl linguist-language=JSON5 linguist-detectable
-*.j2 linguist-language=Jinja
-*.jsonc.tmpl linguist-language=jsonc linguist-detectable
-*.json.tmpl linguist-language=JSON linguist-detectable
-*.kdl.tmpl linguist-language=KDL linguist-detectable
-*.nix.tmpl linguist-language=Nix
-*.opts.tmpl linguist-language=Go-Template
-*.py.in linguist-language=Python
-*.py.tmpl linguist-language=Python
-*.ron.tmpl linguist-language=RON linguist-detectable
-*.sh.tmpl linguist-language=Shell
-*.theme.tmpl linguist-language=INI linguist-detectable
-*.tmTheme.tmpl linguist-language=XML-Property-List linguist-detectable
-*.toml.tmpl linguist-language=TOML linguist-detectable
-*.yaml.tmpl linguist-language=YAML linguist-detectable
-*.yml.tmpl linguist-language=YAML linguist-detectable
-*.zsh.tmpl linguist-language=Shell
-dotfiles/.chezmoitemplates/theme_rgb linguist-language=Go-Template
-dotfiles/.chezmoitemplates/executable_fingerprint linguist-language=Go-Template
-dotfiles/dot_bash_profile.tmpl linguist-language=Shell
-dotfiles/dot_bashenv.tmpl linguist-language=Shell
-dotfiles/dot_bashrc.tmpl linguist-language=Shell
-dotfiles/dot_gitconfig.tmpl linguist-language=gitconfig linguist-detectable
-dotfiles/dot_gitignore_global linguist-language=Ignore-List linguist-detectable
-dotfiles/dot_local/share/applications/*.desktop.tmpl linguist-language=desktop linguist-detectable
-dotfiles/private_dot_ssh/private_config.tmpl linguist-language=sshconfig linguist-detectable
-dotfiles/dot_zshenv.tmpl linguist-language=Shell
-dotfiles/dot_zshrc.tmpl linguist-language=Shell
+dotfiles/home/.gitignore_global linguist-language=Ignore-List linguist-detectable
 
 # Cover config formats whose extensions are either too generic or unknown to
 # Linguist, while still using known Linguist language names where available.
-.ansible-lint linguist-language=YAML linguist-detectable
 .clang-format linguist-detectable
 .shellcheckrc linguist-detectable
 .yamllint linguist-language=YAML linguist-detectable
-dotfiles/.chezmoiignore linguist-language=Ignore-List linguist-detectable
-dotfiles/.chezmoiremove linguist-language=Ignore-List linguist-detectable
-*.cfg linguist-detectable
-*.cnf.in linguist-language=INI linguist-detectable
 *.conf linguist-language=INI linguist-detectable
-# Linguist has no AppArmor language entry; Text keeps policy sources visible
-# without misclassifying them as the syntactically different SELinux DSL.
-*.apparmor linguist-language=Text linguist-detectable
 *.fc linguist-language=sepolicy linguist-detectable
 *.if linguist-language=sepolicy linguist-detectable
 *.path linguist-language=INI linguist-detectable
-*.plist.in linguist-language=XML-Property-List linguist-detectable
 *.repo linguist-language=INI linguist-detectable
 *.rules linguist-language=INI linguist-detectable
 *.service linguist-detectable
@@ -95,16 +53,12 @@ dotfiles/.chezmoiremove linguist-language=Ignore-List linguist-detectable
 
 # Plain-text files below are executable repository configuration or managed
 # data rather than documentation, so include them without inventing a DSL.
-.chezmoiroot linguist-language=Text linguist-detectable
 .python-version linguist-language=Text linguist-detectable
 .tool-versions linguist-language=Text linguist-detectable
-containers/*.txt linguist-language=Text linguist-detectable
-dotfiles/.chezmoiversion linguist-language=Text linguist-detectable
-dotfiles/dot_config/fastfetch/*.txt linguist-language=Text linguist-detectable
-dotfiles/dot_local/bin/symlink_* linguist-language=Text linguist-detectable
-dotfiles/private_dot_ssh/allowed_signers linguist-language=Text linguist-detectable
-dotfiles/private_dot_ssh/known_hosts.d/* linguist-language=Text linguist-detectable
-dotfiles/dot_zprofile linguist-language=Shell
+dotfiles/home/.config/fastfetch/*.txt linguist-language=Text linguist-detectable
+dotfiles/home/.ssh/allowed_signers linguist-language=Text linguist-detectable
+dotfiles/home/.ssh/known_hosts.d/* linguist-language=Text linguist-detectable
+dotfiles/home/.zprofile linguist-language=Shell
 
 # Linguist vendors TypeScript declaration files globally. These declarations
 # describe local extension runtimes and should count with the package sources.
@@ -126,15 +80,3 @@ hosts/**/hardware-configuration.nix linguist-generated
 packages/hyper-window-tiling/bun.nix linguist-generated
 packages/**/dist/** linguist-generated
 secrets/*.yaml linguist-generated
-
-# Lock GitHub's native language bar to a fixed six-color palette. Everything
-# is excluded by default; only the fixed-size ballast files below contribute.
-# Clear earlier language overrides so every forge applies the exclusion. The
-# one-byte size steps fix the order while all segments round to the same width.
-* !linguist-language !gitlab-language -linguist-detectable
-.github/linguist-palette/01-red.yaml linguist-language=YAML linguist-detectable -linguist-generated -linguist-vendored -linguist-documentation
-.github/linguist-palette/02-orange.zig linguist-language=Zig linguist-detectable -linguist-generated -linguist-vendored -linguist-documentation
-.github/linguist-palette/03-yellow.js linguist-language=JavaScript linguist-detectable -linguist-generated -linguist-vendored -linguist-documentation
-.github/linguist-palette/04-green.sh linguist-language=Shell linguist-detectable -linguist-generated -linguist-vendored -linguist-documentation
-.github/linguist-palette/05-blue.py linguist-language=Python linguist-detectable -linguist-generated -linguist-vendored -linguist-documentation
-.github/linguist-palette/06-violet.nix linguist-language=Nix linguist-detectable -linguist-generated -linguist-vendored -linguist-documentation
