@@ -75,4 +75,4 @@ runs:
       shell: bash
       run: |-
         bun install --frozen-lockfile --ignore-scripts
-        just spectrum-generate /tmp/Containerfile
+        just spectrum generate /tmp/Containerfile

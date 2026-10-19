@@ -128,17 +128,6 @@ for (const directory of [
   await run(["nixfmt", output]);
 }
 
-if (changed.has("Gemfile.lock")) {
-  await run([
-    "bundix",
-    "--gemfile=Gemfile",
-    "--lockfile=Gemfile.lock",
-    "--gemset=nix/dev/gemset.nix",
-  ]);
-  await run(["deadnix", "--edit", "nix/dev/gemset.nix"]);
-  await run(["nixfmt", "nix/dev/gemset.nix"]);
-}
-
 if (
   changed.has("packages/theme-run/go.mod") ||
   changed.has("packages/theme-run/go.sum")

@@ -1,19 +1,27 @@
 {
   lib,
   pkgs,
-  rubocopFormatter,
 }:
 let
+  inherit (pkgs)
+    biome
+    formats
+    libxml2
+    ruff
+    shfmt
+    taplo
+    writeShellApplication
+    yamlfmt
+    ;
   ruffConfig =
-    (pkgs.formats.toml { }).generate "ruff.toml"
+    (formats.toml { }).generate "ruff.toml"
       (lib.importTOML ../../../pyproject.toml).tool.ruff;
 in
-pkgs.writeShellApplication {
+writeShellApplication {
   name = "template-format";
-  runtimeInputs = [
-    pkgs.coreutils
-    pkgs.diffutils
-  ];
+  runtimeInputs = lib.attrValues {
+    inherit (pkgs) coreutils diffutils;
+  };
   text = ''
     temporary_directory=$(mktemp -d)
     trap 'rm -rf "$temporary_directory"' EXIT
@@ -25,7 +33,7 @@ pkgs.writeShellApplication {
 
       case "$relative_file" in
         *.bash.in | *.sh.in)
-          if ! ${lib.getExe pkgs.shfmt} -w "$file" >/dev/null 2>&1; then
+          if ! ${lib.getExe shfmt} -w "$file" >/dev/null 2>&1; then
             printf 'Skipped unparseable template: %s\n' "$file" >&2
           fi
           continue
@@ -33,35 +41,27 @@ pkgs.writeShellApplication {
         *.py.in)
           output_name=''${output_name%.in}
           formatter=(
-            ${lib.getExe pkgs.ruff}
+            ${lib.getExe ruff}
             format
             --config ${ruffConfig}
           )
           ;;
-        *.rb.in)
-          output_name=''${output_name%.in}
-          formatter=(
-            ${lib.getExe rubocopFormatter}
-            --autocorrect-all
-            --config ${../../../.rubocop.yml}
-          )
-          ;;
         *.toml.in)
           output_name=''${output_name%.in}
-          formatter=(${lib.getExe pkgs.taplo} format)
+          formatter=(${lib.getExe taplo} format)
           ;;
         *.yaml.in | *.yml.in)
           output_name=''${output_name%.in}
           formatter=(
-            ${lib.getExe pkgs.yamlfmt}
+            ${lib.getExe yamlfmt}
             -conf ${../../../.yamlfmt}
           )
           ;;
-        *.json.in | *.jsonc.in | *.css.in | *.css.in | *.scss.in)
+        *.json.in | *.jsonc.in | *.css.in | *.scss.in)
           output_name=''${output_name%.in}
           output_name=''${output_name%.in}
           formatter=(
-            ${lib.getExe pkgs.biome}
+            ${lib.getExe biome}
             format
             --write
             --no-errors-on-unmatched
@@ -86,7 +86,7 @@ pkgs.writeShellApplication {
       formatted=0
       if ((xml)); then
         xml_output="$temporary_directory/formatted-$output_name"
-        if ${lib.getExe' pkgs.libxml2 "xmllint"} \
+        if ${lib.getExe' libxml2 "xmllint"} \
           --format "$temporary_file" --output "$xml_output" \
           >/dev/null 2>&1; then
           mv "$xml_output" "$temporary_file"

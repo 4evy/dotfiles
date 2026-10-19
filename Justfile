@@ -1,54 +1,36 @@
 #!/usr/bin/env -S just --justfile
 
-set minimum-version := "1.58.0"
-set unstable
-set lists
-set lazy
-set default-list
-set default-script
-set shell := ['bash', '-euo', 'pipefail', '-c']
-set script-interpreter := ['bash', '-euo', 'pipefail']
-
-# Recipe shells must keep this file's PATH instead of reloading shell startup
-unexport BASH_ENV
-
+import 'just/common.just'
+import 'just/sops/vaults.just'
 import 'just/dev/dev.just'
-import 'just/secrets.just'
 import 'just/setup/setup.just'
-import 'just/spectrum.just'
 import 'just/system/system.just'
 
-podman := split(env("PODMAN", "podman"))
+set default-list
 
-host_os := os()
-repo_dir := justfile_directory()
-[private]
-just_command := quote([just_executable(), "--justfile", justfile()])
-
-homebrew_prefix := env("HOMEBREW_PREFIX", if host_os == "macos" { "/opt/homebrew" } else { "/home/linuxbrew/.linuxbrew" })
-homebrew_gnu_formulae := ['coreutils', 'findutils', 'gnu-sed', 'grep', 'gawk', 'gnu-tar', 'gnu-which', 'diffutils', 'make']
-homebrew_gnu_path := if host_os == "macos" { homebrew_prefix / "opt" / homebrew_gnu_formulae / "libexec/gnubin" }
-homebrew_path := homebrew_prefix / ["bin", "sbin"]
-nix_bin_dir := "/nix/var/nix/profiles/default/bin"
-nix_profile_bin_dir := home_directory() / ".nix-profile/bin"
-nixos_profile_bin_dir := "/run/current-system/sw/bin"
-hjem_state_home := if env("XDG_STATE_HOME", "") == "" { home_directory() / ".local/state" } else { env("XDG_STATE_HOME") }
-hjem_path := if host_os == "linux" && !path_exists('/etc/NIXOS') { [hjem_state_home / "hjem/standalone/current-profile/bin"] } else { [] }
-
-# Keep activated runtimes ahead of fallback tools; add GNU utilities locally
-# since CI already supplies the selected tools
-export PATH := if env("CI", "") == "true" { env("PATH", "") } else { join_list([homebrew_gnu_path, hjem_path, env("PATH", ""), homebrew_path, nix_bin_dir, nix_profile_bin_dir, nixos_profile_bin_dir], PATH_VAR_SEP) }
-# Development recipes are reproducible by default; dependency changes must be
-# made explicitly with uv outside the task runner
-export UV_LOCKED := "1"
+mod bun 'just/bun/bun.just'
+mod check 'just/check/check.just'
+mod determinate 'just/determinate/determinate.just'
+mod dotfiles 'just/dotfiles/dotfiles.just'
+mod github 'just/github/github.just'
+mod go 'just/go/go.just'
+mod hjem 'just/hjem/hjem.just'
+mod homebrew 'just/homebrew/homebrew.just'
+mod just 'just/just/just.just'
+mod nix 'just/nix/nix.just'
+mod python 'just/python/python.just'
+mod records 'just/records/records.just'
+mod renovate 'just/renovate/renovate.just'
+mod sops 'just/sops/sops.just'
+mod spectrum 'just/spectrum/spectrum.just'
 
 alias a := apply
 [linux]
-alias build := spectrum-build
+alias build := spectrum::build
 alias c := check
-alias cf := check-format
+alias cf := check::format
 alias ck := check
-alias diff := dotfiles-diff
+alias diff := dotfiles::diff
 alias f := fmt
 alias h := help
 alias l := lint
@@ -56,15 +38,20 @@ alias nx := nix
 [linux]
 alias r := reboot
 alias s := setup
-alias typecheck := python-typecheck
+alias typecheck := python::typecheck
 alias up := update
 [linux]
-alias validate := spectrum-validate
+alias validate := spectrum::validate
 alias w := watch
 
 # List recipes or show detailed usage for one recipe
-[arg('recipe', help='Recipe to explain; omit to list all recipes')]
+[arg('recipe', help='Command and subcommands to explain, or omit to list commands')]
 [group('system')]
-help recipe='':
+help *recipe:
     {{ just_command }} \
-      {{ quote(if recipe != '' { ['--usage', recipe] } else { ['--list', '--list-submodules'] }) }}
+      {{ quote(if recipe != [] { ['--usage', recipe] } else { ['--list', '--list-submodules'] }) }}
+
+# Check one workflow's commands, or every workflow when omitted
+[arg('profile', pattern=['status', 'reboot', 'install', 'build', 'setup', 'reconcile', 'apply', 'records', 'sops', 'shell', 'spectrum', 'fmt', 'lint', 'bun', 'nix', 'watch', 'check', 'all'], help='Workflow to check')]
+[group('system')]
+doctor $profile="all": (_doctor profile)

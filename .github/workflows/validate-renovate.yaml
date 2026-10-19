@@ -49,4 +49,4 @@ jobs:
       - name: Validate Renovate Config
         env:
           RENOVATE_GITHUB_COM_TOKEN: ${{ github.token }}
-        run: just renovate-check
+        run: just renovate check

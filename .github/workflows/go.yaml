@@ -44,4 +44,4 @@ jobs:
           cache-dependency-path: '**/go.sum'
 
       - name: Check Go Workspace
-        run: just go-check
+        run: just go check

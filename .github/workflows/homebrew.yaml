@@ -35,4 +35,4 @@ jobs:
         uses: ./.github/actions/setup-check-tools # zizmor: ignore[self-repository]
 
       - name: Check Homebrew
-        run: just homebrew-check
+        run: just homebrew check

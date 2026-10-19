@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 cask_args appdir: "/Applications" if OS.mac?
 
 tap "4evy/hide-disply-audio", "https://github.com/4evy/hide-disply-audio", trusted: true
@@ -15,8 +13,6 @@ brew "go"
 brew "gradle"
 brew "maven"
 brew "node"
-brew "ruby"
-brew "ruby-lsp"
 brew "rustup"
 
 if OS.mac?

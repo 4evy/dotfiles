@@ -46,4 +46,4 @@ jobs:
       - name: Check Python
         env:
           UV_MALWARE_CHECK: "1"
-        run: just python-check
+        run: just python check

@@ -45,7 +45,7 @@
       "detail": "Check repository formatting without rewriting files.",
       "type": "process",
       "command": "just",
-      "args": ["check-format"],
+      "args": ["check", "format"],
       "inAgents": true,
       "group": "build",
       "problemMatcher": []
@@ -100,27 +100,17 @@
       "detail": "Run Biome and every Bun workspace type check.",
       "type": "process",
       "command": "just",
-      "args": ["bun-check"],
+      "args": ["bun", "check"],
       "inAgents": true,
       "group": "build",
       "problemMatcher": "$tsc"
-    },
-    {
-      "label": "ruby: check",
-      "detail": "Run RuboCop and Ruby syntax checks using the repository recipe.",
-      "type": "process",
-      "command": "just",
-      "args": ["ruby-check"],
-      "inAgents": true,
-      "group": "build",
-      "problemMatcher": []
     },
     {
       "label": "nix: flake check (no build)",
       "detail": "Evaluate all systems without building derivations, using the repository recipe.",
       "type": "process",
       "command": "just",
-      "args": ["nix-check"],
+      "args": ["nix", "check"],
       "inAgents": true,
       "group": "build",
       "problemMatcher": []
@@ -143,7 +133,7 @@
       "detail": "Preview pending Hjem-managed home changes.",
       "type": "process",
       "command": "just",
-      "args": ["dotfiles-diff"],
+      "args": ["dotfiles", "diff"],
       "icon": {
         "id": "diff"
       },
@@ -154,7 +144,7 @@
       "detail": "Run Python lint, types, dependency, complexity, and packaging checks.",
       "type": "process",
       "command": "just",
-      "args": ["python-check"],
+      "args": ["python", "check"],
       "group": "build",
       "problemMatcher": []
     },
@@ -163,7 +153,7 @@
       "detail": "Run ty with the repository Python configuration.",
       "type": "process",
       "command": "just",
-      "args": ["python-typecheck"],
+      "args": ["python", "typecheck"],
       "group": "build",
       "problemMatcher": []
     },
@@ -172,7 +162,7 @@
       "detail": "Check formatting, test, vet, lint, and build the Go workspace.",
       "type": "process",
       "command": "just",
-      "args": ["go-check"],
+      "args": ["go", "check"],
       "group": "build",
       "problemMatcher": []
     },
@@ -181,7 +171,7 @@
       "detail": "Validate workflow syntax and security with actionlint and zizmor.",
       "type": "process",
       "command": "just",
-      "args": ["github-actions-check"],
+      "args": ["github", "actions", "check"],
       "group": "build",
       "problemMatcher": []
     },
@@ -190,7 +180,7 @@
       "detail": "Validate the encrypted records state.",
       "type": "process",
       "command": "just",
-      "args": ["records-check"],
+      "args": ["records", "check"],
       "group": "build",
       "problemMatcher": []
     },
@@ -199,7 +189,7 @@
       "detail": "Check Homebrew formula style and the Brewfile.",
       "type": "process",
       "command": "just",
-      "args": ["homebrew-check"],
+      "args": ["homebrew", "check"],
       "group": "build",
       "problemMatcher": []
     },
@@ -208,7 +198,7 @@
       "detail": "Validate Renovate configuration and dependency extraction.",
       "type": "process",
       "command": "just",
-      "args": ["renovate-check"],
+      "args": ["renovate", "check"],
       "group": "build",
       "problemMatcher": []
     },
@@ -217,7 +207,7 @@
       "detail": "Validate the BlueBuild recipe and its pinned base image. Linux only; open the Linux checkout to run this task.",
       "type": "process",
       "command": "just",
-      "args": ["spectrum-validate"],
+      "args": ["spectrum", "validate"],
       "inAgents": true,
       "group": "build",
       "problemMatcher": []
@@ -227,7 +217,7 @@
       "detail": "Build the local Spectrum image on a supported Linux host. Linux only; open the Linux checkout to run this task.",
       "type": "process",
       "command": "just",
-      "args": ["spectrum-build"],
+      "args": ["spectrum", "build"],
       "icon": {
         "id": "layers",
         "color": "terminal.ansiBlue"

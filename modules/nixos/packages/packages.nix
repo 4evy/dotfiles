@@ -7,10 +7,21 @@
 let
   inherit (lib.attrsets) attrValues;
   inherit (lib.strings) makeSearchPath;
-  rustPkgConfigPath = makeSearchPath "lib/pkgconfig" [
-    pkgs.unstable.openssl.dev
-    pkgs.unstable.zlib.dev
-  ];
+  inherit (pkgs) eupkgs stdenv unstable;
+  inherit (unstable)
+    llvmPackages
+    luaPackages
+    nh
+    openssh_hpn
+    openssl
+    rustPlatform
+    zlib
+    ;
+  inherit (llvmPackages) libclang;
+  rustPkgConfigPath = makeSearchPath "lib/pkgconfig" (attrValues {
+    openssl = openssl.dev;
+    zlib = zlib.dev;
+  });
 in
 {
   _class = "nixos";
@@ -21,17 +32,17 @@ in
 
       nh = {
         enable = true;
-        package = pkgs.unstable.nh;
+        package = nh;
       };
 
       # Select the HPN implementation for both the client and the server;
       # installing it as an extra package leaves the NixOS modules on OpenSSH.
-      ssh.package = pkgs.unstable.openssh_hpn;
+      ssh.package = openssh_hpn;
     };
 
     environment.systemPackages = attrValues {
-      hjem = inputs.hjem.packages.${pkgs.stdenv.hostPlatform.system}.hjem;
-      ghostty = inputs.patches.packages.${pkgs.stdenv.hostPlatform.system}.ghostty;
+      hjem = inputs.hjem.packages.${stdenv.hostPlatform.system}.hjem;
+      ghostty = inputs.patches.packages.${stdenv.hostPlatform.system}.ghostty;
       inherit (pkgs)
         helix
         jj-patched
@@ -40,10 +51,10 @@ in
         ;
       inherit (pkgs) theme-run;
       inherit (pkgs) dotfiles-workstation;
-      inherit (pkgs.unstable) python314;
+      inherit (unstable) python314;
 
       # Host/session spine and editor dependencies.
-      inherit (pkgs.unstable)
+      inherit (unstable)
         actionlint
         age
         autoconf
@@ -126,8 +137,6 @@ in
         resvg
         ripgrep
         rsync
-        ruby
-        ruby-lsp
         rumdl
         rust-bindgen
         rust-analyzer
@@ -162,14 +171,14 @@ in
         zstd
         ;
 
-      inherit (pkgs.unstable.luaPackages) luacheck;
+      inherit (luaPackages) luacheck;
 
-      inherit (pkgs.eupkgs)
+      inherit (eupkgs)
         yt-dlp-script
         ;
 
       # Hardware and platform tools.
-      inherit (pkgs.unstable)
+      inherit (unstable)
         pciutils
         podman-compose
         smartmontools
@@ -180,9 +189,9 @@ in
     };
 
     environment.sessionVariables = {
-      LIBCLANG_PATH = "${pkgs.unstable.llvmPackages.libclang.lib}/lib";
+      LIBCLANG_PATH = "${libclang.lib}/lib";
       PKG_CONFIG_PATH = rustPkgConfigPath;
-      RUST_SRC_PATH = "${pkgs.unstable.rustPlatform.rustLibSrc}";
+      RUST_SRC_PATH = "${rustPlatform.rustLibSrc}";
     };
   };
 }

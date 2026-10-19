@@ -1,18 +1,23 @@
+import '../common.just'
+
+set working-directory := '../..'
+set default-list
+
 export BB_BUILD_DRIVER := "podman"
 export BB_RUN_DRIVER := "podman"
 
 # Validate the recipe and enforce the Renovate-managed base digest lock.
 [group('spectrum')]
 [linux]
-spectrum-validate: (doctor 'nix')
+validate: (_doctor 'nix')
     nix develop .#operations --command \
-      {{ just_command }} _spectrum-validate
+      {{ just_command }} spectrum _validate
 
 [linux]
-_spectrum-validate: (doctor 'spectrum')
+_validate: (_doctor 'spectrum')
     generated=$(mktemp)
     trap 'rm -f "$generated"' EXIT
-    {{ just_command }} spectrum-generate "$generated"
+    {{ just_command }} spectrum generate "$generated"
     locked=$(< bluebuild/recipes/spectrum.lock)
     tagged=${locked%@*}
     expected_arg="${tagged%:*}@${locked##*@}"
@@ -25,13 +30,15 @@ _spectrum-validate: (doctor 'spectrum')
 # Generate and validate the Containerfile used by local builds and CI.
 [group('spectrum')]
 [linux]
-spectrum-generate output:
+generate output:
     generated={{ quote(output) }}
     bluebuild=${BLUEBUILD:-bluebuild}
     validator=${CHECK_JSONSCHEMA:-check-jsonschema}
     bun bluebuild/recipes/spectrum/sources/sources.ts
     export BLUEBUILD_CLI_REVISION
     BLUEBUILD_CLI_REVISION=$(jq -r '.nodes[.nodes[.root].inputs["source-bluebuild-cli"]].locked.rev' flake.lock)
+    # Include nested stage and module files in schema validation
+    shopt -s globstar
     "$validator" \
       --base-uri https://schema.blue-build.org/ \
       --schemafile https://schema.blue-build.org/recipe-v2.json \
@@ -39,11 +46,11 @@ spectrum-generate output:
     "$validator" \
       --base-uri https://schema.blue-build.org/ \
       --schemafile https://schema.blue-build.org/stage-v1.json \
-      bluebuild/recipes/spectrum/stages/*.yml
+      bluebuild/recipes/spectrum/stages/**/*.yml
     "$validator" \
       --base-uri https://schema.blue-build.org/ \
       --schemafile https://schema.blue-build.org/module-list-v1.json \
-      bluebuild/recipes/spectrum/modules/*.yml
+      bluebuild/recipes/spectrum/modules/**/*.yml
     # BlueBuild's feature-gated v2 parser is ready, but its validate command
     # still hardcodes the v1 schema. The official v2 schema is checked above.
     "$bluebuild" generate --skip-validation --output "$generated" bluebuild/recipes/spectrum.yml
@@ -70,12 +77,12 @@ spectrum-generate output:
 # Build the local Spectrum image from the BlueBuild recipe v2 definition.
 [group('spectrum')]
 [linux]
-spectrum-build: (doctor 'nix')
+build: (_doctor 'nix')
     nix develop .#operations --command \
-      {{ just_command }} _spectrum-build
+      {{ just_command }} spectrum _build
 
 [linux]
-_spectrum-build: _spectrum-validate
+_build: _validate
     # Nix shells use /tmp, whose tmpfs quota can be smaller than an image layer.
     export BLUEBUILD_CLI_REVISION
     BLUEBUILD_CLI_REVISION=$(jq -r '.nodes[.nodes[.root].inputs["source-bluebuild-cli"]].locked.rev' flake.lock)

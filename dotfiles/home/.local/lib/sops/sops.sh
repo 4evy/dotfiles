@@ -38,17 +38,17 @@ if [ "${SOPS_AGE_KEY_CACHE:-}" = "$cache_environment" ]; then
 fi
 
 if [ "$mode" = cache ]; then
-	require_command ruby Ruby
-	cache_helper=${0%/*}/cache.rb
+	require_command python3 Python
+	cache_helper=${0%/*}/cache.py
 	if [ ! -f "$cache_helper" ]; then
-		cache_helper=${0%/*}/../lib/sops/cache.rb
+		cache_helper=${0%/*}/../lib/sops/cache.py
 	fi
 	if [ ! -f "$cache_helper" ]; then
 		printf '%s: cache helper is not installed\n' "$program" >&2
 		exit 127
 	fi
 
-	exec ruby "$cache_helper" "$@"
+	exec python3 "$cache_helper" "$@"
 fi
 
 require_command op '1Password CLI'

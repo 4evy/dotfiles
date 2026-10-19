@@ -14,12 +14,6 @@
       }
     },
     {
-      "name": "Ruby: current file",
-      "type": "ruby_lsp",
-      "request": "launch",
-      "program": "ruby ${file}"
-    },
-    {
       "name": "Go: current package",
       "type": "go",
       "request": "launch",

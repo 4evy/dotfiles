@@ -109,8 +109,9 @@ The script asks for administrator and 1Password access when needed
 
 </details>
 
-Run `just --list --list-submodules` for commands or `just help <command>`
-for usage and aliases.
+Multiword commands use spaces, such as `just records edit` and
+`just spectrum build`. Run `just --list --list-submodules` to list commands,
+or `just help <command> [subcommand...]` for usage.
 
 ## License
 

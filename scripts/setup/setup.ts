@@ -348,7 +348,7 @@ class Workstation implements AsyncDisposable {
     await this.ensureSudo();
     if (!executable(join(this.brewPrefix, "bin/just")))
       await this.command([join(this.brewPrefix, "bin/brew"), "install", "just", "jq"]);
-    await this.command([join(this.brewPrefix, "bin/just"), "_ensure-nix"]);
+    await this.command([join(this.brewPrefix, "bin/just"), "nix", "_ensure"]);
     if (process.platform === "linux")
       await this.command([join(this.brewPrefix, "bin/just"), "nix"]);
   }

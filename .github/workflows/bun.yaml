@@ -45,7 +45,7 @@ jobs:
           cache-scope: workspace
 
       - name: Install Dependencies
-        run: just bun-install
+        run: just bun install
 
       - name: Check Workspace
-        run: just bun-check
+        run: just bun check

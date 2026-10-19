@@ -131,7 +131,7 @@ func (v *vault) checkMaterialized(value collectionSet) error {
 		return err
 	}
 	if !equalCollections(plaintext, value) {
-		return errors.New("plaintext records differ from the encrypted vault; run `just records-pack`")
+		return errors.New("plaintext records differ from the encrypted vault, run `just records pack`")
 	}
 	return nil
 }

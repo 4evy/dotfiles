@@ -38,4 +38,4 @@ jobs:
           tools: just actionlint zizmor
 
       - name: Check Workflows
-        run: just github-actions-check
+        run: just github actions check

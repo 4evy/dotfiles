@@ -15,7 +15,6 @@ Thumbs.db
 .ansible/
 .jj/
 .venv/
-.ruby-lsp/
 .cache/
 .gradle/
 .complexipy_cache/

@@ -92,7 +92,7 @@ else
 		rebuild() {
 			(
 				cd "$_dotfiles_repo_path" &&
-					just spectrum-validate &&
+					just spectrum validate &&
 					bluebuild switch --skip-validation "$@" bluebuild/recipes/spectrum.yml
 			)
 		}

@@ -6,9 +6,15 @@
   perSystem =
     { pkgs, ... }:
     let
-      rubocopFormatter = import ./ruby.nix { inherit pkgs; };
+      inherit (pkgs)
+        go_1_27
+        swift-format
+        unstable
+        writeShellApplication
+        zig
+        ;
       templateFormatter = import ./template.nix {
-        inherit lib pkgs rubocopFormatter;
+        inherit lib pkgs;
       };
 
     in
@@ -32,7 +38,7 @@
           clang-format.enable = true;
           gofmt = {
             enable = true;
-            package = pkgs.go_1_27;
+            package = go_1_27;
           };
           just.enable = true;
           nixfmt.enable = true;
@@ -40,7 +46,7 @@
           rumdl-format.enable = true;
           rustfmt = {
             enable = true;
-            package = pkgs.unstable.rustfmt;
+            package = unstable.rustfmt;
             edition = "2024";
           };
           shfmt = {
@@ -70,12 +76,11 @@
 
           formatter = {
             go-mod = {
-              command = pkgs.writeShellApplication {
+              command = writeShellApplication {
                 name = "go-mod-format";
-                runtimeInputs = [
-                  pkgs.coreutils
-                  pkgs.diffutils
-                ];
+                runtimeInputs = lib.attrValues {
+                  inherit (pkgs) coreutils diffutils;
+                };
                 text = ''
                   temporary_directory=$(mktemp -d)
                   trap 'rm -rf "$temporary_directory"' EXIT
@@ -86,7 +91,7 @@
                       *go.work) kind=work ;;
                       *) kind=mod ;;
                     esac
-                    ${lib.getExe pkgs.go_1_27} "$kind" edit -fmt -print "$file" > "$temporary_directory/formatted"
+                    ${lib.getExe go_1_27} "$kind" edit -fmt -print "$file" > "$temporary_directory/formatted"
                     if ! cmp -s "$file" "$temporary_directory/formatted"; then
                       cp "$temporary_directory/formatted" "$file"
                     fi
@@ -100,19 +105,6 @@
               ];
             };
 
-            rubocop = {
-              command = rubocopFormatter;
-              includes = [
-                "*.rb"
-                "Brewfile"
-                "Gemfile"
-              ];
-              options = [
-                "--autocorrect-all"
-                "--force-exclusion"
-              ];
-            };
-
             shfmt = {
               includes = lib.mkAfter [
                 "dotfiles/home/.local/bin/*"
@@ -121,7 +113,6 @@
               excludes = [
                 "*.py"
                 "*.ts"
-                "*.rb"
               ];
             };
 
@@ -129,7 +120,7 @@
             yamlfmt.includes = lib.mkAfter [ ".yamlfmt" ];
 
             swift-format = {
-              command = lib.getExe pkgs.swift-format;
+              command = lib.getExe swift-format;
               includes = [ "*.swift" ];
               options = [ "--in-place" ];
             };
@@ -150,7 +141,7 @@
             ];
 
             zig = {
-              command = lib.getExe pkgs.zig;
+              command = lib.getExe zig;
               includes = [ "*.zig" ];
               options = [ "fmt" ];
             };

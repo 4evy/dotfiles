@@ -574,8 +574,8 @@
       "executable": true
     },
     {
-      "source": ".local/lib/sops/cache.rb",
-      "target": ".local/lib/sops/cache.rb",
+      "source": ".local/lib/sops/cache.py",
+      "target": ".local/lib/sops/cache.py",
       "executable": true
     },
     {
@@ -788,9 +788,9 @@
       "name": "private_application_configurer.sh"
     },
     {
-      "source": "raycast/raycast.rb",
+      "source": "raycast/raycast.sh",
       "onChange": false,
-      "name": "raycast.rb"
+      "name": "raycast.sh"
     },
     {
       "source": "rustdesk/rustdesk.sh",

@@ -1,13 +1,13 @@
 # Format the repository and any available encrypted records through treefmt.
 [group('dev')]
-fmt: (doctor 'fmt')
+fmt: (_doctor 'fmt')
     records_ready=0
 
     pack_records() {
       exit_status=$?
       trap - EXIT
       if ((records_ready)); then
-        {{ just_command }} records-pack || {
+        {{ just_command }} records pack || {
           pack_status=$?
           printf 'Failed to repack encrypted records; plaintext remains materialized.\n' >&2
           exit "$pack_status"
@@ -19,7 +19,7 @@ fmt: (doctor 'fmt')
 
     if [[ -f .records-unpacked ]]; then
       records_ready=1
-    elif {{ just_command }} records-unpack; then
+    elif {{ just_command }} records unpack; then
       records_ready=1
     else
       printf 'Skipping encrypted records because they could not be unpacked.\n' >&2
@@ -46,22 +46,5 @@ fmt: (doctor 'fmt')
 # Rerun a recipe when files change.
 [arg('args', help='Recipe and arguments to rerun on file changes')]
 [group('dev')]
-watch +args=['check']: (doctor 'watch')
+watch +args=['check']: (_doctor 'watch')
     watchexec --clear --restart --shell=none -- {{ just_command }} {{ quote(args) }}
-
-# Run the same treefmt wrapper in CI mode without retaining rewrites.
-[group('check')]
-check-format: (doctor 'fmt')
-    nix fmt -- --ci
-
-# Format the root Justfile and every imported recipe file without starting Nix
-[group('dev')]
-just-fmt: *(_just-format *git_files(['Justfile', '*.just']))
-
-# Check all Just files with the same native formatter
-[group('check')]
-just-check: *(_just-format *git_files(['Justfile', '*.just']) ['--check'])
-
-_just-format file flags=[]:
-    [[ -f {{ quote(file) }} && ! -L {{ quote(file) }} ]] || exit 0
-    {{ quote([just_executable(), '--unstable', '--justfile', file, '--fmt', flags]) }}

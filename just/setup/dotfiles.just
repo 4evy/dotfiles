@@ -1,16 +1,11 @@
 # Activate the complete Hjem-managed home generation
 [group('setup')]
-apply: (doctor 'apply')
+apply: (_doctor 'apply')
     scripts/hjem/hjem.sh apply
-
-# Preview pending Hjem-managed home changes
-[group('setup')]
-dotfiles-diff: (doctor 'apply')
-    scripts/hjem/hjem.sh diff
 
 # Apply Helium extensions, settings, and the Catppuccin Custom themes
 [group('setup')]
-helium: (doctor 'reconcile')
+helium: (_doctor 'reconcile')
     #!/usr/bin/env bash
     set -euo pipefail
     if [ "$(uname)" = Darwin ]; then

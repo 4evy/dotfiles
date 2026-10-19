@@ -84,7 +84,8 @@ function materializeRecords(
       "just",
       "--justfile",
       join(repository, "Justfile"),
-      "records-unpack",
+      "records",
+      "unpack",
       resolve(vault),
     ],
     {

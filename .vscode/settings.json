@@ -1,6 +1,5 @@
 {
   "files.associations": {
-    "Brewfile": "ruby",
     "Containerfile": "dockerfile",
     "Justfile": "just",
 
@@ -43,7 +42,6 @@
     "**/.zig-cache": true,
     "**/zig-out": true,
     "**/.jj": true,
-    "**/.ruby-lsp": true,
     "**/.ruff_cache": true,
     "**/.rumdl_cache": true,
     "**/.swiftpm": true,
@@ -67,7 +65,6 @@
     "**/.zig-cache/**": true,
     "**/zig-out/**": true,
     "**/.jj/**": true,
-    "**/.ruby-lsp/**": true,
     "**/.ruff_cache/**": true,
     "**/.rumdl_cache/**": true,
     "**/.swiftpm/**": true,
@@ -131,7 +128,6 @@
   "nix.enableLanguageServer": true,
   "nix.serverPath": "nixd",
   "nix.formatterPath": "nixfmt",
-  "rubyLsp.formatter": "rubocop",
   "vscode-just.lspPath": "vscode-just-lsp",
   "markdownlint.enable": false,
   "rumdl.server.path": "rumdl",
@@ -156,11 +152,6 @@
       "source.fixAll.ruff": "explicit",
       "source.organizeImports.ruff": "explicit"
     }
-  },
-  "[ruby]": {
-    "editor.defaultFormatter": "Shopify.ruby-lsp",
-    "editor.formatOnSave": true,
-    "editor.formatOnType": true
   },
   "[shellscript]": {
     "editor.defaultFormatter": "mkhl.shfmt"

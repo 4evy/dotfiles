@@ -41,15 +41,15 @@ jobs:
         uses: ./.github/actions/setup-nix # zizmor: ignore[self-repository]
 
       - name: Check Generated Bun Dependencies
-        run: just bun-nix-check
+        run: just bun nix check
 
       - name: Check Flake and Repository
-        run: just nix-ci-check
+        run: just nix ci check
 
       - name: Discover Native Checks
         id: native-inputs
         run: |
-          checks=$(just --quiet nix-native-checks)
+          checks=$(just --quiet nix native checks)
           echo "checks=$checks" >> "$GITHUB_OUTPUT"
 
   # Omit `name` so skipped matrices do not expose an unevaluated matrix expression.
@@ -78,4 +78,4 @@ jobs:
       - name: Build Native Check
         env:
           CHECK: ${{ matrix.check }}
-        run: just nix-build-check "$CHECK"
+        run: just nix build check "$CHECK"

@@ -641,7 +641,7 @@ func (v *vault) validateLocalExcludes(paths []string) error {
 		return err
 	}
 	if !regular {
-		return errors.New("missing local Git exclude file; run `just records-unpack`")
+		return errors.New("missing local Git exclude file, run `just records unpack`")
 	}
 	content, err := os.ReadFile(exclude)
 	if err != nil {
@@ -652,10 +652,10 @@ func (v *vault) validateLocalExcludes(paths []string) error {
 		return err
 	}
 	if string(content) != localExcludeBlock.replace(string(content), entries) {
-		return errors.New("local Git exclude block is stale; run `just records-unpack`")
+		return errors.New("local Git exclude block is stale, run `just records unpack`")
 	}
 	if err := v.verifyGitExcludes(paths); err != nil {
-		return errors.New("plaintext records are not excluded from Git; run `just records-unpack`")
+		return errors.New("plaintext records are not excluded from Git, run `just records unpack`")
 	}
 	return nil
 }
@@ -782,7 +782,7 @@ func (v *vault) validateSearchIgnore(sources []sourceFile) error {
 		return err
 	}
 	if string(content) != expected {
-		return errors.New("local ripgrep ignore overlay is stale; run `just records-unpack`")
+		return errors.New("local ripgrep ignore overlay is stale, run `just records unpack`")
 	}
 	return nil
 }
@@ -878,7 +878,7 @@ func (v *vault) requireUnpackedMarker() error {
 		return err
 	}
 	if !regular {
-		return errors.New("records are not unpacked; run `just records-unpack` first")
+		return errors.New("records are not unpacked, run `just records unpack` first")
 	}
 	content, err := os.ReadFile(v.marker)
 	if err != nil {

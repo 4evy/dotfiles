@@ -23,11 +23,4 @@ _check-worktree-paths:
     done
     exit "$broken"
 
-# Render every supported host variant and validate the generated home files
-[group('check')]
-hjem-check: sops-check *(_hjem-platform *['darwin', 'fedora', 'nixos'])
-
-_lint-hjem-source: hjem-check
-
-_hjem-platform platform:
-    bun scripts/check/hjem.ts {{ quote(platform) }}
+_lint-hjem-source: hjem::check
