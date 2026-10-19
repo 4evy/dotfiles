@@ -6,22 +6,32 @@
 }:
 let
   inherit (config.local.user) group home name;
+  inherit (lib.attrsets) attrValues;
+  inherit (pkgs)
+    linkFarm
+    linuxPackages_latest
+    nerd-fonts
+    unstable
+    ;
+  inherit (unstable) tailscale;
 
-  dotfilesFontconfig = pkgs.linkFarm "dotfiles-fontconfig" {
+  dotfilesFontconfig = linkFarm "dotfiles-fontconfig" {
     "etc/fonts/conf.d/45-interface-fonts.conf" =
-      ../../dotfiles/dot_config/fontconfig/conf.d/45-interface-fonts.conf;
+      ../../dotfiles/home/.config/fontconfig/conf.d/45-interface-fonts.conf;
     "etc/fonts/conf.d/50-code-monospace.conf" =
-      ../../dotfiles/dot_config/fontconfig/conf.d/50-code-monospace.conf;
+      ../../dotfiles/home/.config/fontconfig/conf.d/50-code-monospace.conf;
   };
 
 in
 {
+  _class = "nixos";
+
   imports = [
     ./hardware-configuration.nix
   ];
 
   boot = {
-    kernelPackages = pkgs.linuxPackages_latest;
+    kernelPackages = linuxPackages_latest;
     loader = {
       efi.canTouchEfiVariables = true;
       systemd-boot = {
@@ -34,7 +44,7 @@ in
   };
 
   environment = {
-    systemPackages = lib.attrsets.attrValues {
+    systemPackages = attrValues {
       inherit (pkgs)
         firefox
         libreoffice
@@ -42,16 +52,16 @@ in
         rsync
         rustdesk-flutter
         ;
-      inherit (pkgs.unstable) jq;
+      inherit (unstable) jq;
     };
 
     etc."xdg/autostart/1password.desktop".source =
-      ../../dotfiles/dot_config/autostart/1password.desktop;
+      ../../dotfiles/home/.config/autostart/1password.desktop;
   };
 
   fonts = {
     fontconfig = {
-      confPackages = [ dotfilesFontconfig ];
+      confPackages = attrValues { inherit dotfilesFontconfig; };
       defaultFonts = {
         sansSerif = [
           "Noto Sans"
@@ -72,13 +82,15 @@ in
         emoji = [ "Noto Color Emoji" ];
       };
     };
-    packages = with pkgs; [
-      noto-fonts
-      noto-fonts-cjk-sans
-      noto-fonts-cjk-serif
-      noto-fonts-color-emoji
-      nerd-fonts.symbols-only
-    ];
+    packages = attrValues {
+      inherit (pkgs)
+        noto-fonts
+        noto-fonts-cjk-sans
+        noto-fonts-cjk-serif
+        noto-fonts-color-emoji
+        ;
+      inherit (nerd-fonts) symbols-only;
+    };
   };
 
   hardware = {
@@ -166,7 +178,7 @@ in
   services = {
     xserver.enable = true;
     tailscale.enable = true;
-    tailscale.package = pkgs.unstable.tailscale;
+    tailscale.package = tailscale;
 
     atuin = {
       enable = true;

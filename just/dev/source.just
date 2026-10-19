@@ -1,25 +1,22 @@
-_lint-nix: (_run-files 'deadnix' ['*.nix', ':(exclude)hosts/linux/hardware-configuration.nix', ':(exclude)packages/hyper-window-tiling/bun.nix'] ['--fail'])
+_lint-nix: (_run-files 'deadnix' ['*.nix', ':(exclude)hosts/linux/hardware-configuration.nix'] ['--fail'])
     for file in {{ quote(git_files(['*.nix'])) }}; do
       [[ -f $file && ! -L $file ]] || continue
       nix-instantiate --parse "$file" >/dev/null
     done
     statix check .
 
-_lint-xml: (_run-files 'uv' ['*.plist', '*.xml'] ['run', 'python', '-c', 'import sys; from defusedxml.ElementTree import parse; [parse(path) for path in sys.argv[1:]]'])
+_lint-xml: (_run-files 'bun' ['*.plist', '*.xml'] ['scripts/check/xml.ts'])
 
-# These substitution templates are build inputs, outside chezmoi's source state
+# These substitution templates are build inputs, outside the managed home tree
 _lint-input-templates:
     temporary_dir=$(mktemp -d)
     trap 'rm -rf "$temporary_dir"' EXIT
-    for file in {{ quote(git_files(['*.py.in', '*.plist.in', '*.xml.in'])) }}; do
+    for file in {{ quote(git_files(['*.plist.in', '*.xml.in'])) }}; do
       [[ -f $file && ! -L $file ]] || continue
       rendered_file="$temporary_dir/${file%.in}"
       mkdir -p "${rendered_file%/*}"
       sed -E 's/@[A-Za-z_][A-Za-z0-9_]*@/template_value/g' "$file" > "$rendered_file"
-      case "$file" in
-        *.py.in) PYTHONPYCACHEPREFIX="$temporary_dir/pycache" uv run python -m py_compile "$rendered_file" ;;
-        *) uv run python -c 'import sys; from defusedxml.ElementTree import parse; parse(sys.argv[1])' "$rendered_file" ;;
-      esac
+      bun scripts/check/xml.ts "$rendered_file"
     done
 
 _lint-shell-files:
@@ -36,13 +33,3 @@ _lint-shell-files:
     done
     ((${#shell_files[@]} == 0)) && exit
     shellcheck -x "${shell_files[@]}"
-
-# Refresh npm source hunks from the corresponding OMP source patches
-[group('dev')]
-omp-patches-sync:
-    bun scripts/sync-omp-patches.ts
-
-# Keep source and npm patches aligned without downloading upstream
-[group('check')]
-omp-patches-check:
-    bun scripts/sync-omp-patches.ts --check

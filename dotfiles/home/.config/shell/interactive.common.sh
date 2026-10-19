@@ -1,0 +1,61 @@
+# shellcheck shell=bash
+#           ⣀⣤⣤⣤⣤⣄⡀                                               ⣀⣀⣀⣀⡀
+#        ⢀⣴⣿⠟⠁⠇ ⠸⠉⠛⣷⣄                                          ⣠⣶⠟⠋⡏⠉⢹⠛⠷⣦⡀
+#       ⢠⣾⡽⠉⠁ ⢀⣀⣀⡀⠘⠁⠹⣦                                       ⢀⣼⠋⠘⠂⢀⣠⠤⢤⣀⠰⠋⢻⣄
+#       ⡼⢳⠋  ⢰⢋⣄ ⠙⣆ ⠋⢻⡄                                      ⣸⠏⠓ ⢠⠏ ⡀ ⠈⠳⡄⠖⢿⡀
+#       ⢧⠈⡇  ⠘⠾⠟  ⢸ ⢲⣾⡇                                      ⣇   ⠸⣄⠸⣿   ⣳⢤⣼⡇
+#       ⠸⡄⠘⢦⡀   ⢀⣠⠋⠤⣿⣿⣧                                      ⢸⡸⡄  ⠈⠉⠉  ⢠⣇⣾⣿⣇
+#        ⠘⢦⡀⠉⠙⠒⢾⠉⠐⡆⣠⢿⣿⡏                                       ⠱⣌⠲⢤⣀⣀⣀⣠⠴⡏⢀⣿⣿⡟
+#          ⠉⠓⠦⠤⠯⠤⠖⠋⠁⠈⠛⠁⢀⣀⣸⠉⠉⠓⠒⠢⠤⢤⣀⣀           ⢀⣀⣠⠤⠤⠒⠒⠋⠉⢹⣀⣀     ⠈⠓⠦⣄⣀⣞⣀⡤⠗⠋⠘⠿⠃
+#                      ⡏ ⢸         ⠉⠉⠒⠒⠦⢤⠤⠖⠒⠊⠉⠁        ⢸ ⠈⡇
+#                      ⡇ ⢸              ⢸              ⢸  ⡇
+#                      ⡇ ⡏   ⠉⠉⠑⠒⠒⠤⠤⢄⡀  ⢸   ⣀⠤⠤⠔⠒⠒⠉⠉⠁  ⠈⡇ ⡇
+#                     ⢠⠃ ⡇              ⢸               ⡇ ⢣
+#                     ⢸  ⡇   ⠑⠒⠒⠤⠤⢄⣀⣀   ⢸   ⢀⣀⣀⠤⠤⠔⠒⠒⠁   ⡇ ⢸
+#                     ⢸ ⢀⡇           ⠁  ⢸   ⠁           ⣇ ⢸
+#                     ⢸ ⢸    ⠒⠤⠤⢄⣀⣀     ⢸     ⢀⣀⣀⠤⠤⠔⠂   ⢸ ⢸
+#                     ⢸ ⢸          ⠉⠉⠁  ⢸   ⠉⠉⠁         ⢸ ⢸
+#                     ⢸ ⢸    ⠤⣄⣀⣀       ⢸       ⢀⣀⣀⡤⠄   ⢸ ⢸
+#                     ⢸ ⡼       ⠈⠉⠉⠓⠒⠂  ⢸   ⠒⠒⠋⠉⠉       ⠸⡄⢸
+#                     ⢸ ⡇               ⢸                ⡇⢸
+#                     ⢸ ⠧⣈⣉⡓⠒⠦⠤⢤⣀⣀      ⢸      ⢀⣀⣠⠤⠤⠖⠒⣋⣉⡠⠇⢸
+#                     ⠸⠤⠤⣀⣀⡉⠉⠓⠒⠲⠤⢬⣉⣉⠒⠒⠂ ⢸  ⠒⠒⢊⣉⣩⠤⠴⠒⠒⠋⠉⣁⣀⡠⠤⠼
+#                          ⠉⠉⠓⠒⠦⠤⢄⣀⣈⠉⠉⠒⠒⠾⠖⠒⠊⠉⢉⣀⣀⠤⠤⠖⠒⠋⠉⠁
+#                                  ⠈⠉⠙⠒⠂  ⠒⠚⠉⠉
+
+# Shared interactive module loader for Bash and Zsh.
+#
+# Managed modules load in lexical order. Host-local additions can be placed in
+# ~/.config/shell/interactive.local.d/*.sh without adding them to the repository
+
+_dotfiles_interactive_module_dir="$HOME/.config/shell/interactive.d"
+_dotfiles_interactive_local_dir="$HOME/.config/shell/interactive.local.d"
+_dotfiles_interactive_nullglob_was_set=0
+
+if [[ -n "${ZSH_VERSION:-}" ]]; then
+	[[ -o nullglob ]] && _dotfiles_interactive_nullglob_was_set=1
+	setopt nullglob
+else
+	shopt -q nullglob && _dotfiles_interactive_nullglob_was_set=1
+	shopt -s nullglob
+fi
+
+for _dotfiles_interactive_module in \
+	"$_dotfiles_interactive_module_dir"/*.sh \
+	"$_dotfiles_interactive_local_dir"/*.sh; do
+	[[ -r "$_dotfiles_interactive_module" ]] || continue
+	# shellcheck source=/dev/null
+	source "$_dotfiles_interactive_module"
+done
+
+if [[ -n "${ZSH_VERSION:-}" ]]; then
+	((_dotfiles_interactive_nullglob_was_set)) || unsetopt nullglob
+else
+	((_dotfiles_interactive_nullglob_was_set)) || shopt -u nullglob
+fi
+
+unset \
+	_dotfiles_interactive_module \
+	_dotfiles_interactive_module_dir \
+	_dotfiles_interactive_local_dir \
+	_dotfiles_interactive_nullglob_was_set

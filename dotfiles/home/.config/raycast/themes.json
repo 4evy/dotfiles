@@ -1,0 +1,42 @@
+{
+  "themes": [
+    {
+      "name": "Catppuccin Custom Light",
+      "appearance": "light",
+      "colors": {
+        "background": "@COLOR_LIGHT_BASE@",
+        "backgroundSecondary": "@COLOR_LIGHT_SURFACE0@",
+        "foreground": "@COLOR_LIGHT_TEXT@",
+        "accent": "@COLOR_LIGHT_PINK@",
+        "selection": "@COLOR_LIGHT_SURFACE1@",
+        "loader": "@COLOR_LIGHT_SKY@",
+        "red": "@COLOR_LIGHT_RED@",
+        "orange": "@COLOR_LIGHT_PEACH@",
+        "yellow": "@COLOR_LIGHT_YELLOW@",
+        "green": "@COLOR_LIGHT_GREEN@",
+        "blue": "@COLOR_LIGHT_BLUE@",
+        "purple": "@COLOR_LIGHT_MAUVE@",
+        "magenta": "@COLOR_LIGHT_PINK@"
+      }
+    },
+    {
+      "name": "Catppuccin Custom Dark",
+      "appearance": "dark",
+      "colors": {
+        "background": "@COLOR_DARK_BASE@",
+        "backgroundSecondary": "@COLOR_DARK_SURFACE0@",
+        "foreground": "@COLOR_DARK_TEXT@",
+        "accent": "@COLOR_DARK_PINK@",
+        "selection": "@COLOR_DARK_SURFACE1@",
+        "loader": "@COLOR_DARK_SKY@",
+        "red": "@COLOR_DARK_RED@",
+        "orange": "@COLOR_DARK_PEACH@",
+        "yellow": "@COLOR_DARK_YELLOW@",
+        "green": "@COLOR_DARK_GREEN@",
+        "blue": "@COLOR_DARK_BLUE@",
+        "purple": "@COLOR_DARK_MAUVE@",
+        "magenta": "@COLOR_DARK_PINK@"
+      }
+    }
+  ]
+}

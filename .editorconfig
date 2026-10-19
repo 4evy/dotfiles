@@ -8,10 +8,10 @@ indent_size = 2
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[*.{py,py.in,py.j2,py.tmpl,pyi,pyw}]
+[*.{py,py.in,py.j2,pyi,pyw}]
 indent_size = 4
 
-[{bluebuild/files/system/usr/bin/open,dotfiles/dot_local/bin/executable_helix-rumdl-lsp}]
+[{bluebuild/files/system/usr/bin/open,dotfiles/home/.local/bin/helix-rumdl-lsp}]
 indent_size = 4
 
 [*.{rs,zig,zon}]
@@ -24,25 +24,25 @@ indent_size = 4
 indent_style = tab
 indent_size = tab
 
-[*.{if,lua,lua.tmpl,te}]
+[*.{if,lua,te}]
 indent_style = tab
 indent_size = tab
 
-[*.{bash,bash.tmpl,sh,sh.tmpl}]
-indent_style = tab
-indent_size = tab
-binary_next_line = false
-simplify = false
-switch_case_indent = true
-
-[{dotfiles/dot_bash*.tmpl,dotfiles/dot_zprofile,dotfiles/dot_local/bin/executable_codex-node-repl-browser-trust,dotfiles/dot_local/bin/executable_solaar-no-tray,dotfiles/dot_local/bin/executable_sops-age-key-1password}]
+[*.{bash,sh}]
 indent_style = tab
 indent_size = tab
 binary_next_line = false
 simplify = false
 switch_case_indent = true
 
-[*.{md,md.tmpl}]
+[{dotfiles/home/.bash*,dotfiles/home/.zprofile,dotfiles/home/.local/bin/codex-node-repl-browser-trust,dotfiles/home/.local/bin/solaar-no-tray,dotfiles/home/.local/lib/sops/sops.sh}]
+indent_style = tab
+indent_size = tab
+binary_next_line = false
+simplify = false
+switch_case_indent = true
+
+[*.{md}]
 trim_trailing_whitespace = false
 
 [*.{diff,patch}]

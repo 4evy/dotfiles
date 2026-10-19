@@ -64,17 +64,82 @@ determinate-upgrade: (doctor 'nix') _ensure-nix
 determinate-fix-hashes *args: (doctor 'nix') _ensure-nix
     determinate-nixd fix hashes {{ quote(args) }}
 
-# Install Nix and reconcile only the repository-owned tool bundle
+# Update selected inputs, or all inputs
+[arg('inputs', help='Input names to update; omit to update all')]
+[group('dev')]
+nix-update *inputs: (doctor 'nix')
+    nix flake update {{ quote(inputs) }}
+
+# Install Nix and activate the Linux user environment through Hjem
 [group('setup')]
 nix: (doctor 'nix') _ensure-nix
-    if [[ -e /etc/NIXOS ]]; then
-      printf '%s\n' 'NixOS owns these tools; update the flake and rebuild the system to upgrade them.'
+    if [[ $(uname) == Darwin ]]; then
+      printf '%s\n' 'Darwin owns these tools, use just darwin to rebuild them.'
       exit 0
     fi
-
-    nix_bin={{ quote(which(nix_bin) || 'nix') }}
-    installed=$("$nix_bin" profile list --json | jq -er '.elements | has("dotfiles-nix-tools") | tostring')
-    if [[ $installed == false ]]; then
-      "$nix_bin" profile add --priority 3 {{ quote('path:' + repo_dir + '#dotfiles-nix-tools') }}
+    if [[ -e /etc/NIXOS ]]; then
+      printf '%s\n' 'NixOS owns these tools, rebuild the system to upgrade them.'
+      exit 0
     fi
-    "$nix_bin" profile upgrade dotfiles-nix-tools
+    {{ just_command }} hjem
+
+# Build or activate the Hjem home environment
+[arg('action', help='switch to activate, or build to prepare without activating')]
+[group('setup')]
+hjem action='switch':
+    case {{ quote(action) }} in
+      switch|build) ;;
+      *) printf '%s\n' 'Expected switch or build' >&2; exit 2 ;;
+    esac
+    if [[ $(uname) == Linux && ! -e /etc/NIXOS ]]; then
+      nix run {{ quote(repo_dir + '#hjem') }} -- standalone {{ quote(action) }} \
+        --flake {{ quote(repo_dir) }} --flake-attr hjemConfigurations.linux --impure
+    fi
+    {{ quote(repo_dir / 'scripts/hjem/hjem.sh') }} {{ quote(if action == 'switch' { 'apply' } else { 'build' }) }}
+    if [[ {{ quote(action) }} == switch && $(uname) == Linux && ! -e /etc/NIXOS ]]; then
+      profile="${XDG_STATE_HOME:-$HOME/.local/state}/hjem/standalone/current-profile"
+      if command -v systemctl >/dev/null 2>&1 && systemctl --user show-environment >/dev/null 2>&1; then
+        systemctl --user daemon-reload
+        # Imported manager values can outlive environment generator reloads
+        if command -v busctl >/dev/null 2>&1; then
+          manager_environment=$(busctl --user --json=short get-property \
+            org.freedesktop.systemd1 /org/freedesktop/systemd1 \
+            org.freedesktop.systemd1.Manager Environment | \
+            "$profile/bin/jq" -r '.data[] | select(test("^(PATH|XDG_DATA_DIRS|MANPATH|INFOPATH)="))')
+          manager_path=$PATH
+          manager_data=${XDG_DATA_DIRS:-/usr/local/share:/usr/share}
+          manager_man=${MANPATH:-}
+          manager_info=${INFOPATH:-}
+          while IFS= read -r entry; do
+            case "$entry" in
+              PATH=*) manager_path=${entry#PATH=} ;;
+              XDG_DATA_DIRS=*) manager_data=${entry#XDG_DATA_DIRS=} ;;
+              MANPATH=*) manager_man=${entry#MANPATH=} ;;
+              INFOPATH=*) manager_info=${entry#INFOPATH=} ;;
+            esac
+          done <<< "$manager_environment"
+          case ":$manager_path:" in
+            *":$profile/bin:"*) ;;
+            *) manager_path="$profile/bin:$manager_path" ;;
+          esac
+          case ":$manager_data:" in
+            *":$profile/share:"*) ;;
+            *) manager_data="$profile/share:$manager_data" ;;
+          esac
+          case ":$manager_man:" in
+            *":$profile/share/man:"*) ;;
+            *) manager_man="$profile/share/man:$manager_man" ;;
+          esac
+          case ":$manager_info:" in
+            *":$profile/share/info:"*) ;;
+            *) manager_info="$profile/share/info:$manager_info" ;;
+          esac
+          systemctl --user set-environment \
+            "PATH=$manager_path" "XDG_DATA_DIRS=$manager_data" \
+            "MANPATH=$manager_man" "INFOPATH=$manager_info"
+        fi
+      fi
+      if command -v fc-cache >/dev/null 2>&1; then
+        fc-cache
+      fi
+    fi

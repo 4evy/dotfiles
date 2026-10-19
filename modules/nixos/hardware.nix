@@ -8,6 +8,7 @@ let
   inherit (lib.attrsets) attrValues;
   inherit (lib.modules) mkIf mkMerge;
   inherit (lib.options) mkEnableOption;
+  inherit (pkgs) rocmPackages symlinkJoin;
 in
 {
   imports = [ ./config.nix ];
@@ -40,10 +41,10 @@ in
       # HIP libraries support - many applications hard-code HIP library paths
       systemd.tmpfiles.settings.rocm =
         let
-          rocmEnv = pkgs.symlinkJoin {
+          rocmEnv = symlinkJoin {
             name = "rocm-combined";
             paths = attrValues {
-              inherit (pkgs.rocmPackages) rocblas hipblas clr;
+              inherit (rocmPackages) rocblas hipblas clr;
             };
           };
         in
@@ -52,7 +53,7 @@ in
         };
 
       hardware.graphics.extraPackages = attrValues {
-        inherit (pkgs.rocmPackages) clr;
+        inherit (rocmPackages) clr;
       };
     })
   ];

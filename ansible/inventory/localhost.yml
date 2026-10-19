@@ -1,7 +1,0 @@
----
-all:
-  hosts:
-    localhost:
-      ansible_connection: local
-      # Interpreter discovery otherwise selects Apple's older /usr/bin/python3.
-      ansible_python_interpreter: "{{ ansible_playbook_python }}"

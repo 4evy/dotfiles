@@ -1,0 +1,11 @@
+[Unit]
+Description=Apply Catppuccin Custom GNOME accent colors
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/env gnome-catppuccin-custom-accent --watch
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

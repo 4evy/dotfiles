@@ -1,0 +1,69 @@
+add_newline = true
+command_timeout = 5000
+continuation_prompt = "[∙](subtle) "
+format = "$directory$line_break$sudo$character$command_timeout"
+palette = "catppuccin_custom_dark"
+right_format = "$cmd_duration$time"
+
+[character]
+error_symbol = "[💔 ❯ ](bold love)"
+format = "$symbol"
+success_symbol = "[🦋 ❯ ](bold sky)"
+
+[cmd_duration]
+format = "[took $duration]($style) "
+min_time = 2000
+style = "subtle"
+
+[directory]
+fish_style_pwd_dir_length = 1
+format = "[🌈 $path]($style)[$read_only]($read_only_style) "
+read_only = " 󰌾"
+read_only_style = "bold love"
+style = "bold pink"
+truncate_to_repo = false
+truncation_symbol = "../"
+
+[palettes.catppuccin_custom_dark]
+base = "@COLOR_DARK_BASE@"
+blue = "@COLOR_DARK_BLUE@"
+crust = "@COLOR_DARK_CRUST@"
+flamingo = "@COLOR_DARK_FLAMINGO@"
+green = "@COLOR_DARK_GREEN@"
+lavender = "@COLOR_DARK_LAVENDER@"
+love = "@COLOR_DARK_LOVE@"
+mantle = "@COLOR_DARK_MANTLE@"
+maroon = "@COLOR_DARK_MAROON@"
+mauve = "@COLOR_DARK_MAUVE@"
+overlay0 = "@COLOR_DARK_OVERLAY0@"
+overlay1 = "@COLOR_DARK_OVERLAY1@"
+overlay2 = "@COLOR_DARK_OVERLAY2@"
+peach = "@COLOR_DARK_PEACH@"
+pink = "@COLOR_DARK_PINK@"
+red = "@COLOR_DARK_RED@"
+rose = "@COLOR_DARK_ROSE@"
+rosewater = "@COLOR_DARK_ROSEWATER@"
+sapphire = "@COLOR_DARK_SAPPHIRE@"
+sky = "@COLOR_DARK_SKY@"
+subtle = "@COLOR_DARK_SUBTLE@"
+subtext0 = "@COLOR_DARK_SUBTEXT0@"
+subtext1 = "@COLOR_DARK_SUBTEXT1@"
+surface0 = "@COLOR_DARK_SURFACE0@"
+surface1 = "@COLOR_DARK_SURFACE1@"
+surface2 = "@COLOR_DARK_SURFACE2@"
+teal = "@COLOR_DARK_TEAL@"
+text = "@COLOR_DARK_TEXT@"
+yellow = "@COLOR_DARK_YELLOW@"
+
+
+[sudo]
+disabled = false
+format = "[$symbol]($style) "
+style = "bold love"
+symbol = "🔓 root"
+
+[time]
+disabled = false
+format = "[✨ $time]($style)"
+style = "subtle"
+time_format = "%H:%M:%S"

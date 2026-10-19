@@ -14,23 +14,23 @@ let
 in
 stdenv.mkDerivation {
   pname = "uresourced";
-  version = lib.removePrefix "v" sourcePin.version;
+  version = lib.removePrefix "v" (lib.removePrefix "refs/tags/" sourcePin.version);
   strictDeps = true;
 
   src = sourcePin.outPath;
 
-  nativeBuildInputs = [
-    glib
-    meson
-    ninja
-    pkg-config
-  ];
+  nativeBuildInputs = lib.attrValues {
+    inherit
+      glib
+      meson
+      ninja
+      pkg-config
+      ;
+  };
 
-  buildInputs = [
-    glib
-    pipewire
-    systemd
-  ];
+  buildInputs = lib.attrValues {
+    inherit glib pipewire systemd;
+  };
 
   mesonFlags = [
     "-Dappmanagement=true"

@@ -35,8 +35,7 @@
     "swiftlang.swift-vscode",
     "tamasfe.even-better-toml",
     "timonwong.shellcheck",
-    "typescriptteam.native-preview",
-    "xembly.gomplate"
+    "typescriptteam.native-preview"
   ],
   "unwantedRecommendations": ["llvm-vs-code-extensions.vscode-clangd"]
 }

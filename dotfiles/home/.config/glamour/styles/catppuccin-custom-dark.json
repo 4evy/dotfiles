@@ -1,0 +1,199 @@
+{
+  "document": {
+    "block_prefix": "\n",
+    "block_suffix": "\n",
+    "color": "@COLOR_DARK_TEXT@",
+    "margin": 2
+  },
+  "block_quote": {
+    "indent": 1,
+    "indent_token": "> "
+  },
+  "paragraph": {},
+  "list": {
+    "level_indent": 2
+  },
+  "heading": {
+    "block_suffix": "\n",
+    "color": "@COLOR_DARK_TEXT@",
+    "bold": true
+  },
+  "h1": {
+    "prefix": "# ",
+    "suffix": " ",
+    "color": "@COLOR_DARK_PINK@",
+    "bold": true
+  },
+  "h2": {
+    "prefix": "## ",
+    "color": "@COLOR_DARK_MAUVE@"
+  },
+  "h3": {
+    "prefix": "### ",
+    "color": "@COLOR_DARK_LAVENDER@"
+  },
+  "h4": {
+    "prefix": "#### ",
+    "color": "@COLOR_DARK_BLUE@"
+  },
+  "h5": {
+    "prefix": "##### ",
+    "color": "@COLOR_DARK_SAPPHIRE@"
+  },
+  "h6": {
+    "prefix": "###### ",
+    "color": "@COLOR_DARK_SKY@"
+  },
+  "text": {},
+  "strikethrough": {
+    "crossed_out": true
+  },
+  "emph": {
+    "italic": true
+  },
+  "strong": {
+    "bold": true
+  },
+  "hr": {
+    "color": "@COLOR_DARK_OVERLAY0@",
+    "format": "\n--------\n"
+  },
+  "item": {
+    "block_prefix": "- "
+  },
+  "enumeration": {
+    "block_prefix": ". "
+  },
+  "task": {
+    "ticked": "[x] ",
+    "unticked": "[ ] "
+  },
+  "link": {
+    "color": "@COLOR_DARK_BLUE@",
+    "underline": true
+  },
+  "link_text": {
+    "color": "@COLOR_DARK_LAVENDER@",
+    "bold": true
+  },
+  "image": {
+    "color": "@COLOR_DARK_BLUE@",
+    "underline": true
+  },
+  "image_text": {
+    "color": "@COLOR_DARK_LAVENDER@",
+    "format": "Image: @GLAMOUR_TEXT@ ->"
+  },
+  "code": {
+    "prefix": " ",
+    "suffix": " ",
+    "color": "@COLOR_DARK_PINK@",
+    "background_color": "@COLOR_DARK_MANTLE@"
+  },
+  "code_block": {
+    "color": "@COLOR_DARK_MANTLE@",
+    "margin": 2,
+    "chroma": {
+      "text": {
+        "color": "@COLOR_DARK_TEXT@"
+      },
+      "error": {
+        "color": "@COLOR_DARK_TEXT@",
+        "background_color": "@COLOR_DARK_RED@"
+      },
+      "comment": {
+        "color": "@COLOR_DARK_OVERLAY0@"
+      },
+      "comment_preproc": {
+        "color": "@COLOR_DARK_BLUE@"
+      },
+      "keyword": {
+        "color": "@COLOR_DARK_MAUVE@"
+      },
+      "keyword_reserved": {
+        "color": "@COLOR_DARK_MAUVE@"
+      },
+      "keyword_namespace": {
+        "color": "@COLOR_DARK_YELLOW@"
+      },
+      "keyword_type": {
+        "color": "@COLOR_DARK_YELLOW@"
+      },
+      "operator": {
+        "color": "@COLOR_DARK_SKY@"
+      },
+      "punctuation": {
+        "color": "@COLOR_DARK_OVERLAY2@"
+      },
+      "name": {
+        "color": "@COLOR_DARK_LAVENDER@"
+      },
+      "name_builtin": {
+        "color": "@COLOR_DARK_PEACH@"
+      },
+      "name_tag": {
+        "color": "@COLOR_DARK_MAUVE@"
+      },
+      "name_attribute": {
+        "color": "@COLOR_DARK_YELLOW@"
+      },
+      "name_class": {
+        "color": "@COLOR_DARK_YELLOW@"
+      },
+      "name_constant": {
+        "color": "@COLOR_DARK_YELLOW@"
+      },
+      "name_decorator": {
+        "color": "@COLOR_DARK_PINK@"
+      },
+      "name_exception": {},
+      "name_function": {
+        "color": "@COLOR_DARK_BLUE@"
+      },
+      "name_other": {},
+      "literal": {},
+      "literal_number": {
+        "color": "@COLOR_DARK_PEACH@"
+      },
+      "literal_date": {},
+      "literal_string": {
+        "color": "@COLOR_DARK_GREEN@"
+      },
+      "literal_string_escape": {
+        "color": "@COLOR_DARK_PINK@"
+      },
+      "generic_deleted": {
+        "color": "@COLOR_DARK_RED@"
+      },
+      "generic_emph": {
+        "color": "@COLOR_DARK_TEXT@",
+        "italic": true
+      },
+      "generic_inserted": {
+        "color": "@COLOR_DARK_GREEN@"
+      },
+      "generic_strong": {
+        "color": "@COLOR_DARK_TEXT@",
+        "bold": true
+      },
+      "generic_subheading": {
+        "color": "@COLOR_DARK_SKY@"
+      },
+      "background": {
+        "background_color": "@COLOR_DARK_MANTLE@"
+      }
+    }
+  },
+  "table": {
+    "center_separator": "+",
+    "column_separator": "|",
+    "row_separator": "-"
+  },
+  "definition_list": {},
+  "definition_term": {},
+  "definition_description": {
+    "block_prefix": "\n=> "
+  },
+  "html_block": {},
+  "html_span": {}
+}

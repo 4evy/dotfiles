@@ -1,0 +1,393 @@
+{
+  "files.associations": {
+    "*.css": "css",
+    "*.html": "html"
+  },
+  "chat.disableAIFeatures": true,
+  "github.copilot.enable": {
+    "*": false
+  },
+  "github.copilot.editor.enableCodeActions": false,
+  "github.copilot.nextEditSuggestions.enabled": false,
+  "editor.fontFamily": "'JetBrainsMono Nerd Font Mono', 'Noto Sans Mono', monospace",
+  "editor.wordWrap": "on",
+  "editor.mouseWheelZoom": true,
+  "editor.renderWhitespace": "selection",
+  "editor.linkedEditing": true,
+  "editor.guides.bracketPairs": "active",
+  "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+  "editor.accessibilitySupport": "off",
+  "editor.semanticHighlighting.enabled": true,
+  "workbench.editor.showIcons": true,
+  "workbench.startupEditor": "none",
+  "window.autoDetectColorScheme": true,
+  "workbench.preferredDarkColorTheme": "Catppuccin Mocha",
+  "workbench.preferredLightColorTheme": "Catppuccin Latte",
+  "workbench.colorTheme": "Catppuccin Mocha",
+  "workbench.iconTheme": "catppuccin-custom-catppuccin-icons",
+  "catppuccin.accentColor": "pink",
+  "catppuccin.bracketMode": "monochromatic",
+  "catppuccin.extraBordersEnabled": true,
+  "catppuccin.colorOverrides": {
+    "mocha": {
+      "rosewater": "@COLOR_DARK_ROSEWATER@",
+      "flamingo": "@COLOR_DARK_FLAMINGO@",
+      "pink": "@COLOR_DARK_PINK@",
+      "mauve": "@COLOR_DARK_MAUVE@",
+      "red": "@COLOR_DARK_RED@",
+      "maroon": "@COLOR_DARK_MAROON@",
+      "peach": "@COLOR_DARK_PEACH@",
+      "yellow": "@COLOR_DARK_YELLOW@",
+      "green": "@COLOR_DARK_GREEN@",
+      "teal": "@COLOR_DARK_TEAL@",
+      "sky": "@COLOR_DARK_SKY@",
+      "sapphire": "@COLOR_DARK_SAPPHIRE@",
+      "blue": "@COLOR_DARK_BLUE@",
+      "lavender": "@COLOR_DARK_LAVENDER@",
+      "text": "@COLOR_DARK_TEXT@",
+      "subtext1": "@COLOR_DARK_SUBTEXT1@",
+      "subtext0": "@COLOR_DARK_SUBTEXT0@",
+      "overlay2": "@COLOR_DARK_OVERLAY2@",
+      "overlay1": "@COLOR_DARK_OVERLAY1@",
+      "overlay0": "@COLOR_DARK_OVERLAY0@",
+      "surface2": "@COLOR_DARK_SURFACE2@",
+      "surface1": "@COLOR_DARK_SURFACE1@",
+      "surface0": "@COLOR_DARK_SURFACE0@",
+      "base": "@COLOR_DARK_BASE@",
+      "mantle": "@COLOR_DARK_MANTLE@",
+      "crust": "@COLOR_DARK_CRUST@"
+    },
+    "latte": {
+      "rosewater": "@COLOR_LIGHT_ROSEWATER@",
+      "flamingo": "@COLOR_LIGHT_FLAMINGO@",
+      "pink": "@COLOR_LIGHT_PINK@",
+      "mauve": "@COLOR_LIGHT_MAUVE@",
+      "red": "@COLOR_LIGHT_RED@",
+      "maroon": "@COLOR_LIGHT_MAROON@",
+      "peach": "@COLOR_LIGHT_PEACH@",
+      "yellow": "@COLOR_LIGHT_YELLOW@",
+      "green": "@COLOR_LIGHT_GREEN@",
+      "teal": "@COLOR_LIGHT_TEAL@",
+      "sky": "@COLOR_LIGHT_SKY@",
+      "sapphire": "@COLOR_LIGHT_SAPPHIRE@",
+      "blue": "@COLOR_LIGHT_BLUE@",
+      "lavender": "@COLOR_LIGHT_LAVENDER@",
+      "text": "@COLOR_LIGHT_TEXT@",
+      "subtext1": "@COLOR_LIGHT_SUBTEXT1@",
+      "subtext0": "@COLOR_LIGHT_SUBTEXT0@",
+      "overlay2": "@COLOR_LIGHT_OVERLAY2@",
+      "overlay1": "@COLOR_LIGHT_OVERLAY1@",
+      "overlay0": "@COLOR_LIGHT_OVERLAY0@",
+      "surface2": "@COLOR_LIGHT_SURFACE2@",
+      "surface1": "@COLOR_LIGHT_SURFACE1@",
+      "surface0": "@COLOR_LIGHT_SURFACE0@",
+      "base": "@COLOR_LIGHT_BASE@",
+      "mantle": "@COLOR_LIGHT_MANTLE@",
+      "crust": "@COLOR_LIGHT_CRUST@"
+    }
+  },
+  "workbench.colorCustomizations": {
+    "[Catppuccin Mocha]": {
+      "activityBar.activeBorder": "@COLOR_DARK_FOCUS@",
+      "activityBarBadge.background": "@COLOR_DARK_ACCENT@",
+      "activityBarBadge.foreground": "@COLOR_DARK_ACCENTFOREGROUND@",
+      "focusBorder": "@COLOR_DARK_FOCUS@",
+      "statusBar.background": "@COLOR_DARK_CRUST@",
+      "statusBar.foreground": "@COLOR_DARK_TEXT@",
+      "statusBar.noFolderBackground": "@COLOR_DARK_CRUST@",
+      "editor.background": "@COLOR_DARK_CODEBACKGROUND@",
+      "editor.foreground": "@COLOR_DARK_CODEFOREGROUND@",
+      "editorLineNumber.foreground": "@COLOR_DARK_PLACEHOLDER@",
+      "editorLineNumber.activeForeground": "@COLOR_DARK_ACCENT@",
+      "input.background": "@COLOR_DARK_SURFACERAISED@",
+      "input.border": "@COLOR_DARK_INPUT@",
+      "input.foreground": "@COLOR_DARK_TEXT@",
+      "input.placeholderForeground": "@COLOR_DARK_PLACEHOLDER@",
+      "sideBar.background": "@COLOR_DARK_SIDEBAR@",
+      "sideBar.border": "@COLOR_DARK_SIDEBARBORDER@",
+      "sideBar.foreground": "@COLOR_DARK_SIDEBARFOREGROUND@",
+      "sideBarSectionHeader.foreground": "@COLOR_DARK_SIDEBARFOREGROUND@",
+      "tab.activeBorderTop": "@COLOR_DARK_FOCUS@",
+      "terminal.background": "@COLOR_DARK_TERMINALBACKGROUND@",
+      "terminal.foreground": "@COLOR_DARK_TERMINALFOREGROUND@",
+      "terminalCursor.foreground": "@COLOR_DARK_TERMINALCURSOR@",
+      "terminal.selectionBackground": "@COLOR_DARK_TERMINALSELECTION@",
+      "terminal.selectionForeground": "@COLOR_DARK_SELECTIONFOREGROUND@",
+      "terminal.ansiBlack": "@COLOR_DARK_ANSIBLACK@",
+      "terminal.ansiBrightBlack": "@COLOR_DARK_ANSIBLACK@",
+      "terminal.ansiRed": "@COLOR_DARK_RED@",
+      "terminal.ansiBrightRed": "@COLOR_DARK_RED@",
+      "terminal.ansiGreen": "@COLOR_DARK_PINE@",
+      "terminal.ansiBrightGreen": "@COLOR_DARK_PINE@",
+      "terminal.ansiYellow": "@COLOR_DARK_YELLOW@",
+      "terminal.ansiBrightYellow": "@COLOR_DARK_YELLOW@",
+      "terminal.ansiBlue": "@COLOR_DARK_BLUE@",
+      "terminal.ansiBrightBlue": "@COLOR_DARK_BLUE@",
+      "terminal.ansiMagenta": "@COLOR_DARK_PINK@",
+      "terminal.ansiBrightMagenta": "@COLOR_DARK_PINK@",
+      "terminal.ansiCyan": "@COLOR_DARK_SKY@",
+      "terminal.ansiBrightCyan": "@COLOR_DARK_SKY@",
+      "terminal.ansiWhite": "@COLOR_DARK_ANSIWHITE@",
+      "terminal.ansiBrightWhite": "@COLOR_DARK_ANSIWHITE@",
+      "titleBar.activeBackground": "@COLOR_DARK_TOOLBAR@",
+      "titleBar.activeForeground": "@COLOR_DARK_TOOLBARFOREGROUND@",
+      "titleBar.border": "@COLOR_DARK_TOOLBARBORDER@"
+    },
+    "[Catppuccin Latte]": {
+      "activityBar.activeBorder": "@COLOR_LIGHT_FOCUS@",
+      "activityBarBadge.background": "@COLOR_LIGHT_ACCENT@",
+      "activityBarBadge.foreground": "@COLOR_LIGHT_ACCENTFOREGROUND@",
+      "focusBorder": "@COLOR_LIGHT_FOCUS@",
+      "statusBar.background": "@COLOR_LIGHT_CRUST@",
+      "statusBar.foreground": "@COLOR_LIGHT_TEXT@",
+      "statusBar.noFolderBackground": "@COLOR_LIGHT_CRUST@",
+      "statusBar.debuggingBackground": "@COLOR_LIGHT_WARNING@",
+      "statusBar.debuggingForeground": "@COLOR_LIGHT_TEXT@",
+      "editor.background": "@COLOR_LIGHT_BASE@",
+      "editor.foreground": "@COLOR_LIGHT_CODEFOREGROUND@",
+      "editorLineNumber.foreground": "@COLOR_LIGHT_PLACEHOLDER@",
+      "editorLineNumber.activeForeground": "@COLOR_LIGHT_ACCENT@",
+      "input.background": "@COLOR_LIGHT_SURFACERAISED@",
+      "input.border": "@COLOR_LIGHT_INPUT@",
+      "input.foreground": "@COLOR_LIGHT_TEXT@",
+      "input.placeholderForeground": "@COLOR_LIGHT_PLACEHOLDER@",
+      "sideBar.background": "@COLOR_LIGHT_SIDEBAR@",
+      "sideBar.border": "@COLOR_LIGHT_SIDEBARBORDER@",
+      "sideBar.foreground": "@COLOR_LIGHT_SIDEBARFOREGROUND@",
+      "sideBarSectionHeader.foreground": "@COLOR_LIGHT_SIDEBARFOREGROUND@",
+      "tab.activeBorderTop": "@COLOR_LIGHT_FOCUS@",
+      "terminal.background": "@COLOR_LIGHT_TERMINALBACKGROUND@",
+      "terminal.foreground": "@COLOR_LIGHT_TERMINALFOREGROUND@",
+      "terminalCursor.foreground": "@COLOR_LIGHT_TERMINALCURSOR@",
+      "terminal.selectionBackground": "@COLOR_LIGHT_TERMINALSELECTION@",
+      "terminal.selectionForeground": "@COLOR_LIGHT_SELECTIONFOREGROUND@",
+      "terminal.ansiBlack": "@COLOR_LIGHT_ANSIBLACK@",
+      "terminal.ansiBrightBlack": "@COLOR_LIGHT_ANSIBLACK@",
+      "terminal.ansiRed": "@COLOR_LIGHT_RED@",
+      "terminal.ansiBrightRed": "@COLOR_LIGHT_RED@",
+      "terminal.ansiGreen": "@COLOR_LIGHT_PINE@",
+      "terminal.ansiBrightGreen": "@COLOR_LIGHT_PINE@",
+      "terminal.ansiYellow": "@COLOR_LIGHT_YELLOW@",
+      "terminal.ansiBrightYellow": "@COLOR_LIGHT_YELLOW@",
+      "terminal.ansiBlue": "@COLOR_LIGHT_BLUE@",
+      "terminal.ansiBrightBlue": "@COLOR_LIGHT_BLUE@",
+      "terminal.ansiMagenta": "@COLOR_LIGHT_PINK@",
+      "terminal.ansiBrightMagenta": "@COLOR_LIGHT_PINK@",
+      "terminal.ansiCyan": "@COLOR_LIGHT_SKY@",
+      "terminal.ansiBrightCyan": "@COLOR_LIGHT_SKY@",
+      "terminal.ansiWhite": "@COLOR_LIGHT_ANSIWHITE@",
+      "terminal.ansiBrightWhite": "@COLOR_LIGHT_ANSIWHITE@",
+      "titleBar.activeBackground": "@COLOR_LIGHT_TOOLBAR@",
+      "titleBar.activeForeground": "@COLOR_LIGHT_TOOLBARFOREGROUND@",
+      "titleBar.border": "@COLOR_LIGHT_TOOLBARBORDER@"
+    }
+  },
+  "window.zoomLevel": 1.5,
+  "window.titleBarStyle": "custom",
+  "terminal.integrated.fontFamily": "'JetBrainsMono Nerd Font Mono', 'Noto Sans Mono', monospace",
+  "terminal.integrated.minimumContrastRatio": 1,
+  "terminal.integrated.macOptionIsMeta": true,
+  "files.trimTrailingWhitespace": true,
+  "files.trimFinalNewlines": true,
+  "files.insertFinalNewline": true,
+  "diffEditor.ignoreTrimWhitespace": false,
+  "security.workspace.trust.enabled": false,
+  "telemetry.telemetryLevel": "off",
+  "git.enableCommitSigning": true,
+  "git.mergeEditor": true,
+  "git.branchProtection": ["main", "master"],
+  "git.branchProtectionPrompt": "alwaysCommitToNewBranch",
+  "git.branchRandomName.enable": true,
+  "js/ts.experimental.useTsgo": true,
+  "js/ts.inlayHints.parameterNames.enabled": "literals",
+  "js/ts.inlayHints.parameterTypes.enabled": true,
+  "js/ts.inlayHints.functionLikeReturnTypes.enabled": true,
+  "js/ts.preferences.preferTypeOnlyAutoImports": true,
+  "js/ts.suggest.completeFunctionCalls": true,
+  "js/ts.updateImportsOnFileMove.enabled": "always",
+  "python.languageServer": "None",
+  "python.useEnvironmentsExtension": true,
+  "python.defaultInterpreterPath": "@PYTHON@",
+  "python.experiments.enabled": false,
+  "python-envs.terminal.autoActivationType": "shellStartup",
+  "ty.importStrategy": "fromEnvironment",
+  "ruff.importStrategy": "fromEnvironment",
+  "ruff.nativeServer": "on",
+  "C_Cpp.codeAnalysis.clangTidy.path": "@CLANG_TIDY@",
+  "path-intellisense.autoSlashAfterDirectory": true,
+  "path-intellisense.autoTriggerNextSuggestion": true,
+  "markdownlint.run": "onSave",
+  "bashIde.shellcheckPath": "",
+  "vscode-just.runInTerminal": true,
+  "stylua.searchBinaryInPATH": true,
+  "stylua.disableVersionCheck": true,
+  "systemd.version": "latest",
+  "containers.containerClient": "com.microsoft.visualstudio.containers.podman",
+  "containers.orchestratorClient": "com.microsoft.visualstudio.orchestrators.podmancompose",
+  "ansible.lightspeed.enabled": false,
+  "ansible.lightspeed.suggestions.enabled": false,
+  "ansible.mcpServer.enabled": false,
+  "errorLens.delay": 250,
+  "errorLens.enabledDiagnosticLevels": ["error", "warning"],
+  "errorLens.messageMaxChars": 160,
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
+  "[go]": {
+    "editor.defaultFormatter": "golang.go",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "[shellscript]": {
+    "editor.defaultFormatter": "mkhl.shfmt"
+  },
+  "[dockerfile]": {
+    "editor.defaultFormatter": "ms-azuretools.vscode-containers",
+    "editor.formatOnSave": true
+  },
+  "[nix]": {
+    "editor.defaultFormatter": "jnoortheen.nix-ide",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.biome": "explicit",
+      "source.organizeImports.biome": "explicit"
+    }
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[less]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[postcss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[svelte]": {
+    "editor.defaultFormatter": "svelte.svelte-vscode",
+    "editor.formatOnSave": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+    "editor.formatOnSave": true
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+    "editor.formatOnSave": true
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.formatOnSave": true
+  },
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml",
+    "editor.formatOnSave": true
+  },
+  "[lua]": {
+    "editor.defaultFormatter": "johnnymorganz.stylua",
+    "editor.formatOnSave": true
+  },
+  "[xml]": {
+    "editor.defaultFormatter": "redhat.vscode-xml",
+    "editor.formatOnSave": true
+  },
+  "[kdl]": {
+    "editor.defaultFormatter": "kdl-org.kdl",
+    "editor.formatOnSave": true
+  },
+  "[typst]": {
+    "editor.defaultFormatter": "myriad-dreamin.tinymist",
+    "editor.formatOnSave": true
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "nix.enableLanguageServer": true,
+  "nix.serverPath": "@NIX_SERVER@",
+  "nix.formatterPath": "@NIXFMT@",
+  "nix.serverSettings": {
+    "nil": {
+      "formatting": {
+        "command": ["@NIXFMT@"]
+      }
+    },
+    "nixd": {
+      "formatting": {
+        "command": ["@NIXFMT@"]
+      }
+    }
+  },
+  "redhat.telemetry.enabled": false,
+  "yaml.disableSchemaDetection": [
+    "**/.github/workflows/*.yml",
+    "**/.github/workflows/*.yaml",
+    "**/.gitea/workflows/*.yml",
+    "**/.gitea/workflows/*.yaml",
+    "**/.forgejo/workflows/*.yml",
+    "**/.forgejo/workflows/*.yaml"
+  ],
+  "json.schemaDownload.trustedDomains": {
+    "https://schemastore.azurewebsites.net/": true,
+    "https://raw.githubusercontent.com/": true,
+    "https://www.schemastore.org/": true,
+    "https://json.schemastore.org/": true,
+    "https://json-schema.org/": true,
+    "https://esm.sh": true
+  }
+}

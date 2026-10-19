@@ -1,0 +1,51 @@
+#                                                     ⣀⡠⣀⡀
+#                                                    ⢰⠃  ⢳
+#                                                    ⠈⠳⣼⡴⠋
+#                                               ⢀⣠⠴⠒⠚⠉⠉⣯⡏⠉⠙⠒⠲⢤⣀
+#                                            ⢀⡠⠞⠉⣠⠼⠖⠊⠉⢹⠻⣻⠉⠉⠒⠾⢤⡈⠙⠦⣀
+#                ⢀⣠⡤⠤⠤⣤⣀                    ⡰⠋⢄⡴⠋     ⣸⠐⢼⡀    ⠈⠳⣄⠌⠳⡀
+#               ⡴⠛⢉⣠⠤⢤⣈⠙⢳⡄                ⢀⡞⠁⡴⠋⠁      ⡇⢈⠢⡇      ⠉⠳⡄⠙⣆
+#              ⣼⡓⢦⠏⢠⣴⣤⠈⢿⢡⣿⡄              ⢀⡞⣀⡞        ⢰⠃⠠⡑⢷        ⠘⣆⡘⣆
+#             ⠘⢿⡥⢻⡀⠸⣧⡿ ⣸⠓⣺⠁              ⣸ ⡸⠁        ⣸ ⠐⢌⢺⡀        ⠹⡀⢸⡀
+#              ⠘⢷⣄⠙⠦⠤⠤⠞⢁⣴⠟               ⡇ ⣇⣀⣀⣠⠤⡤⢴⠲⡒⢞⠳⣆⣬⣦⠗⠛⠒⠒⠲⠤⠤⢤⣀⣀⣀⡇ ⡇
+#               ⠈⠙⠷⢦⣀⣠⠶⠟⠉              ⠒⠺⡿⠿⣿⣑⣈⣂⠑⠈⠂⠑⠈⠂⠑⢿⣿⣿⢇⠢⡐⢄⠢⡐⢄⢢⣐⣄⣺⡿⠯⡿⠒⠂
+#                  ⣀⣇⣇⡀                  ⣇ ⡇  ⠈⠉⠉⠙⠒⠒⠲⣜⠣⡉⠁⢛⡵⠚⠒⠛⠉⠉⠉⢸⢹ ⡇⢀⡇
+#                  ⠓⣗⡗⠃                  ⢸⡀⣸⡄        ⢸⡑⠄ ⢸      ⢠⢏⠏⣼⡀⣸
+#                  ⠛⡧⡟⠃                   ⢳⡀⠳⡀       ⠘⣎⠂ ⡞     ⣠⣫⠏⡰⠃⣰⠃
+#                   ⡇⡇                     ⠳⡄⠙⢦⡄      ⣧⡁⢀⡇  ⣀⡤⣺⠟⣥⠞⠁⡴⠃
+#                   ⡇⣇⣀⣀⣀⣀⣀⣀                ⠘⢦⡁⠙⠦⣀    ⢸⠄⢸  ⠩⠗⢋⡡⠞⠁⣡⠞
+#                   ⡇⡇   ⠐⠒⢺                  ⠈⠳⢤⣈⠹⠓⠢⠤⠼⣶⡾⠤⠤⠒⠻⢉⣠⠴⠋
+#                   ⡇⡧⠤⠤⢤⠈⠉⢹                     ⠈⠙⠒⠲⠤⠤⣯⡧⠤⠴⠒⠚⠉
+#                  ⣀⣇⣇⡀ ⢸⠐⠒⢺                           ⠸
+#                  ⠙⠗⠟⠁ ⠈⠉⠉⠉
+
+# zoxide / Bash integration
+# Load the cached init script when it includes the `cd` wrapper; otherwise
+# generate the integration directly.
+
+_zoxide_bin="$(_dotfiles_command_path zoxide 2>/dev/null || true)"
+if [[ -n "$_zoxide_bin" ]]; then
+	if [[ -r "$HOME/.cache/zoxide/init.bash" ]] &&
+		[[ "$(<"$HOME/.cache/zoxide/init.bash")" == *'function cd()'* ]]; then
+		# shellcheck source=/dev/null
+		source "$HOME/.cache/zoxide/init.bash"
+	else
+		if _dotfiles_init="$("$_zoxide_bin" init bash --cmd cd)"; then
+			eval "$_dotfiles_init"
+		fi
+		unset _dotfiles_init
+	fi
+
+	if declare -F __zoxide_z >/dev/null 2>&1; then
+		z() {
+			__zoxide_z "$@"
+		}
+	fi
+
+	if declare -F __zoxide_zi >/dev/null 2>&1; then
+		zi() {
+			__zoxide_zi "$@"
+		}
+	fi
+fi
+unset _zoxide_bin

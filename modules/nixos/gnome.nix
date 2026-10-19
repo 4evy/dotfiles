@@ -21,6 +21,13 @@ let
     mkEmptyArray
     type
     ;
+  inherit (pkgs) gnomeExtensions hyper-window-tiling-gnome;
+  inherit (gnomeExtensions)
+    appindicator
+    copyous
+    focused-window-d-bus
+    pip-on-top
+    ;
 
   workspaceNumbers = map toString (lib.lists.range 1 9);
 
@@ -33,11 +40,11 @@ let
       num: nameValuePair "${prefix}-${num}" (mkArray [ "${super}${modifierStr}${num}" ])
     );
 
-  copyousExtension = pkgs.gnomeExtensions.copyous;
+  copyousExtension = copyous;
   copyousExtensionUuid = copyousExtension.extensionUuid;
-  toshyWindowContextExtension = pkgs.gnomeExtensions.focused-window-d-bus;
+  toshyWindowContextExtension = focused-window-d-bus;
   toshyWindowContextExtensionUuid = toshyWindowContextExtension.extensionUuid;
-  hyperWindowTilingExtension = pkgs.hyper-window-tiling-gnome;
+  hyperWindowTilingExtension = hyper-window-tiling-gnome;
   hyperWindowTilingExtensionUuid = hyperWindowTilingExtension.passthru.extensionUuid;
 
 in
@@ -80,7 +87,7 @@ in
     })
     (mkIf config.local.dconf.enable {
       environment.systemPackages = attrValues {
-        inherit (pkgs.gnomeExtensions) appindicator pip-on-top;
+        inherit appindicator pip-on-top;
         inherit hyperWindowTilingExtension;
       };
       programs.dconf.profiles.user.databases = [
@@ -93,6 +100,9 @@ in
               clock-show-date = mkBoolean true;
               clock-show-seconds = mkBoolean true;
               clock-format = mkString "24h";
+              font-name = mkString "Noto Sans 11";
+              document-font-name = mkString "Noto Sans 12";
+              monospace-font-name = mkString "JetBrainsMono Nerd Font Mono 11";
             };
 
             "org/gnome/desktop/wm/preferences" = {
@@ -111,6 +121,10 @@ in
             );
 
             "org/gnome/desktop/wm/keybindings" = {
+              switch-to-workspace-left = mkEmptyArray type.string;
+              switch-to-workspace-right = mkEmptyArray type.string;
+              move-to-workspace-left = mkEmptyArray type.string;
+              move-to-workspace-right = mkEmptyArray type.string;
               switch-applications = mkEmptyArray type.string;
               switch-applications-backward = mkEmptyArray type.string;
               switch-windows = mkArray [
@@ -143,11 +157,11 @@ in
 
             "org/gnome/shell" = {
               enabled-extensions = mkArray [
-                "appindicatorsupport@rgcjonas.gmail.com"
+                appindicator.extensionUuid
                 copyousExtensionUuid
                 hyperWindowTilingExtensionUuid
-                "omp-workspaces@4evy.local"
-                "pip-on-top@rafostar.github.com"
+                "workspaces@farstep.local"
+                pip-on-top.extensionUuid
                 toshyWindowContextExtensionUuid
               ];
             };
@@ -159,6 +173,11 @@ in
               move-right = mkArray [ "<Super><Control><Alt><Shift>d" ];
               move-max-almost = mkArray [ "<Super><Control><Alt><Shift>Return" ];
               move-max = mkArray [ "<Super><Control><Alt><Shift>backslash" ];
+            };
+            "org/gnome/shell/extensions/blur-my-shell/popup".blur = mkBoolean false;
+            "org/gnome/shell/extensions/vicinae" = {
+              enable-clipboard-monitoring = mkBoolean true;
+              blocked-applications = mkArray [ "1Password" ];
             };
           };
         }

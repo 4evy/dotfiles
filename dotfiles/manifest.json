@@ -1,0 +1,899 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "source": "Library/Application Support/Code/User/settings.json",
+      "target": "Library/Application Support/Code/User/settings.json",
+      "systems": ["darwin"],
+      "nixGenerated": true
+    },
+    {
+      "source": "Library/Application Support/com.mitchellh.ghostty/config.ghostty",
+      "target": "Library/Application Support/com.mitchellh.ghostty/config.ghostty",
+      "systems": ["darwin"],
+      "nixGenerated": true
+    },
+    {
+      "source": "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/catppuccin-custom-dark.scss",
+      "target": "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/catppuccin-custom-dark.scss",
+      "systems": ["darwin"],
+      "nixGenerated": true
+    },
+    {
+      "source": "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/catppuccin-custom-light.scss",
+      "target": "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/catppuccin-custom-light.scss",
+      "systems": ["darwin"],
+      "nixGenerated": true
+    },
+    {
+      "source": "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/theme.yml",
+      "target": "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/theme.yml",
+      "systems": ["darwin"]
+    },
+    {
+      "source": "Library/LaunchAgents/com.carriez.RustDesk.plist",
+      "target": "Library/LaunchAgents/com.carriez.RustDesk.plist",
+      "systems": ["darwin"]
+    },
+    {
+      "source": "Library/LaunchAgents/dev.4evy.hide-display-audio.plist",
+      "target": "Library/LaunchAgents/dev.4evy.hide-display-audio.plist",
+      "systems": ["darwin"]
+    },
+    {
+      "source": ".bash_profile",
+      "target": ".bash_profile"
+    },
+    {
+      "source": ".bashenv",
+      "target": ".bashenv"
+    },
+    {
+      "source": ".bashrc",
+      "target": ".bashrc"
+    },
+    {
+      "source": ".codex/themes/catppuccin-custom-dark.tmTheme",
+      "target": ".codex/themes/catppuccin-custom-dark.tmTheme",
+      "nixGenerated": true
+    },
+    {
+      "source": ".codex/themes/catppuccin-custom-light.tmTheme",
+      "target": ".codex/themes/catppuccin-custom-light.tmTheme",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/Code/User/settings.json",
+      "target": ".config/Code/User/settings.json",
+      "systems": ["linux"],
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/atuin/config.toml",
+      "target": ".config/atuin/config.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/atuin/themes/catppuccin-custom-dark.toml",
+      "target": ".config/atuin/themes/catppuccin-custom-dark.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/atuin/themes/catppuccin-custom-light.toml",
+      "target": ".config/atuin/themes/catppuccin-custom-light.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/atuin-catppuccin-custom-dark/config.toml",
+      "target": ".config/atuin-catppuccin-custom-dark/config.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/atuin-catppuccin-custom-light/config.toml",
+      "target": ".config/atuin-catppuccin-custom-light/config.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/autostart/1password.desktop",
+      "target": ".config/autostart/1password.desktop",
+      "systems": ["linux"]
+    },
+    {
+      "source": ".config/autostart/solaar.desktop",
+      "target": ".config/autostart/solaar.desktop",
+      "systems": ["linux"]
+    },
+    {
+      "source": ".config/bat/themes/Catppuccin Custom Dark.tmTheme",
+      "target": ".config/bat/themes/Catppuccin Custom Dark.tmTheme",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/bat/themes/Catppuccin Custom Light.tmTheme",
+      "target": ".config/bat/themes/Catppuccin Custom Light.tmTheme",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/broot/conf.hjson",
+      "target": ".config/broot/conf.hjson",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/broot/skins/catppuccin-custom-dark.hjson",
+      "target": ".config/broot/skins/catppuccin-custom-dark.hjson",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/broot/skins/catppuccin-custom-light.hjson",
+      "target": ".config/broot/skins/catppuccin-custom-light.hjson",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/btop/btop.conf",
+      "target": ".config/btop/btop.conf"
+    },
+    {
+      "source": ".config/btop/themes/catppuccin_custom_dark.theme",
+      "target": ".config/btop/themes/catppuccin_custom_dark.theme",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/btop/themes/catppuccin_custom_light.theme",
+      "target": ".config/btop/themes/catppuccin_custom_light.theme",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/eza/theme.yml",
+      "target": ".config/eza/theme.yml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/eza-catppuccin-custom-dark/theme.yml",
+      "target": ".config/eza-catppuccin-custom-dark/theme.yml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/eza-catppuccin-custom-light/theme.yml",
+      "target": ".config/eza-catppuccin-custom-light/theme.yml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/fastfetch/apple.txt",
+      "target": ".config/fastfetch/apple.txt"
+    },
+    {
+      "source": ".config/fastfetch/config.jsonc.linux",
+      "target": ".config/fastfetch/config.jsonc",
+      "nixGenerated": true,
+      "sourceByOS": {
+        "linux": ".config/fastfetch/config.jsonc.linux",
+        "darwin": ".config/fastfetch/config.jsonc.darwin"
+      }
+    },
+    {
+      "source": ".config/fastfetch/coreos.txt",
+      "target": ".config/fastfetch/coreos.txt"
+    },
+    {
+      "source": ".config/fastfetch/emblem.txt",
+      "target": ".config/fastfetch/emblem.txt"
+    },
+    {
+      "source": ".config/fontconfig/conf.d/44-noto-color-emoji-bitmap.conf.linux",
+      "target": ".config/fontconfig/conf.d/44-noto-color-emoji-bitmap.conf",
+      "nixGenerated": true,
+      "sourceByOS": {
+        "linux": ".config/fontconfig/conf.d/44-noto-color-emoji-bitmap.conf.linux",
+        "darwin": ".config/fontconfig/conf.d/44-noto-color-emoji-bitmap.conf.darwin"
+      }
+    },
+    {
+      "source": ".config/fontconfig/conf.d/45-interface-fonts.conf",
+      "target": ".config/fontconfig/conf.d/45-interface-fonts.conf"
+    },
+    {
+      "source": ".config/fontconfig/conf.d/50-code-monospace.conf",
+      "target": ".config/fontconfig/conf.d/50-code-monospace.conf"
+    },
+    {
+      "source": ".config/fzf/catppuccin-custom-dark.opts",
+      "target": ".config/fzf/catppuccin-custom-dark.opts",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/fzf/catppuccin-custom-light.opts",
+      "target": ".config/fzf/catppuccin-custom-light.opts",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/gh/config.yml",
+      "target": ".config/gh/config.yml"
+    },
+    {
+      "source": ".config/ghostty/config.ghostty",
+      "target": ".config/ghostty/config.ghostty",
+      "systems": ["linux"],
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/ghostty/shaders/catppuccin-custom-glow.glsl.linux",
+      "target": ".config/ghostty/shaders/catppuccin-custom-glow.glsl",
+      "nixGenerated": true,
+      "sourceByOS": {
+        "linux": ".config/ghostty/shaders/catppuccin-custom-glow.glsl.linux",
+        "darwin": ".config/ghostty/shaders/catppuccin-custom-glow.glsl.darwin"
+      }
+    },
+    {
+      "source": ".config/ghostty/themes/catppuccin-custom-dark.conf",
+      "target": ".config/ghostty/themes/catppuccin-custom-dark.conf",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/ghostty/themes/catppuccin-custom-light.conf",
+      "target": ".config/ghostty/themes/catppuccin-custom-light.conf",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/git/catppuccin-custom-delta.gitconfig",
+      "target": ".config/git/catppuccin-custom-delta.gitconfig",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/gitui/catppuccin-custom-dark.ron",
+      "target": ".config/gitui/catppuccin-custom-dark.ron",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/gitui/catppuccin-custom-light.ron",
+      "target": ".config/gitui/catppuccin-custom-light.ron",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/gitui/theme.ron",
+      "target": ".config/gitui/theme.ron",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/glamour/styles/catppuccin-custom-dark.json",
+      "target": ".config/glamour/styles/catppuccin-custom-dark.json",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/glamour/styles/catppuccin-custom-light.json",
+      "target": ".config/glamour/styles/catppuccin-custom-light.json",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/gtk-3.0/gtk.css",
+      "target": ".config/gtk-3.0/gtk.css",
+      "systems": ["linux"]
+    },
+    {
+      "source": ".config/gtk-4.0/gtk.css",
+      "target": ".config/gtk-4.0/gtk.css",
+      "systems": ["linux"]
+    },
+    {
+      "source": ".config/helix/config.toml",
+      "target": ".config/helix/config.toml"
+    },
+    {
+      "source": ".config/helix/languages.toml",
+      "target": ".config/helix/languages.toml"
+    },
+    {
+      "source": ".config/helix/themes/catppuccin_custom_dark.toml",
+      "target": ".config/helix/themes/catppuccin_custom_dark.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/helix/themes/catppuccin_custom_light.toml",
+      "target": ".config/helix/themes/catppuccin_custom_light.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/homebrew/Brewfile.private",
+      "target": ".config/homebrew/Brewfile.private",
+      "private": true,
+      "systems": ["darwin"]
+    },
+    {
+      "source": ".config/jj/config.toml",
+      "target": ".config/jj/config.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/kanata/kanata-macos.kbd",
+      "target": ".config/kanata/kanata-macos.kbd",
+      "systems": ["linux"]
+    },
+    {
+      "source": ".config/nix/nix.conf",
+      "target": ".config/nix/nix.conf",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/opencode/themes/catppuccin-custom.json",
+      "target": ".config/opencode/themes/catppuccin-custom.json",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/raycast/config.json",
+      "target": ".config/raycast/config.json",
+      "private": true,
+      "systems": ["darwin"]
+    },
+    {
+      "source": ".config/raycast/themes.json",
+      "target": ".config/raycast/themes.json",
+      "private": true,
+      "systems": ["darwin"],
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/shell/environment.sh",
+      "target": ".config/shell/environment.sh"
+    },
+    {
+      "source": ".config/shell/bashrc.d/10-terminal.bash",
+      "target": ".config/shell/bashrc.d/10-terminal.bash"
+    },
+    {
+      "source": ".config/shell/bashrc.d/20-core.bash",
+      "target": ".config/shell/bashrc.d/20-core.bash"
+    },
+    {
+      "source": ".config/shell/bashrc.d/30-framework.bash",
+      "target": ".config/shell/bashrc.d/30-framework.bash"
+    },
+    {
+      "source": ".config/shell/bashrc.d/40-focus.bash",
+      "target": ".config/shell/bashrc.d/40-focus.bash"
+    },
+    {
+      "source": ".config/shell/bashrc.d/50-integrations.bash",
+      "target": ".config/shell/bashrc.d/50-integrations.bash"
+    },
+    {
+      "source": ".config/shell/bashrc.d/70-commands.bash",
+      "target": ".config/shell/bashrc.d/70-commands.bash"
+    },
+    {
+      "source": ".config/shell/bashrc.d/80-navigation.bash",
+      "target": ".config/shell/bashrc.d/80-navigation.bash"
+    },
+    {
+      "source": ".config/shell/interactive.d/10-essentials.sh",
+      "target": ".config/shell/interactive.d/10-essentials.sh"
+    },
+    {
+      "source": ".config/shell/interactive.d/20-wrappers.sh",
+      "target": ".config/shell/interactive.d/20-wrappers.sh"
+    },
+    {
+      "source": ".config/shell/interactive.d/40-host-tools.sh",
+      "target": ".config/shell/interactive.d/40-host-tools.sh"
+    },
+    {
+      "source": ".config/shell/interactive.d/50-repository.sh",
+      "target": ".config/shell/interactive.d/50-repository.sh"
+    },
+    {
+      "source": ".config/shell/interactive.d/60-navigation.sh",
+      "target": ".config/shell/interactive.d/60-navigation.sh"
+    },
+    {
+      "source": ".config/shell/zshrc.d/10-terminal.zsh",
+      "target": ".config/shell/zshrc.d/10-terminal.zsh"
+    },
+    {
+      "source": ".config/shell/zshrc.d/20-core.zsh",
+      "target": ".config/shell/zshrc.d/20-core.zsh"
+    },
+    {
+      "source": ".config/shell/zshrc.d/30-framework.zsh",
+      "target": ".config/shell/zshrc.d/30-framework.zsh"
+    },
+    {
+      "source": ".config/shell/zshrc.d/40-focus.zsh",
+      "target": ".config/shell/zshrc.d/40-focus.zsh"
+    },
+    {
+      "source": ".config/shell/zshrc.d/50-integrations.zsh",
+      "target": ".config/shell/zshrc.d/50-integrations.zsh"
+    },
+    {
+      "source": ".config/shell/zshrc.d/70-commands.zsh",
+      "target": ".config/shell/zshrc.d/70-commands.zsh"
+    },
+    {
+      "source": ".config/shell/zshrc.d/80-navigation.zsh",
+      "target": ".config/shell/zshrc.d/80-navigation.zsh"
+    },
+    {
+      "source": ".config/shell/interactive.bash",
+      "target": ".config/shell/interactive.bash"
+    },
+    {
+      "source": ".config/shell/interactive.common.sh",
+      "target": ".config/shell/interactive.common.sh"
+    },
+    {
+      "source": ".config/shell/interactive.zsh",
+      "target": ".config/shell/interactive.zsh"
+    },
+    {
+      "source": ".config/shell/completion-commands.json",
+      "target": ".config/shell/completion-commands.json",
+      "private": true
+    },
+    {
+      "source": ".config/shell/zoxide.bash",
+      "target": ".config/shell/zoxide.bash"
+    },
+    {
+      "source": ".config/shell/zoxide.zsh",
+      "target": ".config/shell/zoxide.zsh"
+    },
+    {
+      "source": ".config/shell/zsh-syntax-highlighting.zsh",
+      "target": ".config/shell/zsh-syntax-highlighting.zsh"
+    },
+    {
+      "source": ".config/solaar/rules.yaml",
+      "target": ".config/solaar/rules.yaml"
+    },
+    {
+      "source": ".config/starship-catppuccin-custom-dark.toml",
+      "target": ".config/starship-catppuccin-custom-dark.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/starship-catppuccin-custom-light.toml",
+      "target": ".config/starship-catppuccin-custom-light.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/starship-catppuccin-custom-terminal-dark.toml",
+      "target": ".config/starship-catppuccin-custom-terminal-dark.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/starship-catppuccin-custom-terminal-light.toml",
+      "target": ".config/starship-catppuccin-custom-terminal-light.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/starship.toml",
+      "target": ".config/starship.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/systemd/user/gnome-catppuccin-custom-accent.service",
+      "target": ".config/systemd/user/gnome-catppuccin-custom-accent.service",
+      "systems": ["linux"]
+    },
+    {
+      "source": ".config/systemd/user/solaar.service",
+      "target": ".config/systemd/user/solaar.service",
+      "systems": ["linux"]
+    },
+    {
+      "source": ".config/theme-run/config.toml",
+      "target": ".config/theme-run/config.toml"
+    },
+    {
+      "source": ".config/yazi/flavors/catppuccin-custom-dark.yazi/flavor.toml",
+      "target": ".config/yazi/flavors/catppuccin-custom-dark.yazi/flavor.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/yazi/flavors/catppuccin-custom-dark.yazi/tmtheme.xml",
+      "target": ".config/yazi/flavors/catppuccin-custom-dark.yazi/tmtheme.xml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/yazi/flavors/catppuccin-custom-light.yazi/flavor.toml",
+      "target": ".config/yazi/flavors/catppuccin-custom-light.yazi/flavor.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/yazi/flavors/catppuccin-custom-light.yazi/tmtheme.xml",
+      "target": ".config/yazi/flavors/catppuccin-custom-light.yazi/tmtheme.xml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/yazi/init.lua",
+      "target": ".config/yazi/init.lua"
+    },
+    {
+      "source": ".config/yazi/keymap.toml.linux",
+      "target": ".config/yazi/keymap.toml",
+      "nixGenerated": true,
+      "sourceByOS": {
+        "linux": ".config/yazi/keymap.toml.linux",
+        "darwin": ".config/yazi/keymap.toml.darwin"
+      }
+    },
+    {
+      "source": ".config/yazi/package.toml",
+      "target": ".config/yazi/package.toml",
+      "mutable": true
+    },
+    {
+      "source": ".config/yazi/plugins/system-clipboard.yazi/.luarc.json",
+      "target": ".config/yazi/plugins/system-clipboard.yazi/.luarc.json"
+    },
+    {
+      "source": ".config/yazi/plugins/system-clipboard.yazi/main.lua",
+      "target": ".config/yazi/plugins/system-clipboard.yazi/main.lua"
+    },
+    {
+      "source": ".config/yazi/theme.toml",
+      "target": ".config/yazi/theme.toml"
+    },
+    {
+      "source": ".config/yazi/yazi.toml",
+      "target": ".config/yazi/yazi.toml",
+      "nixGenerated": true
+    },
+    {
+      "source": ".gitconfig",
+      "target": ".gitconfig",
+      "nixGenerated": true
+    },
+    {
+      "source": ".gitignore_global",
+      "target": ".gitignore_global"
+    },
+    {
+      "source": ".local/lib/ghostty/ghostty.ts",
+      "target": ".local/lib/ghostty/ghostty.ts",
+      "executable": true
+    },
+    {
+      "source": ".local/lib/ghostty/scrollback.zsh",
+      "target": ".local/lib/ghostty/scrollback.zsh",
+      "executable": true
+    },
+    {
+      "source": ".local/lib/helix/helix.ts",
+      "target": ".local/lib/helix/helix.ts",
+      "executable": true,
+      "mutable": true
+    },
+    {
+      "source": ".local/lib/solaar/solaar.ts",
+      "target": ".local/lib/solaar/solaar.ts",
+      "executable": true
+    },
+    {
+      "source": ".local/lib/sops/sops.sh",
+      "target": ".local/lib/sops/sops.sh",
+      "executable": true
+    },
+    {
+      "source": ".local/lib/sops/cache.rb",
+      "target": ".local/lib/sops/cache.rb",
+      "executable": true
+    },
+    {
+      "source": ".local/lib/vscode/vscode.ts",
+      "target": ".local/lib/vscode/vscode.ts",
+      "executable": true,
+      "mutable": true
+    },
+    {
+      "source": ".local/lib/helium/helium.ts",
+      "target": ".local/lib/helium/helium.ts",
+      "private": true,
+      "executable": true
+    },
+    {
+      "source": ".local/lib/chatgpt/chatgpt.sh",
+      "target": ".local/lib/chatgpt/chatgpt.sh",
+      "private": true,
+      "executable": true,
+      "systems": ["linux"]
+    },
+    {
+      "source": ".local/bin/ghostty-dreamy-swirl",
+      "target": ".local/bin/ghostty-dreamy-swirl",
+      "symlink": true
+    },
+    {
+      "source": ".local/bin/helium-user-agent",
+      "target": ".local/bin/helium-user-agent",
+      "symlink": true
+    },
+    {
+      "source": ".local/lib/helix/launch.sh",
+      "target": ".local/bin/helix-rumdl-lsp",
+      "executable": true
+    },
+    {
+      "source": ".local/lib/vscode/launch.sh",
+      "target": ".local/bin/vscode-just-lsp",
+      "executable": true
+    },
+    {
+      "source": ".local/lib/typescript/bun.lock",
+      "target": ".local/lib/typescript/bun.lock"
+    },
+    {
+      "source": ".local/lib/typescript/lsp/lsp.ts",
+      "target": ".local/lib/typescript/lsp/lsp.ts",
+      "mutable": true
+    },
+    {
+      "source": ".local/lib/typescript/package.json",
+      "target": ".local/lib/typescript/package.json"
+    },
+    {
+      "source": ".local/lib/typescript/validation.ts",
+      "target": ".local/lib/typescript/validation.ts",
+      "mutable": true
+    },
+    {
+      "source": ".local/lib/external/external.sh",
+      "target": ".local/lib/external/external.sh",
+      "private": true,
+      "executable": true
+    },
+    {
+      "source": ".local/share/applications/com.mitchellh.ghostty.desktop",
+      "target": ".local/share/applications/com.mitchellh.ghostty.desktop",
+      "systems": ["linux"]
+    },
+    {
+      "source": ".local/share/applications/discord.desktop",
+      "target": ".local/share/applications/discord.desktop",
+      "systems": ["linux"]
+    },
+    {
+      "source": ".local/share/applications/rustdesk.desktop",
+      "target": ".local/share/applications/rustdesk.desktop",
+      "systems": ["linux"]
+    },
+    {
+      "source": ".local/share/flatpak/overrides/org.gnome.NautilusPreviewer",
+      "target": ".local/share/flatpak/overrides/org.gnome.NautilusPreviewer",
+      "systems": ["linux"]
+    },
+    {
+      "source": ".local/share/nix/chatgpt/flake.lock",
+      "target": ".local/share/nix/chatgpt/flake.lock",
+      "private": true,
+      "systems": ["linux"]
+    },
+    {
+      "source": ".local/share/nix/chatgpt/flake.nix",
+      "target": ".local/share/nix/chatgpt/flake.nix",
+      "private": true,
+      "systems": ["linux"]
+    },
+    {
+      "source": ".local/share/nix/chatgpt/package.nix",
+      "target": ".local/share/nix/chatgpt/package.nix",
+      "private": true,
+      "systems": ["linux"]
+    },
+    {
+      "source": ".omp/agent/extensions/pride",
+      "target": ".omp/agent/extensions/pride"
+    },
+    {
+      "source": ".omp/agent/package.json",
+      "target": ".omp/agent/package.json"
+    },
+    {
+      "source": ".omp/agent/themes/catppuccin-custom-dark.json",
+      "target": ".omp/agent/themes/catppuccin-custom-dark.json",
+      "nixGenerated": true
+    },
+    {
+      "source": ".omp/agent/themes/catppuccin-custom-light.json",
+      "target": ".omp/agent/themes/catppuccin-custom-light.json",
+      "nixGenerated": true
+    },
+    {
+      "source": ".quiltrc",
+      "target": ".quiltrc"
+    },
+    {
+      "source": ".zprofile",
+      "target": ".zprofile"
+    },
+    {
+      "source": ".zshenv",
+      "target": ".zshenv"
+    },
+    {
+      "source": ".zshrc",
+      "target": ".zshrc"
+    },
+    {
+      "source": ".ssh/allowed_signers",
+      "target": ".ssh/allowed_signers",
+      "private": true
+    },
+    {
+      "source": ".ssh/known_hosts.d/codeberg",
+      "target": ".ssh/known_hosts.d/codeberg",
+      "private": true
+    },
+    {
+      "source": ".ssh/known_hosts.d/github",
+      "target": ".ssh/known_hosts.d/github",
+      "private": true
+    },
+    {
+      "source": ".local/share/bash-completion/homebrew/completions",
+      "target": ".local/share/bash-completion/homebrew/completions",
+      "symlink": true,
+      "requireCommand": "brew"
+    },
+    {
+      "source": ".local/bin/ghostty-scrollback-editor",
+      "target": ".local/bin/ghostty-scrollback-editor",
+      "symlink": true
+    },
+    {
+      "source": ".local/bin/sops-age-key-1password",
+      "target": ".local/bin/sops-age-key-1password",
+      "symlink": true
+    },
+    {
+      "source": ".local/bin/update-chatgpt-nix",
+      "target": ".local/bin/update-chatgpt-nix",
+      "symlink": true,
+      "systems": ["linux"]
+    }
+  ],
+  "hooks": [
+    {
+      "source": "external/external.sh",
+      "onChange": false,
+      "name": "90_external_cli.sh"
+    },
+    {
+      "source": "desktop/desktop.sh",
+      "onChange": false,
+      "name": "desktop_integrations.sh"
+    },
+    {
+      "source": "discord/discord.sh",
+      "onChange": false,
+      "name": "discord_equicord.sh"
+    },
+    {
+      "source": "ghostty/ghostty.sh",
+      "onChange": false,
+      "name": "ghostty_dreamy_swirl.sh"
+    },
+    {
+      "source": "helium/helium.sh",
+      "onChange": false,
+      "name": "helium.sh"
+    },
+    {
+      "source": "nix/nix.sh",
+      "onChange": false,
+      "name": "nix_github_auth.sh"
+    },
+    {
+      "source": "applications/applications.sh",
+      "onChange": false,
+      "name": "private_application_configurer.sh"
+    },
+    {
+      "source": "raycast/raycast.rb",
+      "onChange": false,
+      "name": "raycast.rb"
+    },
+    {
+      "source": "rustdesk/rustdesk.sh",
+      "onChange": false,
+      "name": "rustdesk.sh"
+    },
+    {
+      "source": "vscode/vscode.sh",
+      "onChange": false,
+      "name": "vscode_catppuccin_custom_icons.sh"
+    },
+    {
+      "source": "workstation/workstation.sh",
+      "onChange": true,
+      "inputs": [
+        "packages/workstation/src",
+        "packages/workstation/assets",
+        "packages/workstation/package.json",
+        "packages/workstation/bun.lock",
+        "lib/typescript",
+        "dotfiles/data/palette/palette.json",
+        "scripts/setup/workstation.ts"
+      ],
+      "name": "80_repository_workstation_tool.sh"
+    },
+    {
+      "source": "bat/bat.sh",
+      "onChange": true,
+      "inputs": ["dotfiles/data/palette/palette.json"],
+      "name": "bat_catppuccin_custom.sh"
+    },
+    {
+      "source": "gnome/gnome.sh",
+      "onChange": true,
+      "inputs": [
+        "dotfiles/data/palette/palette.json",
+        "packages/workstation/src/desktop/gnome.ts",
+        "packages/workstation/assets/desktop/gtk/legacy.css.in",
+        "packages/workstation/assets/desktop/gtk/gtk.css.in"
+      ],
+      "name": "gnome_catppuccin_custom_accent.sh"
+    },
+    {
+      "source": "kanata/kanata.sh",
+      "onChange": true,
+      "inputs": [
+        "dotfiles/home/.config/kanata/kanata-macos.kbd",
+        "packages/macos/codesign.ts",
+        "packages/macos/logitech/logitech.ts",
+        "modules/darwin/keyboard.nix",
+        "overlays/applications.nix"
+      ],
+      "name": "kanata.sh"
+    },
+    {
+      "source": "lsp/lsp.sh",
+      "onChange": true,
+      "inputs": [
+        "dotfiles/home/.local/lib/typescript/package.json",
+        "dotfiles/home/.local/lib/typescript/bun.lock"
+      ],
+      "name": "lsp_dependencies.sh"
+    },
+    {
+      "source": "macos/macos.sh",
+      "onChange": true,
+      "inputs": [
+        "dotfiles/data/palette/palette.json",
+        "packages/workstation/src/macos/appearance.ts"
+      ],
+      "name": "macos_catppuccin_custom_appearance.sh"
+    },
+    {
+      "source": "omp/omp.sh",
+      "onChange": true,
+      "inputs": ["dotfiles/home/.omp/agent/package.json"],
+      "name": "omp_theme_dependencies.sh"
+    },
+    {
+      "source": "terminal/terminal.sh",
+      "onChange": true,
+      "inputs": [
+        "packages/workstation/src/macos/terminal.ts",
+        "packages/workstation/src/macos/native.ts"
+      ],
+      "name": "terminal_app_catppuccin_custom.sh"
+    },
+    {
+      "source": "toshy/toshy.sh",
+      "onChange": true,
+      "inputs": [
+        "scripts/setup/toshy.py",
+        "packages/toshy-user/setup/setup.py",
+        "packages/toshy-user/setup/slices.py",
+        "packages/toshy-user/slices"
+      ],
+      "name": "toshy.sh"
+    },
+    {
+      "source": "yazi/yazi.sh",
+      "onChange": true,
+      "inputs": ["dotfiles/home/.config/yazi/package.toml"],
+      "name": "yazi_init.sh"
+    }
+  ]
+}

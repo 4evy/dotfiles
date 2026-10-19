@@ -1,0 +1,42 @@
+#                          ⣰⠋⠉⢳⡀
+#                          ⠳⣄⣄⡴⠃
+#                      ⢀⣠⠤⠴⠒⢲⣷⠒⠲⠤⢤⣀
+#                   ⣀⠴⠚⢉⣦⠤⠖⠒⡺⠿⡒⠒⠦⢤⣎⠙⠲⢄⡀
+#                 ⣠⠞⣁⡤⠚⠉    ⡇⡑⡇   ⠈⠙⠢⣄⡙⢦⡀
+#                ⡴⠁⡰⠋      ⢰⠁⢌⢳      ⠈⠳⡀⠱⡄
+#               ⡼⣁⡼⠁       ⡸ ⠢⡹⡀       ⠹⣄⡹⡄
+#              ⢸⠁⣸⠁        ⡇ ⡑⢌⡇        ⢹⡀⢹
+#              ⡏ ⡇⣀⣀⣀⠤⡤⢤⠲⡒⢖⠣⣀⣌⡢⠓⠒⠒⠢⠤⠤⢄⣀⣀⡀⡇⠈⡇          ⡤⠤⠤⠤⠤⠤⠤⢤⡀
+#            ⠒⠒⡯⠿⡿⣁⣈⣀⠁⠈ ⠁⠈ ⠑⣿⣿⡗⢄⠢⡐⢄⠢⡐⢄⣢⣐⡼⡿⠿⡗⠒⠂        ⡇       ⠳⡄
+#              ⢧ ⣇   ⠉⠉⠉⠒⠒⠒⣎⠢⠁⠈⡖⠓⠚⠊⠉⠉⠁⢸⢹⢀⡇⢠⠇          ⡇ ⡏⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹⠉⠉⡇
+#              ⠸⡄⣸⡄        ⡧⡑  ⡇     ⢠⢯⠏⣼⡀⡼           ⡇ ⢠⠏⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⡏⠉⡏
+#               ⠹⡄⠹⡄       ⢸⢌ ⢸     ⡰⣫⠏⡼⠁⡼⠁           ⡇ ⡞                 ⡇⡸
+#                ⠙⣄⠘⣦⡀     ⠘⡦ ⡜ ⢀⣠⢴⣫⠞⣡⡞⢀⡜⠁            ⡇⡼                  ⣧⠇
+#                 ⠈⠳⣄⠉⠲⢤⣀   ⡗ ⡇  ⢚⣩⠴⠊⢁⡴⠋              ⣷⠃  ⠈⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠁   ⡟
+#                    ⠙⠲⢤⣋⠉⠓⠒⢺⣿⠒⠒⠋⢉⣣⠴⠚⠁                ⠩⠭⠭⠭⠭⠭⠭⠭⠭⠭⠭⠭⠭⠭⠭⠭⠭⠭⠭⠭⠁
+#                       ⠈⠉⠙⠒⠚⡞⠒⠚⠉⠉
+#                            ⠁
+
+# 09 / zoxide
+# Load it late so its `cd` wrapper wins.
+
+if [[ -r "$HOME/.config/shell/zoxide.bash" ]]; then
+	# shellcheck source=/dev/null
+	source "$HOME/.config/shell/zoxide.bash"
+fi
+
+# 10 / directory-aware tools
+# Load generated hooks when available and fall back to the installed commands
+# on a fresh machine.
+
+_broot_bin="$(_dotfiles_command_path broot 2>/dev/null || true)"
+if [[ -n "$_broot_bin" && -r "$HOME/.cache/broot/init.bash" ]]; then
+	# shellcheck source=/dev/null
+	source "$HOME/.cache/broot/init.bash"
+elif [[ -n "$_broot_bin" ]]; then
+	if _dotfiles_init="$("$_broot_bin" --print-shell-function bash)"; then
+		eval "$_dotfiles_init"
+	fi
+	unset _dotfiles_init
+fi
+unset _broot_bin

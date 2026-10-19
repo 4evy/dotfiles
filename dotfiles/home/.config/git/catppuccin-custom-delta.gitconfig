@@ -1,0 +1,44 @@
+
+[delta "catppuccin-custom-light"]
+    blame-palette = "@COLOR_LIGHT_BASE@ @COLOR_LIGHT_MANTLE@ @COLOR_LIGHT_CRUST@ @COLOR_LIGHT_SURFACE0@ @COLOR_LIGHT_SURFACE1@"
+    commit-decoration-style = "@COLOR_LIGHT_OVERLAY0@" bold box ul
+    light = true
+    file-decoration-style = "@COLOR_LIGHT_OVERLAY0@"
+    file-style = "@COLOR_LIGHT_TEXT@"
+    hunk-header-decoration-style = "@COLOR_LIGHT_OVERLAY0@" box ul
+    hunk-header-file-style = bold
+    hunk-header-line-number-style = bold "@COLOR_LIGHT_SUBTEXT0@"
+    hunk-header-style = file line-number syntax
+    line-numbers-left-style = "@COLOR_LIGHT_OVERLAY0@"
+    line-numbers-minus-style = bold "@COLOR_LIGHT_RED@"
+    line-numbers-plus-style = bold "@COLOR_LIGHT_GREEN@"
+    line-numbers-right-style = "@COLOR_LIGHT_OVERLAY0@"
+    line-numbers-zero-style = "@COLOR_LIGHT_OVERLAY0@"
+    minus-emph-style = bold syntax "@COLOR_LIGHT_ERRORSURFACE@"
+    minus-style = syntax "@COLOR_LIGHT_ERRORSURFACE@"
+    plus-emph-style = bold syntax "@MIX_LIGHT_SUCCESS@"
+    plus-style = syntax "@MIX_LIGHT_SUCCESS@"
+    syntax-theme = Catppuccin Custom Light
+
+
+[delta "catppuccin-custom-dark"]
+    blame-palette = "@COLOR_DARK_BASE@ @COLOR_DARK_MANTLE@ @COLOR_DARK_CRUST@ @COLOR_DARK_SURFACE0@ @COLOR_DARK_SURFACE1@"
+    commit-decoration-style = "@COLOR_DARK_OVERLAY0@" bold box ul
+    dark = true
+    file-decoration-style = "@COLOR_DARK_OVERLAY0@"
+    file-style = "@COLOR_DARK_TEXT@"
+    hunk-header-decoration-style = "@COLOR_DARK_OVERLAY0@" box ul
+    hunk-header-file-style = bold
+    hunk-header-line-number-style = bold "@COLOR_DARK_SUBTEXT0@"
+    hunk-header-style = file line-number syntax
+    line-numbers-left-style = "@COLOR_DARK_OVERLAY0@"
+    line-numbers-minus-style = bold "@COLOR_DARK_RED@"
+    line-numbers-plus-style = bold "@COLOR_DARK_GREEN@"
+    line-numbers-right-style = "@COLOR_DARK_OVERLAY0@"
+    line-numbers-zero-style = "@COLOR_DARK_OVERLAY0@"
+    minus-emph-style = bold syntax "@COLOR_DARK_ERRORSURFACE@"
+    minus-style = syntax "@COLOR_DARK_ERRORSURFACE@"
+    plus-emph-style = bold syntax "@MIX_DARK_SUCCESS@"
+    plus-style = syntax "@MIX_DARK_SUCCESS@"
+    syntax-theme = Catppuccin Custom Dark
+

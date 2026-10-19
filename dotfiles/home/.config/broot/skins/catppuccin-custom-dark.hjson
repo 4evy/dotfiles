@@ -1,0 +1,92 @@
+syntax_theme: base16-ocean.dark
+
+skin: {
+  default: @RGB_DARK_TEXT@ none / @RGB_DARK_SUBTEXT1@ none
+  tree: @RGB_DARK_PINK@ none / @RGB_DARK_SURFACE2@ none
+  parent: @RGB_DARK_SURFACE2@ none / @RGB_DARK_SURFACE1@ none
+  file: @RGB_DARK_TEXT@ none / @RGB_DARK_SUBTEXT1@ none
+  directory: @RGB_DARK_BLUE@ none Bold / @RGB_DARK_SUBTEXT0@ none bold
+  exe: @RGB_DARK_GREEN@ none
+  link: @RGB_DARK_TEAL@ none
+  pruning: @RGB_DARK_OVERLAY0@ none Italic
+  perm__: @RGB_DARK_SURFACE2@ none
+  perm_r: @RGB_DARK_SKY@ none
+  perm_w: @RGB_DARK_MAROON@ none
+  perm_x: @RGB_DARK_GREEN@ none
+  owner: @RGB_DARK_LAVENDER@ none
+  group: @RGB_DARK_MAUVE@ none
+  count: @RGB_DARK_PEACH@ @RGB_DARK_SURFACE2@
+  dates: @RGB_DARK_SAPPHIRE@ none
+  sparse: @RGB_DARK_YELLOW@ none
+  content_extract: @RGB_DARK_TEAL@ none
+  content_match: @RGB_DARK_GREEN@ none
+  preview_title: @RGB_DARK_TEXT@ @RGB_DARK_MANTLE@ Bold
+  preview: @RGB_DARK_TEXT@ @RGB_DARK_MANTLE@
+  preview_line_number: @RGB_DARK_OVERLAY0@ @RGB_DARK_MANTLE@
+  preview_separator: @RGB_DARK_OVERLAY0@ @RGB_DARK_MANTLE@
+  preview_match: @RGB_DARK_PINK@ @RGB_DARK_SURFACE2@ Bold Italic
+  device_id_major: @RGB_DARK_LAVENDER@ none
+  device_id_sep: @RGB_DARK_SURFACE2@ none
+  device_id_minor: @RGB_DARK_LAVENDER@ none
+
+  git_branch: @RGB_DARK_PINK@ none
+  git_insertions: @RGB_DARK_GREEN@ none
+  git_deletions: @RGB_DARK_RED@ none
+  git_status_current: @RGB_DARK_SUBTEXT1@ none
+  git_status_modified: @RGB_DARK_YELLOW@ none
+  git_status_new: @RGB_DARK_SKY@ none Bold
+  git_status_ignored: @RGB_DARK_SURFACE2@ none
+  git_status_conflicted: @RGB_DARK_RED@ none
+  git_status_other: @RGB_DARK_RED@ none
+  staging_area_title: @RGB_DARK_PINK@ none Bold
+
+  selected_line: none @RGB_DARK_SURFACE1@ / none @RGB_DARK_SURFACE0@
+  char_match: @RGB_DARK_GREEN@ none Bold
+  file_error: @RGB_DARK_RED@ none
+
+  flag_label: @RGB_DARK_SUBTEXT1@ none
+  flag_value: @RGB_DARK_PINK@ none Bold
+
+  input: @RGB_DARK_TEXT@ none / @RGB_DARK_SUBTEXT1@ @RGB_DARK_SURFACE2@
+
+  status_error: @RGB_DARK_TEXT@ @RGB_DARK_RED@
+  status_job: @RGB_DARK_YELLOW@ @RGB_DARK_SURFACE1@
+  status_normal: @RGB_DARK_TEXT@ @RGB_DARK_SURFACE2@
+  status_italic: @RGB_DARK_PINK@ @RGB_DARK_SURFACE2@ Italic
+  status_bold: @RGB_DARK_PINK@ @RGB_DARK_SURFACE2@ Bold
+  status_code: @RGB_DARK_ROSEWATER@ @RGB_DARK_SURFACE2@
+  status_ellipsis: @RGB_DARK_SUBTEXT1@ @RGB_DARK_SURFACE1@
+  mode_command_mark: @RGB_DARK_PINK@ @RGB_DARK_SURFACE2@ Bold
+
+  help_paragraph: @RGB_DARK_TEXT@ none
+  help_headers: @RGB_DARK_PINK@ none Bold
+  help_bold: @RGB_DARK_PEACH@ none Bold
+  help_italic: @RGB_DARK_YELLOW@ none Italic
+  help_code: @RGB_DARK_GREEN@ @RGB_DARK_SURFACE0@
+  help_table_border: @RGB_DARK_OVERLAY0@ none
+
+  hex_null: @RGB_DARK_TEXT@ none
+  hex_ascii_graphic: @RGB_DARK_PEACH@ none
+  hex_ascii_whitespace: @RGB_DARK_GREEN@ none
+  hex_ascii_other: @RGB_DARK_TEAL@ none
+  hex_non_ascii: @RGB_DARK_PINK@ none
+
+  purpose_normal: @RGB_DARK_TEXT@ none
+  purpose_italic: @RGB_DARK_MAUVE@ none Italic
+  purpose_bold: @RGB_DARK_MAUVE@ none Bold
+  purpose_ellipsis: @RGB_DARK_OVERLAY1@ none
+
+  scrollbar_track: @RGB_DARK_SURFACE0@ none
+  scrollbar_thumb: @RGB_DARK_SURFACE2@ none
+
+  good_to_bad_0: @RGB_DARK_GREEN@ none
+  good_to_bad_1: @RGB_DARK_TEAL@ none
+  good_to_bad_2: @RGB_DARK_SKY@ none
+  good_to_bad_3: @RGB_DARK_BLUE@ none
+  good_to_bad_4: @RGB_DARK_SAPPHIRE@ none
+  good_to_bad_5: @RGB_DARK_LAVENDER@ none
+  good_to_bad_6: @RGB_DARK_MAUVE@ none
+  good_to_bad_7: @RGB_DARK_PEACH@ none
+  good_to_bad_8: @RGB_DARK_MAROON@ none
+  good_to_bad_9: @RGB_DARK_RED@ none
+}

@@ -21,7 +21,6 @@ Thumbs.db
 .complexipy_cache/
 .ruff_cache/
 .rumdl_cache/
-.docker-cache/
 .pre-commit-config.yaml
 .fallow/
 fallow/
@@ -35,6 +34,8 @@ fallow/
 # Dependencies
 **/packages/
 !/packages/
+!/modules/nixos/packages/
+!/overlays/packages/
 __pycache__/
 *.py[cod]
 node_modules/
@@ -47,7 +48,9 @@ zig-pkg/
 zig-out/
 
 # Generated outputs
+.generated/
 *.o
+*.bun-build
 a.out
 build/
 build-*/
@@ -60,6 +63,12 @@ tmp/
 
 /.bluebuild-scripts_*
 
-/bluebuild/recipes/spectrum/sources/
+/bluebuild/recipes/spectrum/sources/*
+!/bluebuild/recipes/spectrum/sources/sources.ts
 
 /Sources/
+
+# Cached shell initialization is generated from tracked Hjem templates
+!/dotfiles/home/.cache/
+!/dotfiles/home/.cache/**/
+!/dotfiles/home/.cache/**/*.tmpl

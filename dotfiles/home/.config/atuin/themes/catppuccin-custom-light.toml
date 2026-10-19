@@ -1,0 +1,19 @@
+[theme]
+name = "catppuccin-custom-light"
+
+[colors]
+AlertInfo = "@COLOR_LIGHT_SKY@"
+AlertWarn = "@COLOR_LIGHT_PEACH@"
+AlertError = "@COLOR_LIGHT_RED@"
+Annotation = "@COLOR_LIGHT_PINK@"
+Base = "@COLOR_LIGHT_TEXT@"
+Guidance = "@COLOR_LIGHT_OVERLAY2@"
+Important = "@COLOR_LIGHT_PINK@"
+Title = "@COLOR_LIGHT_PINK@"
+Muted = "@COLOR_LIGHT_OVERLAY1@"
+SyntaxCommand = "@COLOR_LIGHT_BLUE@"
+SyntaxFlag = "@COLOR_LIGHT_MAUVE@"
+SyntaxString = "@COLOR_LIGHT_GREEN@"
+SyntaxVariable = "@COLOR_LIGHT_ROSEWATER@"
+SyntaxOperator = "@COLOR_LIGHT_SKY@"
+SyntaxComment = "@COLOR_LIGHT_OVERLAY0@"

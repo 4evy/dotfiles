@@ -1,0 +1,122 @@
+[app]
+overall = { bg = "@COLOR_DARK_BASE@" }
+
+[mgr]
+cwd = { fg = "@COLOR_DARK_FOAM@" }
+find_keyword = { fg = "@COLOR_DARK_GOLD@", italic = true }
+find_position = { fg = "@COLOR_DARK_ROSE@", italic = true }
+symlink_target = { fg = "@COLOR_DARK_SUBTLE@", italic = true }
+marker_copied = { fg = "@COLOR_DARK_PINE@", bg = "@COLOR_DARK_PINE@" }
+marker_cut = { fg = "@COLOR_DARK_LOVE@", bg = "@COLOR_DARK_LOVE@" }
+marker_marked = { fg = "@COLOR_DARK_FOAM@", bg = "@COLOR_DARK_FOAM@" }
+marker_selected = { fg = "@COLOR_DARK_IRIS@", bg = "@COLOR_DARK_IRIS@" }
+marker_symbol = "│"
+count_copied = { fg = "@COLOR_DARK_BASE@", bg = "@COLOR_DARK_PINE@" }
+count_cut = { fg = "@COLOR_DARK_BASE@", bg = "@COLOR_DARK_LOVE@" }
+count_selected = { fg = "@COLOR_DARK_BASE@", bg = "@COLOR_DARK_IRIS@" }
+border_symbol = "│"
+border_style = { fg = "@COLOR_DARK_HIGHLIGHTHIGH@" }
+
+[tabs]
+active = { fg = "@COLOR_DARK_ACCENTFOREGROUND@", bg = "@COLOR_DARK_ACCENT@", bold = true }
+inactive = { fg = "@COLOR_DARK_SUBTLE@", bg = "@COLOR_DARK_SURFACE@" }
+sep_inner = { open = "", close = "" }
+sep_outer = { open = "", close = "" }
+
+[mode]
+normal_main = { fg = "@COLOR_DARK_ACCENTFOREGROUND@", bg = "@COLOR_DARK_ACCENT@", bold = true }
+normal_alt = { fg = "@COLOR_DARK_ROSE@", bg = "@COLOR_DARK_SURFACE@" }
+select_main = { fg = "@COLOR_DARK_BASE@", bg = "@COLOR_DARK_PINE@", bold = true }
+select_alt = { fg = "@COLOR_DARK_PINE@", bg = "@COLOR_DARK_SURFACE@" }
+unset_main = { fg = "@COLOR_DARK_BASE@", bg = "@COLOR_DARK_LOVE@", bold = true }
+unset_alt = { fg = "@COLOR_DARK_LOVE@", bg = "@COLOR_DARK_SURFACE@" }
+
+[indicator]
+parent = { fg = "@COLOR_DARK_SUBTLE@", bg = "@COLOR_DARK_SURFACE@" }
+current = { fg = "@COLOR_DARK_ACCENTFOREGROUND@", bg = "@COLOR_DARK_ACCENT@", bold = true }
+preview = { fg = "@COLOR_DARK_BASE@", bg = "@COLOR_DARK_IRIS@", underline = true }
+padding = { open = "", close = "" }
+
+[status]
+overall = { fg = "@COLOR_DARK_TEXT@", bg = "@COLOR_DARK_BASE@" }
+sep_left = { open = "", close = "" }
+sep_right = { open = "", close = "" }
+progress_label = { fg = "@COLOR_DARK_TEXT@", bold = true }
+progress_normal = { fg = "@COLOR_DARK_PINE@", bg = "@COLOR_DARK_HIGHLIGHTLOW@" }
+progress_error = { fg = "@COLOR_DARK_GOLD@", bg = "@COLOR_DARK_LOVE@" }
+perm_type = { fg = "@COLOR_DARK_IRIS@" }
+perm_read = { fg = "@COLOR_DARK_GOLD@" }
+perm_write = { fg = "@COLOR_DARK_LOVE@" }
+perm_exec = { fg = "@COLOR_DARK_PINE@" }
+perm_sep = { fg = "@COLOR_DARK_PLACEHOLDER@" }
+
+[input]
+border = { fg = "@COLOR_DARK_ROSE@" }
+title = { fg = "@COLOR_DARK_ROSE@" }
+value = { fg = "@COLOR_DARK_TEXT@" }
+selected = { reversed = true }
+
+[pick]
+border = { fg = "@COLOR_DARK_ROSE@" }
+active = { fg = "@COLOR_DARK_ROSE@" }
+inactive = { fg = "@COLOR_DARK_SUBTLE@" }
+
+[confirm]
+border = { fg = "@COLOR_DARK_ROSE@" }
+title = { fg = "@COLOR_DARK_ROSE@" }
+body = { fg = "@COLOR_DARK_TEXT@" }
+list = { fg = "@COLOR_DARK_SUBTLE@" }
+btn_yes = { reversed = true }
+btn_no = { fg = "@COLOR_DARK_PLACEHOLDER@" }
+btn_labels = ["  [Y]es  ", "  (N)o  "]
+
+[cmp]
+border = { fg = "@COLOR_DARK_ROSE@" }
+active = { fg = "@COLOR_DARK_ACCENTFOREGROUND@", bg = "@COLOR_DARK_ACCENT@", bold = true }
+inactive = { fg = "@COLOR_DARK_SUBTLE@" }
+
+[tasks]
+border = { fg = "@COLOR_DARK_ROSE@" }
+title = { fg = "@COLOR_DARK_ROSE@" }
+hovered = { fg = "@COLOR_DARK_ROSE@", bold = true }
+
+[which]
+border = { fg = "@COLOR_DARK_ROSE@" }
+cols = 3
+mask = { bg = "@COLOR_DARK_SURFACE@" }
+cand = { fg = "@COLOR_DARK_FOAM@" }
+rest = { fg = "@COLOR_DARK_PLACEHOLDER@" }
+desc = { fg = "@COLOR_DARK_ROSE@" }
+separator = "  "
+separator_style = { fg = "@COLOR_DARK_HIGHLIGHTHIGH@" }
+
+[help]
+border = { fg = "@COLOR_DARK_ROSE@" }
+chord = { fg = "@COLOR_DARK_FOAM@" }
+action = { fg = "@COLOR_DARK_TEXT@" }
+hovered = { fg = "@COLOR_DARK_TEXT@", bg = "@COLOR_DARK_HIGHLIGHTLOW@", bold = true }
+
+[notify]
+title_info = { fg = "@COLOR_DARK_FOAM@" }
+title_warn = { fg = "@COLOR_DARK_GOLD@" }
+title_error = { fg = "@COLOR_DARK_LOVE@" }
+
+[filetype]
+rules = [
+  { mime = "**/image/*", fg = "@COLOR_DARK_FOAM@" },
+  { mime = "**/{audio,video}/*", fg = "@COLOR_DARK_GOLD@" },
+  { mime = "**/application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "@COLOR_DARK_ROSE@" },
+  { mime = "**/application/{pdf,doc,rtf}", fg = "@COLOR_DARK_PINE@" },
+  { mime = "vfs/{absent,stale}", fg = "@COLOR_DARK_PLACEHOLDER@" },
+  { url = "*", is = "orphan", bg = "@COLOR_DARK_LOVE@" },
+  { url = "*", is = "exec", fg = "@COLOR_DARK_PINE@" },
+  { url = "*", is = "dummy", bg = "@COLOR_DARK_LOVE@" },
+  { url = "*/", is = "dummy", bg = "@COLOR_DARK_LOVE@" },
+  { url = "*/", fg = "@COLOR_DARK_IRIS@" },
+]
+
+[spot]
+border = { fg = "@COLOR_DARK_ROSE@" }
+title = { fg = "@COLOR_DARK_ROSE@" }
+tbl_cell = { fg = "@COLOR_DARK_ROSE@", reversed = true }
+tbl_col = { fg = "@COLOR_DARK_FOAM@", bold = true }

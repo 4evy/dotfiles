@@ -1,0 +1,93 @@
+# Catppuccin Custom Light
+
+# Main background, empty for terminal default, need to be empty if you want transparent background
+theme[main_bg]="@COLOR_LIGHT_BASE@"
+
+# Main text color
+theme[main_fg]="@COLOR_LIGHT_TEXT@"
+
+# Title color for boxes
+theme[title]="@COLOR_LIGHT_TEXT@"
+
+# Highlight color for keyboard shortcuts
+theme[hi_fg]="@COLOR_LIGHT_PINK@"
+
+# Background color of selected item in processes box
+theme[selected_bg]="@COLOR_LIGHT_SURFACE0@"
+
+# Foreground color of selected item in processes box
+theme[selected_fg]="@COLOR_LIGHT_PINK@"
+
+# Color of inactive/disabled text
+theme[inactive_fg]="@COLOR_LIGHT_OVERLAY0@"
+
+# Color of text appearing on top of graphs, i.e uptime and current network graph scaling
+theme[graph_text]="@COLOR_LIGHT_ROSEWATER@"
+
+# Background color of the percentage meters
+theme[meter_bg]="@COLOR_LIGHT_SURFACE0@"
+
+# Misc colors for processes box including mini cpu graphs, details memory graph and details status text
+theme[proc_misc]="@COLOR_LIGHT_ROSEWATER@"
+
+# Process follow/pause banners and the followed row
+theme[proc_pause_bg]="@COLOR_LIGHT_SURFACE2@"
+theme[proc_follow_bg]="@COLOR_LIGHT_PINE@"
+theme[proc_banner_bg]="@COLOR_LIGHT_IRIS@"
+theme[proc_banner_fg]="@COLOR_LIGHT_TEXT@"
+theme[followed_bg]="@COLOR_LIGHT_PINE@"
+theme[followed_fg]="@COLOR_LIGHT_TEXT@"
+
+# CPU, Memory, Network, Proc box outline colors
+theme[cpu_box]="@COLOR_LIGHT_ROSE@"
+theme[mem_box]="@COLOR_LIGHT_PINE@"
+theme[net_box]="@COLOR_LIGHT_LOVE@"
+theme[proc_box]="@COLOR_LIGHT_IRIS@"
+
+# Box divider line and small boxes line color
+theme[div_line]="@COLOR_LIGHT_SURFACE1@"
+
+# Temperature graph color (Green -> Yellow -> Red)
+theme[temp_start]="@COLOR_LIGHT_GREEN@"
+theme[temp_mid]="@COLOR_LIGHT_YELLOW@"
+theme[temp_end]="@COLOR_LIGHT_RED@"
+
+# CPU graph colors (Pink)
+theme[cpu_start]="@COLOR_LIGHT_TEAL@"
+theme[cpu_mid]="@COLOR_LIGHT_SAPPHIRE@"
+theme[cpu_end]="@COLOR_LIGHT_PINK@"
+
+# Mem/Disk free meter (Pink)
+theme[free_start]="@COLOR_LIGHT_PINK@"
+theme[free_mid]="@COLOR_LIGHT_LAVENDER@"
+theme[free_end]="@COLOR_LIGHT_BLUE@"
+
+# Mem/Disk cached meter (Pink)
+theme[cached_start]="@COLOR_LIGHT_SAPPHIRE@"
+theme[cached_mid]="@COLOR_LIGHT_BLUE@"
+theme[cached_end]="@COLOR_LIGHT_LAVENDER@"
+
+# Mem/Disk available meter (Peach -> Red)
+theme[available_start]="@COLOR_LIGHT_PEACH@"
+theme[available_mid]="@COLOR_LIGHT_MAROON@"
+theme[available_end]="@COLOR_LIGHT_RED@"
+
+# Mem/Disk used meter (Pink)
+theme[used_start]="@COLOR_LIGHT_GREEN@"
+theme[used_mid]="@COLOR_LIGHT_TEAL@"
+theme[used_end]="@COLOR_LIGHT_SKY@"
+
+# Download graph colors (Peach -> Red)
+theme[download_start]="@COLOR_LIGHT_PEACH@"
+theme[download_mid]="@COLOR_LIGHT_MAROON@"
+theme[download_end]="@COLOR_LIGHT_RED@"
+
+# Upload graph colors (Pink)
+theme[upload_start]="@COLOR_LIGHT_GREEN@"
+theme[upload_mid]="@COLOR_LIGHT_TEAL@"
+theme[upload_end]="@COLOR_LIGHT_SKY@"
+
+# Process box color gradient for threads, mem and cpu usage (Pink)
+theme[process_start]="@COLOR_LIGHT_SAPPHIRE@"
+theme[process_mid]="@COLOR_LIGHT_LAVENDER@"
+theme[process_end]="@COLOR_LIGHT_PINK@"

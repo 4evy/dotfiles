@@ -61,7 +61,6 @@ in
       channel.enable = false;
       # Opinionated: make flake registry and nix path match flake inputs
       registry = lib.attrsets.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
-      nixPath = nixPathEntries;
     };
   };
 }

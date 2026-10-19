@@ -15,16 +15,14 @@ _run-files executable patterns arguments=[]:
     done
     ((${#files[@]} == 0)) || {{ quote([executable, arguments]) }} "${files[@]}"
 
-# Validate the locked Python project with the same checks locally and in CI.
+# Validate Toshy's Python sources with the same checks locally and in CI
 [group('check')]
 python-check: python-lint python-complexity python-dead-code python-dependencies python-typecheck
     uv lock --check
     uv sync --check
     bytecode_dir=$(mktemp -d)
-    build_dir=$(mktemp -d)
-    trap 'rm -rf "$bytecode_dir" "$build_dir"' EXIT
-    PYTHONPYCACHEPREFIX="$bytecode_dir" uv run python -m compileall -q -x /node_modules/ .github ansible bluebuild dotfiles packages
-    uv build --out-dir "$build_dir" --no-build-logs
+    trap 'rm -rf "$bytecode_dir"' EXIT
+    PYTHONPYCACHEPREFIX="$bytecode_dir" uv run python -m compileall -q packages/toshy-user scripts/setup/toshy.py
 
 [group('check')]
 python-lint:
@@ -51,9 +49,7 @@ python-dead-code:
 python-complexity:
     uv run complexipy --plain
 
-_check-ansible: (doctor 'ansible') _deps (_run-files 'uv' ['*.yaml', '*.yml'] ['run', 'yamllint'])
-    uv run ansible-playbook --syntax-check ansible/site.yml
-    uv run ansible-lint ansible
+_check-yaml: (_run-files 'yamllint' ['*.yaml', '*.yml'])
 
 [group('check')]
 github-actions-check:
@@ -61,32 +57,40 @@ github-actions-check:
     zizmor --persona=pedantic .github/workflows .github/actions
 
 [group('check')]
-bun-check: (doctor 'bun') omp-patches-check
+bun-check: (doctor 'bun')
     bun run check
 
 # Keep every independently locked Bun package's Nix cache in sync
 [group('check')]
 bun-nix-check:
-    for package in packages/hyper-window-tiling packages/omp-helper packages/omp/upstream; do
-      generated=$(nix run .#bun2nix -- \
+    for package in packages/hyper-window-tiling packages/workstation; do
+      generated_dir=$(mktemp -d)
+      trap 'rm -rf "$generated_dir"' EXIT
+      generated="$generated_dir/bun.nix"
+      nix run .#bun2nix -- \
         --lock-file "$package/bun.lock" \
-        --copy-prefix "$package")
-      if ! diff -u "$package/bun.nix" <(printf '%s\n' "$generated"); then
+        --copy-prefix "$package" \
+        --output-file "$generated"
+      deadnix --edit "$generated"
+      nixfmt "$generated"
+      if ! diff -u "$package/bun.nix" "$generated"; then
         printf '%s/bun.nix is stale; run `just bun-nix-update`.\n' "$package" >&2
         exit 1
       fi
+      rm -rf "$generated_dir"
     done
 
 # Regenerate all independent dependency caches from their locked graphs
 [group('dev')]
 bun-nix-update:
-    for package in packages/hyper-window-tiling packages/omp-helper packages/omp/upstream; do
+    for package in packages/hyper-window-tiling packages/workstation; do
       nix run .#bun2nix -- \
         --lock-file "$package/bun.lock" \
         --copy-prefix "$package" \
         --output-file "$package/bun.nix"
+      deadnix --edit "$package/bun.nix"
     done
-    nix fmt -- packages/hyper-window-tiling/bun.nix packages/omp-helper/bun.nix packages/omp/upstream/bun.nix
+    nix fmt -- packages/hyper-window-tiling/bun.nix packages/workstation/bun.nix
 
 [group('check')]
 ruby-check:
@@ -120,17 +124,10 @@ _go-format module:
 bun-install:
     bun install --frozen-lockfile
     bun install --cwd packages/hyper-window-tiling --frozen-lockfile
-    bun install --cwd packages/omp-helper --frozen-lockfile --ignore-scripts
-    bun install --cwd packages/omp/upstream --frozen-lockfile --ignore-scripts
-
-# Build the same source archive used by the local Homebrew tap.
-[group('dev')]
-homebrew-source output='Sources/theme-run-0.1.0.tar':
-    bash scripts/package-theme-run.sh {{ quote(output) }}
+    bun install --cwd packages/workstation --frozen-lockfile --ignore-scripts
 
 [group('check')]
-homebrew-check: homebrew-source
-    brew style Formula/*.rb
+homebrew-check:
     brew bundle list --file Brewfile --all >/dev/null
 
 [group('check')]
@@ -146,7 +143,7 @@ _lint-deps: bun-install
 
 # Run formatting, dependency, and source validation.
 [group('check')]
-lint: (doctor 'lint') check-format _lint-deps _check-ansible _lint-checks
+lint: (doctor 'lint') check-format _lint-deps _check-yaml _lint-checks
 
 [parallel]
 _lint-checks: _lint-files python-check github-actions-check bun-check go-check ruby-check

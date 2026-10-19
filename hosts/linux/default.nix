@@ -9,6 +9,8 @@
       ./configuration.nix
       nixosModule
       {
+        _file = ./default.nix;
+
         local = {
           user.name = "evy";
           shell.enable = true;
@@ -26,6 +28,8 @@
           inherit (config.local.user) group home;
         in
         {
+          _file = ./default.nix;
+
           local.nix.githubTokenFile = config.sops.secrets.github-token.path;
 
           sops = {

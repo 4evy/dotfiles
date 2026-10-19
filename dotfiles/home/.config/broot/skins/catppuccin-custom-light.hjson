@@ -1,0 +1,92 @@
+syntax_theme: base16-ocean.light
+
+skin: {
+  default: @RGB_LIGHT_TEXT@ none / @RGB_LIGHT_SUBTEXT1@ none
+  tree: @RGB_LIGHT_PINK@ none / @RGB_LIGHT_SURFACE2@ none
+  parent: @RGB_LIGHT_SURFACE2@ none / @RGB_LIGHT_SURFACE1@ none
+  file: @RGB_LIGHT_TEXT@ none / @RGB_LIGHT_SUBTEXT1@ none
+  directory: @RGB_LIGHT_BLUE@ none Bold / @RGB_LIGHT_SUBTEXT0@ none bold
+  exe: @RGB_LIGHT_GREEN@ none
+  link: @RGB_LIGHT_TEAL@ none
+  pruning: @RGB_LIGHT_OVERLAY0@ none Italic
+  perm__: @RGB_LIGHT_SURFACE2@ none
+  perm_r: @RGB_LIGHT_SKY@ none
+  perm_w: @RGB_LIGHT_MAROON@ none
+  perm_x: @RGB_LIGHT_GREEN@ none
+  owner: @RGB_LIGHT_LAVENDER@ none
+  group: @RGB_LIGHT_MAUVE@ none
+  count: @RGB_LIGHT_PEACH@ @RGB_LIGHT_SURFACE2@
+  dates: @RGB_LIGHT_SAPPHIRE@ none
+  sparse: @RGB_LIGHT_YELLOW@ none
+  content_extract: @RGB_LIGHT_TEAL@ none
+  content_match: @RGB_LIGHT_GREEN@ none
+  preview_title: @RGB_LIGHT_TEXT@ @RGB_LIGHT_MANTLE@ Bold
+  preview: @RGB_LIGHT_TEXT@ @RGB_LIGHT_MANTLE@
+  preview_line_number: @RGB_LIGHT_OVERLAY0@ @RGB_LIGHT_MANTLE@
+  preview_separator: @RGB_LIGHT_OVERLAY0@ @RGB_LIGHT_MANTLE@
+  preview_match: @RGB_LIGHT_PINK@ @RGB_LIGHT_SURFACE2@ Bold Italic
+  device_id_major: @RGB_LIGHT_LAVENDER@ none
+  device_id_sep: @RGB_LIGHT_SURFACE2@ none
+  device_id_minor: @RGB_LIGHT_LAVENDER@ none
+
+  git_branch: @RGB_LIGHT_PINK@ none
+  git_insertions: @RGB_LIGHT_GREEN@ none
+  git_deletions: @RGB_LIGHT_RED@ none
+  git_status_current: @RGB_LIGHT_SUBTEXT1@ none
+  git_status_modified: @RGB_LIGHT_YELLOW@ none
+  git_status_new: @RGB_LIGHT_SKY@ none Bold
+  git_status_ignored: @RGB_LIGHT_SURFACE2@ none
+  git_status_conflicted: @RGB_LIGHT_RED@ none
+  git_status_other: @RGB_LIGHT_RED@ none
+  staging_area_title: @RGB_LIGHT_PINK@ none Bold
+
+  selected_line: none @RGB_LIGHT_SURFACE1@ / none @RGB_LIGHT_SURFACE0@
+  char_match: @RGB_LIGHT_GREEN@ none Bold
+  file_error: @RGB_LIGHT_RED@ none
+
+  flag_label: @RGB_LIGHT_SUBTEXT1@ none
+  flag_value: @RGB_LIGHT_PINK@ none Bold
+
+  input: @RGB_LIGHT_TEXT@ none / @RGB_LIGHT_SUBTEXT1@ @RGB_LIGHT_SURFACE2@
+
+  status_error: @RGB_LIGHT_TEXT@ @RGB_LIGHT_RED@
+  status_job: @RGB_LIGHT_YELLOW@ @RGB_LIGHT_SURFACE1@
+  status_normal: @RGB_LIGHT_TEXT@ @RGB_LIGHT_SURFACE2@
+  status_italic: @RGB_LIGHT_PINK@ @RGB_LIGHT_SURFACE2@ Italic
+  status_bold: @RGB_LIGHT_PINK@ @RGB_LIGHT_SURFACE2@ Bold
+  status_code: @RGB_LIGHT_ROSEWATER@ @RGB_LIGHT_SURFACE2@
+  status_ellipsis: @RGB_LIGHT_SUBTEXT1@ @RGB_LIGHT_SURFACE1@
+  mode_command_mark: @RGB_LIGHT_PINK@ @RGB_LIGHT_SURFACE2@ Bold
+
+  help_paragraph: @RGB_LIGHT_TEXT@ none
+  help_headers: @RGB_LIGHT_PINK@ none Bold
+  help_bold: @RGB_LIGHT_PEACH@ none Bold
+  help_italic: @RGB_LIGHT_YELLOW@ none Italic
+  help_code: @RGB_LIGHT_GREEN@ @RGB_LIGHT_SURFACE0@
+  help_table_border: @RGB_LIGHT_OVERLAY0@ none
+
+  hex_null: @RGB_LIGHT_TEXT@ none
+  hex_ascii_graphic: @RGB_LIGHT_PEACH@ none
+  hex_ascii_whitespace: @RGB_LIGHT_GREEN@ none
+  hex_ascii_other: @RGB_LIGHT_TEAL@ none
+  hex_non_ascii: @RGB_LIGHT_PINK@ none
+
+  purpose_normal: @RGB_LIGHT_TEXT@ none
+  purpose_italic: @RGB_LIGHT_MAUVE@ none Italic
+  purpose_bold: @RGB_LIGHT_MAUVE@ none Bold
+  purpose_ellipsis: @RGB_LIGHT_OVERLAY1@ none
+
+  scrollbar_track: @RGB_LIGHT_SURFACE0@ none
+  scrollbar_thumb: @RGB_LIGHT_SURFACE2@ none
+
+  good_to_bad_0: @RGB_LIGHT_GREEN@ none
+  good_to_bad_1: @RGB_LIGHT_TEAL@ none
+  good_to_bad_2: @RGB_LIGHT_SKY@ none
+  good_to_bad_3: @RGB_LIGHT_BLUE@ none
+  good_to_bad_4: @RGB_LIGHT_SAPPHIRE@ none
+  good_to_bad_5: @RGB_LIGHT_LAVENDER@ none
+  good_to_bad_6: @RGB_LIGHT_MAUVE@ none
+  good_to_bad_7: @RGB_LIGHT_PEACH@ none
+  good_to_bad_8: @RGB_LIGHT_MAROON@ none
+  good_to_bad_9: @RGB_LIGHT_RED@ none
+}

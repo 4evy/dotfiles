@@ -8,12 +8,15 @@ let
     all
     concatMapAttrsStringSep
     concatMapStringsSep
+    div
     findFirst
     head
     last
+    map
     range
     tail
     throwIfNot
+    toString
     zipListsWith
     ;
 
@@ -111,7 +114,7 @@ let
     let
       inherit (anchorPairAt anchors step) lower upper;
       lowerWeight =
-        if lower.at == upper.at then 100 else builtins.div ((upper.at - step) * 100) (upper.at - lower.at);
+        if lower.at == upper.at then 100 else div ((upper.at - step) * 100) (upper.at - lower.at);
     in
     if step == lower.at || lower.at == upper.at then
       lower.color
@@ -146,7 +149,7 @@ let
     variant:
     map (
       { at, color }:
-      anchor (100 + builtins.div ((at - 1) * 800) 99) color
+      anchor (100 + div ((at - 1) * 800) 99) color
     ) neutralAnchors.${variant};
 
   modernScales = variant: {

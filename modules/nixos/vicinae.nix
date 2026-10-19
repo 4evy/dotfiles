@@ -6,12 +6,13 @@
   ...
 }:
 let
-  vicinaePackage = inputs.vicinae.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  inherit (pkgs) stdenv;
+  vicinaePackage = inputs.vicinae.packages.${stdenv.hostPlatform.system}.default;
 in
 {
   boot.kernelModules = [ "uinput" ];
 
-  environment.systemPackages = [ vicinaePackage ];
+  environment.systemPackages = lib.attrValues { inherit vicinaePackage; };
 
   programs.vicinae.input-server = {
     enable = true;

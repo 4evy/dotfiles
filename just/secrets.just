@@ -2,7 +2,7 @@
 export SOPS_CONFIG := env("SOPS_CONFIG", repo_dir / ".sops.yaml")
 [macos]
 [private]
-export SOPS_AGE_KEY_CMD := env("SOPS_AGE_KEY_CMD", repo_dir / "dotfiles/dot_local/bin/executable_sops-age-key-1password")
+export SOPS_AGE_KEY_CMD := env("SOPS_AGE_KEY_CMD", repo_dir / "dotfiles/home/.local/lib/sops/sops.sh")
 [private]
 sops_records_vault := repo_dir / "secrets/records.yaml"
 [private]
@@ -10,7 +10,7 @@ sops_settings_vault := repo_dir / "secrets/secrets.yaml"
 [private]
 sops_vaults := [sops_records_vault, sops_settings_vault]
 
-# Materialize records at their chezmoi source paths, or pass an external workspace.
+# Materialize records at their native source paths, or pass an external workspace.
 [arg('workspace', max='1', help='Optional protected workspace outside the repository')]
 [group('secrets')]
 records-unpack *workspace: (_records ['unpack', workspace])
@@ -26,13 +26,17 @@ records-pack *workspace: (_records ['pack', workspace])
 records-check *workspace: (_records ['check', workspace])
 
 # Materialize and edit the source tree, or open one target or source path.
-[arg('target', max='1', help='Optional record target or chezmoi source path')]
+[arg('target', max='1', help='Optional record target or native source path')]
 [group('secrets')]
 records-edit *target: (_records ['edit', target])
 
 # Decrypt and show target-to-source record mappings and attributes.
 [group('secrets')]
 records-layout: (_records ['layout'])
+
+# Decrypt records into protected runtime files and emit a Hjem manifest
+[group('secrets')]
+records-deploy *args: (_records ['deploy', args])
 
 # Decrypt and validate every SOPS vault.
 [group('secrets')]

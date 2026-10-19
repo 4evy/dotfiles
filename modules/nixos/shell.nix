@@ -5,6 +5,8 @@
   ...
 }:
 let
+  inherit (lib.attrsets) attrValues;
+  inherit (pkgs) zsh;
   inherit (lib.modules) mkIf;
   inherit (lib.options) mkEnableOption;
 in
@@ -27,23 +29,25 @@ in
       };
     };
 
-    users.users.${config.local.user.name}.shell = pkgs.zsh;
+    users.users.${config.local.user.name}.shell = zsh;
 
-    # Chezmoi and the browser reconciler install user-owned commands here.
+    # Hjem and the browser reconciler install user-owned commands here
     environment.localBinInPath = true;
 
-    environment.systemPackages = with pkgs; [
-      atuin
-      bash-completion
-      btop
-      curl
-      eza
-      fastfetch
-      fzf
-      nmap
-      starship
-      yazi
-      zoxide
-    ];
+    environment.systemPackages = attrValues {
+      inherit (pkgs)
+        atuin
+        bash-completion
+        btop
+        curl
+        eza
+        fastfetch
+        fzf
+        nmap
+        starship
+        yazi
+        zoxide
+        ;
+    };
   };
 }

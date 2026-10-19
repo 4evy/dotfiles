@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/fallow/schema.json",
+  "entry": [
+    "scripts/**/*.ts",
+    "packages/macos/**/*.ts",
+    "packages/source/*.ts",
+    "packages/ghostty-patched/prepare.ts",
+    "packages/chatgpt/**/*.ts",
+    "bluebuild/recipes/spectrum/sources/sources.ts",
+    "dotfiles/home/.omp/agent/extensions/**/*.ts",
+    "dotfiles/home/.local/lib/{ghostty,helium,helix,solaar,vscode}/*.ts"
+  ],
+  "ignorePatterns": [
+    "!dotfiles/home/.local/**",
+    "!dotfiles/home/.omp/**",
+    ".jj/**",
+    ".venv/**",
+    ".cache/**",
+    "target/**",
+    "zig-pkg/**",
+    "zig-out/**",
+    // This independently locked package runs Fallow through its own check script
+    "packages/workstation/**",
+    "packages/omp/upstream/**"
+  ]
+}

@@ -16,49 +16,92 @@ import (
 	"runtime"
 	"slices"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/google/renameio/v2"
 	set "github.com/hashicorp/go-set/v3"
+	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 
 const (
 	formatVersion = 1
-	layoutVersion = 1
+	layoutVersion = 2
 )
 
 var (
-	collectionSchemas = map[string]collectionSchema{
-		"t0": {
-			fields: set.From([]string{
-				"body",
-				"executable",
-				"paths",
-				"private",
-				"render",
-				"systems",
-			}),
-			booleanFields: []string{"private", "executable", "render"},
-		},
+	collectionSchemas = map[string]*jsonschema.Schema{
+		"t0": compileRecordSchema(`{
+			"$schema": "https://json-schema.org/draft/2020-12/schema",
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["body", "executable", "paths", "private", "render", "systems"],
+			"properties": {
+				"body": {"type": "string"},
+				"executable": {"type": "boolean"},
+				"private": {"type": "boolean"},
+				"render": {"type": "boolean"},
+				"variants": {
+					"type": "array",
+					"items": {
+						"type": "object", "additionalProperties": false,
+						"required": ["system", "body"],
+						"properties": {
+							"system": {"enum": ["darwin", "linux"]},
+							"hostname": {"type": "string", "minLength": 1},
+							"body": {"type": "string"}
+						}
+					}
+				},
+				"paths": {
+					"type": "array", "minItems": 1, "uniqueItems": true,
+					"items": {"type": "string", "format": "safe-relative-path"}
+				},
+				"systems": {
+					"type": "array", "uniqueItems": true,
+					"items": {"enum": ["darwin", "linux"]}
+				}
+			}
+		}`),
 	}
-	collectionNames            = slices.Sorted(maps.Keys(collectionSchemas))
-	collectionNameSet          = set.From(collectionNames)
-	directoryAttributePrefixes = []string{"exact_", "private_", "readonly_"}
-	supportedSystems           = set.From([]string{"darwin", "linux"})
+	collectionNames   = slices.Sorted(maps.Keys(collectionSchemas))
+	collectionNameSet = set.From(collectionNames)
 )
 
-type collectionSchema struct {
-	fields        *set.Set[string]
-	booleanFields []string
+func compileRecordSchema(source string) *jsonschema.Schema {
+	var document any
+	if err := json.Unmarshal([]byte(source), &document); err != nil {
+		panic(err)
+	}
+	compiler := jsonschema.NewCompiler()
+	compiler.AssertFormat()
+	compiler.RegisterFormat(&jsonschema.Format{
+		Name: "safe-relative-path",
+		Validate: func(value any) error {
+			if path, ok := value.(string); ok && !validRelativePath(path) {
+				return errors.New("must be a safe relative path")
+			}
+			return nil
+		},
+	})
+	if err := compiler.AddResource("record.json", document); err != nil {
+		panic(err)
+	}
+	return compiler.MustCompile("record.json")
+}
+
+type recordVariant struct {
+	System   string `json:"system"`
+	Hostname string `json:"hostname,omitempty"`
+	Body     string `json:"body"`
 }
 
 type record struct {
-	Body       string   `json:"body"`
-	Executable bool     `json:"executable"`
-	Paths      []string `json:"paths"`
-	Private    bool     `json:"private"`
-	Render     bool     `json:"render"`
-	Systems    []string `json:"systems"`
+	Body       string          `json:"body"`
+	Executable bool            `json:"executable"`
+	Paths      []string        `json:"paths"`
+	Private    bool            `json:"private"`
+	Render     bool            `json:"render"`
+	Systems    []string        `json:"systems"`
+	Variants   []recordVariant `json:"variants,omitempty"`
 }
 
 type collectionSet map[string][]record
@@ -97,6 +140,9 @@ func (value collectionSet) clone() collectionSet {
 	result := make(collectionSet, len(value))
 	for collection, records := range value {
 		result[collection] = slices.Clone(records)
+		for index, item := range records {
+			result[collection][index].Variants = slices.Clone(item.Variants)
+		}
 	}
 	return result
 }
@@ -106,7 +152,6 @@ type vault struct {
 	file         string
 	marker       string
 	source       string
-	ignore       string
 	searchIgnore string
 	sops         string
 	stdout       io.Writer
@@ -153,14 +198,7 @@ func newVault(stdout, stderr io.Writer) (*vault, error) {
 			environment: "RECORDS_SOURCE",
 			destination: &result.source,
 			fallback: func() string {
-				return filepath.Join(repository, "dotfiles")
-			},
-		},
-		{
-			environment: "RECORDS_IGNORE_OVERLAY",
-			destination: &result.ignore,
-			fallback: func() string {
-				return filepath.Join(result.source, ".chezmoitemplates", "records-ignore")
+				return filepath.Join(repository, "dotfiles", "records")
 			},
 		},
 		{
@@ -297,31 +335,8 @@ func (v *vault) decryptCollections(files ...string) (collectionSet, error) {
 
 func decodeRecord(raw jsontext.Value, collection string, index int) (record, error) {
 	label := fmt.Sprintf("%s record %03d", collection, index)
-	var fields map[string]jsontext.Value
-	if err := json.Unmarshal(raw, &fields); err != nil || fields == nil {
-		return record{}, fmt.Errorf("%s must be an object", label)
-	}
-	schema, ok := collectionSchemas[collection]
-	if !ok {
-		return record{}, fmt.Errorf("unknown collection: %s", collection)
-	}
-	if !schema.fields.EqualSliceSet(slices.Collect(maps.Keys(fields))) {
-		return record{}, fmt.Errorf("%s has unexpected fields", label)
-	}
-	if fields["body"].Kind() != '"' {
-		return record{}, fmt.Errorf("%s body must be UTF-8 text", label)
-	}
-	if fields["paths"].Kind() != '[' {
-		return record{}, fmt.Errorf("%s paths must be unique safe relative paths", label)
-	}
-	if fields["systems"].Kind() != '[' {
-		return record{}, fmt.Errorf("%s systems must contain unique supported systems", label)
-	}
-	for _, field := range schema.booleanFields {
-		kind := fields[field].Kind()
-		if kind != 't' && kind != 'f' {
-			return record{}, fmt.Errorf("%s %s must be boolean", label, field)
-		}
+	if err := validateRecord(raw, collection, label); err != nil {
+		return record{}, err
 	}
 	var result record
 	if err := json.Unmarshal(raw, &result, json.RejectUnknownMembers(true)); err != nil {
@@ -339,9 +354,11 @@ func validateCollections(value collectionSet) error {
 		targets[collection] = set.New[string](0)
 	}
 	for current := range value.records() {
-		label := fmt.Sprintf("%s record %03d", current.collection, current.index)
-		if err := validateRecord(current.record, label); err != nil {
-			return err
+		selectors := set.New[string](len(current.record.Variants))
+		for _, variant := range current.record.Variants {
+			if !selectors.Insert(variant.System + "\x00" + variant.Hostname) {
+				return fmt.Errorf("%s record %03d has duplicate platform variants", current.collection, current.index)
+			}
 		}
 		for _, target := range current.record.Paths {
 			if !targets[current.collection].Insert(target) {
@@ -352,21 +369,26 @@ func validateCollections(value collectionSet) error {
 	return nil
 }
 
-func validateRecord(item record, label string) error {
-	if !utf8.ValidString(item.Body) {
-		return fmt.Errorf("%s body must be UTF-8 text", label)
+func validateRecord(raw jsontext.Value, collection, label string) error {
+	schema, ok := collectionSchemas[collection]
+	if !ok {
+		return fmt.Errorf("unknown collection: %s", collection)
 	}
-	if len(item.Paths) == 0 || set.From(item.Paths).Size() != len(item.Paths) {
-		return fmt.Errorf("%s paths must be unique safe relative paths", label)
+	var value any
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return fmt.Errorf("%s is not valid UTF-8 JSON", label)
 	}
-	for _, target := range item.Paths {
-		if !validRelativePath(target) {
-			return fmt.Errorf("%s paths must be unique safe relative paths", label)
+	if err := schema.Validate(value); err != nil {
+		// Report the field and constraint without exposing record values
+		if failure, ok := errors.AsType[*jsonschema.ValidationError](err); ok {
+			for len(failure.Causes) != 0 {
+				failure = failure.Causes[0]
+			}
+			return fmt.Errorf("%s invalid field /%s (%s)", label,
+				strings.Join(failure.InstanceLocation, "/"),
+				strings.Join(failure.ErrorKind.KeywordPath(), "/"))
 		}
-	}
-	if item.Systems == nil || set.From(item.Systems).Size() != len(item.Systems) ||
-		!supportedSystems.ContainsSlice(item.Systems) {
-		return fmt.Errorf("%s systems must contain unique supported systems", label)
+		return fmt.Errorf("%s has invalid fields", label)
 	}
 	return nil
 }
@@ -472,46 +494,34 @@ func (v *vault) runSOPS(stdin []byte, arguments ...string) ([]byte, error) {
 }
 
 func sopsEnvironment(repository string) []string {
-	environment := environmentMap(os.Environ())
+	environment := os.Environ()
 	config := filepath.Join(repository, ".sops.yaml")
-	if environment["SOPS_CONFIG"] == "" {
+	if os.Getenv("SOPS_CONFIG") == "" {
 		if regular, _ := isRegular(config); regular {
-			environment["SOPS_CONFIG"] = config
+			environment = append(environment, "SOPS_CONFIG="+config)
 		}
 	}
-	helper := filepath.Join(repository, "dotfiles", "dot_local", "bin", "executable_sops-age-key-1password")
-	if environment["SOPS_AGE_KEY_CMD"] == "" && runtime.GOOS == "darwin" {
+	helper := filepath.Join(repository, "dotfiles", "home", ".local", "lib", "sops", "sops.sh")
+	if os.Getenv("SOPS_AGE_KEY_CMD") == "" && runtime.GOOS == "darwin" {
 		if executable, _ := isExecutable(helper); executable {
-			environment["SOPS_AGE_KEY_CMD"] = helper
+			environment = append(environment, "SOPS_AGE_KEY_CMD="+helper)
 		}
 	}
-	return flattenEnvironment(environment)
-}
-
-func environmentMap(environment []string) map[string]string {
-	result := make(map[string]string, len(environment))
-	for _, entry := range environment {
-		name, value, found := strings.Cut(entry, "=")
-		if found {
-			result[name] = value
-		}
-	}
-	return result
-}
-
-func flattenEnvironment(environment map[string]string) []string {
-	names := slices.Sorted(maps.Keys(environment))
-	result := make([]string, 0, len(names))
-	for _, name := range names {
-		result = append(result, name+"="+environment[name])
-	}
-	return result
+	return environment
 }
 
 func equalCollections(left, right collectionSet) bool {
-	leftJSON, leftErr := marshalJSON(left)
-	rightJSON, rightErr := marshalJSON(right)
-	return leftErr == nil && rightErr == nil && bytes.Equal(leftJSON, rightJSON)
+	return maps.EqualFunc(left, right, func(left, right []record) bool {
+		return slices.EqualFunc(left, right, func(left, right record) bool {
+			return left.Body == right.Body &&
+				left.Executable == right.Executable &&
+				left.Private == right.Private &&
+				left.Render == right.Render &&
+				slices.Equal(left.Variants, right.Variants) &&
+				slices.Equal(left.Paths, right.Paths) &&
+				slices.Equal(left.Systems, right.Systems)
+		})
+	})
 }
 
 func recordCount(value collectionSet) int {

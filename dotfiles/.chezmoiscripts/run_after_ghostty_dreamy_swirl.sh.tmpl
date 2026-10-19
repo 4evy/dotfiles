@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-# shellcheck shell=bash
-set -euo pipefail
-
-generator="${CHEZMOI_HOME_DIR}/.local/bin/ghostty-dreamy-swirl.ts"
-if [[ -x "$generator" ]]; then
-	"$generator"
-fi

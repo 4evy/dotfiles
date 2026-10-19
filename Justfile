@@ -12,11 +12,11 @@ set script-interpreter := ['bash', '-euo', 'pipefail']
 # Recipe shells must keep this file's PATH instead of reloading shell startup
 unexport BASH_ENV
 
-import 'just/dev.just'
+import 'just/dev/dev.just'
 import 'just/secrets.just'
-import 'just/setup.just'
+import 'just/setup/setup.just'
 import 'just/spectrum.just'
-import 'just/system.just'
+import 'just/system/system.just'
 
 podman := split(env("PODMAN", "podman"))
 
@@ -32,10 +32,12 @@ homebrew_path := homebrew_prefix / ["bin", "sbin"]
 nix_bin_dir := "/nix/var/nix/profiles/default/bin"
 nix_profile_bin_dir := home_directory() / ".nix-profile/bin"
 nixos_profile_bin_dir := "/run/current-system/sw/bin"
+hjem_state_home := if env("XDG_STATE_HOME", "") == "" { home_directory() / ".local/state" } else { env("XDG_STATE_HOME") }
+hjem_path := if host_os == "linux" && !path_exists('/etc/NIXOS') { [hjem_state_home / "hjem/standalone/current-profile/bin"] } else { [] }
 
 # Keep activated runtimes ahead of fallback tools; add GNU utilities locally
 # since CI already supplies the selected tools
-export PATH := if env("CI", "") == "true" { env("PATH", "") } else { join_list([homebrew_gnu_path, env("PATH", ""), homebrew_path, nix_bin_dir, nix_profile_bin_dir, nixos_profile_bin_dir], PATH_VAR_SEP) }
+export PATH := if env("CI", "") == "true" { env("PATH", "") } else { join_list([homebrew_gnu_path, hjem_path, env("PATH", ""), homebrew_path, nix_bin_dir, nix_profile_bin_dir, nixos_profile_bin_dir], PATH_VAR_SEP) }
 # Development recipes are reproducible by default; dependency changes must be
 # made explicitly with uv outside the task runner
 export UV_LOCKED := "1"

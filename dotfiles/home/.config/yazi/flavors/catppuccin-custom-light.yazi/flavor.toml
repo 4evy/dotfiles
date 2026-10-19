@@ -1,0 +1,122 @@
+[app]
+overall = { bg = "@COLOR_LIGHT_BASE@" }
+
+[mgr]
+cwd = { fg = "@COLOR_LIGHT_FOAM@" }
+find_keyword = { fg = "@COLOR_LIGHT_GOLD@", italic = true }
+find_position = { fg = "@COLOR_LIGHT_ROSE@", italic = true }
+symlink_target = { fg = "@COLOR_LIGHT_SUBTLE@", italic = true }
+marker_copied = { fg = "@COLOR_LIGHT_PINE@", bg = "@COLOR_LIGHT_PINE@" }
+marker_cut = { fg = "@COLOR_LIGHT_LOVE@", bg = "@COLOR_LIGHT_LOVE@" }
+marker_marked = { fg = "@COLOR_LIGHT_FOAM@", bg = "@COLOR_LIGHT_FOAM@" }
+marker_selected = { fg = "@COLOR_LIGHT_IRIS@", bg = "@COLOR_LIGHT_IRIS@" }
+marker_symbol = "│"
+count_copied = { fg = "@COLOR_LIGHT_BASE@", bg = "@COLOR_LIGHT_PINE@" }
+count_cut = { fg = "@COLOR_LIGHT_BASE@", bg = "@COLOR_LIGHT_LOVE@" }
+count_selected = { fg = "@COLOR_LIGHT_BASE@", bg = "@COLOR_LIGHT_IRIS@" }
+border_symbol = "│"
+border_style = { fg = "@COLOR_LIGHT_HIGHLIGHTHIGH@" }
+
+[tabs]
+active = { fg = "@COLOR_LIGHT_ACCENTFOREGROUND@", bg = "@COLOR_LIGHT_ACCENT@", bold = true }
+inactive = { fg = "@COLOR_LIGHT_SUBTLE@", bg = "@COLOR_LIGHT_SURFACE@" }
+sep_inner = { open = "", close = "" }
+sep_outer = { open = "", close = "" }
+
+[mode]
+normal_main = { fg = "@COLOR_LIGHT_ACCENTFOREGROUND@", bg = "@COLOR_LIGHT_ACCENT@", bold = true }
+normal_alt = { fg = "@COLOR_LIGHT_ROSE@", bg = "@COLOR_LIGHT_SURFACE@" }
+select_main = { fg = "@COLOR_LIGHT_BASE@", bg = "@COLOR_LIGHT_PINE@", bold = true }
+select_alt = { fg = "@COLOR_LIGHT_PINE@", bg = "@COLOR_LIGHT_SURFACE@" }
+unset_main = { fg = "@COLOR_LIGHT_BASE@", bg = "@COLOR_LIGHT_LOVE@", bold = true }
+unset_alt = { fg = "@COLOR_LIGHT_LOVE@", bg = "@COLOR_LIGHT_SURFACE@" }
+
+[indicator]
+parent = { fg = "@COLOR_LIGHT_SUBTLE@", bg = "@COLOR_LIGHT_SURFACE@" }
+current = { fg = "@COLOR_LIGHT_ACCENTFOREGROUND@", bg = "@COLOR_LIGHT_ACCENT@", bold = true }
+preview = { fg = "@COLOR_LIGHT_BASE@", bg = "@COLOR_LIGHT_IRIS@", underline = true }
+padding = { open = "", close = "" }
+
+[status]
+overall = { fg = "@COLOR_LIGHT_TEXT@", bg = "@COLOR_LIGHT_BASE@" }
+sep_left = { open = "", close = "" }
+sep_right = { open = "", close = "" }
+progress_label = { fg = "@COLOR_LIGHT_TEXT@", bold = true }
+progress_normal = { fg = "@COLOR_LIGHT_PINE@", bg = "@COLOR_LIGHT_HIGHLIGHTLOW@" }
+progress_error = { fg = "@COLOR_LIGHT_GOLD@", bg = "@COLOR_LIGHT_LOVE@" }
+perm_type = { fg = "@COLOR_LIGHT_IRIS@" }
+perm_read = { fg = "@COLOR_LIGHT_GOLD@" }
+perm_write = { fg = "@COLOR_LIGHT_LOVE@" }
+perm_exec = { fg = "@COLOR_LIGHT_PINE@" }
+perm_sep = { fg = "@COLOR_LIGHT_PLACEHOLDER@" }
+
+[input]
+border = { fg = "@COLOR_LIGHT_ROSE@" }
+title = { fg = "@COLOR_LIGHT_ROSE@" }
+value = { fg = "@COLOR_LIGHT_TEXT@" }
+selected = { reversed = true }
+
+[pick]
+border = { fg = "@COLOR_LIGHT_ROSE@" }
+active = { fg = "@COLOR_LIGHT_ROSE@" }
+inactive = { fg = "@COLOR_LIGHT_SUBTLE@" }
+
+[confirm]
+border = { fg = "@COLOR_LIGHT_ROSE@" }
+title = { fg = "@COLOR_LIGHT_ROSE@" }
+body = { fg = "@COLOR_LIGHT_TEXT@" }
+list = { fg = "@COLOR_LIGHT_SUBTLE@" }
+btn_yes = { reversed = true }
+btn_no = { fg = "@COLOR_LIGHT_PLACEHOLDER@" }
+btn_labels = ["  [Y]es  ", "  (N)o  "]
+
+[cmp]
+border = { fg = "@COLOR_LIGHT_ROSE@" }
+active = { fg = "@COLOR_LIGHT_ACCENTFOREGROUND@", bg = "@COLOR_LIGHT_ACCENT@", bold = true }
+inactive = { fg = "@COLOR_LIGHT_SUBTLE@" }
+
+[tasks]
+border = { fg = "@COLOR_LIGHT_ROSE@" }
+title = { fg = "@COLOR_LIGHT_ROSE@" }
+hovered = { fg = "@COLOR_LIGHT_ROSE@", bold = true }
+
+[which]
+border = { fg = "@COLOR_LIGHT_ROSE@" }
+cols = 3
+mask = { bg = "@COLOR_LIGHT_SURFACE@" }
+cand = { fg = "@COLOR_LIGHT_FOAM@" }
+rest = { fg = "@COLOR_LIGHT_PLACEHOLDER@" }
+desc = { fg = "@COLOR_LIGHT_ROSE@" }
+separator = "  "
+separator_style = { fg = "@COLOR_LIGHT_HIGHLIGHTHIGH@" }
+
+[help]
+border = { fg = "@COLOR_LIGHT_ROSE@" }
+chord = { fg = "@COLOR_LIGHT_FOAM@" }
+action = { fg = "@COLOR_LIGHT_TEXT@" }
+hovered = { fg = "@COLOR_LIGHT_TEXT@", bg = "@COLOR_LIGHT_HIGHLIGHTLOW@", bold = true }
+
+[notify]
+title_info = { fg = "@COLOR_LIGHT_FOAM@" }
+title_warn = { fg = "@COLOR_LIGHT_GOLD@" }
+title_error = { fg = "@COLOR_LIGHT_LOVE@" }
+
+[filetype]
+rules = [
+  { mime = "**/image/*", fg = "@COLOR_LIGHT_FOAM@" },
+  { mime = "**/{audio,video}/*", fg = "@COLOR_LIGHT_GOLD@" },
+  { mime = "**/application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "@COLOR_LIGHT_ROSE@" },
+  { mime = "**/application/{pdf,doc,rtf}", fg = "@COLOR_LIGHT_PINE@" },
+  { mime = "vfs/{absent,stale}", fg = "@COLOR_LIGHT_PLACEHOLDER@" },
+  { url = "*", is = "orphan", bg = "@COLOR_LIGHT_LOVE@" },
+  { url = "*", is = "exec", fg = "@COLOR_LIGHT_PINE@" },
+  { url = "*", is = "dummy", bg = "@COLOR_LIGHT_LOVE@" },
+  { url = "*/", is = "dummy", bg = "@COLOR_LIGHT_LOVE@" },
+  { url = "*/", fg = "@COLOR_LIGHT_IRIS@" },
+]
+
+[spot]
+border = { fg = "@COLOR_LIGHT_ROSE@" }
+title = { fg = "@COLOR_LIGHT_ROSE@" }
+tbl_cell = { fg = "@COLOR_LIGHT_ROSE@", reversed = true }
+tbl_col = { fg = "@COLOR_LIGHT_FOAM@", bold = true }

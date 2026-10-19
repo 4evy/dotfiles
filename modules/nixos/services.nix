@@ -4,18 +4,30 @@
   ...
 }:
 let
-  # Import the rootfs once. Taking each local file as an independent Nix path
-  # would create another single-file store object for every shared policy.
-  rootfs = builtins.path {
-    path = ../../bluebuild/files/system;
+  inherit (lib.attrsets) attrValues;
+  inherit (pkgs)
+    bun
+    kmscon
+    nerd-fonts
+    runCommand
+    rustdesk-flutter
+    ;
+  # Import the rootfs once so shared policy files remain in one store tree
+  rootfs = lib.sources.cleanSourceWith {
+    src = ../../bluebuild/files/system;
     name = "spectrum-rootfs";
   };
 
   # System and user units, native drop-ins, and their shared canonical policy
   # files stay one tree consumed directly by both NixOS and BlueBuild.
-  spectrumSystemdUnits = pkgs.linkFarm "spectrum-systemd-units" {
-    "lib/systemd" = "${rootfs}/usr/lib/systemd";
-  };
+  spectrumSystemdUnits = runCommand "spectrum-systemd-units" { } ''
+    mkdir -p $out/lib
+    cp -rs ${rootfs}/usr/lib/systemd $out/lib/systemd
+    rm -r $out/lib/systemd/system/rustdesk.service.d \
+      $out/lib/systemd/system/tailscaled.service.d
+    rm $out/lib/systemd/system/spectrum-rustdesk-prepare.service \
+      $out/lib/systemd/system/spectrum-tailscale-policy.service
+  '';
 in
 {
   environment.etc = {
@@ -31,18 +43,18 @@ in
     "uresourced.conf".source = rootfs + "/etc/uresourced.conf";
   };
 
-  fonts.packages = [ pkgs.nerd-fonts.jetbrains-mono ];
+  fonts.packages = attrValues { inherit (nerd-fonts) jetbrains-mono; };
 
   services = {
     # The system daemon still supplies ancestor allocations to whichever user
     # owns the active graphical session. Spectrum's shared user-unit drop-in
     # keeps the separate --user app-management daemon disabled by default.
-    dbus.packages = [ pkgs.uresourced ];
+    dbus.packages = attrValues { inherit (pkgs) uresourced; };
     flatpak.enable = true;
 
     kmscon = {
       enable = true;
-      package = pkgs.kmscon;
+      package = kmscon;
       useXkbConfig = true;
       config = {
         hwaccel = true;
@@ -66,16 +78,29 @@ in
 
   systemd = {
     oomd.enable = true;
-    packages = [
-      pkgs.uresourced
-      spectrumSystemdUnits
-    ];
+    packages = attrValues {
+      inherit (pkgs) uresourced;
+      inherit spectrumSystemdUnits;
+    };
     services."user@".wants = [ "uresourced.service" ];
+    services.rustdesk = {
+      description = "RustDesk remote desktop service";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "network.target" ];
+      preStart = ''
+        ${lib.getExe bun} ${../../scripts/setup/applications.ts} rustdesk
+      '';
+      environment.HOME = "/root";
+      serviceConfig = {
+        ExecStart = "${lib.getExe rustdesk-flutter} --service";
+        Restart = "on-failure";
+        KillMode = "mixed";
+      };
+    };
   };
 
   virtualisation.podman = {
     enable = true;
-    dockerCompat = true;
     defaultNetwork.settings.dns_enabled = true;
   };
 }

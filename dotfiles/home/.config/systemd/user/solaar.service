@@ -1,0 +1,16 @@
+[Unit]
+Description=Solaar Logitech device manager
+After=graphical-session.target
+PartOf=graphical-session.target
+StartLimitIntervalSec=30
+StartLimitBurst=3
+
+[Service]
+Type=simple
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/run/current-system/sw/bin
+ExecStart=%h/.local/lib/solaar/solaar.ts
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

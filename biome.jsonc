@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.9/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -23,7 +23,7 @@
   },
   "overrides": [
     {
-      "includes": ["packages/equicord-settings/quick-css.css"],
+      "includes": ["packages/equicord-settings/css/css.css"],
       "linter": {
         "rules": {
           "complexity": {

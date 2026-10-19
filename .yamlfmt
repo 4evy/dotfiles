@@ -1,7 +1,7 @@
 ---
 gitignore_excludes: true
 exclude:
-  - dotfiles/dot_config/solaar/rules.yaml
+  - dotfiles/home/.config/solaar/rules.yaml
   - secrets/
 formatter:
   type: basic

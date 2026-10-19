@@ -29,9 +29,9 @@ in
       };
     })
     (mkIf (config.local.kde.enable || config.local.kde.hyperWindowTiling.enable) {
-      environment.systemPackages = [
-        pkgs.hyper-window-tiling-kde
-      ];
+      environment.systemPackages = attrValues {
+        inherit (pkgs) hyper-window-tiling-kde;
+      };
     })
   ];
 }

@@ -5,9 +5,6 @@ AllCops:
   TargetRubyVersion: 4.0
   Exclude:
     - .ruby-lsp/**/*
-    # Homebrew's dedicated style command owns Formula rules. Its cop settings
-    # intentionally conflict with upstream RuboCop in a few places.
-    - Formula/**/*
     - vendor/bundle/**/*
     - packages/**/vendor/**/*
     - '**/zig-pkg/**/*'
@@ -31,6 +28,10 @@ Metrics:
 
 Naming/PredicateMethod:
   Enabled: false
+
+Naming/FileName:
+  Exclude:
+    - packages/chatgpt/sync-plugins.rb
 
 # All URI.open call sites validate URI::HTTP before opening.
 Security/Open:

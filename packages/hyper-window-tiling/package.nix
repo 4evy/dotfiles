@@ -6,6 +6,7 @@
   glib,
 }:
 let
+  inherit (bun2nix) hook;
   repositoryRoot = ../..;
   packageRoot = ./.;
   packageMetadata = lib.importJSON (packageRoot + /package.json);
@@ -50,11 +51,11 @@ let
         sourceRoot="$sourceRoot/packages/hyper-window-tiling"
       '';
 
-      nativeBuildInputs = [
-        bun
-        bun2nix.hook
-      ]
-      ++ (args.nativeBuildInputs or [ ]);
+      nativeBuildInputs =
+        lib.attrValues {
+          inherit bun hook;
+        }
+        ++ (args.nativeBuildInputs or [ ]);
       doCheck = false;
       doInstallCheck = false;
 
@@ -72,7 +73,7 @@ in
 {
   gnome = mkTilingExtension {
     pname = "gnome-shell-extension-hyper-window-tiling";
-    nativeBuildInputs = [ glib ];
+    nativeBuildInputs = lib.attrValues { inherit glib; };
 
     buildPhase = buildPhaseFor "build:gnome";
 

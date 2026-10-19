@@ -1,0 +1,101 @@
+# shellcheck disable=SC2154
+#                                                                   ⢠⢾⠉⢻⠽⠛⣧
+#                                                                  ⢰⡟⡟⢢⣖⠲⡞⠯⣇
+#                                                                   ⢯⡿⢦⣉⡤⢳⢶⠟
+#                            ⣀⣀⣠⠤⠤⣤⡀                                ⠈⠷⠾⢽⠦⠼⠋⢀⡀
+#                       ⢀⡤⠔⠚⠉⠁  ⢀⣼⠿⡅                                   ⡏ ⣠⡴⢫⠇
+#                    ⢈⡵⠺⢅⣀     ⣠⠞⢁⠄⡇                               ⢟⢷⣄⡀⢳⢿⣋⡤⠞
+#                  ⣠⢞⡁   ⠈⠙⠲⢤⣠⣾⢋⠔⠁ ⡇                               ⠸⢤⣈⡻⣾⡍
+#                ⢀⡜⠁ ⠉⠓⠦⢄⣀   ⣰⠗⢁⡴⠂ ⡇                                  ⠉⢛⡷⠂
+#               ⢠⠏ ⠠⣄⡀   ⠈⠙⠲⡴⢃⡴⠋   ⡇                                   ⠸⠁
+#              ⢠⠏    ⠉⠓⠦⢄⡀ ⣰⡵⠋⣠⠞  ⢸⠁
+#              ⡎  ⠒⠤⣀    ⠈⣱⠋⣠⠞⢁   ⡼         ⢠⣀⣀                   ⢀⣀⣠
+#             ⢰⠃     ⠉⠓⠦⣄⣰⣣⠞⢁⠔⠁  ⢀⡇       ⡤⠔⡞ ⠈⠉⠉⠒⠒⠦⠤⢤⣀⣀ ⢀⣀⣠⠤⠤⠖⠒⠊⠉⠉ ⠘⡖⠤⡄
+#             ⢸  ⠙⠲⢤⣀   ⢰⠋⢁⠔⢁⡤   ⡼        ⡇ ⡇          ⠈⢹⠉           ⡇ ⡇
+#             ⠘⡄⣀    ⠉⠓⢦⣇⠔⢁⡴⠋   ⣰⠃        ⡇ ⡇  ⠑⠒⠒⠤⠤⢄⣀⡀ ⢸  ⣀⣀⠤⠤⠔⠒⠒⠁  ⡇ ⡇
+#              ⢧⠈⠙⠲⢤⣀ ⢠⠏⢀⡴⠋⣠⠆  ⣰⠃         ⡇ ⡇           ⢸            ⡇ ⡇
+#             ⠠⢜⣆    ⢩⠟⠴⠋⣠⠞⠁ ⢀⡴⠁          ⡇⢰⠃  ⠉⠉⠙⠒⠒⠤⠤⠄ ⢸  ⠤⠤⠔⠒⠚⠉⠉⠁  ⢳ ⡇
+#               ⠈⢷⠲⢤⣠⠏ ⣠⠞⠁ ⢀⡤⠋            ⡇⢸   ⣀⣀       ⢸       ⢀⣀⡀  ⢸ ⡇
+#                ⠈⠳⣠⡏⠙⠚⢁⣀⡤⠖⠋              ⡇⢸     ⠉⠉⠑⠒⠒⠄ ⢸  ⠔⠒⠒⠉⠉⠁    ⢸ ⡇
+#                 ⣠⠋⠉⠉⠉⠁                  ⡇⢸   ⠤⢄⣀⣀     ⢸     ⢀⣀⣀⠤⠄  ⢸ ⡇
+#                ⡰⠃                      ⢠⠃⡏       ⠉⠉⠑⠂ ⢸  ⠒⠉⠉⠁      ⠈⡇⢣
+#              ⢀⡼⠁                       ⢸ ⡇⠠⢄⣀⣀        ⢸        ⢀⣀⣀⠤ ⡇⢸
+#            ⠤⠤⠬⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠄              ⢸⣀⣉⠑⠒⠲⠬⢭⣙⣒⠒⠦⠤⡄ ⢸  ⡤⠤⠖⢒⣚⣩⠭⠴⠒⠒⢉⣁⣸
+#                                          ⠈⠉⠉⠒⠒⠤⠤⣄⣉⡉⠒⠒⠦⠼⠤⠖⠒⠊⣉⣁⡤⠤⠔⠒⠊⠉⠉
+#                                                   ⠉⠉⠙⠂  ⠚⠉⠉⠁
+
+# C M D S / shared commands
+# Editor, files, media, host tools, repo maintenance, and completions
+#
+# Loaded after shell frameworks so shared aliases take precedence.
+
+# Interactive tools should keep their styling even when a parent process was
+# started with NO_COLOR set.
+unset NO_COLOR
+
+# A1 / editor
+#      e h v vi vim ────────────> Helix
+
+alias e="hx"
+alias h="hx"
+alias v="hx"
+alias vi="hx"
+alias vim="hx"
+
+# A2 / file and system views
+# Shared aliases load after the shell frameworks, so these definitions replace
+# their platform-specific `ls` wrappers in both Bash and Zsh.
+
+unalias afind egrep fgrep grep 2>/dev/null || true
+
+alias ls="theme-run eza --icons=auto --group-directories-first"
+alias l="theme-run eza --icons=auto --group-directories-first"
+alias la="theme-run eza -a --icons=auto --group-directories-first"
+alias ll="theme-run eza -la --icons=auto --group-directories-first --git"
+alias lt="theme-run eza --tree --icons=auto --group-directories-first"
+
+alias btop="theme-run btop"
+alias htop="theme-run btop"
+alias top="theme-run btop"
+
+alias bat="theme-run bat"
+alias delta="theme-run delta"
+alias gitui="theme-run gitui"
+alias glow="theme-run glow"
+
+unalias pfetch neofetch 2>/dev/null || true
+
+pfetch() {
+	local terminal_width="${COLUMNS:-120}"
+	local -a fetch_options=()
+
+	if ! command -v fastfetch >/dev/null 2>&1; then
+		command pfetch "$@"
+		return
+	fi
+
+	if [[ ! -t 1 ]]; then
+		fetch_options+=(--logo none)
+	elif [[ "$terminal_width" =~ ^[0-9]+$ ]] && ((terminal_width < 100)); then
+		fetch_options+=(--logo none)
+	fi
+
+	command fastfetch "${fetch_options[@]}" "$@"
+}
+
+neofetch() { pfetch "$@"; }
+
+# A3 / media helpers
+#      m4a ─┐  mp3 ─┐  mp4 ─┐
+#           └─ cut variants share one yt-dlp runner
+
+_dotfiles_ytdlp() {
+	env -u PROMPT_MULTILINE_INDICATOR yt-dlp-script "$@"
+}
+
+m4a() { _dotfiles_ytdlp m4a "$@"; }
+m4a-cut() { _dotfiles_ytdlp m4a-cut "$@"; }
+mp3() { _dotfiles_ytdlp mp3 "$@"; }
+mp3-cut() { _dotfiles_ytdlp mp3-cut "$@"; }
+mp4() { _dotfiles_ytdlp mp4 "$@"; }
+mp4-cut() { _dotfiles_ytdlp mp4-cut "$@"; }

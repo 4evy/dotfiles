@@ -1,0 +1,13 @@
+--height=40%
+--layout=reverse
+--border
+--color=bg:@COLOR_LIGHT_BASE@,list-bg:@COLOR_LIGHT_BASE@,preview-bg:@COLOR_LIGHT_MANTLE@,input-bg:@COLOR_LIGHT_SURFACE0@
+--color=header-bg:@COLOR_LIGHT_BASE@,footer-bg:@COLOR_LIGHT_BASE@,bg+:@COLOR_LIGHT_SURFACE0@,selected-bg:@COLOR_LIGHT_SURFACE1@
+--color=fg:@COLOR_LIGHT_TEXT@,fg+:@COLOR_LIGHT_TEXT@,query:@COLOR_LIGHT_TEXT@,ghost:@COLOR_LIGHT_OVERLAY1@,disabled:@COLOR_LIGHT_OVERLAY0@
+--color=hl:@COLOR_LIGHT_SKY@,hl+:@COLOR_LIGHT_SKY@,selected-hl:@COLOR_LIGHT_SKY@,nth:dim
+--color=spinner:@COLOR_LIGHT_PINK@,info:@COLOR_LIGHT_PINK@,pointer:@COLOR_LIGHT_PINK@,marker:@COLOR_LIGHT_SKY@,prompt:@COLOR_LIGHT_PINK@
+--color=header:@COLOR_LIGHT_PINK@,footer:@COLOR_LIGHT_ROSEWATER@,gutter:@COLOR_LIGHT_BASE@,alt-bg:@COLOR_LIGHT_MANTLE@,alt-gutter:@COLOR_LIGHT_MANTLE@
+--color=border:@COLOR_LIGHT_OVERLAY0@,list-border:@COLOR_LIGHT_OVERLAY0@,preview-border:@COLOR_LIGHT_OVERLAY0@,input-border:@COLOR_LIGHT_OVERLAY0@
+--color=header-border:@COLOR_LIGHT_OVERLAY0@,footer-border:@COLOR_LIGHT_OVERLAY0@,scrollbar:@COLOR_LIGHT_OVERLAY2@,preview-scrollbar:@COLOR_LIGHT_OVERLAY2@
+--color=separator:@COLOR_LIGHT_SURFACE2@,gap-line:@COLOR_LIGHT_SURFACE2@,label:@COLOR_LIGHT_TEXT@,list-label:@COLOR_LIGHT_TEXT@
+--color=preview-label:@COLOR_LIGHT_ROSEWATER@,input-label:@COLOR_LIGHT_ROSEWATER@,header-label:@COLOR_LIGHT_ROSEWATER@,footer-label:@COLOR_LIGHT_ROSEWATER@

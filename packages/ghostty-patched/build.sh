@@ -20,7 +20,7 @@ patches_repository=$(jq -er '.repository' "$PATCHES_LOCK")
 patches_revision=$(jq -er '.revision' "$PATCHES_LOCK")
 
 mkdir -p /build/source /build/zig "$PREFIX"
-python3.14 /src/download_source.py "$SOURCE_LOCK" "$ZIG_PIN" /build/zig.tar.xz
+bun /src/download.ts "$SOURCE_LOCK" "$ZIG_PIN" /build/zig.tar.xz
 tar -xJf /build/zig.tar.xz --strip-components=1 -C /build/zig
 
 git init -q /build/source
@@ -41,11 +41,12 @@ while IFS= read -r patch_name || [[ -n $patch_name ]]; do
 done <"$patches/series"
 
 version="$VERSION_PREFIX.${revision:0:7}"
+mkdir -p /build/zig-cache/0.16/tmp
 (
 	cd /build/source
 	build_status=0
 	for attempt in 1 2 3; do
-		if PATH="/build/zig:$PATH" ZIG_GLOBAL_CACHE_DIR=/build/zig-cache \
+		if PATH="/build/zig:$PATH" ZIG_GLOBAL_CACHE_DIR=/build/zig-cache/0.16 \
 			/build/zig/zig build \
 			-p "$PREFIX" \
 			"${build_arguments[@]}" \

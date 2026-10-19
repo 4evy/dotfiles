@@ -1,4 +1,0 @@
-{{- $starship := lookPath "starship" -}}
-{{- if $starship -}}
-{{ output "starship" "init" "zsh" | replace $starship "starship" -}}
-{{- end -}}

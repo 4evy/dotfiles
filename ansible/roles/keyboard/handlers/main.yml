@@ -1,9 +1,0 @@
----
-- name: Restart Toshy services
-  ansible.builtin.command:
-    argv:
-      - sh
-      - -c
-      - command -v toshy-services-restart >/dev/null && exec toshy-services-restart
-  changed_when: true
-  failed_when: false

@@ -20,11 +20,12 @@ type workspaceFormat struct {
 }
 
 type recordMetadata struct {
-	Executable bool     `json:"executable"`
-	Paths      []string `json:"paths"`
-	Private    bool     `json:"private"`
-	Render     bool     `json:"render"`
-	Systems    []string `json:"systems"`
+	Executable bool            `json:"executable"`
+	Paths      []string        `json:"paths"`
+	Private    bool            `json:"private"`
+	Render     bool            `json:"render"`
+	Systems    []string        `json:"systems"`
+	Variants   []recordVariant `json:"variants,omitempty"`
 }
 
 func (v *vault) unpackWorkspace(destination string) (returnErr error) {
@@ -110,18 +111,15 @@ func (v *vault) checkMaterialized(value collectionSet) error {
 	if err := v.requireUnpackedMarker(); err != nil {
 		return err
 	}
-	if err := v.validateIgnoreOverlay(value); err != nil {
-		return err
-	}
 	sources, err := v.sourceFiles(value)
 	if err != nil {
 		return err
 	}
-	excluded := make([]string, 0, len(sources)+2)
+	excluded := make([]string, 0, len(sources)+1)
 	for _, source := range sources {
 		excluded = append(excluded, source.path)
 	}
-	excluded = append(excluded, v.ignore, v.searchIgnore)
+	excluded = append(excluded, v.searchIgnore)
 	if err := v.validateLocalExcludes(excluded); err != nil {
 		return err
 	}
@@ -255,6 +253,7 @@ func (item record) metadata() recordMetadata {
 		Private:    item.Private,
 		Render:     item.Render,
 		Systems:    item.Systems,
+		Variants:   item.Variants,
 	}
 }
 
@@ -366,11 +365,7 @@ func assertEntries(directory string, expected []string) error {
 	if err != nil {
 		return err
 	}
-	actual := make([]string, len(entries))
-	for index, entry := range entries {
-		actual[index] = entry.Name()
-	}
-	if set.From(expected).EqualSlice(actual) {
+	if set.FromFunc(entries, os.DirEntry.Name).EqualSlice(expected) {
 		return nil
 	}
 	return fmt.Errorf("unexpected files in protected workspace: %s", directory)

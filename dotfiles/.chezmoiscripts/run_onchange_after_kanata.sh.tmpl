@@ -1,7 +1,0 @@
-{{- if eq .chezmoi.os "darwin" -}}
-{{- $repo := .chezmoi.workingTree -}}
-#!/bin/sh
-# Kanata source fingerprint: {{ include "dot_config/kanata/kanata-macos.kbd" | sha256sum }}:{{ output "shasum" "-a" "256" (joinPath $repo "ansible/library/dotfiles_codesign.py") (joinPath $repo "ansible/roles/system/tasks/macos.yml") (joinPath $repo "ansible/roles/system/templates/macos/kanata-app-info.plist.j2") (joinPath $repo "ansible/roles/system/templates/macos/kanata.plist.j2") (joinPath $repo "ansible/roles/system/templates/macos/launch-kanata.j2") (joinPath $repo "Formula/kanata-with-cmd.rb") | sha256sum }}
-set -eu
-{{ template "ansible_reconcile.sh.tmpl" (dict "tags" "always,kanata" "required" true "label" "Kanata reconciliation") }}
-{{- end }}

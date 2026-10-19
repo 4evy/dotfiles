@@ -5,7 +5,6 @@ import (
 	json "encoding/json/v2"
 	"errors"
 	"fmt"
-	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +12,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"text/tabwriter"
 	"unicode/utf8"
 
 	"github.com/go-ruby-shellwords/shellwords"
@@ -28,23 +28,6 @@ var (
 		"# BEGIN dotfiles decrypted records",
 		"# END dotfiles decrypted records",
 	)
-	literalSourcePrefixes = []string{
-		"after_",
-		"before_",
-		"create_",
-		"dot_",
-		"empty_",
-		"encrypted_",
-		"executable_",
-		"literal_",
-		"modify_",
-		"once_",
-		"private_",
-		"readonly_",
-		"remove_",
-		"run_",
-		"symlink_",
-	}
 )
 
 type delimitedBlock struct {
@@ -99,11 +82,11 @@ func (v *vault) unpackSource() (returnErr error) {
 	if err != nil {
 		return err
 	}
-	excluded := make([]string, 0, len(sources)+2)
+	excluded := make([]string, 0, len(sources)+1)
 	for _, source := range sources {
 		excluded = append(excluded, source.path)
 	}
-	excluded = append(excluded, v.ignore, v.searchIgnore)
+	excluded = append(excluded, v.searchIgnore)
 	if err := v.updateLocalExcludes(excluded); err != nil {
 		return err
 	}
@@ -141,9 +124,6 @@ func (v *vault) unpackSource() (returnErr error) {
 			return err
 		}
 	}
-	if err := v.writeIgnoreOverlay(value); err != nil {
-		return err
-	}
 	if err := v.writeSearchIgnore(sources); err != nil {
 		return err
 	}
@@ -160,9 +140,6 @@ func (v *vault) packSource() error {
 	}
 	current, err := v.decryptCollections()
 	if err != nil {
-		return err
-	}
-	if err := v.validateIgnoreOverlay(current); err != nil {
 		return err
 	}
 	sources, err := v.sourceFiles(current)
@@ -195,7 +172,6 @@ func (v *vault) layout() error {
 		return err
 	}
 	type row [5]string
-	widths := [4]int{}
 	rows, err := collectRecords(value, func(current recordRef) ([]row, error) {
 		result := make([]row, 0, len(current.record.Paths))
 		for _, target := range current.record.Paths {
@@ -221,41 +197,50 @@ func (v *vault) layout() error {
 			if relativeErr != nil {
 				return nil, relativeErr
 			}
-			line := row{
+			attributes := strings.Join(flags, ",")
+			if attributes == "" {
+				attributes = "-"
+			}
+			result = append(result, row{
 				fmt.Sprintf("%s/%03d", current.collection, current.index),
 				systems,
-				strings.Join(flags, ","),
+				attributes,
 				target,
 				relative,
+			})
+		}
+		for index, variant := range current.record.Variants {
+			attributes := "variant"
+			if variant.Hostname != "" {
+				attributes += ",host-specific"
 			}
-			for column := range widths {
-				widths[column] = max(widths[column], len(line[column]))
+			for _, target := range current.record.Paths {
+				source, err := v.variantSourcePath(current, target, index)
+				if err != nil {
+					return nil, err
+				}
+				relative, err := relativePath(v.repository, source)
+				if err != nil {
+					return nil, err
+				}
+				result = append(result, row{
+					fmt.Sprintf("%s/%03d.%03d", current.collection, current.index, index),
+					variant.System, attributes, target, relative,
+				})
 			}
-			result = append(result, line)
 		}
 		return result, nil
 	})
 	if err != nil {
 		return err
 	}
+	output := tabwriter.NewWriter(v.stdout, 0, 0, 2, ' ', 0)
 	for _, current := range rows {
-		flags := current[2]
-		if flags == "" {
-			flags = "-"
-		}
-		if _, err := fmt.Fprintf(
-			v.stdout,
-			"%-*s  %-*s  %-*s  %-*s  %s\n",
-			widths[0], current[0],
-			widths[1], current[1],
-			widths[2], flags,
-			widths[3], current[3],
-			current[4],
-		); err != nil {
+		if _, err := fmt.Fprintln(output, strings.Join(current[:], "\t")); err != nil {
 			return err
 		}
 	}
-	return nil
+	return output.Flush()
 }
 
 func (v *vault) editSource(target string) error {
@@ -378,123 +363,31 @@ func (v *vault) sourceFiles(value collectionSet) ([]sourceFile, error) {
 		if item.Executable {
 			mode = 0o700
 		}
-		for _, target := range item.Paths {
-			path, err := v.sourcePathFor(target, item)
-			if err != nil {
-				return nil, err
+		for variant := -1; variant < len(item.Variants); variant++ {
+			body := item.Body
+			if variant >= 0 {
+				body = item.Variants[variant].Body
 			}
-			if !seen.Insert(path) {
-				return nil, fmt.Errorf(
-					"%s record %03d has a duplicate source path: %s",
-					current.collection,
-					current.index,
-					path,
-				)
+			for _, target := range item.Paths {
+				path, err := v.variantSourcePath(current, target, variant)
+				if err != nil {
+					return nil, err
+				}
+				if !seen.Insert(path) {
+					return nil, fmt.Errorf("%s record %03d has a duplicate source path", current.collection, current.index)
+				}
+				result = append(result, sourceFile{path: path, body: body, mode: mode})
 			}
-			result = append(result, sourceFile{path: path, body: item.Body, mode: mode})
 		}
 		return result, nil
 	})
 }
 
-func (v *vault) sourcePathFor(target string, item record) (string, error) {
-	components := strings.Split(filepath.ToSlash(target), "/")
-	basename := encodeSourceBasename(components[len(components)-1], item)
-	directory := v.source
-	for _, component := range components[:len(components)-1] {
-		var err error
-		directory, err = v.sourceDirectory(directory, encodeSourceName(component))
-		if err != nil {
-			return "", err
-		}
+func (v *vault) sourcePathFor(target string, _ record) (string, error) {
+	if !validRelativePath(target) {
+		return "", errors.New("record target must be a safe relative path")
 	}
-	attributes := ""
-	if item.Private {
-		attributes += "private_"
-	}
-	if item.Executable {
-		attributes += "executable_"
-	}
-	basename = attributes + basename
-	if item.Render {
-		basename += ".tmpl"
-	}
-	return filepath.Join(directory, basename), nil
-}
-
-func encodeSourceName(component string) string {
-	return encodeSourceBasename(component, record{})
-}
-
-func encodeSourceBasename(component string, item record) string {
-	if name, ok := strings.CutPrefix(component, "."); ok {
-		component = "dot_" + name
-	} else {
-		for _, prefix := range literalSourcePrefixes {
-			if strings.HasPrefix(component, prefix) {
-				if prefix == "private_" && item.Private ||
-					prefix == "executable_" && item.Executable {
-					break
-				}
-				component = "literal_" + component
-				break
-			}
-		}
-	}
-	if strings.HasSuffix(component, ".literal") ||
-		strings.HasSuffix(component, ".tmpl") && !item.Render {
-		component += ".literal"
-	}
-	return component
-}
-
-func (v *vault) sourceDirectory(parent, encodedName string) (string, error) {
-	directory, err := isDirectory(parent)
-	if err != nil {
-		return "", err
-	}
-	if !directory {
-		return filepath.Join(parent, encodedName), nil
-	}
-	entries, err := os.ReadDir(parent)
-	if err != nil {
-		return "", err
-	}
-	matches := make([]string, 0, 1)
-	for _, entry := range entries {
-		candidate := filepath.Join(parent, entry.Name())
-		candidateDirectory, statErr := isDirectory(candidate)
-		if statErr != nil {
-			return "", statErr
-		}
-		if candidateDirectory && sourceDirectoryName(entry.Name()) == encodedName {
-			matches = append(matches, candidate)
-		}
-	}
-	switch len(matches) {
-	case 0:
-		return filepath.Join(parent, encodedName), nil
-	case 1:
-		return matches[0], nil
-	default:
-		relative, _ := relativePath(v.repository, filepath.Join(parent, encodedName))
-		return "", fmt.Errorf("ambiguous chezmoi source directories for %s", relative)
-	}
-}
-
-func sourceDirectoryName(name string) string {
-	for {
-		matched := false
-		for _, prefix := range directoryAttributePrefixes {
-			if trimmed, ok := strings.CutPrefix(name, prefix); ok {
-				name = trimmed
-				matched = true
-			}
-		}
-		if !matched {
-			return name
-		}
-	}
+	return filepath.Join(v.source, filepath.FromSlash(target)), nil
 }
 
 func (v *vault) rejectSourceConflicts(sources []sourceFile) error {
@@ -529,43 +422,65 @@ func (v *vault) rejectSourceConflicts(sources []sourceFile) error {
 	return fmt.Errorf("refusing to overwrite changed plaintext records: %s", strings.Join(conflicts, ", "))
 }
 
+func (v *vault) variantSourcePath(current recordRef, target string, variant int) (string, error) {
+	path, err := v.sourcePathFor(target, current.record)
+	if err != nil || variant < 0 {
+		return path, err
+	}
+	return filepath.Join(v.source, ".variants", current.collection,
+		fmt.Sprintf("%03d", current.index), fmt.Sprintf("%03d", variant), filepath.FromSlash(target)), nil
+}
+
 func (v *vault) collectionsWithSourceBodies(value collectionSet) (collectionSet, error) {
 	updated := value.clone()
 	for current := range value.records() {
-		item := current.record
-		bodies := make([]string, 0, len(item.Paths))
-		for _, target := range item.Paths {
-			path, err := v.sourcePathFor(target, item)
+		for variant := -1; variant < len(current.record.Variants); variant++ {
+			body, err := v.readSourceBody(current, variant)
 			if err != nil {
-				return collectionSet{}, err
+				return nil, err
 			}
-			label, _ := relativePath(v.repository, path)
-			regular, err := isRegular(path)
-			if err != nil {
-				return collectionSet{}, err
+			if variant < 0 {
+				updated[current.collection][current.index].Body = body
+			} else {
+				updated[current.collection][current.index].Variants[variant].Body = body
 			}
-			if !regular {
-				return collectionSet{}, fmt.Errorf("missing plaintext record: %s", label)
-			}
-			body, err := os.ReadFile(path)
-			if err != nil {
-				return collectionSet{}, err
-			}
-			if !utf8.Valid(body) {
-				return collectionSet{}, fmt.Errorf("plaintext record must be UTF-8 text: %s", label)
-			}
-			bodies = append(bodies, string(body))
 		}
-		body, err := mergedSourceBody(bodies, item.Body, current.collection, current.index)
-		if err != nil {
-			return nil, err
-		}
-		updated[current.collection][current.index].Body = body
 	}
 	if err := validateCollections(updated); err != nil {
 		return nil, err
 	}
 	return updated, nil
+}
+
+func (v *vault) readSourceBody(current recordRef, variant int) (string, error) {
+	bodies := make([]string, 0, len(current.record.Paths))
+	for _, target := range current.record.Paths {
+		path, err := v.variantSourcePath(current, target, variant)
+		if err != nil {
+			return "", err
+		}
+		label, _ := relativePath(v.repository, path)
+		regular, err := isRegular(path)
+		if err != nil {
+			return "", err
+		}
+		if !regular {
+			return "", fmt.Errorf("missing plaintext record: %s", label)
+		}
+		body, err := os.ReadFile(path)
+		if err != nil {
+			return "", err
+		}
+		if !utf8.Valid(body) {
+			return "", fmt.Errorf("plaintext record must be UTF-8 text: %s", label)
+		}
+		bodies = append(bodies, string(body))
+	}
+	original := current.record.Body
+	if variant >= 0 {
+		original = current.record.Variants[variant].Body
+	}
+	return mergedSourceBody(bodies, original, current.collection, current.index)
 }
 
 func mergedSourceBody(bodies []string, original, collection string, index int) (string, error) {
@@ -633,9 +548,6 @@ func (v *vault) concealSourceFiles(value collectionSet) error {
 			return fmt.Errorf("refusing to remove unverified plaintext record: %s", label)
 		}
 	}
-	if err := v.validateIgnoreOverlay(value); err != nil {
-		return err
-	}
 	if err := v.validateSearchIgnore(sources); err != nil {
 		return err
 	}
@@ -645,11 +557,11 @@ func (v *vault) concealSourceFiles(value collectionSet) error {
 	if err := v.clearSearchIgnore(); err != nil {
 		return err
 	}
-	removable := make([]string, 0, len(sources)+2)
+	removable := make([]string, 0, len(sources)+1)
 	for _, source := range sources {
 		removable = append(removable, source.path)
 	}
-	removable = append(removable, v.ignore, v.marker)
+	removable = append(removable, v.marker)
 	for _, path := range removable {
 		if err := os.Remove(path); err != nil {
 			return err
@@ -932,78 +844,6 @@ func (v *vault) gitTracked(path string) (bool, error) {
 	} else {
 		return false, err
 	}
-}
-
-func (v *vault) writeIgnoreOverlay(value collectionSet) error {
-	content := ignoreOverlayContent(value)
-	if err := os.MkdirAll(filepath.Dir(v.ignore), 0o700); err != nil {
-		return err
-	}
-	_, mode, err := readOptionalTextFile(v.ignore)
-	if err != nil {
-		return err
-	}
-	if err := replaceTextFile(v.ignore, []byte(content), mode); err != nil {
-		return err
-	}
-	return os.Chmod(v.ignore, 0o600)
-}
-
-func (v *vault) validateIgnoreOverlay(value collectionSet) error {
-	regular, err := isRegular(v.ignore)
-	if err != nil {
-		return err
-	}
-	if !regular {
-		return errors.New("missing local records ignore overlay")
-	}
-	content, err := os.ReadFile(v.ignore)
-	if err != nil {
-		return err
-	}
-	if string(content) != ignoreOverlayContent(value) {
-		return errors.New("local records ignore overlay is stale; run `just records-unpack`")
-	}
-	return nil
-}
-
-func ignoreOverlayContent(value collectionSet) string {
-	type group struct {
-		systems []string
-		paths   []string
-	}
-	groups := make(map[string]*group)
-	for current := range value.records() {
-		item := current.record
-		if len(item.Systems) == 0 {
-			continue
-		}
-		systems := slices.Clone(item.Systems)
-		slices.Sort(systems)
-		key := strings.Join(systems, "\x00")
-		if groups[key] == nil {
-			groups[key] = &group{systems: systems}
-		}
-		groups[key].paths = append(groups[key].paths, item.Paths...)
-	}
-	keys := slices.Sorted(maps.Keys(groups))
-	lines := []string{"# Generated from encrypted record metadata; do not commit."}
-	for _, key := range keys {
-		current := groups[key]
-		expressions := make([]string, len(current.systems))
-		for index, system := range current.systems {
-			expressions[index] = fmt.Sprintf("(ne .chezmoi.os %s)", strconv.Quote(system))
-		}
-		expression := strings.Join(expressions, " ")
-		if len(expressions) > 1 {
-			expression = "and " + expression
-		}
-		lines = append(lines, "{{ if "+expression+" }}")
-		slices.Sort(current.paths)
-		lines = append(lines, current.paths...)
-		lines = append(lines, "{{ end }}")
-	}
-	return strings.Join(lines, "\n") + "\n"
 }
 
 func (v *vault) writeMarker() error {

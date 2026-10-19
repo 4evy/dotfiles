@@ -1,0 +1,37 @@
+[[plugin.deps]]
+use = "yazi-rs/plugins:diff"
+rev = "9166202cc1694c98bac3a639874d6f4c0eaa2dab"
+hash = "14558d2829c0aa05e99c57de8f74d199"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:full-border"
+rev = "9166202cc1694c98bac3a639874d6f4c0eaa2dab"
+hash = "f281261ff04ad7ec867c3f802a50835f"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:git"
+rev = "9166202cc1694c98bac3a639874d6f4c0eaa2dab"
+hash = "347cc6b190eb0c2fd60513cc7ae37412"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:smart-enter"
+rev = "9166202cc1694c98bac3a639874d6f4c0eaa2dab"
+hash = "187cc58ba7ac3befd49c342129e6f1b6"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:smart-paste"
+rev = "9166202cc1694c98bac3a639874d6f4c0eaa2dab"
+hash = "5be02722d97561b6f7aec22429aa00be"
+
+[[plugin.deps]]
+use = "Rolv-Apneseth/starship"
+rev = "ea92cf4"
+hash = "9776f378459072b6c2875eae5addc49d"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:types"
+rev = "9166202cc1694c98bac3a639874d6f4c0eaa2dab"
+hash = "d368d5a6a72657e1c0e7ee7340dcea8c"
+
+[flavor]
+deps = []

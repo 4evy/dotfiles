@@ -1,0 +1,35 @@
+--- a/lib/solaar/gtk.py
++++ b/lib/solaar/gtk.py
+@@ -95,6 +95,7 @@
+         choices=("regular", "symbolic", "solaar"),
+         help="prefer regular battery / symbolic battery / solaar icons",
+     )
++    arg_parser.add_argument("--no-tray", action="store_true", help="disable the tray icon")
+     arg_parser.add_argument("--tray-icon-size", type=int, help="explicit size for tray icons")
+     arg_parser.add_argument("-V", "--version", action="version", version="%(prog)s " + __version__)
+     arg_parser.add_argument("--help-actions", action="store_true", help="describe the command-line actions")
+@@ -201,7 +202,12 @@
+         configuration.defer_saves = True  # allow configuration saves to be deferred
+ 
+         # main UI event loop
+-        ui.run_loop(listener.start_all, listener.stop_all, args.window != "only", args.window != "hide")
++        ui.run_loop(
++            listener.start_all,
++            listener.stop_all,
++            args.window != "only" and not args.no_tray,
++            args.window != "hide",
++        )
+     except Exception:
+         sys.exit(f"{NAME.lower()}: error: {format_exc()}")
+ 
+--- a/lib/solaar/ui/__init__.py
++++ b/lib/solaar/ui/__init__.py
+@@ -102,8 +102,6 @@
+     use_tray: bool,
+     show_window: bool,
+ ):
+-    assert use_tray or show_window, "need either tray or visible window"
+-
+     application = Gtk.Application.new(APP_ID, Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
+ 
+     application.connect(

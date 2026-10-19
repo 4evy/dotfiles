@@ -1,0 +1,54 @@
+#:schema https://yazi-rs.github.io/schemas/keymap.json
+
+[mgr]
+prepend_keymap = [
+  { on = "d", run = "plugin diff", desc = "Diff the selected with the hovered file" },
+
+  { on = "<S-Up>", run = "arrow -50%", desc = "Move up half page" },
+  { on = "<S-Down>", run = "arrow 50%", desc = "Move down half page" },
+  { on = "<C-Home>", run = "arrow top", desc = "Move to the top" },
+  { on = "<C-End>", run = "arrow bot", desc = "Move to the bottom" },
+  { on = "<Right>", run = "plugin smart-enter", desc = "Enter directory or open file" },
+
+  { on = [
+    "g",
+    "g",
+  ], run = "cd --interactive", desc = "Go to a directory interactively" },
+  { on = [
+    "g",
+    "c",
+  ], run = "cd @HOME@/.config", desc = "Go to Config" },
+  { on = [
+    "g",
+    "d",
+  ], run = "cd @HOME@/Downloads", desc = "Go to Downloads" },
+  { on = [
+    "g",
+    "h",
+  ], run = "cd @HOME@", desc = "Go to Home" },
+  { on = [
+    "g",
+    "m",
+  ], run = "cd @HOME@/Movies", desc = "Go to Movies" },
+  { on = [
+    "g",
+    "u",
+  ], run = "cd @HOME@/Music", desc = "Go to Music" },
+  { on = [
+    "g",
+    "p",
+  ], run = "cd @HOME@/Pictures", desc = "Go to Pictures" },
+
+  { on = "t", run = "tab_create --current", desc = "Create a new tab using the current path" },
+
+  { on = "<C-a>", run = "toggle_all --state=on", desc = "Select all files" },
+  { on = "y", run = "yank --cut", desc = "Yank selected files (cut)" },
+  { on = "Y", run = "plugin system-clipboard", desc = "Copy files to system clipboard" },
+  { on = "U", run = "unyank", desc = "Cancel the yank status" },
+  { on = "p", run = "plugin smart-paste", desc = "Paste into hovered directory or CWD" },
+  { on = "P", run = "plugin smart-paste --force", desc = "Paste into hovered directory or CWD (overwrite)" },
+  { on = ":", run = "shell --interactive", desc = "Run a shell command" },
+  { on = "D", run = "remove", desc = "Trash selected files" },
+  { on = "s", run = "shell \"$SHELL\" --block", desc = "Open shell here" },
+  { on = "S", run = "search --via=rg", desc = "Search files by content using ripgrep" },
+]

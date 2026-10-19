@@ -2,17 +2,15 @@
 
 cask_args appdir: "/Applications" if OS.mac?
 
-tap "4evy/dotfiles", trusted: true
 tap "4evy/hide-disply-audio", "https://github.com/4evy/hide-disply-audio", trusted: true
-tap "4evy/patches", "https://github.com/4evy/patches", trusted: true
 
-# Bootstrap shell and provisioning tools
-brew "bash"
-brew "bash-completion@2"
-brew "chezmoi"
-brew "uv"
-brew "bun"
-brew "zstd"
+# Linux shell and everyday CLI packages are declared in modules/hjem/packages.nix
+# Bootstrap installs only the tools needed before Hjem can run
+brew "bash" if OS.mac?
+brew "bash-completion@2" if OS.mac?
+brew "uv" if OS.mac?
+brew "bun" if OS.mac?
+brew "zstd" if OS.mac?
 brew "go"
 brew "gradle"
 brew "maven"
@@ -22,37 +20,37 @@ brew "ruby-lsp"
 brew "rustup"
 
 if OS.mac?
-  cask "temurin@21"
+  cask "temurin"
 else
-  brew "openjdk@21"
+  brew "openjdk"
 end
 
 # Shells and prompts
 brew "atuin", restart_service: true
-brew "starship"
-brew "zoxide"
-brew "zsh"
+brew "starship" if OS.mac?
+brew "zoxide" if OS.mac?
+brew "zsh" if OS.mac?
 
 # CLI replacements
-brew "broot"
-brew "coreutils"
-brew "diffutils"
-brew "diffstat"
-brew "duf"
-brew "dust"
-brew "eza"
-brew "fd"
-brew "findutils"
-brew "gawk"
-brew "git-delta"
-brew "gnu-getopt"
-brew "gnu-sed"
-brew "gnu-tar"
-brew "gnu-which"
-brew "grep"
-brew "gum"
-brew "ripgrep"
-brew "sd"
+brew "broot" if OS.mac?
+brew "coreutils" if OS.mac?
+brew "diffutils" if OS.mac?
+brew "diffstat" if OS.mac?
+brew "duf" if OS.mac?
+brew "dust" if OS.mac?
+brew "eza" if OS.mac?
+brew "fd" if OS.mac?
+brew "findutils" if OS.mac?
+brew "gawk" if OS.mac?
+brew "git-delta" if OS.mac?
+brew "gnu-getopt" if OS.mac?
+brew "gnu-sed" if OS.mac?
+brew "gnu-tar" if OS.mac?
+brew "gnu-which" if OS.mac?
+brew "grep" if OS.mac?
+brew "gum" if OS.mac?
+brew "ripgrep" if OS.mac?
+brew "sd" if OS.mac?
 
 # Development
 brew "actionlint"
@@ -61,20 +59,19 @@ brew "biome"
 brew "clang-format"
 brew "delve"
 brew "dockerfmt" if OS.linux?
-brew "gh"
-brew "git"
-brew "git-filter-repo"
-brew "git-lfs"
-brew "gitui"
+brew "gh" if OS.mac?
+brew "git" if OS.mac?
+brew "git-filter-repo" if OS.mac?
+brew "git-lfs" if OS.mac?
+brew "gitui" if OS.mac?
 brew "golangci-lint"
 brew "gopls"
 brew "hadolint" if OS.linux?
 brew "autoconf"
 brew "automake"
 brew "cmake"
-brew "just"
+brew "just" if OS.mac?
 brew "just-lsp"
-brew "4evy/dotfiles/jj-patched"
 brew "libtool"
 brew "lld"
 brew "lua"
@@ -89,8 +86,8 @@ brew "pkgconf"
 brew "quilt"
 brew "rumdl"
 brew "selene"
-brew "shellcheck"
-brew "shfmt"
+brew "shellcheck" if OS.mac?
+brew "shfmt" if OS.mac?
 brew "sqlcipher"
 brew "stylua"
 brew "taplo"
@@ -119,19 +116,18 @@ brew "yara"
 brew "gdb" if OS.linux?
 
 # Editors and terminals
-brew "4evy/dotfiles/helix-tip"
-brew "yazi"
+brew "yazi" if OS.mac?
 
 # File management and archives
-brew "chafa"
-brew "file-formula"
-brew "resvg"
-brew "rsync"
-brew "sevenzip"
-brew "tree"
-brew "unzip"
-brew "xz"
-brew "zip"
+brew "chafa" if OS.mac?
+brew "file-formula" if OS.mac?
+brew "resvg" if OS.mac?
+brew "rsync" if OS.mac?
+brew "sevenzip" if OS.mac?
+brew "tree" if OS.mac?
+brew "unzip" if OS.mac?
+brew "xz" if OS.mac?
+brew "zip" if OS.mac?
 
 # Media and documents
 brew "ffmpeg"
@@ -145,8 +141,8 @@ brew "pandoc"
 brew "poppler"
 
 # Networking
-brew "age"
-brew "curl"
+brew "age" if OS.mac?
+brew "curl" if OS.mac?
 brew "bind"
 brew "gnupg"
 brew "netcat"
@@ -155,10 +151,10 @@ brew "openssh"
 brew "sshpass"
 # Linux Tailscale is a host service managed by the image and system role.
 if OS.mac?
-  # tailscaled requires a boot-level root service; Ansible owns that service.
+  # tailscaled requires a boot-level root service configured by nix-darwin
   brew "tailscale"
 end
-brew "wget"
+brew "wget" if OS.mac?
 
 # Android device access and screen mirroring
 cask "android-commandlinetools"
@@ -166,44 +162,34 @@ cask "android-platform-tools"
 brew "scrcpy"
 
 # Text processing and viewing
-brew "jq"
-brew "less"
-brew "yq"
+brew "jq" if OS.mac?
+brew "less" if OS.mac?
+brew "yq" if OS.mac?
 
 # System and misc
-brew "btop"
-brew "4evy/dotfiles/browser-configurer"
-brew "fastfetch"
-brew "fzf"
+brew "btop" if OS.mac?
+brew "fastfetch" if OS.mac?
+brew "fzf" if OS.mac?
 brew "ghidra"
 brew "ipsw" if OS.mac?
-brew "4evy/dotfiles/equilotl"
-brew "4evy/dotfiles/theme-run"
 
 # Linux's image owns Kanata's executable, configuration, and host integration.
-# macOS keeps its Brew-provided binary and signed launch daemon in Ansible.
+# macOS uses its Nix-provided binary and a Darwin launch daemon
 if OS.mac?
   brew "4evy/hide-disply-audio/hide-display-audio", args: ["HEAD"]
-  brew "4evy/dotfiles/kanata-with-cmd"
   brew "gettext"
   brew "hidapi"
   brew "zig"
 end
 brew "lsof"
-brew "ncdu"
-brew "pass"
-brew "ruff"
-brew "sops"
-brew "tlrc"
-brew "tokei"
-brew "ty"
-brew "yt-dlp"
-brew "4evy/dotfiles/yt-dlp-script"
-
-if OS.linux?
-  brew "wl-clipboard"
-  brew "xclip"
-end
+brew "ncdu" if OS.mac?
+brew "pass" if OS.mac?
+brew "ruff" if OS.mac?
+brew "sops" if OS.mac?
+brew "tlrc" if OS.mac?
+brew "tokei" if OS.mac?
+brew "ty" if OS.mac?
+brew "yt-dlp" if OS.mac?
 
 # GUI applications
 if OS.mac?
@@ -212,11 +198,8 @@ if OS.mac?
   cask "alt-tab"
   cask "appcleaner"
   cask "brave-browser"
-  cask "discord"
   cask "firefox"
   cask "google-chrome"
-  brew "4evy/dotfiles/ghostty-patched"
-  cask "helium-browser"
   cask "iina"
   cask "imhex"
   cask "itsycal"
@@ -227,8 +210,6 @@ if OS.mac?
   cask "stats"
   cask "telegram"
   cask "visual-studio-code"
-else
-  brew "4evy/dotfiles/helium-linux"
 end
 
 # Brew Bundle installs these through the native editor CLI on both Spectrum

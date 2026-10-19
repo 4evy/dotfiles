@@ -4,65 +4,23 @@
     "Containerfile": "dockerfile",
     "Justfile": "just",
 
-    // xembly.gomplate provides combined Go-template and host-language
-    // grammars for these formats. Keep the generic mapping as the fallback.
-    "*.tmpl": "gomplate",
-    "*.bash.tmpl": "goshell",
-    "*.css.tmpl": "gocss",
-    "*.html.tmpl": "gohtml",
-    "*.js.tmpl": "gojs",
-    "*.json.tmpl": "gojson",
-    "*.sh.tmpl": "goshell",
-    "*.ts.tmpl": "gots",
-    "*.yaml.tmpl": "goyaml",
-    "*.yml.tmpl": "goyaml",
-    "*.zsh.tmpl": "goshell",
-
-    // For host formats that gomplate does not embed, retain the base language
-    // mode so its native syntax, navigation, and completion remain available.
-    "*.conf.tmpl": "properties",
-    "*.desktop.tmpl": "properties",
-    "*.fish.tmpl": "fish",
-    "*.gitconfig.tmpl": "gitconfig",
-    "*.glsl.tmpl": "glsl",
-    "*.ghostty.tmpl": "properties",
-    "*.hjson.tmpl": "hjson",
-    "*.jsonc.tmpl": "jsonc",
-    "*.lua.tmpl": "lua",
-    "*.plist.tmpl": "xml",
-    "*.py.tmpl": "python",
-    "*.rb.tmpl": "ruby",
-    "*.ron.tmpl": "ron",
-    "*.scss.tmpl": "scss",
-    "*.theme.tmpl": "properties",
-    "*.tmTheme.tmpl": "xml",
-    "*.toml.tmpl": "toml",
-    "*.xml.tmpl": "xml",
-
     "*.m": "objective-c",
     "*.mm": "objective-cpp",
     "*.plist.in": "xml",
     "*.py.in": "python",
     "*.xml.in": "xml",
 
-    "ansible/**/*.yml": "ansible",
-    "ansible/**/*.yaml": "ansible",
     "**/*.plist.j2": "jinja-xml",
     "**/*.py.j2": "jinja-py",
     "**/*.sh.j2": "jinja-shell",
 
-    "**/.chezmoitemplates/executable_fingerprint": "gomplate",
-    "**/.chezmoitemplates/theme_rgb": "gomplate",
-    "**/.chezmoitemplates/theme_color_mix": "gomplate",
-    "**/.chezmoitemplates/record-filter.sh": "goshell",
-
-    "**/dot_bash_profile.tmpl": "goshell",
-    "**/dot_bashenv.tmpl": "goshell",
-    "**/dot_bashrc.tmpl": "goshell",
-    "**/dot_gitconfig.tmpl": "gitconfig",
-    "**/private_dot_ssh/private_config.tmpl": "ssh_config",
-    "**/dot_zshenv.tmpl": "goshell",
-    "**/dot_zshrc.tmpl": "goshell"
+    "**/.bash_profile": "shellscript",
+    "**/.bashenv": "shellscript",
+    "**/.bashrc": "shellscript",
+    "**/.gitconfig": "gitconfig",
+    "**/.ssh/config": "ssh_config",
+    "**/.zshenv": "shellscript",
+    "**/.zshrc": "shellscript"
   },
   "explorer.excludeGitIgnore": true,
   "files.exclude": {
@@ -76,7 +34,6 @@
   "C_Cpp.codeAnalysis.clangTidy.enabled": true,
   "C_Cpp.formatting": "clangFormat",
   "search.exclude": {
-    "**/.ansible": true,
     "**/.cache": true,
     "**/.complexipy_cache": true,
     "**/.decrypted~*": true,
@@ -101,7 +58,6 @@
     "secrets": true
   },
   "files.watcherExclude": {
-    "**/.ansible/**": true,
     "**/.cache/**": true,
     "**/.complexipy_cache/**": true,
     "**/.decrypted~*": true,
@@ -146,12 +102,7 @@
     "**/zlogout": true,
     "**/*.zshenv": true,
     "**/zshenv": true,
-    "**/*.zsh-theme": true,
-    "**/*.bash.tmpl": true,
-    "**/*.sh.tmpl": true,
-    "**/*.zsh.tmpl": true,
-    "**/dot_bashrc.tmpl": true,
-    "**/dot_zshrc.tmpl": true
+    "**/*.zsh-theme": true
   },
   "shellcheck.customArgs": ["--source-path=SCRIPTDIR"],
   "shellcheck.useWorkspaceRootAsCwd": true,
@@ -182,8 +133,6 @@
   "nix.formatterPath": "nixfmt",
   "rubyLsp.formatter": "rubocop",
   "vscode-just.lspPath": "vscode-just-lsp",
-  "ansible.ansible.useFullyQualifiedCollectionNames": true,
-  "ansible.validation.lint.enabled": true,
   "markdownlint.enable": false,
   "rumdl.server.path": "rumdl",
   "redhat.telemetry.enabled": false,

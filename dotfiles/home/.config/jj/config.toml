@@ -1,0 +1,54 @@
+[user]
+name = "4evy"
+email = "git@evy.pink"
+
+[ui]
+color = "auto"
+paginate = "auto"
+merge-editor = "vscode"
+diff-formatter = "git-plaintext-records"
+default-command = "log"
+
+[merge-tools.git-plaintext-records]
+program = "jj-diff"
+diff-args = ["patch", "$left", "$right", "@REPOSITORY@", "$width"]
+diff-expected-exit-codes = [0, 1]
+
+[merge-tools.git-plaintext-records-stat]
+program = "jj-diff"
+diff-args = ["stat", "$left", "$right", "@REPOSITORY@", "$width"]
+diff-expected-exit-codes = [0, 1]
+
+[git]
+# Sign unsigned outgoing commits authored or committed by me. The local jj
+# patch preserves explicitly redated author and committer timestamps while
+# adding signatures.
+sign-on-push = '''~signed() & (mine() | committer(exact-i:"git@evy.pink"))'''
+# Preserve the custom branch's shallow-fetch behavior: one requested commit
+# plus its parent, so the requested commit retains a real diff base.
+fetch-depth = 2
+
+[signing]
+behavior = "drop"
+backend = "ssh"
+key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPsZFHUhLSPiz0EF1Q59jzu7IS7qdn3MSEImztN4KgmN"
+
+[signing.backends.ssh]
+# ssh-keygen signs with the matching key from SSH_AUTH_SOCK. In an SSH session,
+# that is the originating computer's forwarded 1Password agent, so approval is
+# requested there instead of by the remote computer's 1Password app.
+program = "ssh-keygen"
+allowed-signers = "@HOME@/.ssh/allowed_signers"
+
+[aliases]
+d = ["describe"]
+ds = ["diff", "--tool", "git-plaintext-records-stat"]
+p = ["git", "push"]
+e = ["edit"]
+n = ["new"]
+get.definition = ["git", "ref", "fetch"]
+get.doc = "Fetch Git refs or commit IDs (native git ref fetch options)"
+
+[templates]
+git_push_bookmark = '"4evy/push-" ++ change_id.short()'
+duplicate_description = 'concat(description, "\n(cherry picked from commit ", commit_id, ")")'

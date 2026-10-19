@@ -1,18 +1,13 @@
-{ inputs, pkgs, ... }:
+{ pkgs, ... }:
 let
-  patchedKanata = inputs.patches.packages.${pkgs.stdenv.hostPlatform.system}.kanata.overrideAttrs {
-    buildFeatures = [ "cmd" ];
-  };
+  inherit (pkgs) kanata-with-cmd;
 in
 {
   services.kanata = {
     enable = true;
-    package = patchedKanata;
+    package = kanata-with-cmd;
     keyboards.main = {
-      configFile = builtins.path {
-        path = ../../packages/kanata/kanata.kbd;
-        name = "kanata-config";
-      };
+      configFile = ../../packages/kanata/kanata.kbd;
     };
   };
 }

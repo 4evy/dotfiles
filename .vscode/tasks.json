@@ -140,32 +140,12 @@
     },
     {
       "label": "dotfiles: preview",
-      "detail": "Preview pending chezmoi changes without refreshing externals.",
+      "detail": "Preview pending Hjem-managed home changes.",
       "type": "process",
       "command": "just",
       "args": ["dotfiles-diff"],
       "icon": {
         "id": "diff"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "dotfiles: render current template",
-      "detail": "Render the active standalone template with this repository's chezmoi data.",
-      "type": "process",
-      "command": "chezmoi",
-      "args": [
-        "--source",
-        "${workspaceFolder}/dotfiles",
-        "--working-tree",
-        "${workspaceFolder}",
-        "--refresh-externals=never",
-        "execute-template",
-        "--file",
-        "${file}"
-      ],
-      "icon": {
-        "id": "preview"
       },
       "problemMatcher": []
     },
@@ -273,7 +253,6 @@
         "spectrum",
         "fmt",
         "lint",
-        "ansible",
         "bun",
         "nix",
         "watch",
@@ -285,7 +264,7 @@
     {
       "id": "nixPackage",
       "type": "pickString",
-      "description": "Package output for this system (see lib/flake.nix; Linux-only outputs require the Linux checkout)",
+      "description": "Package output for this system (see nix/flake/packages.nix; Linux-only outputs require the Linux checkout)",
       "default": "default",
       "options": [
         "default",
@@ -293,7 +272,7 @@
         "bun2nix",
         "check-jsonschema",
         "dotfiles-nix-tools",
-        "dotfiles-python",
+        "dotfiles-workstation",
         "equicord-settings",
         "hyper-window-tiling-gnome",
         "hyper-window-tiling-kde",

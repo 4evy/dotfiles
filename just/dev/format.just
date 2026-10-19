@@ -63,4 +63,5 @@ just-fmt: *(_just-format *git_files(['Justfile', '*.just']))
 just-check: *(_just-format *git_files(['Justfile', '*.just']) ['--check'])
 
 _just-format file flags=[]:
+    [[ -f {{ quote(file) }} && ! -L {{ quote(file) }} ]] || exit 0
     {{ quote([just_executable(), '--unstable', '--justfile', file, '--fmt', flags]) }}

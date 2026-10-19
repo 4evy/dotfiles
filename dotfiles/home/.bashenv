@@ -1,0 +1,27 @@
+# shellcheck shell=bash
+#                                       ⣠⠖⠒⠢⡄
+#             ⢠⠞⠉⠉⠑⡄                    ⡇⣠⠆ ⡽
+#             ⠸⣄ ⡗⢲⢇⡀                  ⣠⠟⠣⠤⠞⠁
+#              ⠈⠉⡏⠁ ⠈⠑⠢⣄⡀            ⣠⠞⠁
+#                ⡇      ⠈⠓⠦⣄⡀      ⣠⠞⠁
+#                ⡇          ⠉⠓⢦⣞⣉⣩⢿⡁
+#                ⡇            ⢸⡀⠛⢧⣠⠃                   ⣀⡤⡤⢤⣄⡀
+#                ⡇             ⠉⠓⠊⠙⣄                 ⢠⢞⠣⡑⢌⠢⡑⢝⢦
+#                ⡇                 ⠈⠳⡀              ⢠⢏⠂⢠ ⠢⡁⢠ ⡙⢧
+#                ⡇                   ⠙⢦⡀            ⣞⠢⡑⢄⠤⠗⠦⢄⡐⢌⠺⡆
+#              ⢀⡤⣧⣀                    ⠳⣄⣀⣀⡀        ⡧⣵⢌ ⠙⠦⠞⠁⢈⢲⡕⡇
+#             ⢰⠋⣠⣧⠈⡇                    ⡞⢧⣄⠙⣆      ⢀⡟⣟⡞     ⠘⡟⣟⣇
+#             ⠈⢧⣈⣁⡴⠃                    ⢧⡘⠛⣀⡎     ⢠⡟⢽⡧⣇     ⢀⣏⣿⡙⢧
+#                                        ⠉⠉⠁      ⠓⠋⠉⢳⣜⣆   ⢀⣞⣲⠋⠉⠓⠃
+#                                                 ⡤⠒⡋⢉⠙⡿⣦⣠⣠⡾⡟⢉⠉⡓⠢⡄
+#                                                 ⠙⠦⠧⠼⠤⠧⠞⠁⠙⠦⠧⠼⠤⠧⠞⠁
+
+# Bash environment entry point.
+#
+# BASH_ENV may source this file for non-interactive shells, so keep it quiet
+# and delegate all idempotence to the shared environment module.
+
+if [[ -r "$HOME/.config/shell/environment.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$HOME/.config/shell/environment.sh"
+fi

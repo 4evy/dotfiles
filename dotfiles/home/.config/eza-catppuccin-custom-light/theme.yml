@@ -1,0 +1,105 @@
+---
+colourful: true
+
+filekinds:
+  normal: {foreground: "@COLOR_LIGHT_TEXT@"}
+  directory: {foreground: "@COLOR_LIGHT_PINK@"}
+  symlink: {foreground: "@COLOR_LIGHT_BLUE@"}
+  pipe: {foreground: "@COLOR_LIGHT_SUBTEXT1@"}
+  block_device: {foreground: "@COLOR_LIGHT_MAROON@"}
+  char_device: {foreground: "@COLOR_LIGHT_MAROON@"}
+  socket: {foreground: "@COLOR_LIGHT_SUBTEXT1@"}
+  special: {foreground: "@COLOR_LIGHT_MAUVE@"}
+  executable: {foreground: "@COLOR_LIGHT_GREEN@"}
+  mount_point: {foreground: "@COLOR_LIGHT_TEAL@"}
+
+perms:
+  user_read: {foreground: "@COLOR_LIGHT_RED@", is_bold: true}
+  user_write: {foreground: "@COLOR_LIGHT_YELLOW@", is_bold: true}
+  user_execute_file: {foreground: "@COLOR_LIGHT_GREEN@", is_bold: true}
+  user_execute_other: {foreground: "@COLOR_LIGHT_GREEN@", is_bold: true}
+  group_read: {foreground: "@COLOR_LIGHT_RED@"}
+  group_write: {foreground: "@COLOR_LIGHT_YELLOW@"}
+  group_execute: {foreground: "@COLOR_LIGHT_GREEN@"}
+  other_read: {foreground: "@COLOR_LIGHT_RED@"}
+  other_write: {foreground: "@COLOR_LIGHT_YELLOW@"}
+  other_execute: {foreground: "@COLOR_LIGHT_GREEN@"}
+  special_user_file: {foreground: "@COLOR_LIGHT_MAUVE@"}
+  special_other: {foreground: "@COLOR_LIGHT_OVERLAY1@"}
+  attribute: {foreground: "@COLOR_LIGHT_OVERLAY2@"}
+
+size:
+  major: {foreground: "@COLOR_LIGHT_SUBTEXT0@"}
+  minor: {foreground: "@COLOR_LIGHT_SKY@"}
+  number_byte: {foreground: "@COLOR_LIGHT_SUBTEXT1@"}
+  number_kilo: {foreground: "@COLOR_LIGHT_SUBTEXT0@"}
+  number_mega: {foreground: "@COLOR_LIGHT_BLUE@"}
+  number_giga: {foreground: "@COLOR_LIGHT_MAUVE@"}
+  number_huge: {foreground: "@COLOR_LIGHT_MAUVE@"}
+  unit_byte: {foreground: "@COLOR_LIGHT_SUBTEXT0@"}
+  unit_kilo: {foreground: "@COLOR_LIGHT_SKY@"}
+  unit_mega: {foreground: "@COLOR_LIGHT_MAUVE@"}
+  unit_giga: {foreground: "@COLOR_LIGHT_MAUVE@"}
+  unit_huge: {foreground: "@COLOR_LIGHT_TEAL@"}
+
+users:
+  user_you: {foreground: "@COLOR_LIGHT_TEXT@"}
+  user_root: {foreground: "@COLOR_LIGHT_RED@"}
+  user_other: {foreground: "@COLOR_LIGHT_MAROON@"}
+  group_yours: {foreground: "@COLOR_LIGHT_SUBTEXT0@"}
+  group_other: {foreground: "@COLOR_LIGHT_OVERLAY2@"}
+  group_root: {foreground: "@COLOR_LIGHT_RED@"}
+
+links:
+  normal: {foreground: "@COLOR_LIGHT_BLUE@"}
+  multi_link_file: {foreground: "@COLOR_LIGHT_BLUE@"}
+
+git:
+  new: {foreground: "@COLOR_LIGHT_GREEN@"}
+  modified: {foreground: "@COLOR_LIGHT_YELLOW@"}
+  deleted: {foreground: "@COLOR_LIGHT_MAROON@"}
+  renamed: {foreground: "@COLOR_LIGHT_TEAL@"}
+  typechange: {foreground: "@COLOR_LIGHT_PINK@"}
+  ignored: {foreground: "@COLOR_LIGHT_OVERLAY1@"}
+  conflicted: {foreground: "@COLOR_LIGHT_PEACH@"}
+
+git_repo:
+  branch_main: {foreground: "@COLOR_LIGHT_SUBTEXT0@"}
+  branch_other: {foreground: "@COLOR_LIGHT_MAUVE@"}
+  git_clean: {foreground: "@COLOR_LIGHT_GREEN@"}
+  git_dirty: {foreground: "@COLOR_LIGHT_MAROON@"}
+
+security_context:
+  none: {foreground: "@COLOR_LIGHT_OVERLAY1@"}
+  selinux:
+    colon: {foreground: "@COLOR_LIGHT_OVERLAY0@"}
+    user: {foreground: "@COLOR_LIGHT_OVERLAY1@"}
+    role: {foreground: "@COLOR_LIGHT_MAUVE@"}
+    typ: {foreground: "@COLOR_LIGHT_SURFACE2@"}
+    range: {foreground: "@COLOR_LIGHT_MAUVE@"}
+
+file_type:
+  image: {foreground: "@COLOR_LIGHT_YELLOW@"}
+  video: {foreground: "@COLOR_LIGHT_RED@"}
+  music: {foreground: "@COLOR_LIGHT_GREEN@"}
+  lossless: {foreground: "@COLOR_LIGHT_TEAL@"}
+  crypto: {foreground: "@COLOR_LIGHT_OVERLAY1@"}
+  document: {foreground: "@COLOR_LIGHT_TEXT@"}
+  compressed: {foreground: "@COLOR_LIGHT_PINK@"}
+  temp: {foreground: "@COLOR_LIGHT_MAROON@"}
+  compiled: {foreground: "@COLOR_LIGHT_SAPPHIRE@"}
+  build: {foreground: "@COLOR_LIGHT_YELLOW@"}
+  source: {foreground: "@COLOR_LIGHT_BLUE@"}
+
+punctuation: {foreground: "@COLOR_LIGHT_OVERLAY0@"}
+date: {foreground: "@COLOR_LIGHT_YELLOW@"}
+inode: {foreground: "@COLOR_LIGHT_SUBTEXT0@"}
+blocks: {foreground: "@COLOR_LIGHT_OVERLAY0@"}
+header: {foreground: "@COLOR_LIGHT_TEXT@"}
+octal: {foreground: "@COLOR_LIGHT_TEAL@"}
+flags: {foreground: "@COLOR_LIGHT_MAUVE@"}
+
+symlink_path: {foreground: "@COLOR_LIGHT_SKY@"}
+control_char: {foreground: "@COLOR_LIGHT_SAPPHIRE@"}
+broken_symlink: {foreground: "@COLOR_LIGHT_RED@"}
+broken_path_overlay: {foreground: "@COLOR_LIGHT_SURFACE2@"}

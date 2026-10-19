@@ -1,0 +1,19 @@
+[theme]
+name = "catppuccin-custom-dark"
+
+[colors]
+AlertInfo = "@COLOR_DARK_SKY@"
+AlertWarn = "@COLOR_DARK_PEACH@"
+AlertError = "@COLOR_DARK_RED@"
+Annotation = "@COLOR_DARK_PINK@"
+Base = "@COLOR_DARK_TEXT@"
+Guidance = "@COLOR_DARK_OVERLAY2@"
+Important = "@COLOR_DARK_PINK@"
+Title = "@COLOR_DARK_PINK@"
+Muted = "@COLOR_DARK_OVERLAY1@"
+SyntaxCommand = "@COLOR_DARK_BLUE@"
+SyntaxFlag = "@COLOR_DARK_MAUVE@"
+SyntaxString = "@COLOR_DARK_GREEN@"
+SyntaxVariable = "@COLOR_DARK_ROSEWATER@"
+SyntaxOperator = "@COLOR_DARK_SKY@"
+SyntaxComment = "@COLOR_DARK_OVERLAY0@"

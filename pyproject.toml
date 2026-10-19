@@ -1,55 +1,23 @@
-[build-system]
-requires = ["setuptools>=83"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "dotfiles-python"
+name = "dotfiles-toshy"
 version = "0.1.0"
-description = "Personal workstation commands for Linux and macOS."
+description = "Repository checks for Toshy configuration"
 requires-python = ">=3.14,<3.15"
-dependencies = [
-  "cyclopts>=5.1,<6",
-  "packaging>=24,<27",
-  "platformdirs>=4.3,<5",
-  "psutil>=7,<8",
-  "pydantic>=2.13,<3",
-  "pydantic-settings>=2.12,<3",
-  "pyobjc-framework-Cocoa>=11.1,<13; sys_platform == 'darwin'",
-  "rich>=15,<16",
-]
-
-[project.scripts]
-extra-shell-completions = "workstation.local.shell_completions:main"
-sync-equicord-settings = "workstation.apps.equicord_settings:main"
-vscode-catppuccin-custom-icons = "workstation.apps.vscode_icons:main"
-desktop-perf-audit = "workstation.local.desktop_audit:desktop_perf_audit_entrypoint"
-discord-equicord = "workstation.apps.discord:entrypoint"
-gnome-catppuccin-custom-accent = "workstation.local.gnome:gnome_catppuccin_custom_accent_entrypoint"
-jj-diff = "workstation.local.jj:jj_diff_entrypoint"
-macos-catppuccin-custom-appearance = "workstation.macos.appearance:apply_appearance"
-phone-mirror = "workstation.local.phone_mirror:entrypoint"
-terminal-catppuccin-custom = "workstation.macos.terminal:terminal_profile"
+dependencies = []
 
 [dependency-groups]
-automation = [
-  "ansible>=14,<15",
-  "ansible-core>=2.21,<2.22",
-  "ansible-lint>=26,<27",
-]
 dev = [
-  { include-group = "kmscon" },
-  "complexipy>=8,<9",
-  "defusedxml>=0.7,<1",
+  "complexipy>=8.0.1,<9",
   "deptry>=0.25.1,<0.26",
-  "ruff>=0.16,<0.17",
-  "ty>=0.0.57,<0.1",
-  "vulture>=2.14,<3",
+  "ruff>=0.17.1,<0.18",
+  "ty>=0.0.89,<0.1",
+  "vulture>=2.16,<3",
 ]
-kmscon = ["astral>=3.2,<4"]
 
 [tool.uv]
-default-groups = ["dev", "automation"]
-required-version = ">=0.11.26,<0.13"
+package = false
+default-groups = ["dev"]
+required-version = ">=0.13,<0.14"
 required-environments = [
   "sys_platform == 'darwin' and platform_machine == 'arm64'",
   "sys_platform == 'linux' and platform_machine == 'x86_64'",
@@ -58,17 +26,6 @@ required-environments = [
 [tool.uv.pip]
 strict = true
 
-[tool.setuptools.packages.find]
-where = ["packages/dotfiles-python/src"]
-include = ["workstation", "workstation.*"]
-namespaces = false
-
-[tool.setuptools.data-files]
-"share/dotfiles-python/desktop" = [
-  "packages/dotfiles-python/assets/desktop/*.json",
-  "packages/dotfiles-python/assets/desktop/*.in",
-]
-
 [tool.ruff]
 force-exclude = true
 line-length = 88
@@ -76,9 +33,6 @@ preview = true
 show-fixes = true
 target-version = "py314"
 unsafe-fixes = false
-
-[tool.ruff.per-file-target-version]
-"ansible/bootstrap.py" = "py39"
 
 [tool.ruff.lint]
 ignore = [
@@ -103,6 +57,8 @@ ignore = [
   "line-too-long",
   # Copyright headers and exhaustive API prose do not make automation safer.
   "missing-copyright-notice",
+  "missing-trailing-period",
+  "missing-terminal-punctuation",
   "undocumented-public-module",
   "undocumented-public-class",
   "undocumented-public-method",
@@ -129,6 +85,7 @@ ignore = [
   # Importing subprocess and using argv without a shell are intentional here.
   "suspicious-subprocess-import",
   "subprocess-without-shell-equals-true",
+  "start-process-with-partial-path",
   "start-process-with-no-shell",
   # Standalone automation scripts are not importable packages.
   "implicit-namespace-package",
@@ -149,22 +106,16 @@ allow-multiline = false
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
-known-first-party = ["workstation"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
 
 [tool.ruff.lint.per-file-ignores]
 # Toshy executes these slices inside its config namespace and supplies the API.
-"ansible/roles/keyboard/files/toshy/slices/*.py" = [
-  "runtime-import-in-type-checking-block",
-]
+"packages/toshy-user/slices/*.py" = ["runtime-import-in-type-checking-block"]
 # This variable name is Toshy's public configuration interface.
-"ansible/roles/keyboard/files/toshy/slices/kbtype_override.py" = [
+"packages/toshy-user/slices/kbtype_override.py" = [
   "mixed-case-variable-in-global-scope",
-]
-"packages/dotfiles-python/src/workstation/macos/terminal.py" = [
-  "get-attr-with-constant",
 ]
 
 [tool.ruff.lint.pylint]
@@ -182,17 +133,10 @@ preview = true
 
 [tool.ty.environment]
 python-version = "3.14"
-extra-paths = [
-  "./",
-  "./ansible/roles/keyboard/files/toshy",
-  "./packages/dotfiles-python/src",
-  "./bluebuild/files/kmscon",
-  "./packages/source-lock",
-  "./dotfiles/dot_local/lib/python",
-]
+extra-paths = ["./", "./packages/toshy-user"]
 
 [tool.ty.src]
-include = [".github", "ansible", "bluebuild", "dotfiles", "packages"]
+include = ["packages/toshy-user", "scripts/setup/toshy.py"]
 
 [tool.ty.rules]
 all = "error"
@@ -203,33 +147,22 @@ error-on-warning = true
 [tool.vulture]
 exclude = ["*/node_modules/*", "*/__pycache__/*"]
 min_confidence = 100
-paths = [".github", "ansible", "bluebuild", "dotfiles", "packages"]
+paths = ["packages/toshy-user", "scripts/setup/toshy.py"]
 sort_by_size = true
 
 [tool.deptry]
-root = [".github", "ansible", "bluebuild", "dotfiles", "packages"]
+root = ["packages/toshy-user", "scripts"]
 # Keep first-party setup.py helpers in dependency discovery.
 exclude = [
   "(^|.*/)(venv|\\.venv|\\.direnv|\\.git|\\.jj|node_modules|zig-pkg|build|dist)(/|$)",
 ]
-known_first_party = [
-  "codex_app_server",
-  "kmscon_files",
-  "lsp_jsonrpc",
-  "source_lock",
-  "workstation",
-]
 
 [tool.deptry.per_rule_ignores]
 # Solaar and Toshy supply their own deployment runtimes.
-DEP001 = ["solaar", "xwaykeyz"]
-# Cocoa is macOS-only and loaded dynamically through importlib.
-DEP002 = ["pyobjc-framework-Cocoa"]
-# Deployment helpers and repository checks use these outside the runtime wheel
-DEP004 = ["ansible", "astral", "defusedxml"]
+DEP001 = ["xwaykeyz"]
 
 [tool.complexipy]
 exclude = ["**/node_modules/**", "**/__pycache__/**"]
 failed = true
 max-complexity-allowed = 15
-paths = [".github", "ansible", "bluebuild", "dotfiles", "packages"]
+paths = ["packages/toshy-user", "scripts/setup/toshy.py"]

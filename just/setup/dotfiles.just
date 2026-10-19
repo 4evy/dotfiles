@@ -1,19 +1,12 @@
-# Apply chezmoi-managed dotfiles
-[arg('targets', help='Optional target paths to apply')]
+# Activate the complete Hjem-managed home generation
 [group('setup')]
-apply *targets: (doctor 'apply')
-    chezmoi \
-      --source {{ quote(repo_dir) }} \
-      --refresh-externals=auto \
-      {{ quote(if targets { ['apply', targets] } else { ['init', '--apply'] }) }}
+apply: (doctor 'apply')
+    scripts/hjem/hjem.sh apply
 
-# Preview pending chezmoi-managed dotfile changes without refreshing externals
+# Preview pending Hjem-managed home changes
 [group('setup')]
 dotfiles-diff: (doctor 'apply')
-    chezmoi \
-      --source {{ quote(repo_dir) }} \
-      --refresh-externals=never \
-      diff
+    scripts/hjem/hjem.sh diff
 
 # Apply Helium extensions, settings, and the Catppuccin Custom themes
 [group('setup')]
@@ -43,31 +36,27 @@ helium: (doctor 'reconcile')
         exit 1
       fi
     fi
-    ansible/bootstrap.py run --tags helium
+    bun scripts/setup/applications.ts helium
 
-# Prepare or repair the dependencies needed to run Ansible
+# Prepare Homebrew and uv for workstation setup
 [group('setup')]
 [positional-arguments]
 bootstrap *args:
-    ansible/bootstrap.py bootstrap "$@"
+    scripts/setup/setup.sh bootstrap "$@"
 
 [doc('Install userland, apply dotfiles, then configure the host.')]
 [group('setup')]
 [positional-arguments]
 setup *args:
-    ansible/bootstrap.py setup "$@"
+    scripts/setup/setup.sh setup "$@"
 
 # Refresh userland, dotfiles, and host stages on an already-bootstrapped machine
 [group('setup')]
 update:
-    DOTFILES_HOMEBREW_UPGRADE=1 ansible/bootstrap.py setup
+    DOTFILES_HOMEBREW_UPGRADE=1 scripts/setup/setup.sh setup
 
-_deps:
-    uv run ansible-galaxy collection install {{ if !path_exists('.ansible/collections/ansible_collections/community/general/MANIFEST.json') || !path_exists('.ansible/collections/ansible_collections/community/sops/MANIFEST.json') { '--force' } }} \
-      --requirements-file ansible/requirements.yml
-
-# Run selected Ansible tasks with the installed runtime
+# Build and activate the macOS system configuration
 [group('setup')]
-[positional-arguments]
-ansible *args:
-    ansible/bootstrap.py run "$@"
+[macos]
+darwin:
+    scripts/setup/setup.sh setup --only host

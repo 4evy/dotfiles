@@ -1,4 +1,0 @@
-{{- $starship := lookPath "starship" -}}
-{{- if $starship -}}
-{{ output "starship" "init" "bash" "--print-full-init" | replace $starship "starship" -}}
-{{- end -}}

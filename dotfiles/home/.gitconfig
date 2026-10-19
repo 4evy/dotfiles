@@ -1,0 +1,45 @@
+[user]
+    name = 4evy
+    email = git@evy.pink
+    signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPsZFHUhLSPiz0EF1Q59jzu7IS7qdn3MSEImztN4KgmN
+
+[gpg]
+    format = ssh
+
+[gpg "ssh"]
+    # Use the local 1Password agent normally and its forwarded socket over SSH.
+    program = ssh-keygen
+    allowedSignersFile = "@HOME@/.ssh/allowed_signers"
+
+[commit]
+    gpgsign = false
+
+[push]
+    gpgSign = if-asked
+
+[core]
+    excludesfile = "@HOME@/.gitignore_global"
+    pager = theme-run delta
+
+[interactive]
+    diffFilter = theme-run delta --color-only
+
+[delta]
+    features = catppuccin-custom-dark
+    navigate = true
+    line-numbers = true
+
+[include]
+    path = "@HOME@/.config/git/catppuccin-custom-delta.gitconfig"
+
+[filter "lfs"]
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+    required = true
+
+[credential "https://github.com"]
+    helper = !/usr/bin/env gh auth git-credential
+
+[credential "https://gist.github.com"]
+    helper = !/usr/bin/env gh auth git-credential

@@ -1,0 +1,72 @@
+#                             ⣀⡤⠤⠖⠒⠒⠉⣹⡷
+#                       ⢀⣀⣀⡤⠒⠉⠁    ⢀⡾⠋⢸
+#                      ⢀⡴⠊⠉⠒⠤⣀   ⢀⣴⠏⣠⠖⢸
+#                    ⢀⠔⠫⣄⡀    ⠉⠓⠶⣫⣫⠞⠁ ⢸
+#                   ⡴⠋   ⠉⠓⠢⢄⣀  ⣰⠟⢁⡴⠋ ⢸                      ⡇
+#                 ⢀⡜⠁ ⠲⢤⣀    ⠈⠙⣺⢃⡴⠋⡀  ⢸           ⡀    ⢸⡀    ⡇    ⣸     ⡀
+#                 ⡼     ⠈⠙⠲⠤⣀ ⣰⡷⠋⣠⠞⠁  ⡏           ⢱⡀ ⢀⣠⠴⡗⠚⢉⣭⠟⡟⢯⣍⠙⠒⡷⢤⣀  ⣰⠁
+#                ⢸⠁  ⠒⠦⣄⡀    ⣹⠋⣠⠞⢁⡀  ⢠⠇           ⢀⣧⠚⠉  ⠁⡴⢭⠘⢢⣥⠚⢨⠵⡄⠁ ⠈⠙⢢⣇
+#                ⡞      ⠉⠓⠦⢄⣰⣣⠞⢁⡴⠋   ⡼          ⢀⡴⠋     ⢸⠱⠄ ⢹⣿⣇ ⠴⢹     ⠈⠳⣄
+#                ⡇ ⠈⠑⠢⢤⣀   ⢠⠋⢁⡴⠋⣠   ⢠⠇         ⢰⡋       ⡏⠤⠄⢰⣿⣿⣿ ⠤⠌⡇      ⠈⣳
+#                ⢳⢀    ⠈⠙⠲⢤⣏⡴⠋⣠⠞⠁  ⢀⡏           ⠙⢦⡀     ⢹⢠⠄⠘⣿⣿⡟ ⢤⢸⠁     ⣠⠞⠁
+#                ⠸⡌⠉⠒⠤⣀⡀ ⢠⠏ ⣠⠞⢁⡴  ⢀⡞              ⠙⠦⣀   ⠈⢧⠴⢀⡹⠿⣁⠰⢤⠏   ⢀⡠⠞⠁
+#                ⣀⣳⡀   ⠉⢳⠯⣤⠞⢁⡴⠋  ⣠⠎                 ⠈⠙⠲⢤⣀⣀⠙⠾⣄⣇⡼⠞⢁⣀⣠⠴⠚⠉
+#                 ⠉⢳⡢⢤⡀⢠⠏ ⢀⡴⠋  ⢀⡴⠁                       ⠈⠉⠉⠉⠉⠉⠉⠉
+#                   ⠙⣄⢨⠟⠲⠴⠋ ⢀⡤⠖⠉
+#                    ⢨⠟⠒⠒⠒⠚⠉⠁
+#                   ⣰⠋
+#                  ⡴⠃
+#                 ⠞⠁
+#              ⠈⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠁
+
+# zsh syntax highlighting / Catppuccin Custom
+# ANSI bright black carries Catppuccin Custom's muted foreground, so automatic light/dark
+# theme changes also update muted shell text in an already-running shell.
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+ZSH_HIGHLIGHT_HIGHLIGHTERS=(main)
+typeset -gA ZSH_HIGHLIGHT_STYLES
+ZSH_HIGHLIGHT_STYLES[comment]='fg=8'
+ZSH_HIGHLIGHT_STYLES[alias]='fg=green'
+ZSH_HIGHLIGHT_STYLES[suffix-alias]='fg=green'
+ZSH_HIGHLIGHT_STYLES[global-alias]='fg=green'
+ZSH_HIGHLIGHT_STYLES[function]='fg=green'
+ZSH_HIGHLIGHT_STYLES[command]='fg=green'
+ZSH_HIGHLIGHT_STYLES[precommand]='fg=green,italic'
+ZSH_HIGHLIGHT_STYLES[autodirectory]='fg=yellow,italic'
+ZSH_HIGHLIGHT_STYLES[single-hyphen-option]='fg=yellow'
+ZSH_HIGHLIGHT_STYLES[double-hyphen-option]='fg=yellow'
+ZSH_HIGHLIGHT_STYLES[back-quoted-argument]='fg=magenta'
+ZSH_HIGHLIGHT_STYLES[builtin]='fg=green'
+ZSH_HIGHLIGHT_STYLES[reserved-word]='fg=green'
+ZSH_HIGHLIGHT_STYLES[hashed-command]='fg=green'
+ZSH_HIGHLIGHT_STYLES[commandseparator]='fg=red'
+ZSH_HIGHLIGHT_STYLES[command-substitution-delimiter]='none'
+ZSH_HIGHLIGHT_STYLES[command-substitution-delimiter-unquoted]='none'
+ZSH_HIGHLIGHT_STYLES[process-substitution-delimiter]='none'
+ZSH_HIGHLIGHT_STYLES[back-quoted-argument-delimiter]='fg=red'
+ZSH_HIGHLIGHT_STYLES[back-double-quoted-argument]='fg=red'
+ZSH_HIGHLIGHT_STYLES[back-dollar-quoted-argument]='fg=red'
+ZSH_HIGHLIGHT_STYLES[command-substitution-quoted]='fg=yellow'
+ZSH_HIGHLIGHT_STYLES[command-substitution-delimiter-quoted]='fg=yellow'
+ZSH_HIGHLIGHT_STYLES[single-quoted-argument]='fg=yellow'
+ZSH_HIGHLIGHT_STYLES[single-quoted-argument-unclosed]='fg=red'
+ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=yellow'
+ZSH_HIGHLIGHT_STYLES[double-quoted-argument-unclosed]='fg=red'
+ZSH_HIGHLIGHT_STYLES[rc-quote]='fg=yellow'
+ZSH_HIGHLIGHT_STYLES[dollar-quoted-argument]='none'
+ZSH_HIGHLIGHT_STYLES[dollar-quoted-argument-unclosed]='fg=red'
+ZSH_HIGHLIGHT_STYLES[dollar-double-quoted-argument]='none'
+ZSH_HIGHLIGHT_STYLES[assign]='none'
+ZSH_HIGHLIGHT_STYLES[named-fd]='none'
+ZSH_HIGHLIGHT_STYLES[numeric-fd]='none'
+ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=red'
+ZSH_HIGHLIGHT_STYLES[path]='underline'
+ZSH_HIGHLIGHT_STYLES[path_pathseparator]='fg=red,underline'
+ZSH_HIGHLIGHT_STYLES[path_prefix]='underline'
+ZSH_HIGHLIGHT_STYLES[path_prefix_pathseparator]='fg=red,underline'
+ZSH_HIGHLIGHT_STYLES[globbing]='none'
+ZSH_HIGHLIGHT_STYLES[history-expansion]='fg=magenta'
+ZSH_HIGHLIGHT_STYLES[back-quoted-argument-unclosed]='fg=red'
+ZSH_HIGHLIGHT_STYLES[redirection]='none'
+ZSH_HIGHLIGHT_STYLES[arg0]='none'
+ZSH_HIGHLIGHT_STYLES[default]='none'

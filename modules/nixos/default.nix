@@ -5,7 +5,7 @@
 }:
 let
   inherit (lib.options) mkOption;
-  inherit (lib.types) nonEmptyStr;
+  inherit (lib.types) nonEmptyStr passwdEntry path;
 
   cfg = config.local.user;
   # Keep invalid user names evaluable long enough for the assertion below to
@@ -23,38 +23,41 @@ in
 
   imports = [
     ../cross
-    ./desktop-packages.nix
+    ./packages/desktop.nix
     ./gnome.nix
     ./hardware.nix
     ./kanata.nix
     ./kde.nix
     ./networking.nix
-    ./packages.nix
+    ./packages/packages.nix
     ./shell.nix
     ./toshy.nix
     ./vicinae.nix
-    ./nixcord/settings.nix
+    ../cross/nixcord.nix
     ./services.nix
-    ./zed-remote.nix
+    ./zed/zed.nix
   ];
 
   options.local.user = {
     name = mkOption {
-      type = nonEmptyStr;
+      type = passwdEntry nonEmptyStr;
       description = "Primary interactive user managed by the dotfiles NixOS modules.";
     };
 
     home = mkOption {
-      type = nonEmptyStr;
+      type = passwdEntry path;
       readOnly = true;
       default = user.home;
+      defaultText = lib.literalExpression "config.users.users.\${config.local.user.name}.home";
+      apply = toString;
       description = "Home directory of the primary interactive user.";
     };
 
     group = mkOption {
-      type = nonEmptyStr;
+      type = passwdEntry nonEmptyStr;
       readOnly = true;
       default = user.group;
+      defaultText = lib.literalExpression "config.users.users.\${config.local.user.name}.group";
       description = "Primary group of the primary interactive user.";
     };
   };
@@ -62,7 +65,7 @@ in
   config = {
     assertions = [
       {
-        assertion = builtins.hasAttr cfg.name config.users.users;
+        assertion = lib.hasAttr cfg.name config.users.users;
         message = "local.user.name must identify an account declared in users.users.";
       }
       {

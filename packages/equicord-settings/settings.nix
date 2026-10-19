@@ -1,8 +1,14 @@
 { lib, parseRules }:
 let
-  inherit (lib.attrsets) mapAttrs' nameValuePair;
+  inherit (lib)
+    mapAttrs'
+    nameValuePair
+    removeAttrs
+    substring
+    toUpper
+    ;
 
-  capitalize = string: lib.toUpper (builtins.substring 0 1 string) + builtins.substring 1 (-1) string;
+  capitalize = string: toUpper (substring 0 1 string) + substring 1 (-1) string;
 
   pluginJsonName = name: parseRules.pluginRenames.${name} or (capitalize name);
 

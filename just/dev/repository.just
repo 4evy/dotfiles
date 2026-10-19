@@ -1,5 +1,5 @@
 [parallel]
-_lint-files: _check-worktree-paths _lint-chezmoi-source (_run-files 'jq' ['*.json', 'flake.lock', ':(exclude).vscode/settings.json'] ['empty']) _lint-container-files (_run-files 'luacheck' ['*.lua']) (_run 'rumdl' ['check', '--respect-gitignore', '.']) _lint-nix _lint-shell-files _lint-input-templates (_run-files 'taplo' ['*.toml'] ['lint']) _lint-xml
+_lint-files: _check-worktree-paths _lint-hjem-source (_run-files 'jq' ['*.json', 'flake.lock', ':(exclude).vscode/settings.json'] ['empty']) _lint-container-files (_run-files 'luacheck' ['*.lua']) (_run 'rumdl' ['check', '--respect-gitignore', '.']) _lint-nix _lint-shell-files _lint-input-templates (_run-files 'taplo' ['*.toml'] ['lint']) _lint-xml
 
 [linux]
 _lint-container-files: (_run-files 'hadolint' ['Dockerfile', 'Containerfile'])
@@ -23,11 +23,11 @@ _check-worktree-paths:
     done
     exit "$broken"
 
-# Render each platform once and validate chezmoi's structured target state
+# Render every supported host variant and validate the generated home files
 [group('check')]
-chezmoi-check: sops-check *(_chezmoi-platform *['darwin', 'fedora', 'nixos', 'windows'])
+hjem-check: sops-check *(_hjem-platform *['darwin', 'fedora', 'nixos'])
 
-_lint-chezmoi-source: chezmoi-check
+_lint-hjem-source: hjem-check
 
-_chezmoi-platform platform:
-    uv run python packages/chezmoi-check/check.py {{ quote(platform) }}
+_hjem-platform platform:
+    bun scripts/check/hjem.ts {{ quote(platform) }}

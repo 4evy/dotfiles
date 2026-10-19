@@ -44,59 +44,70 @@ func newCommand(stdout, stderr io.Writer) (*cobra.Command, error) {
 	root.SetErr(stderr)
 	root.CompletionOptions.DisableDefaultCmd = true
 
-	commands := []commandSpec{
-		{
-			use:   "unpack [directory]",
-			short: "Materialize records or decrypt them into a protected workspace",
-			args:  cobra.MaximumNArgs(1),
-			run: func(arguments []string) error {
+	deploy := &cobra.Command{
+		Use:   "deploy",
+		Short: "Decrypt records into protected runtime files for Hjem",
+		Args:  cobra.NoArgs,
+		RunE: func(command *cobra.Command, _ []string) error {
+			directory, _ := command.Flags().GetString("directory")
+			return vault.deploy(directory)
+		},
+	}
+	deploy.Flags().String("directory", "", "Protected runtime root (defaults to XDG_STATE_HOME/hjem/records)")
+	root.AddCommand(deploy)
+	root.AddCommand(
+		&cobra.Command{
+			Use:   "unpack [directory]",
+			Short: "Materialize records or decrypt them into a protected workspace",
+			Args:  cobra.MaximumNArgs(1),
+			RunE: func(_ *cobra.Command, arguments []string) error {
 				if len(arguments) == 0 {
 					return vault.unpackSource()
 				}
 				return vault.unpackWorkspace(arguments[0])
 			},
 		},
-		{
-			use:   "pack [directory]",
-			short: "Re-encrypt materialized records or a protected workspace",
-			args:  cobra.MaximumNArgs(1),
-			run: func(arguments []string) error {
+		&cobra.Command{
+			Use:   "pack [directory]",
+			Short: "Re-encrypt materialized records or a protected workspace",
+			Args:  cobra.MaximumNArgs(1),
+			RunE: func(_ *cobra.Command, arguments []string) error {
 				if len(arguments) == 0 {
 					return vault.packSource()
 				}
 				return vault.packWorkspace(arguments[0])
 			},
 		},
-		{
-			use:   "check [directory]",
-			short: "Validate the vault, materialized records, or a protected workspace",
-			args:  cobra.MaximumNArgs(1),
-			run: func(arguments []string) error {
+		&cobra.Command{
+			Use:   "check [directory]",
+			Short: "Validate the vault, materialized records, or a protected workspace",
+			Args:  cobra.MaximumNArgs(1),
+			RunE: func(_ *cobra.Command, arguments []string) error {
 				return vault.check(optionalArgument(arguments))
 			},
 		},
-		{
-			use:   "edit [path]",
-			short: "Materialize and edit the source tree or one record",
-			args:  cobra.MaximumNArgs(1),
-			run: func(arguments []string) error {
+		&cobra.Command{
+			Use:   "edit [path]",
+			Short: "Materialize and edit the source tree or one record",
+			Args:  cobra.MaximumNArgs(1),
+			RunE: func(_ *cobra.Command, arguments []string) error {
 				return vault.editSource(optionalArgument(arguments))
 			},
 		},
-		{
-			use:   "layout",
-			short: "Show target-to-source mappings and attributes",
-			args:  cobra.NoArgs,
-			run: func(_ []string) error {
+		&cobra.Command{
+			Use:   "layout",
+			Short: "Show target-to-source mappings and attributes",
+			Args:  cobra.NoArgs,
+			RunE: func(_ *cobra.Command, _ []string) error {
 				return vault.layout()
 			},
 		},
-		{
-			use:    "workspace-edit [collection [index]]",
-			short:  "Edit records in a temporary protected workspace",
-			hidden: true,
-			args:   cobra.MaximumNArgs(2),
-			run: func(arguments []string) error {
+		&cobra.Command{
+			Use:    "workspace-edit [collection [index]]",
+			Short:  "Edit records in a temporary protected workspace",
+			Hidden: true,
+			Args:   cobra.MaximumNArgs(2),
+			RunE: func(_ *cobra.Command, arguments []string) error {
 				collection := optionalArgument(arguments)
 				index := ""
 				if len(arguments) == 2 {
@@ -105,31 +116,8 @@ func newCommand(stdout, stderr io.Writer) (*cobra.Command, error) {
 				return vault.editWorkspace(collection, index)
 			},
 		},
-	}
-	for _, spec := range commands {
-		root.AddCommand(spec.command())
-	}
+	)
 	return root, nil
-}
-
-type commandSpec struct {
-	use    string
-	short  string
-	hidden bool
-	args   cobra.PositionalArgs
-	run    func([]string) error
-}
-
-func (spec commandSpec) command() *cobra.Command {
-	return &cobra.Command{
-		Use:    spec.use,
-		Short:  spec.short,
-		Hidden: spec.hidden,
-		Args:   spec.args,
-		RunE: func(_ *cobra.Command, arguments []string) error {
-			return spec.run(arguments)
-		},
-	}
 }
 
 func optionalArgument(arguments []string) string {

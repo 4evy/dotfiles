@@ -1,0 +1,101 @@
+#                                                         ⢀⡤⡶
+#                                                        ⡴⠇⡾⠁
+#                                                       ⢸⡃⠅⡇
+#                                                       ⢺⡂⠅⣳⡀
+#                           ⣠⠖⠒⢦⡀                       ⠸⡆⠅⡂⠷⣄⡀
+#                           ⣇  ⢀⡇                        ⠙⢇⡂⠅⡂⠍⡋⣍⠟⠁
+#                          ⢀⣈⣓⣒⣋⣀                          ⠉⠓⠒⠓⠋⠁
+#                     ⣀⡤⢖⠊⠉⢁⣀⣀⣆⣀⣀⠉⠉⢒⠦⣄⡀
+#                ⠰⣦⣀⡴⠊⢁⣠⠜⠞⠉⠉  ⠁ ⠈⠉⠙⠞⢤⣀⠉⠲⣄⣠⡶
+#                ⢀⡼⢿⣷⢶⡉              ⠈⣱⢶⣿⠿⣄
+#               ⢠⠎⢀⡜⠳⡕⢍⠲⣄⡀         ⣀⡴⢊⠡⡵⠛⣄⠈⢦
+#              ⢠⢏⣀⠞  ⠘⢦⠑⢌⠻⡢⣄    ⢀⡤⠚⠁⢄⢢⠟  ⠘⢆⣈⢧
+#              ⡎ ⡞⠁   ⠈⠳⡀⠑⢌⠪⡙⢦⡠⠞⠉ ⡐⢌⡲⠋    ⠙⡆⠈⡆
+#             ⢰⠁⢰⠃      ⠙⣆ ⠑⢌⢢⣇⢀⠠⡑⢌⡞⠁      ⢳ ⢱
+#             ⢸⠠⢼⠄       ⠈⡣⢤⢴⣿⣿⣷⠵⠬⡋        ⢼⠤⢸
+#             ⢸ ⢸⡀      ⢀⡞⢍⠢⠁⠙⡿⡁  ⠙⣆    ⢀⣇⡇⣸ ⢸
+#              ⡇ ⣇     ⣠⡛⠌⠂ ⢀⡤⠳⣌⠢⡀ ⠈⢣⡀  ⡼⡼⢀⡇ ⡇
+#              ⠸⡔⠚⣅  ⢀⡼⡑⠈⢀⡠⠞⠉  ⠈⠙⠮⣢⡀ ⠹⣄⡼⡵⢃⡝⠒⡼
+#               ⠹⡄⠘⢆⣠⠮⠁⣠⠖⠋        ⠈⠛⢦⣠⣎⢾⣁⠞ ⡼⠁
+#                ⠘⢦⣼⣷⣵⠋           ⡤⢖⡫⠞⢳⣵⣿⣤⠞
+#                ⢠⡾⠛⢧⡀⠙⠲⢄⣄        ⢈⣍⠴⠚⠁⣠⠟⠻⣦
+#                    ⠈⠓⠦⣜⡈⠉⠙⠒⠒⡗⠒⠚⠉⠉⣘⡤⠖⠋               ⢀⣀⣀⣀⣀⡀
+#                        ⠈⠉⠑⠒⠒⠒⠒⠒⠉⠉                   ⢸⢠⠤⠤⠤⠽⠦⠤⠤⠤⠤⡤⢤
+#                                                     ⢸⠈⡞⠉⠉⠉⠉⢩⠉⠉⠉⠉⢹⢩⠇
+#                                                     ⢸⡼    ⠒⢯⠗⠂  ⢸⡜
+#                                                     ⠸⣧⣤⣤⣤⣤⣤⣬⣤⣤⣤⣤⡼⠁
+
+# zoxide / Zsh integration
+# Record directory changes asynchronously, provide z/zi completion, and alias
+# `cd` only after the shell framework has loaded.
+
+_zoxide_bin="$(_dotfiles_command_path zoxide 2>/dev/null || true)"
+if [[ -n "$_zoxide_bin" ]]; then
+  if [[ -r "$HOME/.cache/zoxide/init.zsh" ]]; then
+    # shellcheck source=/dev/null
+    source "$HOME/.cache/zoxide/init.zsh"
+  else
+    if _zoxide_init="$("$_zoxide_bin" init zsh)"; then
+      eval "$_zoxide_init"
+    fi
+    unset _zoxide_init
+  fi
+
+  if (( ! $+functions[__zoxide_z] || ! $+functions[__zoxide_zi] )); then
+    unset _zoxide_bin
+    return 0
+  fi
+
+  if (( $+functions[__zoxide_hook] )); then
+    __zoxide_hook() {
+      emulate -L zsh
+      local current_dir
+      current_dir="$(__zoxide_pwd 2>/dev/null || builtin pwd -L 2>/dev/null)" || return 0
+      command zoxide add -- "$current_dir" >/dev/null 2>&1 &!
+    }
+  fi
+
+  z() {
+    __zoxide_z "$@"
+  }
+
+  zi() {
+    __zoxide_zi "$@"
+  }
+
+  _dotfiles_zoxide_complete() {
+    emulate -L zsh
+    setopt localoptions no_aliases
+
+    [[ ${#words[@]} -eq $CURRENT ]] || return 0
+
+    local pwd
+    pwd="$(__zoxide_pwd 2>/dev/null || builtin pwd -L 2>/dev/null || print -r -- "$PWD")"
+
+    local -a query results display quoted
+    query=("${(@)words[2,-1]}")
+    if (( $#query )) && [[ -z ${query[-1]} ]]; then
+      query[-1]=()
+    fi
+
+    results=(${(@f)"$(command zoxide query --list --exclude "$pwd" -- "${query[@]}" 2>/dev/null)"})
+    if (( $#results )); then
+      local dir
+      for dir in "${results[@]}"; do
+        display+=("${dir/#$HOME/~}")
+        quoted+=("${(q-)dir}")
+      done
+      compadd -U -Q -S ' ' -d display -- "${quoted[@]}"
+      return 0
+    fi
+
+    _cd -/
+  }
+
+  if (( $+functions[compdef] )); then
+    compdef _dotfiles_zoxide_complete z zi
+  fi
+
+  alias cd="z"
+fi
+unset _zoxide_bin

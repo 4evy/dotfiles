@@ -1,24 +1,97 @@
+#                ⢠⣤                                             ⠤⡧⠄              ⢠⣤
+#                ⠹⡾⠁                             ⣴⣶⡄             ⠁               ⠹⡾⠁
+#                ⢰⣷                              ⢿⣿⠇                             ⢰⣷
+#                ⣾⣿⡆                            ⢀⡔⡗⣄                             ⣾⣿⡆
+#     ⣠⣶⠂       ⢰⢻⣿⢳                          ⢀⡴⢋⣔⣑⣌⠳⣄                          ⢰⢻⣿⢳         ⡄
+#    ⢰⠇⣇       ⠲⣜⣏⣏⣟⡴⠂                      ⢀⡴⢋⣴⠟⠋⠈⠛⢷⣌⠳⣄                       ⠲⣜⣏⣏⣟⡴⠂     ⠐⠪⡨⠒
+#    ⠘⣇⡚⢦⣀⣀⡀   ⢰⠃⡇⡇⡇⢳                   ⢀⡾⡀⡠⣫⡶⠋⢀⡤⠚⠙⠢⣄⠈⠳⣮⡣⡀⡸⣆                   ⢰⠃⡇⡇⡇⢳        ⠁
+#     ⠈⠓⠓⠒⠋   ⡀⡜⢸ ⡇⢸⠘⡄⡀                 ⠞⣠⠿⡫⢋⡤⠚⠁⣀⡴⠲⣄⡀⠙⠢⣌⠫⡻⢧⡘⠆                 ⡀⡜⢸ ⡇⢸⠘⡄⡀
+#             ⢹⠗⡺⠒⡗⠺⡒⢿⠁                ⣠⠞⣡⣾⠗⠉⣀⠴⠊⢁⣴⣶⣄⠉⠲⢄⡈⠑⢿⣦⡙⢦⡀                ⢹⠗⡺⠒⡗⠺⡒⢿⠁
+#          ⡄  ⡜ ⡇ ⡇ ⡇⠘⡄  ⡄        ⢀⡄⢀⣴⠟⣡⡾⠋⢀⡤⠞⠁  ⢸⣺⣽⣺   ⠙⠦⣄⠈⠻⣦⡙⢷⣄ ⣄         ⡄  ⡜ ⡇ ⡇ ⡇⠘⡄  ⡄
+#         ⢰⡇⠐⢦⣇⣠⣇⣀⣇⣀⣧⣀⣧⠖ ⣷       ⢀⣞⣷⡟⣁⠼⠉⣠⠔⠋      ⠙⠛⠁     ⠈⠓⢤⡈⠹⢄⡙⣷⣟⣆       ⢰⡇⠐⢦⣇⣠⣇⣀⣇⣀⣧⣀⣧⠖ ⣷
+#         ⡞⡇ ⡼ ⢸  ⡇ ⢸ ⠸⡄ ⡟⡆   ⢀⡴⠱⣼⡿⢋⡔⠁⣠⠞⠁                   ⠙⢦⡀⠑⣌⠻⣿⡴⠱⣄    ⡞⡇ ⡼ ⢸  ⡇ ⢸ ⠸⡄ ⡟⡆
+#        ⢠⠃⡇⢠⠇ ⡎  ⡇ ⠈⡆ ⢧ ⡇⢣  ⡀⠑⢦⣾⢟⡵⠋⣠⠞⠁   ⢀⣠⠤⠖⠒⢋⣉⣉⣏⣉⣉⠓⠒⠦⢤⣀    ⠙⢦⡈⠳⣝⢿⣦⠖⠁⡀ ⢠⠃⡇⢠⠇ ⡎  ⡇ ⠈⡆ ⢧ ⡇⢣
+#        ⠈⠉⡏⢹⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹⠉⡏⠉ ⡼⢧⣴⢋⣵⠋⢠⠞⠁  ⢀⡤⠚⣍⡤⠖⠊⠉⠁⢀⡔⠒⣄ ⠉⠉⠒⠦⣌⡝⠢⣄   ⠙⢦⠈⢳⣍⢳⣤⠿⡄⠈⠉⡏⢹⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹⠉⡏⠉
+#          ⡏⢹⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹⠉⡇ ⠘⣡⡾⣡⡾⠁⡰⠋  ⢀⠔⢋⡴⠊⡵⠒⠲⡄  ⢸⡀ ⣸   ⡴⠒⠲⡍⠲⣌⠓⢄  ⠈⠳⡀⠹⣦⡹⣦⡙  ⡏⢹⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹⠉⡇
+#          ⡇⢸  ⢀⣠⠞⠙⢦⣀  ⢸ ⡇⣠⠞⣽⢞⡟⢁⡜⠁  ⡴⢋⡴⠋  ⢳⡀ ⣹   ⠑⠒⠁  ⢸⡁ ⣰⠃ ⠈⠳⣌⠳⡄  ⠙⣄⠙⣟⢾⡝⢦⡀⡇⢸  ⢀⣠⠞⠙⢦⣀  ⢸ ⡇
+#          ⡇⢸ ⢠⠎⣠⠞⡙⢦⡈⢦ ⢸⢀⡟⣡⡾⠁⡞⢀⡞  ⢀⡞⢤⢎⡤⢤⣀  ⠈⠉⣡⣄   ⣤⣤⡀⢀⣤⡉⠉  ⢀⣠⠤⣌⢦⠜⣆  ⠘⣆⠘⡆⠹⣦⡙⣇⢸ ⢠⠎⣠⠞⡙⢦⡈⢦ ⢸ ⡇ ⢀
+#          ⡇⢸ ⡏⣸⡡⠞⠘⠦⣹⡈⡇⢸⢀⡟⢱⠃⡸⠁⡞   ⡞⢠⠏⢸⡀ ⠈⡆   ⠹⣿⣧  ⠘⢿⣷⣿⡿⠁   ⡎  ⣸⠈⢧⠘⡆  ⠘⡆⠹⡀⢳⠙⣇⢸ ⡏⣸⡡⠞⠘⠦⣹⡈⡇⢸ ⡇⠐⢺⠒
+#    ⠤⡧⠄   ⡇⢸ ⡇⡇⠈⠳⡰⠋ ⡇⡇⢸ ⡇⡎⢠⠇⣸⠁  ⢸⠁⡎  ⠉⠓⠚⠁ ⠼⠿⠿⠿⠿⠿⠿⠿⠯⢿⣿⡄ ⢀⡄ ⠙⠒⠋⠁ ⠈⡆⢹   ⢹⡀⢧⠈⡆⡇⢸ ⡇⡇⠈⠳⡰⠋ ⡇⡇⢸ ⡇
+#     ⠁    ⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⣧⠇⣸ ⡇   ⡏⢰⠁⢀⣀⣀      ⣼⣿⠋    ⠈⢻⣿⢤⣿⡟   ⢀⣀⣀ ⢱⠈⡇   ⡇⢸⡀⢧⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⡇
+#          ⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⣿ ⡇⢸⠁   ⡧⢼⢰⠉ ⠈⢱⠠⣶⣶⣶⣾⡿⡃       ⣫⣿⣿⣶⣶⡆⢰⠉ ⠈⢱⢸⠤⡇   ⢹ ⡇⢸⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⡇
+#          ⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⣿ ⡇⢸    ⡇⢸ ⠙⠒⠚⠁  ⢀⣾⡿⢽⣷⡀     ⣰⣿⠏     ⠙⠒⠚⠁⢸ ⡇   ⢸ ⡇⢸⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⡇
+#          ⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⣿ ⡇⢸    ⢹ ⡇   ⣀⣀ ⠈⠟⠁⠈⢿⣿⡤⣤⣤⣤⣬⣭⣭⣤⣤⠄ ⢀⣀⡀   ⡇⢸⠁   ⢸ ⡇⢸⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⡇
+#          ⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⣿ ⡇⢸    ⠈⣇⠸⡄⢰⠋⠁⠈⡇   ⢠⣾⣿⣿⣍⠉⠉⠹⣿⣯⠉⠉  ⡏ ⠉⢳ ⡼⢀⡏    ⢸ ⡇⢸⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⡇
+#          ⡇⢸ ⣇⣧⣤⣤⣧⣤⣤⣇⡇⢸ ⣿ ⡇⢸     ⠘⣆⠽⡜⠦⠴⠚    ⠻⠟⠁⠻⠿⠆  ⠙⠿⠃   ⠘⠲⠤⠞⡼⢅⡞     ⢸ ⡇⢸⡇⢸ ⣇⣧⣤⣤⣧⣤⣤⣇⡇⢸ ⡇
+#         ⣀⣇⣸⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣸⣀⣿ ⡇⢸      ⠈⢦⡘⢦⡀  ⣰⠊⠉⢳   ⢀⣀   ⢰⠋⠉⢲⡀  ⣠⠞⣠⠎      ⢸ ⡇⢸⣇⣸⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣸⣀⣇⡀
+#      ⢀⡴⠋⠁⡇⢸          ⢸ ⣿ ⡇⢸        ⠙⢄⡙⢦⡀⢧⣀⣠⠏  ⢰⠃ ⢳  ⠈⢧⣀⣠⠇⣠⠞⣁⠜⠁       ⢸ ⡇⢸⡇⢸          ⢸ ⡇⠉⠳⣄
+#    ⡤⣄⡞   ⡏⢹⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹⠉⣿ ⡇⢸ ⡄        ⠙⠦⣈⠗⠦⣄⡀  ⠘⢆⣀⠞   ⣀⡤⠖⢏⡠⠞⠁        ⡄⢸ ⡇⢸⡏⢹⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹⠉⡇  ⠘⣆⡤⡄
+#    ⠉⡟    ⡧⢼   ⢀⡴⠲⣄   ⢸⠤⣿ ⡇⢸ ⡇          ⠈⠙⠲⠤⣌⣉⡑⠒⠒⡖⠒⠒⣉⣉⡤⠴⠚⠉           ⡇⢸ ⡇⢸⡧⢼   ⢀⡴⠲⣄   ⢸⠤⡇   ⠘⡏⠁
+#    ⣴⡅    ⡇⢸ ⢀⡜⢉⡴⠲⣌⠙⣄ ⢸ ⣿ ⡇⢸ ⡇                ⠉⠉⠉⠉⠉⠉⠁                ⡇⢸ ⡇⢸⡇⢸ ⢀⡜⢉⡴⠲⣌⠙⣄ ⢸ ⡇    ⣵⡄
+#    ⢹⠁    ⡇⢸ ⡞⢰⢋⡴⠱⣌⢳⠘⡆⢸ ⣿⠒⡗⢺⠒⡇      ⣠⢤⡀         ⣠⢤⡀         ⣠⢤⡀      ⡗⢺⠒⡗⢺⡇⢸ ⡞⢰⢋⡴⠱⣌⢳⠘⡆⢸ ⡇    ⢹⠁
+#    ⡧⡄    ⡧⢼ ⡇⡏⠑⢦⢠⠖⠉⡇⡇⢸⠤⣿ ⡇⢸ ⡇   ⢀⡴⠋⣡⢤⡉⠳⣄    ⢀⡴⠋⣡⢤⡉⠳⣄    ⢀⡴⠋⣡⢤⡉⠳⣄    ⡇⢸ ⡇⢸⡧⢼ ⡇⡏⠑⢦⢠⠖⠉⡇⡇⢸⠤⡇    ⡤⡇
+#    ⡏⠁    ⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⣿ ⡇⢸ ⡇  ⢠⠏⣠⠚⠁ ⠙⢢⡈⢧  ⢠⠏⣠⠚⠁ ⠙⢢⡈⢧  ⢠⠏⣠⠚⠁ ⠙⢢⡈⢧   ⡇⢸ ⡇⢸⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⡇    ⠉⡇
+#    ⣵⡄    ⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⣿ ⡇⢸ ⡇  ⡏⢸⠁ ⣠⢤⡀ ⢹⠈⡇ ⡏⢸⠁ ⣠⢤⡀ ⢹⠈⡇ ⡏⢸⠁ ⣠⢤⡀ ⢹⠈⡇  ⡇⢸ ⡇⢸⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⡇    ⣴⡅
+#    ⢹⠁    ⡧⢼ ⡇⡇  ⡇  ⡇⡇⢸⠤⣿ ⡇⢸ ⡇  ⡇⡏⢠⠖⠃ ⠓⢦⠈⡇⡇ ⡇⡏⢠⠖⠃ ⠓⢦⠈⡇⡇ ⡇⡏⢠⠖⠃ ⠓⢦⠈⡇⡇  ⡇⢸ ⡇⢸⡧⢼ ⡇⡇  ⡇  ⡇⡇⢸⠤⡇    ⢹⠁
+#    ⠘⡆    ⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⣿ ⡇⢸ ⡇  ⡇⡇⠈⠓⣆⢀⡖⠋ ⡇⡇ ⡇⡇⠈⠓⣆⢀⡖⠋ ⡇⡇ ⡇⡇⠈⠓⣆⢀⡖⠋ ⡇⡇  ⡇⢸ ⡇⢸⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⡇    ⡞
+#    ⣠⣧⡀   ⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⣿⠒⡗⢺⠒⡇  ⡇⡇  ⠈⡏   ⡇⡇ ⡇⡇  ⠈⡏   ⡇⡇ ⡇⡇  ⠈⡏   ⡇⡇  ⡗⢺⠒⡗⢺⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⡇   ⣠⣧⡀
+#    ⢿⣿⠇   ⡇⢸ ⠓⠛⠛⠛⠛⠛⠛⠓⠃⢸ ⣿ ⡇⢸ ⡇  ⡇⡇   ⡇   ⡇⡇ ⡇⡇⢀⡴⣖⣗⡶⣄ ⡇⡇ ⡇⡇   ⡇   ⡇⡇  ⡇⢸ ⡇⢸⡇⢸ ⠓⠛⠛⠛⠛⠛⠛⠓⠃⢸ ⡇   ⢿⣿⠇
+#          ⡗⢺⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⢺⠒⣿ ⡇⢸ ⡇  ⡇⡇       ⡇⡇ ⡇⡇⣼⣿⢱⣷⢹⣿⠆⡇⡇ ⡇⡇       ⡇⡇  ⡇⢸ ⡇⢸⡗⢺⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⢺⠒⡇
+#          ⡗⢺⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⢺⠒⣿ ⡇⢸ ⡇  ⡇⡇  ⢀⣀   ⡇⡇ ⡇⡇⠘⢿⣗⣓⣿⠟ ⡇⡇ ⡇⡇       ⡇⡇  ⡇⢸ ⡇⢸⡗⢺⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⢺⠒⡇
+#          ⡇⢸    ⣠⢤⡀   ⢸ ⣿ ⡇⢸ ⡇  ⡇⡇  ⡿⢟⣷  ⡇⡇ ⡇⡇  ⢼⣺⠄  ⡇⡇ ⡇⡇   ⢠⡖  ⡇⡇  ⡇⢸ ⡇⢸⡇⢸    ⣠⢤⡀   ⢸ ⡇
+#    ⢀⡤⠤⠤⣄⡀⡗⢺  ⡰⠚⣡⢤⡙⠲⡀ ⢸⠒⣿ ⡇⢸ ⡇  ⡇⡇ ⣠⠃⠊⢿⣄ ⡇⡇ ⡇⡇  ⢹⢻⠁  ⡇⡇ ⡇⡇⣠⣶⣶⣶⣶⡶ ⡇⡇  ⡇⢸ ⡇⢸⡗⢺  ⡰⠚⣡⢤⡙⠲⡀ ⢸⠒⡇⣀⡤⠤⠤⣄
+#    ⡏⢀⡤⢤⡀⠉⡇⢸ ⡼⢡⠞⣡⢢⡙⢦⠹⡄⢸ ⣿⠒⡗⢺⠒⡇  ⡇⡇⢰⡏  ⠈⣿⡆⡇⡇ ⡇⡇  ⢸⢸⠤⢤⣤⡇⡇ ⡇⡇⣿⣿⣿⣿⣿⣇ ⡇⡇  ⡗⢺⠒⡗⢺⡇⢸ ⡼⢡⠞⣡⢢⡙⢦⠹⡄⢸ ⡏⠁⡖⣩⣄⠈⡇
+#    ⣷⣌⣛⣡⠇ ⡇⢸ ⡇⡞⠪⣅⢀⡭⠚⡆⡇⢸ ⣿ ⡇⢸ ⡇  ⡇⣿⢋⠩⢆⣀⡄⢋⣳⡇⡇ ⡇⡇  ⢸⣸⠒⣎⣹⡇⡇ ⡇⡇⠘⢿⣿⠿⣿⡿⠁⡇⡇  ⡇⢸ ⡇⢸⡇⢸ ⡇⡞⠪⣅⢀⡭⠚⡆⡇⢸ ⡇ ⠧⣉⡼⢀⡇
+#    ⠈⠳⠭⠤⠄ ⡗⢺ ⡇⡇ ⠈⡎  ⡇⡇⢸⠒⣿ ⡇⢸ ⡇  ⡇⡏⠉⠙⠋⠈⠙⠋ ⡇⡇ ⡇⡇  ⠙⠛⠁⠉⠉⡇⡇ ⡇⡇       ⡇⡇  ⡇⢸ ⡇⢸⡗⢺ ⡇⡇ ⠈⡎  ⡇⡇⢸⠒⡇ ⠤⠤⠴⠋
+#          ⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⣿ ⡇⢸ ⡇  ⡇⡇⠤⠤⠤⠤⠤⠤⠄⡇⡇ ⡇⡇⠤⠤⠤⠤⠤⠤⠄⡇⡇ ⡇⡇⠤⠤⠤⠤⠤⠤⠄⡇⡇  ⡇⢸ ⡇⢸⡇⢸ ⡇⡇  ⡇  ⡇⡇⢸ ⡇
+#          ⡇⢸ ⡇⣇⣀⣀⣇⣀⣀⡇⡇⢸ ⣿ ⡇⢸ ⡇  ⡇⠧⠤⠤⠤⠤⠤⠤⠤⠇⡇ ⡇⠧⠤⠤⠤⠤⠤⠤⠤⠇⡇ ⡇⠧⠤⠤⠤⠤⠤⠤⠤⠇⡇  ⡇⢸ ⡇⢸⡇⢸ ⡇⣇⣀⣀⣇⣀⣀⡇⡇⢸ ⡇
+#          ⣇⣸⣀⣉⣉⣉⣉⣉⣉⣉⣉⣁⣸⣀⣿⠉⡏⢹⠉⡇  ⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠁ ⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠁ ⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠁  ⡏⢹⠉⡏⢹⣇⣸⣀⣉⣉⣉⣉⣉⣉⣉⣉⣁⣸⣀⡇
+#          ⢱⠚⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠒⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠓⠚⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⢲⠁
+#         ⢰⠚⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⢲
+#        ⡤⠼⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠼⠤⡄
+#        ⠇                                                                                 ⠇
+#      ⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠁
+
 {
-  description = "Cross-platform dotfiles packages and NixOS configuration";
+  description = "My dotfiles";
 
   inputs = {
-    # Only browser's NixOS module is consumed; omit unused module inputs
-    browser = {
+    ai = {
+      inputs = {
+        flake-parts.follows = "flake-parts";
+        nix-darwin.follows = "";
+        treefmt-nix.follows = "treefmt-nix";
+      };
+      url = "github:4evy/ai";
+    };
+
+    # Only Tweezle's NixOS module is consumed, omit unused module inputs
+    tweezle = {
       inputs = {
         flake-parts.follows = "flake-parts";
         home-manager.follows = "";
         nix-darwin.follows = "";
         nixpkgs.follows = "";
       };
-      url = "github:4evy/browser";
+      url = "github:4evy/tweezle";
     };
 
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/=3.22.5";
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/=3.23.2";
+
+    darwin = {
+      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:4evy/ndw";
+    };
 
     sops-nix.inputs.nixpkgs.follows = "";
     sops-nix.url = "github:Mic92/sops-nix";
 
     vicinae.url = "github:vicinaehq/vicinae";
+
+    hjem = {
+      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:feel-co/hjem";
+    };
 
     git-hooks-nix = {
       inputs = {
@@ -28,19 +101,38 @@
       url = "github:cachix/git-hooks.nix";
     };
 
+    source-oh-my-zsh = {
+      flake = false;
+      url = "github:ohmyzsh/ohmyzsh/964ddf789b022b6958b27d02d7fa54f552de21e9";
+    };
+    source-zsh-autosuggestions = {
+      flake = false;
+      url = "github:zsh-users/zsh-autosuggestions/85919cd1ffa7d2d5412f6d3fe437ebdbeeec4fc5";
+    };
+    source-zsh-syntax-highlighting = {
+      flake = false;
+      url = "github:zsh-users/zsh-syntax-highlighting/e6683f20e5c38d3e5447f45845d04ddda75d0f23";
+    };
+    source-fzf-tab = {
+      flake = false;
+      url = "github:Aloxaf/fzf-tab/24105b15714bfec37989ed5c5b6e60f572253019";
+    };
+    source-oh-my-bash = {
+      flake = false;
+      url = "github:ohmybash/oh-my-bash/abf846186ab0a8a41ec5888e827ece6277dfe446";
+    };
+    source-fzf-tab-completion = {
+      flake = false;
+      url = "github:lincheney/fzf-tab-completion/7014e0a7cd68fe3530e2f58c45740d17e98f05b8";
+    };
+    source-noto-color-emoji = {
+      flake = false;
+      url = "file+https://raw.githubusercontent.com/googlefonts/noto-emoji/e20cbc2bbec1926686be9f9bee7d1d2cfa1fea0e/2D/fonts/NotoColorEmoji.ttf";
+    };
+
     source-bluebuild-cli = {
       flake = false;
-      url = "github:blue-build/cli/main";
-    };
-
-    source-browser = {
-      flake = false;
-      url = "github:4evy/browser/master";
-    };
-
-    source-equilotl = {
-      flake = false;
-      url = "github:Equicord/Equilotl/v2.3.0";
+      url = "github:blue-build/cli/2591122d18d079b41df5ba419ed315e0cff03d1a";
     };
 
     source-ghostty-zig-aarch64-linux = {
@@ -53,24 +145,14 @@
       url = "file+https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz";
     };
 
-    source-helium-linux-binary = {
-      flake = false;
-      url = "file+https://github.com/imputnet/helium-linux/releases/download/0.16.4.1/helium-0.16.4.1-x86_64_linux.tar.xz";
-    };
-
     source-helix = {
       flake = false;
       url = "github:Helix-Unstable/helix-unstable/unstable";
     };
 
-    source-kanata = {
-      flake = false;
-      url = "github:jtroo/kanata/main";
-    };
-
     source-karabiner-vhid-package = {
       flake = false;
-      url = "file+https://github.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/releases/download/v8.2.0/Karabiner-DriverKit-VirtualHIDDevice-8.2.0.pkg";
+      url = "file+https://github.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/releases/download/v8.6.0/Karabiner-DriverKit-VirtualHIDDevice-8.6.0.pkg";
     };
 
     source-kmscon = {
@@ -90,12 +172,7 @@
 
     source-uresourced = {
       flake = false;
-      url = "git+https://gitlab.freedesktop.org/benzea/uresourced.git?ref=refs/tags/v0.5.4";
-    };
-
-    source-yt-dlp-script = {
-      flake = false;
-      url = "github:euvlok/pkgs/master";
+      url = "git+https://gitlab.freedesktop.org/benzea/uresourced.git?ref=refs/tags/v0.5.5";
     };
 
     bun2nix = {
@@ -134,16 +211,14 @@
       url = "github:4evy/raycast";
     };
 
+    rust-overlay = {
+      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:oxalica/rust-overlay";
+    };
+
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
     treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
-  outputs =
-    inputs:
-    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [
-        inputs.flake-parts.flakeModules.partitions
-        ./lib/flake.nix
-      ];
-    };
+  outputs = inputs: import ./nix/flake/outputs.nix inputs;
 }

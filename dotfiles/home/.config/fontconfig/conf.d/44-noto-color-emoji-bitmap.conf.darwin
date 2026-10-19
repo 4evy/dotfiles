@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<fontconfig>
+  <match target="scan">
+    <test name="file" compare="eq">
+      <string>@HOME@/.local/share/fonts/NotoColorEmoji/NotoColorEmoji.ttf</string>
+    </test>
+    <edit name="family" mode="prepend">
+      <string>Noto Color Emoji Bitmap</string>
+    </edit>
+  </match>
+</fontconfig>

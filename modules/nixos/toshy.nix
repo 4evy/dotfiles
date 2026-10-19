@@ -7,6 +7,7 @@
 let
   inherit (lib.modules) mkIf;
   inherit (lib.options) mkEnableOption;
+  inherit (pkgs) toshy-runtime;
 
   cfg = config.local.toshy;
   user = config.local.user.name;
@@ -27,7 +28,7 @@ in
     # per-user tmpfiles support instead of adding another module framework.
     systemd.user.tmpfiles.users.${user}.rules = [
       "d %S/toshy 0700 - - -"
-      "L+ %S/toshy/runtime - - - - ${pkgs.toshy-runtime}"
+      "L+ %S/toshy/runtime - - - - ${toshy-runtime}"
     ];
   };
 }

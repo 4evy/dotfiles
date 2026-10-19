@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>name</key>
+    <string>Catppuccin Custom Light</string>
+    <key>semanticClass</key>
+    <string>theme.light.catppuccin-custom-light</string>
+    <key>author</key>
+    <string>Catppuccin Custom</string>
+    <key>colorSpaceName</key>
+    <string>sRGB</string>
+    <key>settings</key>
+    <array>
+      <dict>
+        <key>settings</key>
+        <dict>
+          <key>background</key>
+          <string>@COLOR_LIGHT_TERMINALBACKGROUND@</string>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_TERMINALFOREGROUND@</string>
+          <key>caret</key>
+          <string>@COLOR_LIGHT_TERMINALCURSOR@</string>
+          <key>lineHighlight</key>
+          <string>@COLOR_LIGHT_SURFACE0@</string>
+          <key>misspelling</key>
+          <string>@COLOR_LIGHT_RED@</string>
+          <key>accent</key>
+          <string>@COLOR_LIGHT_ACCENT@</string>
+          <key>selection</key>
+          <string>@COLOR_LIGHT_TERMINALSELECTION@</string>
+          <key>selectionForeground</key>
+          <string>@COLOR_LIGHT_SELECTIONFOREGROUND@</string>
+          <key>activeGuide</key>
+          <string>@COLOR_LIGHT_SURFACE1@</string>
+          <key>findHighlight</key>
+          <string>@COLOR_LIGHT_SURFACE2@</string>
+          <key>gutterForeground</key>
+          <string>@COLOR_LIGHT_OVERLAY1@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Text</string>
+        <key>scope</key>
+        <string>text, source, variable, punctuation.definition.variable</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_TEXT@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Punctuation</string>
+        <key>scope</key>
+        <string>punctuation</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_SUBTEXT1@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Strings</string>
+        <key>scope</key>
+        <string>string, punctuation.definition.string</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_GREEN@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Rose accent scopes</string>
+        <key>scope</key>
+        <string>keyword, keyword.operator.word, keyword.operator.new, variable.language.super, support.type.primitive, storage.type, storage.modifier, constant.character.escape, punctuation.definition.keyword</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_PINK@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Functions</string>
+        <key>scope</key>
+        <string>entity.name.function, meta.function-call.method, support.function, support.function.misc, variable.function</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_BLUE@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Types and classes</string>
+        <key>scope</key>
+        <string>entity.name.class, entity.other.inherited-class, support.class, support.type, meta.function-call.constructor, entity.name.struct, meta.type, meta.type-alias, entity.name.type</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_YELLOW@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Constants and numbers</string>
+        <key>scope</key>
+        <string>constant, variable.other.constant, entity.name.constant</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_PEACH@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Markup inserted</string>
+        <key>scope</key>
+        <string>markup.inserted, markup.inserted.diff, diff.inserted</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_GREEN@</string>
+          <key>background</key>
+          <string>@MIX_LIGHT_SUCCESS@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Markup deleted</string>
+        <key>scope</key>
+        <string>markup.deleted, markup.deleted.diff, diff.deleted</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_RED@</string>
+          <key>background</key>
+          <string>@MIX_LIGHT_ERROR@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Comments</string>
+        <key>scope</key>
+        <string>comment, punctuation.definition.comment</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_TEXTMUTED@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Operators</string>
+        <key>scope</key>
+        <string>keyword.operator</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_SKY@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Word operators</string>
+        <key>scope</key>
+        <string>keyword.operator.word, keyword.operator.new</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_PINK@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Escapes</string>
+        <key>scope</key>
+        <string>constant.character.escape</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_PINK@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Tags</string>
+        <key>scope</key>
+        <string>entity.name.tag</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_BLUE@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Attributes</string>
+        <key>scope</key>
+        <string>entity.other.attribute-name</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_YELLOW@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Properties</string>
+        <key>scope</key>
+        <string>variable.other.property, variable.other.object.property</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_TEXT@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Headings</string>
+        <key>scope</key>
+        <string>markup.heading, entity.name.section</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_PINK@</string>
+          <key>fontStyle</key>
+          <string>bold</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Inline code</string>
+        <key>scope</key>
+        <string>markup.inline.raw.string.markdown, markup.raw.inline.markdown</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_PINK@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Links</string>
+        <key>scope</key>
+        <string>markup.underline.link, markup.underline.link.markdown, string.other.link</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_SKY@</string>
+          <key>fontStyle</key>
+          <string>underline</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Changed markup</string>
+        <key>scope</key>
+        <string>markup.changed, meta.diff.header</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_YELLOW@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Invalid syntax</string>
+        <key>scope</key>
+        <string>invalid</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_RED@</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Codex UI accent</string>
+        <key>scope</key>
+        <string>codex.accent</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>@COLOR_LIGHT_PINK@</string>
+        </dict>
+      </dict>
+    </array>
+  </dict>
+</plist>

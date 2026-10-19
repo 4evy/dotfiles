@@ -1,5 +1,0 @@
-{
-  "extends": "../tsconfig.json",
-  // Include every TypeScript/JavaScript module format enabled by the shared config
-  "include": ["**/*"]
-}

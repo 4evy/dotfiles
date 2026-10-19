@@ -26,6 +26,7 @@ symlinkJoin {
     mkdir -p $out/share/toshy
     echo '${sourcePin.revision}' > $out/share/toshy/revision
     echo '${sourcePin.version}' > $out/share/toshy/version
+    ln -s ${source} $out/share/toshy/source
   '';
   passthru = (upstreamRuntime.passthru or { }) // {
     inherit source;
