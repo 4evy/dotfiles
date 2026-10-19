@@ -1,0 +1,153 @@
+diff --git a/dist/modules/platform/github/graphql.js b/dist/modules/platform/github/graphql.js
+index e65680e..9d69366 100644
+--- a/dist/modules/platform/github/graphql.js
++++ b/dist/modules/platform/github/graphql.js
+@@ -11,6 +11,7 @@ query($owner: String!, $name: String!, $user: String) {
+     isArchived
+     nameWithOwner
+     hasIssuesEnabled
++    hasPullRequestsEnabled
+     hasVulnerabilityAlertsEnabled
+     autoMergeAllowed
+     mergeCommitAllowed
+diff --git a/dist/modules/platform/github/index.js b/dist/modules/platform/github/index.js
+index ba6239e..4fe237d 100644
+--- a/dist/modules/platform/github/index.js
++++ b/dist/modules/platform/github/index.js
+@@ -397,7 +397,10 @@ async function initRepo({ repository, forkCreation, forkOrg, forkToken, gitUrl,
+ 		else if (repo.rebaseMergeAllowed) config.mergeMethod = "rebase";
+ 		else logger.debug("Could not find allowed merge methods for repo");
+ 		config.autoMergeAllowed = repo.autoMergeAllowed;
+-		config.hasIssuesEnabled = repo.hasIssuesEnabled;
++		// We never want Renovate to create PRs or issues under any circumstances
++		// Updates must only become commits on top of master, even if GitHub settings change
++		config.hasIssuesEnabled = false;
++		config.hasPullRequestsEnabled = false;
+ 		config.hasVulnerabilityAlertsEnabled = repo.hasVulnerabilityAlertsEnabled;
+ 		config.mergeQueueEnabled[config.defaultBranch] = isNonEmptyObject(repo.mergeQueue);
+ 		const recentIssues = GithubIssue.array().catch([]).parse(res?.data?.repository?.issues?.nodes);
+@@ -583,6 +586,7 @@ async function fetchPr(prNo) {
+ 	}
+ }
+ async function getPr(prNo, refreshCache = false) {
++	if (config.hasPullRequestsEnabled === false) return null;
+ 	if (!prNo) return null;
+ 	if (refreshCache) return fetchPr(prNo);
+ 	let pr = (await getPrList()).find(({ number }) => number === prNo) ?? null;
+@@ -596,6 +600,8 @@ function matchesState(state, desiredState) {
+ 	return state === desiredState;
+ }
+ async function getPrList() {
++	// Disabled PRs return 404; branch automerge does not need their history
++	if (config.hasPullRequestsEnabled === false) return [];
+ 	if (!config.prList) {
+ 		const repo = config.parentRepo ?? config.repository;
+ 		let username = config.renovateUsername;
+@@ -606,6 +612,7 @@ async function getPrList() {
+ 	return config.prList;
+ }
+ async function findPr({ branchName, prTitle, state = "all", includeOtherAuthors }) {
++	if (config.hasPullRequestsEnabled === false) return null;
+ 	logger.debug(`findPr(${branchName}, ${prTitle}, ${state})`);
+ 	if (includeOtherAuthors) {
+ 		const repo = config.parentRepo ?? config.repository;
+@@ -910,6 +917,8 @@ async function closeIssue(issueNumber) {
+ 	}
+ }
+ async function ensureIssue({ title, reuseTitle, body: rawBody, labels, once = false, shouldReOpen = true }) {
++	// Never create or reopen issues, including dashboards and configuration errors
++	return null;
+ 	logger.debug(`ensureIssue(${title})`);
+ 	/* v8 ignore next -- specs initialize repos with issues enabled */
+ 	if (config.hasIssuesEnabled === false) {
+@@ -1217,6 +1226,9 @@ async function tryPrAutomerge(prNumber, prNodeId, platformPrOptions) {
+ 	}
+ }
+ async function createPr({ sourceBranch, targetBranch, prTitle: title, prBody: rawBody, labels, draftPR = false, platformPrOptions, milestone }) {
++	// Never create PRs, including onboarding, security updates, or automerge fallbacks
++	// A rejected master push must fail instead of creating a PR under any circumstances
++	throw new Error("pull-requests-forbidden");
+ 	const body = sanitize(rawBody);
+ 	const base = targetBranch;
+ 	const head = `${config.repository.split("/")[0]}:${sourceBranch}`;
+diff --git a/dist/util/git/index.js b/dist/util/git/index.js
+index b2d1e37..1c8952c 100644
+--- a/dist/util/git/index.js
++++ b/dist/util/git/index.js
+@@ -619,6 +619,8 @@ async function resetHardFromRemote(remoteAndBranch) {
+ 	}
+ }
+ async function forcePushToRemote(branchName, remote) {
++	// Only fast-forward commits on master may be published; force pushes are forbidden
++	throw new Error("force-push-forbidden");
+ 	try {
+ 		const pushLog = await git.push([
+ 			remote,
+@@ -808,6 +810,8 @@ async function isBranchConflicted(baseBranch, branch) {
+ 	return result;
+ }
+ async function deleteBranch(branchName) {
++	// Never change remote branches during cleanup; staging branches exist only locally
++	if (!isVirtualBranch(branchName)) return;
+ 	await syncGit();
+ 	if (isVirtualBranch(branchName)) {
+ 		const ref = remoteBranchRef(branchName);
+@@ -884,6 +888,8 @@ async function mergeToLocal(branchName) {
+ 	}
+ }
+ async function mergeBranch(branchName) {
++	// Never push another base branch or rewrite master history
++	if (config.currentBranch !== "master" || !isVirtualBranch(branchName)) throw new Error("master-commits-only");
+ 	let status;
+ 	try {
+ 		await syncGit();
+@@ -1095,7 +1101,13 @@ async function prepareCommit({ branchName, files, message, trailers, force = fal
+ 	}
+ }
+ async function pushCommit({ sourceRef, targetRef, files, pushOptions }) {
++	// Dependency branches are local staging only; never publish them to GitHub
++	// Only mergeBranch may push new commits, and it must fast-forward master
+ 	await syncGit();
++	if (targetRef || !sourceRef.startsWith("renovate/")) throw new Error("dependency-branch-forbidden");
++	const commitSha = toLongCommitSha((await git.revparse(sourceRef)).trim());
++	await setVirtualBranch(sourceRef, sourceRef, commitSha);
++	return true;
+ 	logger.debug(`Pushing refSpec ${sourceRef}:${targetRef ?? sourceRef}`);
+ 	let result = false;
+ 	try {
+@@ -1176,6 +1188,8 @@ let remoteRefsExist = false;
+ *
+ */
+ async function pushCommitToRenovateRef(commitSha, refName) {
++	// Never publish auxiliary refs or use API commits as an alternative to master
++	throw new Error("auxiliary-ref-forbidden");
+ 	const fullRefName = `refs/renovate/branches/${refName}`;
+ 	await git.raw([
+ 		"update-ref",
+diff --git a/dist/workers/repository/update/pr/index.js b/dist/workers/repository/update/pr/index.js
+index fd15030..f320a57 100644
+--- a/dist/workers/repository/update/pr/index.js
++++ b/dist/workers/repository/update/pr/index.js
+@@ -68,6 +68,9 @@ function addPullRequestNoteIfAttestationHasBeenLost(upgrade, currentReleaseHasAt
+ 	}
+ }
+ async function ensurePr(prConfig) {
++	// This bot only adds commits on top of master and must never create any PRs
++	// Leave failed updates in the job logs, even when branch automerge cannot run
++	return null;
+ 	const config = { ...prConfig };
+ 	const filteredPrConfig = generatePrBodyFingerprintConfig(config);
+ 	const prBodyFingerprint = fingerprint(filteredPrConfig);
+diff --git a/package.json b/package.json
+index 735203b..b566744 100644
+--- a/package.json
++++ b/package.json
+@@ -83,7 +83,7 @@
+   },
+   "homepage": "https://renovatebot.com",
+   "engines": {
+-    "node": "^24.11.0",
++    "node": "^24.11.0 || ^26.0.0",
+     "pnpm": "^11.0.0"
+   },
+   "dependencies": {

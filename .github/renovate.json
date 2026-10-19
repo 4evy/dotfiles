@@ -11,7 +11,8 @@
     "enabled": false
   },
   "nix": {
-    "enabled": true
+    "enabled": true,
+    "managerFilePatterns": ["/^flake\\.nix$/"]
   },
   "pep621": {
     "enabled": true
@@ -19,9 +20,31 @@
   "lockFileMaintenance": {
     "enabled": true,
     "automerge": true,
-    "schedule": ["* 0-5 1 * *"]
+    "schedule": ["at any time"]
   },
   "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track annotated Spectrum build toolchains",
+      "managerFilePatterns": ["/^bluebuild\\/recipes\\/spectrum\\/stages\\/.*\\.yml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\s+ARG [A-Z]+_VERSION=(?<currentValue>[0-9.]+)"
+      ],
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Follow BlueBuild CLI main commits for the feature-gated recipe v2 build",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
+      "matchStrings": [
+        "url = \"github:blue-build/cli/(?<currentDigest>[a-f0-9]{40})\";"
+      ],
+      "depNameTemplate": "blue-build/cli",
+      "packageNameTemplate": "https://github.com/blue-build/cli",
+      "datasourceTemplate": "git-refs",
+      "currentValueTemplate": "main",
+      "versioningTemplate": "exact"
+    },
     {
       "customType": "regex",
       "description": "Track the pinned Spectrum Bluefin base image",
@@ -42,7 +65,8 @@
       "description": "Track pinned Spectrum builder images",
       "managerFilePatterns": ["/^bluebuild\\/recipes\\/spectrum\\/stages\\/.*\\.yml$/"],
       "matchStrings": [
-        "from:\\s+(?<depName>[^\\s:@]+(?:/[^\\s:@]+)+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]+)"
+        "from:\\s+(?<depName>[^\\s:@]+(?:/[^\\s:@]+)+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]+)",
+        "COPY --from=(?<depName>[^\\s:@]+(?:/[^\\s:@]+)+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]+)"
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
@@ -71,17 +95,6 @@
     },
     {
       "customType": "regex",
-      "description": "Track the Helium binary flake input",
-      "managerFilePatterns": ["/^flake\\.nix$/"],
-      "matchStrings": [
-        "url = \"file\\+https://github\\.com/imputnet/helium-linux/releases/download/(?<currentValue>[^/]+)/helium-[^/]+-x86_64_linux\\.tar\\.xz\";"
-      ],
-      "depNameTemplate": "imputnet/helium-linux",
-      "datasourceTemplate": "github-releases",
-      "autoReplaceStringTemplate": "url = \"file+https://github.com/imputnet/helium-linux/releases/download/{{{newValue}}}/helium-{{{newValue}}}-x86_64_linux.tar.xz\";"
-    },
-    {
-      "customType": "regex",
       "description": "Track the Astral source flake input",
       "managerFilePatterns": ["/^flake\\.nix$/"],
       "matchStrings": [
@@ -90,14 +103,6 @@
       "depNameTemplate": "astral",
       "datasourceTemplate": "pypi",
       "versioningTemplate": "pep440"
-    },
-    {
-      "customType": "regex",
-      "description": "Track Equilotl release tags in the flake",
-      "managerFilePatterns": ["/^flake\\.nix$/"],
-      "matchStrings": ["url = \"github:Equicord/Equilotl/(?<currentValue>v[^\"/]+)\";"],
-      "depNameTemplate": "Equicord/Equilotl",
-      "datasourceTemplate": "github-releases"
     },
     {
       "customType": "regex",
@@ -110,46 +115,243 @@
       "datasourceTemplate": "github-tags",
       "extractVersionTemplate": "^Toshy_v(?<version>.*)$",
       "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the Bun workspace catalog at its owning manifest",
+      "managerFilePatterns": ["/^package\\.json$/"],
+      "matchStrings": [
+        "\"catalog\":\\s*\\{[^}]+\\}",
+        "\"(?<depName>[^\"\\s]+)\":\\s*\"(?<currentValue>[^\"\\s]+)\""
+      ],
+      "matchStringsStrategy": "recursive",
+      "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "regex",
+      "description": "Track zizmor because the asdf manager does not support it",
+      "managerFilePatterns": ["/^\\.tool-versions$/"],
+      "matchStrings": ["(?:^|\\n)zizmor (?<currentValue>[^\\s]+)"],
+      "depNameTemplate": "zizmor",
+      "packageNameTemplate": "zizmorcore/zizmor",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the checksum-verified mise bootstrap",
+      "managerFilePatterns": ["/^\\.github/actions/setup-check-tools/action\\.yaml$/"],
+      "matchStrings": ["version=(?<currentValue>v[^\\s]+)"],
+      "depNameTemplate": "jdx/mise",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the Determinate release URL instead of treating FlakeHub as a Git remote",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
+      "matchStrings": [
+        "https://flakehub\\.com/f/DeterminateSystems/determinate/=(?<currentValue>[^\"\\s]+)"
+      ],
+      "depNameTemplate": "DeterminateSystems/determinate",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "Track both Ghostty Zig binary architectures together",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
+      "matchStrings": [
+        "file\\+https://ziglang\\.org/download/(?<currentValue>[^/]+)/zig-[^\"\\s]+"
+      ],
+      "depNameTemplate": "zig",
+      "datasourceTemplate": "custom.zig",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the Karabiner VirtualHID device binary",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
+      "matchStrings": [
+        "file\\+https://github\\.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/releases/download/v(?<currentValue>[^/]+)/[^\"\\s]+"
+      ],
+      "depNameTemplate": "pqrs-org/Karabiner-DriverKit-VirtualHIDDevice",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "Track uresourced release tags instead of silently refreshing the same tag",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
+      "matchStrings": [
+        "git\\+https://gitlab\\.freedesktop\\.org/benzea/uresourced\\.git\\?ref=refs/tags/(?<currentValue>[^\"\\s]+)"
+      ],
+      "depNameTemplate": "uresourced",
+      "packageNameTemplate": "https://gitlab.freedesktop.org/benzea/uresourced.git",
+      "datasourceTemplate": "git-tags"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the checksum-verified Translate Web Pages extension",
+      "managerFilePatterns": ["/^browser/helium\\.toml$/"],
+      "matchStrings": [
+        "version = \"(?<currentValue>[^\"\\s]+)\"\\s+url = \"https://github\\.com/FilipePS/Traduzir-paginas-web/releases/download/[^\"\\s]+\""
+      ],
+      "depNameTemplate": "FilipePS/Traduzir-paginas-web",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
+      "description": "Track all revision-pinned Yazi plugins",
+      "managerFilePatterns": ["/^dotfiles/home/\\.config/yazi/package\\.toml$/"],
+      "matchStrings": [
+        "use = \"(?<depName>[^\":]+)(?::[^\"\\s]+)?\"\\s+rev = \"(?<currentDigest>[a-f0-9]{7,40})\""
+      ],
+      "packageNameTemplate": "https://github.com/{{{depName}}}{{#if (equals depName 'Rolv-Apneseth/starship')}}.yazi{{/if}}",
+      "datasourceTemplate": "git-refs",
+      "currentValueTemplate": "main",
+      "versioningTemplate": "exact"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the ChatGPT Linux RPM from its first-party repository",
+      "managerFilePatterns": [
+        "/^dotfiles/home/\\.local/share/nix/chatgpt/package\\.nix$/"
+      ],
+      "matchStrings": ["  version = \"(?<currentValue>[^\"\\s]+)\";"],
+      "depNameTemplate": "chatgpt",
+      "datasourceTemplate": "rpm",
+      "registryUrlTemplate": "https://persistent.oaistatic.com/codex-app-prod/linux/rpm/x86_64/repodata/",
+      "extractVersionTemplate": "^(?<version>[^-]+)-.*$",
+      "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the ChatGPT flake lock",
+      "managerFilePatterns": [
+        "/^dotfiles/home/\\.local/share/nix/chatgpt/flake\\.lock$/"
+      ],
+      "matchStringsStrategy": "recursive",
+      "matchStrings": [
+        "\"nixpkgs\": \\{[\\s\\S]+?\"original\"",
+        "\"rev\": \"(?<currentDigest>[a-f0-9]{40})\""
+      ],
+      "depNameTemplate": "chatgpt-nixpkgs",
+      "packageNameTemplate": "https://github.com/NixOS/nixpkgs",
+      "datasourceTemplate": "git-refs",
+      "currentValueTemplate": "nixos-unstable",
+      "versioningTemplate": "exact"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the Go workspace toolchain alongside both modules",
+      "managerFilePatterns": ["/^go\\.work$/"],
+      "matchStrings": ["(?:^|\\n)go (?<currentValue>[^\\s]+)"],
+      "depNameTemplate": "go",
+      "datasourceTemplate": "golang-version"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the checksum-verified Bun bootstrap",
+      "managerFilePatterns": ["/^scripts/setup/setup\\.sh$/"],
+      "matchStrings": [
+        "https://github\\.com/oven-sh/bun/releases/download/bun-v(?<currentValue>[^/]+)/"
+      ],
+      "depNameTemplate": "oven-sh/bun",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^bun-v(?<version>.*)$"
     }
   ],
   "packageRules": [
     {
-      "description": "Keep Renovate aligned with its disabled-PR compatibility patch",
-      "matchPackageNames": ["renovate"],
-      "matchFileNames": [".github/renovate/package.json"],
-      "enabled": false
-    },
-    {
-      "description": "Keep module majors aligned with recipe types; update digests automatically",
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["ghcr.io/blue-build/modules/**"],
-      "matchUpdateTypes": ["major", "minor", "patch"],
-      "enabled": false
-    },
-    {
-      "description": "Relock release URLs changed by the flake source managers",
+      "description": "Extract Bun toolchain versions from bun-v release tags",
       "matchManagers": ["custom.regex"],
-      "matchFileNames": ["flake.nix"],
-      "postUpgradeTasks": {
-        "commands": ["nix flake lock"],
-        "fileFilters": ["flake.lock"],
-        "executionMode": "branch"
-      }
+      "matchFileNames": ["bluebuild/recipes/spectrum/stages/**"],
+      "matchDepNames": ["oven-sh/bun"],
+      "extractVersion": "^bun-v(?<version>.*)$"
     },
     {
-      "description": "Preserve frozen source revisions and let release managers own tag changes",
+      "description": "Let release managers own tag and explicitly pinned revision changes",
       "matchManagers": ["nix"],
       "matchDepNames": [
-        "source-equilotl",
+        "source-bluebuild-cli",
         "source-toshy",
-        "source-ghostty",
-        "source-jj",
-        "source-kanata-homebrew",
-        "source-kmscon",
-        "source-libtsm",
-        "source-uresourced"
+        "source-uresourced",
+        "determinate",
+        "nixpkgs"
       ],
       "enabled": false
+    },
+    {
+      "description": "Let the OMP source pin own all matching runtime and extension dependencies",
+      "matchManagers": ["npm", "bun"],
+      "matchPackageNames": ["@oh-my-pi/**"],
+      "enabled": false
+    },
+    {
+      "description": "Ghostty's pinned source requires the Zig 0.16 compiler API series",
+      "matchPackageNames": ["zig"],
+      "allowedVersions": ">=0.16.0 <0.17.0"
+    },
+    {
+      "description": "Module images must retain the recipe module API major",
+      "matchPackageNames": ["ghcr.io/blue-build/modules/**"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Resolve the declared flake-parts GitHub source despite the old FlakeHub lock URL",
+      "matchManagers": ["nix"],
+      "matchDepNames": ["flake-parts"],
+      "overridePackageName": "https://github.com/hercules-ci/flake-parts"
+    },
+    {
+      "description": "Resolve the declared git-hooks GitHub source despite the old FlakeHub lock URL",
+      "matchManagers": ["nix"],
+      "matchDepNames": ["git-hooks-nix"],
+      "overridePackageName": "https://github.com/cachix/git-hooks.nix"
     }
-  ]
+  ],
+  "baseBranchPatterns": ["master"],
+  "platformCommit": "disabled",
+  "platformAutomerge": false,
+  "semanticCommits": "enabled",
+  "semanticCommitType": "deps",
+  "dependencyDashboardApproval": false,
+  "configMigration": false,
+  "ignorePaths": ["secrets/**"],
+  "customDatasources": {
+    "zig": {
+      "defaultRegistryUrlTemplate": "https://ziglang.org/download/index.json",
+      "transformTemplates": [
+        "{\"releases\": $each($, function($release, $version) { {\"version\": $version} })}"
+      ]
+    }
+  },
+  "postUpgradeTasks": {
+    "commands": ["bun scripts/renovate/artifacts.ts"],
+    "fileFilters": [
+      "flake.lock",
+      "packages/**/bun.nix",
+      "**/bun.lock",
+      "**/package.json",
+      "packages/theme-run/package.nix",
+      "nix/dev/gemset.nix",
+      ".github/renovate/patches/**",
+      ".github/actions/setup-check-tools/action.yaml",
+      "browser/helium.toml",
+      "bluebuild/recipes/spectrum/stages/farstep.yml",
+      "dotfiles/home/.config/yazi/package.toml",
+      "dotfiles/home/.local/share/nix/chatgpt/*",
+      "go.work",
+      "go.work.sum",
+      "packages/**/go.mod",
+      "packages/**/go.sum",
+      "scripts/setup/setup.sh",
+      "biome.jsonc"
+    ],
+    "executionMode": "branch"
+  },
+  "statusCheckWhen": {
+    "artifactError": "never",
+    "minimumReleaseAge": "never",
+    "mergeConfidence": "never"
+  }
 }
