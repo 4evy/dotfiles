@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   style:
-    name: Formula Style
+    name: Brewfile
     if: >-
       github.event_name != 'pull_request' ||
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) ||
@@ -33,9 +33,6 @@ jobs:
 
       - name: Set Up Check Tools
         uses: ./.github/actions/setup-check-tools # zizmor: ignore[self-repository]
-
-      - name: Install Homebrew RubyGems
-        run: brew install-bundler-gems
 
       - name: Check Homebrew
         run: just homebrew-check
