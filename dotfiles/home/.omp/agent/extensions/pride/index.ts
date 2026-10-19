@@ -16,6 +16,7 @@ const STREAM_DELTAS: Readonly<
 };
 
 export default function pride(pi: ExtensionAPI) {
+  let enabled = true;
   let running = false;
   let lastDelta = Number.NEGATIVE_INFINITY;
   const tools = new Set<string>();
@@ -32,16 +33,33 @@ export default function pride(pi: ExtensionAPI) {
     if (!running) tools.clear();
     widget?.tick();
   };
-  const attach = (_event: unknown, ctx: ExtensionContext) => {
-    running = !ctx.isIdle();
-    lastDelta = Number.NEGATIVE_INFINITY;
-    tools.clear();
-    if (!ctx.hasUI) return;
+  const detach = (ctx: ExtensionContext) => {
+    widget?.dispose();
+    widget = undefined;
+    if (ctx.hasUI) ctx.ui.setWidget("pride", undefined);
+  };
+  const updateWidget = (ctx: ExtensionContext) => {
+    detach(ctx);
+    if (!enabled || !ctx.hasUI) return;
     ctx.ui.setWidget("pride", (tui) => {
       widget = new PrideFlags(ctx, tui, activity);
       return widget;
     });
   };
+  const attach = (_event: unknown, ctx: ExtensionContext) => {
+    running = !ctx.isIdle();
+    lastDelta = Number.NEGATIVE_INFINITY;
+    tools.clear();
+    updateWidget(ctx);
+  };
+  pi.registerCommand("pride", {
+    description: "Toggle animated pride flags",
+    handler: async (_args, ctx) => {
+      if (!ctx.hasUI) return;
+      enabled = !enabled;
+      updateWidget(ctx);
+    },
+  });
   pi.on("session_start", attach);
   pi.on("session_switch", attach);
   pi.on("agent_start", () => setRunning(true));
@@ -65,8 +83,5 @@ export default function pride(pi: ExtensionAPI) {
     widget?.tick();
   });
   pi.on("agent_end", () => setRunning(false));
-  pi.on("session_shutdown", () => {
-    widget?.dispose();
-    widget = undefined;
-  });
+  pi.on("session_shutdown", (_event, ctx) => detach(ctx));
 }

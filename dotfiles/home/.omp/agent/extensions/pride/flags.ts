@@ -6,7 +6,7 @@ type Pixels = readonly [Rows, Rows, Rows];
 export const ROW_INDICES = [0, 1, 2, 3] as const;
 
 export const FULL_TURN = 2 * Math.PI;
-const FLAG_COLUMNS = 8;
+const FLAG_COLUMNS = 6;
 const HALF_CELLS_PER_ROW = 2;
 const CENTER_OFFSET = 1;
 
