@@ -24,6 +24,7 @@ modules:
         - pcscd.socket
         - podman.socket
         - rustdesk.service
+        - spectrum-tailscale-policy.service
         - systemd-oomd.service
         - systemd-oomd.socket
         - tailscaled.service
@@ -41,7 +42,19 @@ modules:
   - type: script@v2
     source: ghcr.io/blue-build/modules/script:v2@sha256:fa4455089da980cb871c804521786ffa74c534987df4251a90eba850fe4a7d86
     snippets:
+      - |
+        install -d -m 0755 /usr/share/selinux/packages/spectrum
+        for module in tailscaled rustdesk; do
+          source="/tmp/spectrum-selinux/$module"
+          install -d "$source"
+          cp "/tmp/spectrum-policy-sources/$module/"* "$source/"
+          make -f /usr/share/selinux/devel/Makefile -C "$source" "$module.pp"
+          install -m 0644 "$source/$module.pp" /usr/share/selinux/packages/spectrum/
+        done
+        semodule -n -i /usr/share/selinux/packages/spectrum/tailscaled.pp /usr/share/selinux/packages/spectrum/rustdesk.pp
+        rm -rf /tmp/spectrum-selinux /tmp/spectrum-policy-sources
       - install -d -m 0755 /nix /var/roothome
+      - dconf update
       - touch /nix/.spectrum-mountpoint
       # Keep the analytics opt-out previously supplied by the brew module.
       - |

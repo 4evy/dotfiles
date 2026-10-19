@@ -1,0 +1,13 @@
+[Unit]
+Description=Disable self-updates for image-managed Tailscale
+After=tailscaled.service
+Requires=tailscaled.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/tailscale set --auto-update=false
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

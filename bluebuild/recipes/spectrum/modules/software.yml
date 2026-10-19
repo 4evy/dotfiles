@@ -29,8 +29,10 @@ modules:
         - curl
         - file
         - findutils
+        - flatpak
         - fuse3
         - git
+        - gjs
         - google-noto-color-emoji-fonts
         - google-noto-emoji-fonts
         - google-noto-sans-cjk-fonts
@@ -54,6 +56,7 @@ modules:
         - ncurses
         - opensc
         - openssh-clients
+        - patch
         - pinentry
         - pinentry-gnome3
         - pipewire-gstreamer
@@ -74,8 +77,6 @@ modules:
         - xdg-desktop-portal
         - xdg-desktop-portal-gnome
         - xdg-desktop-portal-gtk
-        # renovate: datasource=github-releases depName=getsops/sops
-        - https://github.com/getsops/sops/releases/download/v3.13.3/sops-3.13.3-1.x86_64.rpm
         # renovate: datasource=github-releases depName=rustdesk/rustdesk
         - https://github.com/rustdesk/rustdesk/releases/download/1.5.0/rustdesk-1.5.0-0.x86_64.rpm
         - https://discord.com/api/download?platform=linux&format=rpm
@@ -102,15 +103,6 @@ modules:
         rm -f /usr/lib/sysusers.d/30-rpmostree-pkg-group-onepassword.conf
         rm -f /usr/lib/sysusers.d/30-rpmostree-pkg-group-onepassword-cli.conf
         rm -f /usr/lib/sysusers.d/30-rpmostree-pkg-group-onepassword-mcp.conf
-
-  - type: fonts@v1
-    source: ghcr.io/blue-build/modules/fonts:v1@sha256:2f907eef696b67f54bc4294f6da8e7edbbdd46756f022e6807d44616cced7c38
-    fonts:
-      nerd-fonts:
-        - JetBrainsMono
-      url-fonts:
-        - name: NotoColorEmojiBitmap
-          url: https://raw.githubusercontent.com/googlefonts/noto-emoji/main/2D/fonts/NotoColorEmoji.ttf
 
   # Reconcile user Flatpaks at boot. Flatpak itself selects and maintains the
   # host's matching graphics-driver extensions with each runtime.

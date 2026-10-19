@@ -4,18 +4,7 @@ name: kanata
 # Use the final image's Fedora release and runtime libraries.
 from: ${BASE_IMAGE}
 modules:
-  - type: copy@v1
-    src: bluebuild/recipes/spectrum/sources/kanata.json
-    dest: /src/sources.json
-
-  - type: copy@v1
-    src: bluebuild/recipes/spectrum/sources/patches.json
-    dest: /src/patches.json
-
-  - type: copy@v1
-    src: packages/kanata-with-cmd/build-linux.sh
-    dest: /src/build-kanata.sh
-
+  # Install build dependencies before copying changing source inputs
   - type: dnf@v1
     source: ghcr.io/blue-build/modules/dnf:v1@sha256:4fa89e050fbbc397ec7c04ed11339a5f430cc339224facaa8b8ce65e07d39921
     install:
@@ -27,6 +16,18 @@ modules:
         - jq
         - python3
         - rust
+
+  - type: copy@v1
+    src: bluebuild/recipes/spectrum/sources/kanata.json
+    dest: /src/sources.json
+
+  - type: copy@v1
+    src: bluebuild/recipes/spectrum/sources/patches.json
+    dest: /src/patches.json
+
+  - type: copy@v1
+    src: packages/kanata-with-cmd/build.sh
+    dest: /src/build-kanata.sh
 
   - type: containerfile
     snippets:

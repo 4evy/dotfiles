@@ -1,0 +1,51 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/stage-v1.json
+name: workstation
+from: docker.io/oven/bun:1.4.3@sha256:ec06c3b6cea04192ae6770c434f668ca41d343ad19fa6472216c7b48be39c598
+modules:
+  # Source and palette edits must not invalidate dependency installation
+  - type: copy@v1
+    src: packages/workstation/package.json
+    dest: /src/packages/workstation/package.json
+
+  - type: copy@v1
+    src: packages/workstation/bun.lock
+    dest: /src/packages/workstation/bun.lock
+
+  - type: containerfile
+    snippets:
+      - |-
+        RUN \
+          --mount=type=cache,id=spectrum-workstation-bun-v1,sharing=locked,target=/root/.bun/install/cache \
+          cd /src/packages/workstation && \
+          bun install --frozen-lockfile --ignore-scripts
+
+  # Preserve repository-relative imports into the shared TypeScript helpers
+  - type: copy@v1
+    src: lib/typescript
+    dest: /src/lib/typescript
+
+  - type: copy@v1
+    src: packages/workstation/src
+    dest: /src/packages/workstation/src
+
+  - type: copy@v1
+    src: packages/workstation/assets
+    dest: /src/packages/workstation/assets
+
+  - type: copy@v1
+    src: dotfiles/data/palette/palette.json
+    dest: /src/dotfiles/data/palette/palette.json
+
+  - type: containerfile
+    snippets:
+      - |-
+        RUN set -euo pipefail; \
+          cd /src/packages/workstation && \
+          bun run build && \
+          install -Dm755 dist/workstation /out/usr/bin/workstation && \
+          bun -e 'import { commands } from "./src/cli.ts"; console.log(Object.keys(commands).join("\n"))' | \
+          while IFS= read -r command; do \
+            printf '#!/bin/sh\nexec /usr/bin/workstation %s "$@"\n' "$command" > "/out/usr/bin/$command"; \
+            chmod 755 "/out/usr/bin/$command"; \
+          done

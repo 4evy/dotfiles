@@ -4,27 +4,7 @@ name: ghostty
 # Use the final image's Fedora release and runtime libraries.
 from: ${BASE_IMAGE}
 modules:
-  # Keep Ghostty's source inputs independent from unrelated flake updates.
-  - type: copy@v1
-    src: bluebuild/recipes/spectrum/sources/ghostty.json
-    dest: /src/sources.json
-
-  - type: copy@v1
-    src: bluebuild/recipes/spectrum/sources/patches.json
-    dest: /src/patches.json
-
-  - type: copy@v1
-    src: packages/ghostty-patched/build.sh
-    dest: /src/build-ghostty.sh
-
-  - type: copy@v1
-    src: packages/source-lock/source_lock.py
-    dest: /src/source_lock.py
-
-  - type: copy@v1
-    src: packages/source-lock/download_source.py
-    dest: /src/download_source.py
-
+  # Install build dependencies before copying changing source inputs
   - type: dnf@v1
     source: ghcr.io/blue-build/modules/dnf:v1@sha256:4fa89e050fbbc397ec7c04ed11339a5f430cc339224facaa8b8ce65e07d39921
     install:
@@ -55,6 +35,32 @@ modules:
         - pkgconf-pkg-config
         - tar
         - xz
+
+  - type: copy@v1
+    from: docker.io/oven/bun:1.4.3@sha256:ec06c3b6cea04192ae6770c434f668ca41d343ad19fa6472216c7b48be39c598
+    src: /usr/local/bin/bun
+    dest: /usr/local/bin/bun
+
+  # Keep Ghostty's source inputs independent from unrelated flake updates
+  - type: copy@v1
+    src: bluebuild/recipes/spectrum/sources/ghostty.json
+    dest: /src/sources.json
+
+  - type: copy@v1
+    src: bluebuild/recipes/spectrum/sources/patches.json
+    dest: /src/patches.json
+
+  - type: copy@v1
+    src: packages/ghostty-patched/build.sh
+    dest: /src/build-ghostty.sh
+
+  - type: copy@v1
+    src: packages/source/source.ts
+    dest: /src/source.ts
+
+  - type: copy@v1
+    src: packages/source/download.ts
+    dest: /src/download.ts
 
   # BlueBuild's package-manager mounts cache the toolchain install above. The
   # built-in Containerfile module adds compiler-specific caches as well, so a

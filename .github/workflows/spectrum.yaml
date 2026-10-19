@@ -5,7 +5,7 @@ on:
   push:
     branches: [master]
     paths:
-      - .dockerignore
+      - .containerignore
       - .python-version
       - .tool-versions
       - .github/actions/**
@@ -14,7 +14,7 @@ on:
       - just/**
       - bluebuild/**
       - files/dnf/**
-      - dotfiles/.chezmoidata/catppuccin_custom.json
+      - dotfiles/data/palette/palette.json
       - recipes
       - flake.lock
       - flake.nix

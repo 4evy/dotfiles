@@ -1,0 +1,40 @@
+#!/usr/bin/bash
+set -euo pipefail
+
+source=$(readlink -f /usr/bin/rustdesk)
+install -d -m 0755 /var/lib/rustdesk/dotfiles /root/.config/rustdesk
+if ! cmp -s "$source" /var/lib/rustdesk/dotfiles/rustdesk; then
+  install -m 0755 "$source" /var/lib/rustdesk/dotfiles/rustdesk
+fi
+ln -sfn "$(dirname "$source")/lib" /var/lib/rustdesk/dotfiles/lib
+
+/usr/bin/python3 - <<'PY'
+from pathlib import Path
+
+path = Path('/root/.config/rustdesk/RustDesk2.toml')
+text = path.read_text() if path.exists() else ''
+lines = text.splitlines()
+values = {'direct-server': '"Y"', 'direct-access-port': '"21118"', 'stop-service': '""'}
+result = []
+inside = False
+for line in lines:
+    if line.startswith('['):
+        if inside:
+            result.extend(f'{key} = {value}' for key, value in values.items())
+            values.clear()
+        inside = line.strip() == '[options]'
+    key = line.split('=', 1)[0].strip()
+    if inside and key in values:
+        result.append(f'{key} = {values.pop(key)}')
+    else:
+        result.append(line)
+if values:
+    if not inside:
+        result.extend(('', '[options]'))
+    result.extend(f'{key} = {value}' for key, value in values.items())
+updated = '\n'.join(result) + '\n'
+if updated != text:
+    path.write_text(updated)
+PY
+
+restorecon -RF /var/lib/rustdesk

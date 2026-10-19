@@ -1,3 +1,6 @@
+export BB_BUILD_DRIVER := "podman"
+export BB_RUN_DRIVER := "podman"
+
 # Validate the recipe and enforce the Renovate-managed base digest lock.
 [group('spectrum')]
 [linux]
@@ -26,7 +29,7 @@ spectrum-generate output:
     generated={{ quote(output) }}
     bluebuild=${BLUEBUILD:-bluebuild}
     validator=${CHECK_JSONSCHEMA:-check-jsonschema}
-    uv run --locked python bluebuild/recipes/spectrum/prepare-sources.py
+    bun bluebuild/recipes/spectrum/sources/sources.ts
     export BLUEBUILD_CLI_REVISION
     BLUEBUILD_CLI_REVISION=$(jq -r '.nodes[.nodes[.root].inputs["source-bluebuild-cli"]].locked.rev' flake.lock)
     "$validator" \

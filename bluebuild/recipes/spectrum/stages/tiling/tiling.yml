@@ -1,7 +1,7 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/stage-v1.json
 name: hyper-window-tiling
-from: docker.io/oven/bun:1.4.2@sha256:9114c058aeae42162ee16dd5084b95fe9473970bb6bcb5b232ab1630f0546895
+from: docker.io/oven/bun:1.4.3@sha256:ec06c3b6cea04192ae6770c434f668ca41d343ad19fa6472216c7b48be39c598
 modules:
   - type: copy@v1
     src: packages/hyper-window-tiling/package.json
@@ -10,6 +10,15 @@ modules:
   - type: copy@v1
     src: packages/hyper-window-tiling/bun.lock
     dest: /src/bun.lock
+
+  # Keep dependency installation cached when extension source or metadata changes
+  - type: containerfile
+    snippets:
+      - |-
+        RUN \
+          --mount=type=cache,id=spectrum-hyper-window-tiling-bun-v1,sharing=locked,target=/root/.bun/install/cache \
+          cd /src && \
+          bun install --frozen-lockfile
 
   - type: copy@v1
     src: packages/hyper-window-tiling/tsconfig.json
@@ -30,8 +39,4 @@ modules:
   - type: containerfile
     snippets:
       - |-
-        RUN \
-          --mount=type=cache,id=spectrum-hyper-window-tiling-bun-v1,sharing=locked,target=/root/.bun/install/cache \
-          cd /src && \
-          bun install --frozen-lockfile && \
-          bun run build
+        RUN cd /src && bun run build

@@ -1,0 +1,66 @@
+[org/gnome/desktop/interface]
+font-name='Noto Sans 11'
+document-font-name='Noto Sans 12'
+monospace-font-name='JetBrainsMono Nerd Font Mono 11'
+
+[org/gnome/shell/extensions/blur-my-shell/popup]
+blur=false
+
+[org/gnome/mutter]
+overlay-key='Super_L'
+
+[org/gnome/desktop/wm/keybindings]
+switch-applications=@as []
+switch-applications-backward=@as []
+switch-windows=['<Alt>Tab', '<Super>Tab']
+switch-windows-backward=['<Shift><Alt>Tab', '<Shift><Super>Tab']
+switch-to-workspace-1=['<Super>1']
+move-to-workspace-1=['<Super><Shift>1']
+switch-to-workspace-2=['<Super>2']
+move-to-workspace-2=['<Super><Shift>2']
+switch-to-workspace-3=['<Super>3']
+move-to-workspace-3=['<Super><Shift>3']
+switch-to-workspace-4=['<Super>4']
+move-to-workspace-4=['<Super><Shift>4']
+switch-to-workspace-5=['<Super>5']
+move-to-workspace-5=['<Super><Shift>5']
+switch-to-workspace-6=['<Super>6']
+move-to-workspace-6=['<Super><Shift>6']
+switch-to-workspace-7=['<Super>7']
+move-to-workspace-7=['<Super><Shift>7']
+switch-to-workspace-8=['<Super>8']
+move-to-workspace-8=['<Super><Shift>8']
+switch-to-workspace-9=['<Super>9']
+move-to-workspace-9=['<Super><Shift>9']
+switch-to-workspace-left=@as []
+switch-to-workspace-right=@as []
+move-to-workspace-left=@as []
+move-to-workspace-right=@as []
+
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/vicinae]
+name='Vicinae'
+command='vicinae toggle'
+binding='<Super><Control><Alt><Shift>F24'
+
+[org/gnome/shell/extensions/vicinae]
+enable-clipboard-monitoring=true
+blocked-applications=['1Password']
+
+[org/gnome/shell/extensions/hyper-window-tiling]
+move-up=['<Super><Control><Alt><Shift>w']
+move-left=['<Super><Control><Alt><Shift>a']
+move-down=['<Super><Control><Alt><Shift>s']
+move-right=['<Super><Control><Alt><Shift>d']
+move-max-almost=['<Super><Control><Alt><Shift>Return']
+move-max=['<Super><Control><Alt><Shift>backslash']
+
+[org/gnome/shell/keybindings]
+switch-to-application-1=@as []
+switch-to-application-2=@as []
+switch-to-application-3=@as []
+switch-to-application-4=@as []
+switch-to-application-5=@as []
+switch-to-application-6=@as []
+switch-to-application-7=@as []
+switch-to-application-8=@as []
+switch-to-application-9=@as []

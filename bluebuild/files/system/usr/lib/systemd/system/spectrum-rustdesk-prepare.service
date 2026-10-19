@@ -1,0 +1,8 @@
+[Unit]
+Description=Prepare the image-managed RustDesk loader and direct access settings
+Before=rustdesk.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/dotfiles/prepare-rustdesk
+RemainAfterExit=yes

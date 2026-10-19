@@ -4,7 +4,7 @@ modules:
   # Builder outputs and repository-local configuration deliberately follow
   # remote-heavy modules. Changes here invalidate only this assembly tail.
   - type: copy@v1
-    from: python-runtime
+    from: workstation
     src: /out/usr
     dest: /usr
 
@@ -48,8 +48,9 @@ modules:
   - type: containerfile
     snippets:
       - |-
-        RUN --mount=type=bind,from=omp,source=/out,target=/run/omp-rpm,ro \
-          dnf -y --setopt=install_weak_deps=False install /run/omp-rpm/*.rpm \
+        RUN --mount=type=bind,from=farstep,source=/out,target=/run/farstep-rpm,ro \
+          dnf -y --setopt=install_weak_deps=False install /run/farstep-rpm/*.rpm \
+          && ln -s "$(dirname "$(readlink -f /usr/bin/farstep)")/farstep-desktop" /usr/bin/farstep-desktop \
           && dnf clean all
 
   - type: copy@v1
@@ -57,13 +58,23 @@ modules:
     dest: /
 
   - type: copy@v1
+    src: bluebuild/files/selinux
+    dest: /tmp/spectrum-policy-sources
+
+  - type: copy@v1
+    src: packages/solaar/tray.patch
+    dest: /tmp/solaar-no-tray.patch
+
+  - type: script@v2
+    source: ghcr.io/blue-build/modules/script:v2@sha256:fa4455089da980cb871c804521786ffa74c534987df4251a90eba850fe4a7d86
+    snippets:
+      - patch --batch --forward -p2 -d /usr/lib/python3.14/site-packages < /tmp/solaar-no-tray.patch
+      - rm /tmp/solaar-no-tray.patch
+
+  - type: copy@v1
     src: packages/kanata/kanata.kbd
     dest: /usr/libexec/dotfiles/kanata/kanata.kbd
 
   - type: copy@v1
-    src: bluebuild/files/kmscon
-    dest: /usr/libexec/dotfiles/kmscon
-
-  - type: copy@v1
-    src: dotfiles/.chezmoidata/catppuccin_custom.json
+    src: dotfiles/data/palette/palette.json
     dest: /usr/share/dotfiles/catppuccin_custom_palette.json
