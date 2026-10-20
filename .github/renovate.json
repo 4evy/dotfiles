@@ -339,7 +339,6 @@
       ".github/renovate/patches/**",
       ".github/actions/setup-check-tools/action.yaml",
       "browser/helium.toml",
-      "bluebuild/recipes/spectrum/stages/farstep.yml",
       "dotfiles/home/.config/yazi/package.toml",
       "dotfiles/home/.local/share/nix/chatgpt/*",
       "go.work",

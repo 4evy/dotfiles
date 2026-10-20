@@ -48,9 +48,6 @@ if (changed.has("dotfiles/home/.local/share/nix/chatgpt/package.nix")) {
     "dotfiles/home/.local/share/nix/chatgpt/package.nix",
   ]);
 }
-if (changed.has("bluebuild/recipes/spectrum/stages/farstep.yml"))
-  await run(["bun", "scripts/spectrum/toolchains.ts"]);
-
 if (changed.has("flake.nix") || changed.has("flake.lock")) {
   await run(["nix", "flake", "lock"]);
   await validateGhostty();

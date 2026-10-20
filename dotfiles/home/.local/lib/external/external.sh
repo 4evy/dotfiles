@@ -2,16 +2,7 @@
 # shellcheck shell=bash
 set -euo pipefail
 
-if [[ $(uname -s) == Darwin || -e /etc/NIXOS ]]; then
-	bun "${HJEM_WORKING_TREE:-@REPOSITORY@}/scripts/setup/ai/ai.ts" setup
-else
-	for tool in codex claude opencode; do
-		if [[ ! -x /usr/lib/ai-tools/ai-tools-$tool/bin/$tool ]]; then
-			printf 'The Spectrum image is missing %s. Rebuild and deploy it before applying AI settings.\n' "$tool" >&2
-			exit 1
-		fi
-	done
-fi
+bun "${HJEM_WORKING_TREE:-@REPOSITORY@}/scripts/setup/ai/ai.ts" setup
 
 # Use the activation home when invoked outside an interactive shell
 readonly home_dir="${HJEM_HOME_DIR:-$HOME}"

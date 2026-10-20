@@ -21,8 +21,8 @@ async function run(argv: string[], cwd = root, env = process.env): Promise<strin
 
 const action = Bun.argv[2] ?? "apply";
 const setupArguments = Bun.argv.slice(3);
-if (!["apply", "generate", "setup", "configure", "activate", "check"].includes(action))
-  throw new Error("Usage: ai.ts [apply|generate|setup|configure|activate|check]");
+if (!["apply", "generate", "setup", "configure", "activate"].includes(action))
+  throw new Error("Usage: ai.ts [apply|generate|setup|configure|activate]");
 
 if (action === "activate") {
   const home = homedir();
@@ -48,25 +48,6 @@ if (action === "activate") {
   }
   process.exit(0);
 }
-
-if (
-  (action === "apply" || action === "check") &&
-  process.platform === "linux" &&
-  (existsSync("/run/ostree-booted") || existsSync("/usr/bin/bootc"))
-) {
-  const missing = ["codex", "claude", "opencode"].filter(
-    (tool) => !Bun.which(`/usr/lib/ai-tools/ai-tools-${tool}/bin/${tool}`),
-  );
-  if (!Bun.which("/usr/bin/farstep")) missing.push("farstep");
-  if (!existsSync("/usr/lib/ai-tools/ai-tools-ghidra/installation.json"))
-    missing.push("ghidra");
-  if (missing.length)
-    throw new Error(
-      `The Spectrum image is missing ${missing.join(", ")}. Rebuild and deploy it before applying AI settings`,
-    );
-}
-
-if (action === "check") process.exit(0);
 
 // Darwin activates user settings through its native module
 if (action !== "apply" || process.platform === "linux") {
@@ -107,18 +88,35 @@ if (action !== "apply" || process.platform === "linux") {
     }
   }
   await run(["bun", "install", "--frozen-lockfile", "--ignore-scripts"], source);
+  let farstepPackage = "";
+  if (
+    process.platform === "linux" &&
+    !existsSync("/etc/NIXOS") &&
+    ["apply", "generate", "setup"].includes(action)
+  ) {
+    const state = process.env.XDG_STATE_HOME ?? join(homedir(), ".local/state");
+    farstepPackage = await run([
+      "nix",
+      "build",
+      `${root}#farstep`,
+      "--out-link",
+      join(state, "farstep/package"),
+      "--print-out-paths",
+    ]);
+  }
   if (action === "setup") {
     await run(
       [
         "bun",
-        "tools/scripts/cli/cli.ts",
-        "setup",
+        "--eval",
+        'const { setup } = await import("./tools/scripts/setup/setup.ts"); await setup(Bun.argv.slice(1), { background: process.env.HJEM_ACTIVATING === "1" });',
         "codex",
         "claude",
         "opencode",
         ...setupArguments,
       ],
       source,
+      { ...process.env, AI_TOOLS_FLAKE: root },
     );
   } else if (action === "configure") {
     await run(["bun", "tools/scripts/cli/cli.ts", "chatgpt", "configure"], source);
@@ -133,14 +131,19 @@ if (action !== "apply" || process.platform === "linux") {
         ),
       );
       host.farstep =
+        (farstepPackage && join(farstepPackage, "bin/farstep")) ||
         (process.platform === "linux" &&
-          ["/usr/bin/farstep", "/run/current-system/sw/bin/farstep"].find((path) =>
-            Bun.which(path),
-          )) ||
+          Bun.which("/run/current-system/sw/bin/farstep")) ||
         join(source, "farstep/farstep");
-      const managedCodex = "/usr/lib/ai-tools/ai-tools-codex/bin/codex";
-      if (process.platform === "linux" && Bun.which(managedCodex))
-        host.codexCli = managedCodex;
+      if (process.platform === "linux")
+        host.codexCli = await run(
+          [
+            "bun",
+            "--eval",
+            'import { findBinary } from "./tools/scripts/setup/binary.ts"; console.log(findBinary("codex"));',
+          ],
+          source,
+        );
       await Bun.write(hostFile, JSON.stringify(host));
       const builds = JSON.parse(
         await run([

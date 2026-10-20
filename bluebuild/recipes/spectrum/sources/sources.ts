@@ -57,26 +57,6 @@ function inputPin(
   return { ...node.locked, ref: node.original?.ref ?? null };
 }
 
-// Both distribution paths use the repository revision locked by the AI input
-export async function prepareAi(): Promise<void> {
-  const lock = v.parse(Lock, await Bun.file(join(ROOT, "flake.lock")).json());
-  const pin = inputPin(lock, "ai");
-  const revision = v.parse(v.pipe(v.string(), v.regex(/^[a-f0-9]{40}$/)), pin.rev);
-  const sourceDateEpoch = v.parse(v.number(), pin.lastModified);
-  await Bun.write(
-    join(ROOT, "bluebuild/recipes/spectrum/sources/ai.json"),
-    `${JSON.stringify(
-      {
-        revision,
-        sourceDateEpoch,
-        release: BigInt(`0x${revision}`).toString(),
-      },
-      null,
-      2,
-    )}\n`,
-  );
-}
-
 function sourcePin(
   name: string,
   lock: v.InferOutput<typeof Lock>,
@@ -123,7 +103,6 @@ async function main(): Promise<void> {
   const stackSources = v.parse(StackSources, JSON.parse(evaluation.stdout.toString()));
   const directory = join(ROOT, "bluebuild/recipes/spectrum/sources");
   await mkdir(directory, { recursive: true });
-  await prepareAi();
   const groups = {
     ghostty: ["ghostty", "ghostty-zig-x86-64-linux"],
     kanata: ["kanata-homebrew"],

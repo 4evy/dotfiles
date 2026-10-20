@@ -389,6 +389,26 @@ class Workstation implements AsyncDisposable {
 
   async #configureBootc(): Promise<void> {
     await this.ensureSudo();
+    const farstep = await this.output([
+      "nix",
+      "build",
+      `${root}#farstep`,
+      "--no-link",
+      "--print-out-paths",
+    ]);
+    const nixEnv = Bun.which("nix-env", { PATH: this.env.PATH ?? "" });
+    if (!nixEnv) throw new Error("Nix is missing nix-env");
+    const profile = "/nix/var/nix/profiles/dotfiles-farstep";
+    await this.command(["sudo", nixEnv, "--profile", profile, "--set", farstep]);
+    await this.command([
+      "sudo",
+      "ln",
+      "--symbolic",
+      "--force",
+      "--no-dereference",
+      `${profile}/bin/farstep-desktop`,
+      "/usr/local/bin/farstep-desktop",
+    ]);
     const user = userInfo().username;
     for (const group of ["input", "uinput"])
       await this.command(["sudo", "usermod", "--append", "--groups", group, user]);

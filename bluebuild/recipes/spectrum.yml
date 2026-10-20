@@ -24,7 +24,6 @@ stages:
   - from-file: spectrum/stages/ghostty.yml
   - from-file: spectrum/stages/tiling/tiling.yml
   - from-file: spectrum/stages/kanata.yml
-  - from-file: spectrum/stages/farstep.yml
 
 modules:
   # Put immutable, remote-heavy work first. Local source and configuration

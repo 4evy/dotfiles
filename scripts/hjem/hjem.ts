@@ -324,8 +324,6 @@ async function main() {
   let generated: string | undefined;
   let activationStarted = false;
   try {
-    if (action === "apply" && managesAi)
-      await run(["bun", "scripts/setup/ai/ai.ts", "check"]);
     const records = await buildTool("hjem-records", "packages/records/cmd");
     const rendered = join(state, "rendered");
     await mkdir(rendered, { recursive: true, mode: 0o700 });
