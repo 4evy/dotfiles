@@ -14,8 +14,10 @@ modules:
         - gcc
         - git
         - jq
+        - pkgconf-pkg-config
         - python3
         - rust
+        - systemd-devel
 
   - type: copy@v1
     src: bluebuild/recipes/spectrum/sources/kanata.json
