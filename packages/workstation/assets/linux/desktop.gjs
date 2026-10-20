@@ -28,7 +28,25 @@ switch (operation) {
   case "theme":
   case "watch-theme": {
     const interfaceSettings = settings("org.gnome.desktop.interface");
-    const report = () => print(interfaceSettings.get_string("color-scheme"));
+    const report = () => {
+      const scheme = interfaceSettings.get_string("color-scheme");
+      const theme = scheme === "prefer-dark" ? "adw-gtk3-dark" : "adw-gtk3";
+      const roots = [GLib.get_user_data_dir(), ...GLib.get_system_data_dirs()];
+      // adw-gtk3 consumes the same semantic named colors as libadwaita
+      if (
+        interfaceSettings.is_writable("gtk-theme") &&
+        roots.some((root) =>
+          GLib.file_test(
+            GLib.build_filenamev([root, "themes", theme, "gtk-3.0", "gtk.css"]),
+            GLib.FileTest.IS_REGULAR,
+          ),
+        )
+      ) {
+        interfaceSettings.set_string("gtk-theme", theme);
+        Gio.Settings.sync();
+      }
+      print(scheme);
+    };
     if (
       interfaceSettings.list_keys().includes("accent-color") &&
       interfaceSettings.is_writable("accent-color")

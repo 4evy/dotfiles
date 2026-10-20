@@ -18,8 +18,8 @@ function apply(scheme: string): void {
     [4, gtk4],
   ] as const) {
     const css = template
-      .replaceAll(`\${accent}`, color(palette, "accent"))
-      .replaceAll(`\${accent_fg}`, color(palette, "accentForeground"));
+      .replaceAll(`\${legacy}`, gtk3)
+      .replaceAll(/\$\{(\w+)\}/g, (_, role: string) => color(palette, role));
     writeIfChanged(
       join(configHome(), `gtk-${version}.0/catppuccin-custom-accent.css`),
       css,

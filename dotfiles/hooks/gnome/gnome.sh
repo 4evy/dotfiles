@@ -9,8 +9,11 @@ if [ "$(uname -s)" = Linux ]; then
 	else
 		printf "%s\n" "$command skipped: command not found"
 	fi
-	if command -v systemctl >/dev/null 2>&1; then
-		systemctl --user daemon-reload >/dev/null 2>&1 || true
-		systemctl --user enable --now gnome-catppuccin-custom-accent.service >/dev/null 2>&1 || true
+	if command -v systemctl >/dev/null 2>&1 &&
+		systemctl --user show-environment >/dev/null 2>&1; then
+		systemctl --user daemon-reload
+		systemctl --user enable gnome-catppuccin-custom-accent.service
+		# Pick up the rebuilt workstation executable even if already running
+		systemctl --user restart gnome-catppuccin-custom-accent.service
 	fi
 fi

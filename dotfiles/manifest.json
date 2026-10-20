@@ -828,6 +828,7 @@
       "inputs": [
         "dotfiles/data/palette/palette.json",
         "packages/workstation/src/desktop/gnome.ts",
+        "packages/workstation/assets/linux/desktop.gjs",
         "packages/workstation/assets/desktop/gtk/legacy.css.in",
         "packages/workstation/assets/desktop/gtk/gtk.css.in"
       ],
