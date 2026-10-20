@@ -19,6 +19,24 @@ export async function prepareAiHome(
     await writeFile(target, contents, { mode: 0o600 });
     files.push({ path, private: true });
   };
+  const merge = (
+    left: Record<string, unknown>,
+    right: Record<string, unknown>,
+  ): Record<string, unknown> => {
+    for (const [key, value] of Object.entries(right)) {
+      const previous = left[key];
+      left[key] =
+        value &&
+        typeof value === "object" &&
+        !Array.isArray(value) &&
+        previous &&
+        typeof previous === "object" &&
+        !Array.isArray(previous)
+          ? merge(previous as Record<string, unknown>, value as Record<string, unknown>)
+          : value;
+    }
+    return left;
+  };
   for (const file of manifest.files) {
     if (
       typeof file.path !== "string" ||
@@ -31,31 +49,42 @@ export async function prepareAiHome(
     if (file.path === ".codex/config.toml" && existsSync(join(home, file.path))) {
       const current = Bun.TOML.parse(await readFile(join(home, file.path), "utf8"));
       const managed = Bun.TOML.parse(await readFile(join(exported, file.path), "utf8"));
-      const merge = (
-        left: Record<string, unknown>,
-        right: Record<string, unknown>,
-      ): Record<string, unknown> => {
-        for (const [key, value] of Object.entries(right)) {
-          const previous = left[key];
-          left[key] =
-            value &&
-            typeof value === "object" &&
-            !Array.isArray(value) &&
-            previous &&
-            typeof previous === "object" &&
-            !Array.isArray(previous)
-              ? merge(
-                  previous as Record<string, unknown>,
-                  value as Record<string, unknown>,
-                )
-              : value;
-        }
-        return left;
-      };
       const contents = Bun.TOML.stringify(
         merge(current as Record<string, unknown>, managed as Record<string, unknown>),
       );
       await writeFile(target, contents, { mode: 0o600 });
+    } else if (file.path === ".omp/agent/config.yml") {
+      const current = existsSync(join(home, file.path))
+        ? (Bun.YAML.parse(await readFile(join(home, file.path), "utf8")) as Record<
+            string,
+            unknown
+          >)
+        : {};
+      const managed = Bun.YAML.parse(
+        await readFile(join(exported, file.path), "utf8"),
+      ) as Record<string, unknown>;
+      // Preserve runtime state and the pre-migration flat trans-colored ribbon
+      await writeFile(
+        target,
+        Bun.YAML.stringify(
+          merge(current, {
+            ...managed,
+            theme: { dark: "catppuccin-custom-dark", light: "catppuccin-custom-light" },
+            statusLine: {
+              preset: "custom",
+              separator: "pipe",
+              transparent: true,
+              contextLine: "percentage",
+              sessionAccent: false,
+              compactThinkingLevel: false,
+              leftSegments: ["vim", "model", "mode", "path"],
+              rightSegments: ["context_pct", "usage", "cost", "token_total"],
+              segmentOptions: { path: { stripWorkPrefix: true, maxLength: 32 } },
+            },
+          }),
+        ),
+        { mode: 0o600 },
+      );
     } else await copyFile(join(exported, file.path), target);
     await chmod(target, file.private ? 0o600 : 0o644);
     files.push({ path: file.path, private: Boolean(file.private) });
