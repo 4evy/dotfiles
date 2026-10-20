@@ -7,10 +7,11 @@ lib.attrValues {
   inherit (pkgs)
     bash
     bash-completion
+    bun
     zsh
     zstd
     ;
-  inherit (unstable) bun just uv;
+  inherit (unstable) just uv;
 
   # Shell tools and everyday command-line applications
   inherit (pkgs)
