@@ -26,6 +26,32 @@ fallback = "light"
 
 [runtime.theme_platforms."*"]
 commands = [
+  # Use the host GLib and settings backend before a PATH-provided Homebrew copy
+  [
+    "/usr/bin/gsettings",
+    "get",
+    "org.gnome.desktop.interface",
+    "color-scheme",
+  ],
+  [
+    "/usr/bin/gsettings",
+    "get",
+    "org.gnome.desktop.interface",
+    "gtk-theme",
+  ],
+  # NixOS exposes its native tools through the current system profile
+  [
+    "/run/current-system/sw/bin/gsettings",
+    "get",
+    "org.gnome.desktop.interface",
+    "color-scheme",
+  ],
+  [
+    "/run/current-system/sw/bin/gsettings",
+    "get",
+    "org.gnome.desktop.interface",
+    "gtk-theme",
+  ],
   [
     "gsettings",
     "get",
