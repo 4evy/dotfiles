@@ -2,6 +2,7 @@
 import {
   copyFileSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
@@ -96,7 +97,12 @@ function flatpakFonts(): void {
     if (!statSync(app).isDirectory()) continue;
     if (!copyFontFragments(join(app, "config/fontconfig/conf.d"), fragments)) continue;
     for (const cache of children(join(app, "cache/fontconfig"))) {
-      if (basename(cache).includes("cache-") && statSync(cache).isFile()) rmSync(cache);
+      const entry = lstatSync(cache, { throwIfNoEntry: false });
+      if (
+        basename(cache).includes("cache-") &&
+        (entry?.isFile() || entry?.isSymbolicLink())
+      )
+        rmSync(cache, { force: true });
     }
   }
 }
