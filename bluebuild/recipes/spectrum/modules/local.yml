@@ -3,6 +3,10 @@
 modules:
   # Builder outputs and repository-local configuration deliberately follow
   # remote-heavy modules. Changes here invalidate only this assembly tail.
+  - type: containerfile
+    snippets:
+      - COPY --from=ghcr.io/blue-build/cli:main-installer@sha256:2b0a0eb5f8ce42ac30b05ec88a2f883e51ffb8a21e5e881b9cd939a674fa01f6 /out/bluebuild /usr/bin/bluebuild
+
   - type: copy@v1
     from: workstation
     src: /out/usr

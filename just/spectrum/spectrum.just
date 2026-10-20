@@ -35,8 +35,6 @@ generate output:
     bluebuild=${BLUEBUILD:-bluebuild}
     validator=${CHECK_JSONSCHEMA:-check-jsonschema}
     bun bluebuild/recipes/spectrum/sources/sources.ts
-    export BLUEBUILD_CLI_REVISION
-    BLUEBUILD_CLI_REVISION=$(jq -r '.nodes[.nodes[.root].inputs["source-bluebuild-cli"]].locked.rev' flake.lock)
     # Include nested stage and module files in schema validation
     shopt -s globstar
     "$validator" \
@@ -54,9 +52,8 @@ generate output:
     # BlueBuild's feature-gated v2 parser is ready, but its validate command
     # still hardcodes the v1 schema. The official v2 schema is checked above.
     "$bluebuild" generate --skip-validation --output "$generated" bluebuild/recipes/spectrum.yml
-    cli_revision=$(jq -r '.nodes[.nodes[.root].inputs["source-bluebuild-cli"]].locked.rev' flake.lock)
-    grep -Fq "COPY --from=ghcr.io/blue-build/cli:${cli_revision}-installer" "$generated"
-    grep -Fq '/out/bluebuild /bins/bluebuild' "$generated"
+    grep -Fq 'COPY --from=ghcr.io/blue-build/cli:main-installer@sha256:' "$generated"
+    grep -Fq '/out/bluebuild /usr/bin/bluebuild' "$generated"
     grep -Fq -- '--mount=type=cache,sharing=locked,dst=/var/cache/rpm-ostree,id=rpm-ostree-cache-spectrum-' "$generated"
     grep -Fq -- '--mount=type=cache,sharing=locked,dst=/var/cache/libdnf5,id=dnf-cache-spectrum-' "$generated"
     grep -Fq 'bluebuild/recipes/spectrum/sources/ghostty.json /src/sources.json' "$generated"
@@ -84,6 +81,4 @@ build: (_doctor 'nix')
 [linux]
 _build: _validate
     # Nix shells use /tmp, whose tmpfs quota can be smaller than an image layer.
-    export BLUEBUILD_CLI_REVISION
-    BLUEBUILD_CLI_REVISION=$(jq -r '.nodes[.nodes[.root].inputs["source-bluebuild-cli"]].locked.rev' flake.lock)
     TMPDIR=/var/tmp bluebuild build --skip-validation --no-sign bluebuild/recipes/spectrum.yml

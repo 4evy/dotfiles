@@ -44,8 +44,6 @@ runs:
       run: |
         set -euo pipefail
         bun bluebuild/recipes/spectrum/sources/sources.ts
-        export BLUEBUILD_CLI_REVISION
-        BLUEBUILD_CLI_REVISION=$(jq -r '.nodes[.nodes[.root].inputs["source-bluebuild-cli"]].locked.rev' flake.lock)
         sudo --preserve-env "$BLUEBUILD" build -v --compression-format zstd --skip-validation --no-sign bluebuild/recipes/spectrum.yml
 
     # BlueBuild enables registry caching only when publishing. PR builds read

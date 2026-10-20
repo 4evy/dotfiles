@@ -25,12 +25,15 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Track annotated Spectrum build toolchains",
-      "managerFilePatterns": ["/^bluebuild\\/recipes\\/spectrum\\/stages\\/.*\\.yml$/"],
-      "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\s+ARG [A-Z]+_VERSION=(?<currentValue>[0-9.]+)"
+      "description": "Track the published BlueBuild main installer digest",
+      "managerFilePatterns": [
+        "/^bluebuild\\/recipes\\/spectrum\\/modules\\/local\\.yml$/"
       ],
-      "versioningTemplate": "semver"
+      "matchStrings": [
+        "COPY --from=(?<depName>ghcr\\.io/blue-build/cli):(?<currentValue>main-installer)@(?<currentDigest>sha256:[a-f0-9]+)"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
     },
     {
       "customType": "regex",

@@ -14,8 +14,8 @@ metadata:
     org.opencontainers.image.source: https://github.com/4evy/dotfiles
 spec:
   tool-versions:
-    # BlueBuild expands this from the environment supplied by build preparation.
-    bluebuild: ${BLUEBUILD_CLI_REVISION}
+    # The CLI is installed from a pinned image in spectrum/modules/local.yml
+    bluebuild: none
   platforms:
     - linux/amd64
 
