@@ -25,6 +25,10 @@
 !lib/typescript/
 !lib/typescript/**
 
+!scripts/
+!scripts/setup/
+!scripts/setup/workstation.ts
+
 !packages/
 packages/*
 !packages/source/

@@ -44,6 +44,39 @@ function sourceHash(): string {
   return hash.digest("hex");
 }
 
+function useImage(
+  fingerprint: string,
+  bin: string,
+  executable: string,
+  stamp: string,
+): boolean {
+  const imageExecutable = "/usr/bin/workstation";
+  const imageStamp = "/usr/share/dotfiles/workstation.sha256";
+  if (
+    existsSync(imageExecutable) &&
+    existsSync(imageStamp) &&
+    readFileSync(imageStamp, "utf8").trim() === fingerprint
+  ) {
+    const commands = run([imageExecutable, "--help"], true).trim().split("\n").slice(1);
+    if (!commands.length || commands.some((name) => !/^[a-z][a-z0-9-]*$/.test(name)))
+      throw new Error(
+        "The image workstation executable returned invalid command names",
+      );
+    for (const name of ["workstation", ...commands]) {
+      const launcher = join(bin, name);
+      const entry = lstatSync(launcher, { throwIfNoEntry: false });
+      if (!entry?.isFile()) continue;
+      const argument = name === "workstation" ? "" : `${shellQuote(name)} `;
+      const contents = `#!/bin/sh\nexec ${shellQuote(executable)} ${argument}"$@"\n`;
+      if (readFileSync(launcher, "utf8") === contents) rmSync(launcher);
+    }
+    rmSync(executable, { force: true });
+    rmSync(stamp, { force: true });
+    return true;
+  }
+  return false;
+}
+
 function install(): void {
   if (existsSync("/etc/NIXOS")) return;
   const home = homedir();
@@ -52,11 +85,12 @@ function install(): void {
     "dotfiles/workstation",
   );
   const bin = join(home, ".local/bin");
-  mkdirSync(data, { recursive: true });
   mkdirSync(bin, { recursive: true });
   const executable = join(data, "workstation");
   const stamp = join(data, "source.sha256");
   const fingerprint = sourceHash();
+  if (useImage(fingerprint, bin, executable, stamp)) return;
+  mkdirSync(data, { recursive: true });
   if (
     !existsSync(executable) ||
     !existsSync(stamp) ||

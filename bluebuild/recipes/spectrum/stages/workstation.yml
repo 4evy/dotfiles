@@ -37,6 +37,10 @@ modules:
     src: dotfiles/data/palette/palette.json
     dest: /src/dotfiles/data/palette/palette.json
 
+  - type: copy@v1
+    src: scripts/setup/workstation.ts
+    dest: /src/scripts/setup/workstation.ts
+
   - type: containerfile
     snippets:
       - |-
@@ -48,4 +52,6 @@ modules:
           while IFS= read -r command; do \
             printf '#!/bin/sh\nexec /usr/bin/workstation %s "$@"\n' "$command" > "/out/usr/bin/$command"; \
             chmod 755 "/out/usr/bin/$command"; \
-          done
+          done; \
+          mkdir -p /out/usr/share/dotfiles; \
+          bun /src/scripts/setup/workstation.ts --fingerprint > /out/usr/share/dotfiles/workstation.sha256
