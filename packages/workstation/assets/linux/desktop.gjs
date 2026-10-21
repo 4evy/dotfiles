@@ -6,15 +6,62 @@ switch (operation) {
   case "configure-gnome": {
     const shell = settings("org.gnome.shell");
     if (shell.is_writable("enabled-extensions")) {
+      const obsolete = "hyper-window-tiling@flame.local";
+      const replacement = "hyper-window-tiling@4evy.local";
       const enabled = shell.get_strv("enabled-extensions");
-      shell.set_strv("enabled-extensions", [...new Set([...enabled, ...args])]);
-      if (shell.is_writable("disabled-extensions"))
-        shell.set_strv(
-          "disabled-extensions",
-          shell
-            .get_strv("disabled-extensions")
-            .filter((extension) => !args.includes(extension)),
+      const disabled = shell.get_strv("disabled-extensions");
+      if (enabled.includes(obsolete)) {
+        if (!shell.is_writable("disabled-extensions"))
+          throw new Error("Cannot retire the obsolete tiling extension");
+        // Both implementations remove the same keybinding names on disable
+        // Wait for both to stop before allowing the replacement to register them
+        shell.set_strv("disabled-extensions", [
+          ...new Set([...disabled, obsolete, replacement]),
+        ]);
+        Gio.Settings.sync();
+        const extensions = Gio.DBusProxy.new_for_bus_sync(
+          Gio.BusType.SESSION,
+          Gio.DBusProxyFlags.DO_NOT_AUTO_START,
+          null,
+          "org.gnome.Shell",
+          "/org/gnome/Shell",
+          "org.gnome.Shell.Extensions",
+          null,
         );
+        const deadline = GLib.get_monotonic_time() + 10_000_000;
+        while (extensions.get_name_owner()) {
+          const stopped = [obsolete, replacement].every((uuid) => {
+            const [info] = extensions
+              .call_sync(
+                "GetExtensionInfo",
+                new GLib.Variant("(s)", [uuid]),
+                Gio.DBusCallFlags.NONE,
+                1000,
+                null,
+              )
+              .deep_unpack();
+            // ACTIVE, DEACTIVATING and ACTIVATING still own or may add bindings
+            return ![1, 7, 8].includes(info.state?.deep_unpack());
+          });
+          if (stopped) break;
+          if (GLib.get_monotonic_time() >= deadline)
+            throw new Error("Timed out stopping conflicting tiling extensions");
+          GLib.usleep(50_000);
+        }
+      }
+      shell.set_strv("enabled-extensions", [
+        ...new Set([
+          ...enabled.filter((extension) => extension !== obsolete),
+          ...args,
+        ]),
+      ]);
+      if (shell.is_writable("disabled-extensions"))
+        shell.set_strv("disabled-extensions", [
+          ...new Set([
+            ...disabled.filter((extension) => !args.includes(extension)),
+            obsolete,
+          ]),
+        ]);
     }
     const keys = settings("org.gnome.settings-daemon.plugins.media-keys");
     const binding =
