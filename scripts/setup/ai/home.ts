@@ -85,6 +85,36 @@ export async function prepareAiHome(
         ),
         { mode: 0o600 },
       );
+    } else if (file.path === ".config/opencode/opencode.json") {
+      const managed = await Bun.file(join(exported, file.path)).json();
+      // Keep migration-owned user preferences independent of the pinned AI export
+      await writeFile(
+        target,
+        `${JSON.stringify(
+          merge(managed, {
+            update: "disable",
+            username: "Evy",
+            watcher: {
+              ignore: [
+                ...new Set([
+                  ...(managed.watcher?.ignore ?? []),
+                  "**/.bluebuild-scripts_*/**",
+                ]),
+              ],
+            },
+          }),
+          null,
+          2,
+        )}\n`,
+        { mode: 0o600 },
+      );
+    } else if (file.path === ".config/opencode/opencode-quota/quota-toast.json") {
+      const managed = await Bun.file(join(exported, file.path)).json();
+      await writeFile(
+        target,
+        `${JSON.stringify(merge(managed, { enabledProviders: ["openai", "xai", "zai"] }), null, 2)}\n`,
+        { mode: 0o600 },
+      );
     } else await copyFile(join(exported, file.path), target);
     await chmod(target, file.private ? 0o600 : 0o644);
     files.push({ path: file.path, private: Boolean(file.private) });
