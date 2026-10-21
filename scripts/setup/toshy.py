@@ -43,6 +43,7 @@ def main() -> None:
     ):
         provision_user_files(source, runtime, env)
         stamp.write_text(revision + "\n")
+    run("systemctl", "--user", "daemon-reload")
     with tempfile.TemporaryDirectory(prefix="toshy-config.") as temporary:
         merged = Path(temporary) / "toshy_config.py"
         run(
@@ -65,6 +66,8 @@ def main() -> None:
         check=False,
         stderr=subprocess.DEVNULL,
     )
+    # Arming the path watcher is enough: running its oneshot here restarts a
+    # healthy remapper on every apply, discarding any keys currently held
     run(
         "systemctl",
         "--user",
@@ -72,7 +75,6 @@ def main() -> None:
         "toshy-config.service",
         "toshy-kanata-device.path",
     )
-    run("systemctl", "--user", "start", "toshy-kanata-device.service")
     hide_desktop_surfaces(home)
     run("systemctl", "is-active", "--quiet", "kanata-main.service")
     run("systemctl", "--user", "is-active", "--quiet", "toshy-config.service")

@@ -5,7 +5,8 @@ PartOf=graphical-session.target
 After=graphical-session.target
 
 [Path]
-PathChanged=/run/kanata-main/main
+# Watch device replacement, not writable evdev descriptor closes
+PathChanged=/run/kanata-main
 Unit=toshy-kanata-device.service
 
 [Install]

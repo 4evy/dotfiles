@@ -480,6 +480,21 @@
       "systems": ["linux"]
     },
     {
+      "source": ".config/systemd/user/toshy-kanata-device.path",
+      "target": ".config/systemd/user/toshy-kanata-device.path",
+      "systems": ["linux"]
+    },
+    {
+      "source": ".config/systemd/user/toshy-kanata-device.service",
+      "target": ".config/systemd/user/toshy-kanata-device.service",
+      "systems": ["linux"]
+    },
+    {
+      "source": ".config/systemd/user/toshy-config.service.d/60-dotfiles-input-protection.conf",
+      "target": ".config/systemd/user/toshy-config.service.d/60-dotfiles-input-protection.conf",
+      "systems": ["linux"]
+    },
+    {
       "source": ".config/theme-run/config.toml",
       "target": ".config/theme-run/config.toml"
     },
@@ -886,7 +901,10 @@
         "scripts/setup/toshy.py",
         "packages/toshy-user/setup/setup.py",
         "packages/toshy-user/setup/slices.py",
-        "packages/toshy-user/slices"
+        "packages/toshy-user/slices",
+        "dotfiles/home/.config/systemd/user/toshy-config.service.d",
+        "bluebuild/files/system/usr/lib/systemd/user/toshy-kanata-device.path",
+        "bluebuild/files/system/usr/lib/systemd/user/toshy-kanata-device.service"
       ],
       "name": "toshy.sh"
     },

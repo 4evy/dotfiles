@@ -4,4 +4,5 @@ Documentation=https://github.com/RedBearAK/Toshy https://github.com/jtroo/kanata
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c 'systemctl --user reset-failed toshy-config.service || true; [ -e /run/kanata-main/main ] || exit 0; if systemctl --user is-active --quiet toshy-config.service || systemctl --user is-enabled --quiet toshy-config.service; then systemctl --user restart toshy-config.service; fi'
+# An enabled service may be intentionally stopped by the session monitor
+ExecStart=/bin/sh -c 'if [ -e /run/kanata-main/main ] && systemctl --user is-active --quiet toshy-config.service; then systemctl --user restart toshy-config.service; fi'
