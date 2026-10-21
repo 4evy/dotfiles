@@ -88,8 +88,9 @@ keybind = ctrl+page_down=next_tab
 keybind = ctrl+shift+t=new_tab
 keybind = ctrl+shift+n=new_window
 keybind = ctrl+shift+w=close_tab:this
-keybind = ctrl+enter=toggle_fullscreen
-# Send the same queue shortcut on both platforms
+# Queue in omp with Ctrl+Enter, matching Cmd+Enter on macOS
+keybind = ctrl+enter=text:\x1b[13;6u
+# Keep Ctrl+Shift+Enter as the shared queue shortcut on both platforms
 keybind = ctrl+shift+enter=text:\x1b[13;6u
 keybind = performable:ctrl+shift+f=start_search
 keybind = performable:escape=end_search
