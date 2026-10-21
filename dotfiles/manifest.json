@@ -613,6 +613,12 @@
       "systems": ["linux"]
     },
     {
+      "source": ".local/lib/chatgpt/computer-use.sh",
+      "target": ".local/lib/chatgpt/computer-use.sh",
+      "executable": true,
+      "systems": ["linux"]
+    },
+    {
       "source": ".local/bin/ghostty-dreamy-swirl",
       "target": ".local/bin/ghostty-dreamy-swirl",
       "symlink": true
