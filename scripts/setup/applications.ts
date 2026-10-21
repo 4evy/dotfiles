@@ -142,19 +142,22 @@ export function helium(): void {
     stdout: "ignore",
     stderr: "inherit",
   });
-  if (running.exitCode === 0) {
-    console.log("Helium is running; skipping profile configuration");
-    return;
-  }
-  if (running.exitCode !== 1) throw new Error("Could not inspect Helium processes");
-  const profile = expand(string(object(object(config.paths)[platform]).profile_dir));
-  mkdirSync(profile, { recursive: true });
+  if (running.exitCode !== 0 && running.exitCode !== 1)
+    throw new Error("Could not inspect Helium processes");
+  const applyProfile = running.exitCode === 1;
   const cache = join(
     process.env.XDG_CACHE_HOME ?? join(home, ".cache"),
     "dotfiles/helium",
   );
   mkdirSync(cache, { recursive: true });
-  avatar(profile, cache);
+  if (applyProfile) {
+    const profile = expand(string(object(object(config.paths)[platform]).profile_dir));
+    mkdirSync(profile, { recursive: true });
+    avatar(profile, cache);
+  } else {
+    // Launcher updates are safe while Chromium owns its profile
+    console.log("Helium is running, refreshing launchers without profile changes");
+  }
   run(
     [
       "tweezle",
@@ -166,10 +169,12 @@ export function helium(): void {
       cache,
       "--bin-dir",
       join(home, ".local/bin"),
-      "--input",
-      "-",
+      ...(applyProfile ? ["--input", "-"] : ["--no-profile"]),
     ],
-    { input: JSON.stringify(privatePayload(root)), quiet: true },
+    {
+      ...(applyProfile ? { input: JSON.stringify(privatePayload(root)) } : {}),
+      quiet: true,
+    },
   );
 }
 

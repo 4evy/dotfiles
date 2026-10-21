@@ -6,6 +6,7 @@
 let
   inherit (pkgs)
     helium-browser
+    helium-configured
     lib
     linkFarm
     writeText
@@ -23,7 +24,8 @@ let
   profile = "${stateHome}/hjem/standalone/current-profile";
   heliumAppDir = linkFarm "helium-browser-app" {
     "helium-wrapper" = lib.getExe helium-browser;
-    "helium.desktop" = "${helium-browser}/share/applications/helium.desktop";
+    # Tweezle matches desktop_exec against the configured launcher name
+    "helium.desktop" = "${helium-configured}/share/applications/helium.desktop";
     "product_logo_256.png" = "${helium-browser}/share/icons/hicolor/256x256/apps/helium.png";
   };
   environmentFile = writeText "hjem-environment.conf" ''
