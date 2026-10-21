@@ -695,6 +695,11 @@
       "systems": ["linux"]
     },
     {
+      "source": ".local/share/nix/chatgpt/prepare-bundled-plugins.sh",
+      "target": ".local/share/nix/chatgpt/prepare-bundled-plugins.sh",
+      "systems": ["linux"]
+    },
+    {
       "source": ".omp/agent/extensions/pride",
       "target": ".omp/agent/extensions/pride"
     },
