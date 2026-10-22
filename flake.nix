@@ -76,7 +76,7 @@
       url = "github:4evy/tweezle";
     };
 
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/=3.23.2";
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/=3.23.3";
 
     darwin = {
       inputs.nixpkgs.follows = "nixpkgs";
