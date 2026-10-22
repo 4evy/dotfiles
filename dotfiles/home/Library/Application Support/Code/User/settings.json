@@ -199,6 +199,8 @@
   "git.branchProtectionPrompt": "alwaysCommitToNewBranch",
   "git.branchRandomName.enable": true,
   "js/ts.experimental.useTsgo": true,
+  "js/ts.tsdk.path": "@HOME@/.local/lib/typescript/tsdk",
+  "js/ts.contentMappers.enabled": false,
   "js/ts.inlayHints.parameterNames.enabled": "literals",
   "js/ts.inlayHints.parameterTypes.enabled": true,
   "js/ts.inlayHints.functionLikeReturnTypes.enabled": true,

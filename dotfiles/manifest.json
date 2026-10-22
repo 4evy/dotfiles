@@ -662,6 +662,30 @@
       "target": ".local/lib/typescript/package.json"
     },
     {
+      "source": ".local/lib/typescript/compiler.mjs",
+      "target": ".local/lib/typescript/compiler.mjs"
+    },
+    {
+      "source": ".local/lib/typescript/tsrs.sh",
+      "target": ".local/bin/tsrs",
+      "executable": true
+    },
+    {
+      "source": ".local/lib/typescript/tsrs.sh",
+      "target": ".local/bin/tsc",
+      "executable": true
+    },
+    {
+      "source": ".local/lib/typescript/tsrs.sh",
+      "target": ".local/bin/tsgo",
+      "executable": true
+    },
+    {
+      "source": ".local/lib/typescript/tsrs.sh",
+      "target": ".local/lib/typescript/tsdk/tsgo",
+      "executable": true
+    },
+    {
       "source": ".local/lib/typescript/validation.ts",
       "target": ".local/lib/typescript/validation.ts",
       "mutable": true

@@ -112,8 +112,6 @@
   "git.branchRandomName.enable": true,
   "js/ts.experimental.useTsgo": true,
   "js/ts.preferences.preferTypeOnlyAutoImports": true,
-  "js/ts.tsdk.path": "./node_modules/typescript",
-  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
   "js/ts.updateImportsOnFileMove.enabled": "always",
   "python.languageServer": "None",
   "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",

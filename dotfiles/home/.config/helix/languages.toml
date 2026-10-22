@@ -32,7 +32,19 @@ language-servers = ["bash-language-server"]
 name = "javascript"
 auto-format = true
 indent = { tab-width = 4, unit = "    " }
-language-servers = ["typescript-language-server"]
+language-servers = ["tsrs"]
+
+[[language]]
+name = "jsx"
+language-servers = ["tsrs"]
+
+[[language]]
+name = "typescript"
+language-servers = ["tsrs"]
+
+[[language]]
+name = "tsx"
+language-servers = ["tsrs"]
 
 [[language]]
 name = "css"
@@ -91,17 +103,9 @@ args = ["server", "--preview"]
 [language-server.ruff.config.settings.lint]
 extendSelect = ["I"]
 
-[language-server.typescript-language-server]
-command = "bunx"
-args = [
-  "--bun",
-  "-p",
-  "typescript-language-server",
-  "typescript-language-server",
-  "--stdio",
-]
-[language-server.typescript-language-server.config]
-hostInfo = "helix"
+[language-server.tsrs]
+command = "tsrs"
+args = ["--lsp", "--stdio"]
 
 [language-server.vscode-css-language-server]
 command = "bunx"

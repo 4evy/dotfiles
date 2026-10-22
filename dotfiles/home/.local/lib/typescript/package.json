@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "tsrs": "0.18.0-ts7.1.0-dev.20260929",
     "vscode-jsonrpc": "9.0.3"
   }
 }

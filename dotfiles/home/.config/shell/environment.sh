@@ -132,11 +132,13 @@ if [[ "$_dotfiles_os" == Linux ]]; then
 		_dotfiles_path_append_once /run/wrappers/bin
 	fi
 fi
+# Hjem-managed commands take precedence on every supported host
+_dotfiles_path_append_once "$HOME/.local/bin"
 if [[ ! -e /etc/NIXOS ]]; then
 	if [[ "$_dotfiles_os" == Linux ]]; then
 		_dotfiles_path_append_once "${XDG_STATE_HOME:-$HOME/.local/state}/hjem/standalone/current-profile/bin"
 	fi
-	_dotfiles_path_append_once "$HOME/.local/bin" "$HOME/.nix-profile/bin"
+	_dotfiles_path_append_once "$HOME/.nix-profile/bin"
 	if [[ "$_dotfiles_os" == Darwin ]]; then
 		_dotfiles_path_append_once /run/current-system/sw/bin
 	fi
@@ -259,6 +261,25 @@ export UV_PYTHON="${UV_PYTHON:-3.14}"
 export UV_PYTHON_PREFERENCE="${UV_PYTHON_PREFERENCE:-only-managed}"
 export RUMDL_CACHE_DIR="${RUMDL_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/rumdl}"
 export GLAMOUR_STYLE="${GLAMOUR_STYLE:-$HOME/.config/glamour/styles/catppuccin-custom-dark.json}"
+
+# Redirect project-local TypeScript CLI launchers through the managed compiler
+_dotfiles_compiler_preload="$HOME/.local/lib/typescript/compiler.mjs"
+if [[ -f "$_dotfiles_compiler_preload" ]]; then
+	case "${NODE_OPTIONS:-}" in
+		*"$_dotfiles_compiler_preload"*) ;;
+		*) export NODE_OPTIONS="--import=$_dotfiles_compiler_preload${NODE_OPTIONS:+ $NODE_OPTIONS}" ;;
+	esac
+	# Repair the quoted preload value inherited from the initial configuration
+	_dotfiles_quoted_preload="--preload=\"$_dotfiles_compiler_preload\""
+	export BUN_OPTIONS="${BUN_OPTIONS:-}"
+	BUN_OPTIONS="${BUN_OPTIONS//"$_dotfiles_quoted_preload"/"--preload=$_dotfiles_compiler_preload"}"
+	unset _dotfiles_quoted_preload
+	case "${BUN_OPTIONS:-}" in
+		*"$_dotfiles_compiler_preload"*) ;;
+		*) export BUN_OPTIONS="--preload=$_dotfiles_compiler_preload${BUN_OPTIONS:+ $BUN_OPTIONS}" ;;
+	esac
+fi
+unset _dotfiles_compiler_preload
 
 # 05 / terminal color capability
 # Tailscale SSH accepts LC_* variables but drops COLORTERM, so carry the
