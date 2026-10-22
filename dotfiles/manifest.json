@@ -53,6 +53,16 @@
       "target": ".bashrc"
     },
     {
+      "source": ".codex/skills/browser",
+      "target": ".codex/skills/browser",
+      "systems": ["darwin"]
+    },
+    {
+      "source": ".codex/skills/computer",
+      "target": ".codex/skills/computer",
+      "systems": ["darwin"]
+    },
+    {
       "source": ".codex/themes/catppuccin-custom-dark.tmTheme",
       "target": ".codex/themes/catppuccin-custom-dark.tmTheme",
       "nixGenerated": true
