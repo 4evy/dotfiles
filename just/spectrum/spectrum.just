@@ -82,3 +82,16 @@ build: (_doctor 'nix')
 _build: _validate
     # Nix shells use /tmp, whose tmpfs quota can be smaller than an image layer.
     TMPDIR=/var/tmp bluebuild build --skip-validation --no-sign bluebuild/recipes/spectrum.yml
+
+# Validate and switch with the same pinned CLI, rather than the booted image's CLI
+[group('spectrum')]
+[linux]
+[positional-arguments]
+switch *args: (_doctor 'nix')
+    nix develop .#operations --command \
+      {{ just_command }} spectrum _switch "$@"
+
+[linux]
+[positional-arguments]
+_switch *args: _validate
+    bluebuild switch --skip-validation "$@" bluebuild/recipes/spectrum.yml

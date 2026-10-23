@@ -1,7 +1,9 @@
 # Spectrum
 
-Run `just spectrum build` from the repository root. It prepares the generated
-recipe and source inputs before calling BlueBuild.
+Run `just spectrum build` from the repository root to build only, or
+`just spectrum switch` (`rebuild` in an interactive shell) to build and stage the
+image. Both validate the recipe and source inputs before using the pinned
+BlueBuild CLI in the operations shell.
 
 - Use bootc for image updates so `/usr/lib/bootc/kargs.d` arguments apply.
 - Keep Bluefin's bundled Homebrew setup. The BlueBuild `brew` module replaces
@@ -12,3 +14,5 @@ recipe and source inputs before calling BlueBuild.
   commands, breaking heredocs and shell control flow.
 - Validate with `just spectrum validate`: the CLI validator selects the v1
   schema, but these recipes use v2.
+  The packaged CLI forwards `switch --skip-validation` to its internal generator
+  so switching uses those schema checks instead of repeating v1 validation.
