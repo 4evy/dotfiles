@@ -8,16 +8,17 @@
     ],
     "catalog": {
       "@types/bun": "1.4.3",
+      "tsrs": "0.18.0-ts7.1.0-dev.20260929",
       "typescript": "7.0.2"
     }
   },
   "scripts": {
-    "check": "bun run check:biome && bun x --no-install tsc -p tsconfig.json && bun run --sequential --workspaces check && bun run --cwd packages/hyper-window-tiling check && bun run --cwd packages/workstation check",
+    "check": "bun run check:biome && bun x --no-install tsrs -p tsconfig.json && bun run --sequential --workspaces check && bun run --cwd packages/hyper-window-tiling check && bun run --cwd packages/workstation check",
     "check:biome": "bun x --no-install biome check .",
     "format": "bun x --no-install biome check --write .",
     "lint": "bun x --no-install biome lint .",
     "lint:fix": "bun x --no-install biome lint --write .",
-    "typecheck": "bun x --no-install tsc -p tsconfig.json && bun run --sequential --workspaces typecheck && bun run --cwd packages/hyper-window-tiling typecheck && bun run --cwd packages/workstation typecheck"
+    "typecheck": "bun x --no-install tsrs -p tsconfig.json && bun run --sequential --workspaces typecheck && bun run --cwd packages/hyper-window-tiling typecheck && bun run --cwd packages/workstation typecheck"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
@@ -26,6 +27,7 @@
     "@types/culori": "4.0.1",
     "culori": "4.0.2",
     "fallow": "3.33.1",
+    "tsrs": "catalog:",
     "typescript": "catalog:"
   },
   "dependencies": {

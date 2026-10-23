@@ -53,7 +53,7 @@ try {
 
   const compiler = Bun.spawn(
     [
-      join(source, "node_modules/.bin/tsc"),
+      join(source, "node_modules/.bin/tsrs"),
       "-p",
       staging,
       "--pretty",

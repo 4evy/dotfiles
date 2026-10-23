@@ -662,8 +662,27 @@
       "target": ".local/lib/typescript/package.json"
     },
     {
-      "source": ".local/lib/typescript/compiler.mjs",
-      "target": ".local/lib/typescript/compiler.mjs"
+      "source": ".local/lib/typescript/compiler.mts",
+      "target": ".local/lib/typescript/compiler.mts"
+    },
+    {
+      "source": ".local/lib/typescript/runtime.sh",
+      "target": ".local/bin/node",
+      "executable": true
+    },
+    {
+      "source": ".local/lib/typescript/runtime.sh",
+      "target": ".local/bin/bun",
+      "executable": true
+    },
+    {
+      "source": ".local/lib/typescript/upstream.mts",
+      "target": ".local/lib/typescript/upstream.mts"
+    },
+    {
+      "source": ".local/lib/typescript/tsrs.sh",
+      "target": ".local/bin/tscn",
+      "executable": true
     },
     {
       "source": ".local/lib/typescript/tsrs.sh",

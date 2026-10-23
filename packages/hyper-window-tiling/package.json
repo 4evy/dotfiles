@@ -11,7 +11,7 @@
     "check": "bun run fallow && bun run build && bun run check:dist",
     "check:dist": "bun build dist/gnome/extension.js --target=browser --external='gi://*' --external='resource:///*' --outfile=/tmp/hyper-window-tiling-gnome-check.js && bun build dist/kde/contents/code/main.js --target=browser --outfile=/tmp/hyper-window-tiling-kde-check.js",
     "fallow": "bun x --no-install fallow audit --format compact --quiet --gate all",
-    "typecheck": "bun x --no-install tsc --noEmit -p tsconfig.json"
+    "typecheck": "bun x --no-install tsrs --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "kwin-api": "6.7.1"
@@ -21,6 +21,6 @@
     "@girs/gnome-shell": "50.0.4",
     "@types/bun": "1.4.3",
     "fallow": "3.33.1",
-    "typescript": "7.0.2"
+    "tsrs": "0.18.0-ts7.1.0-dev.20260929"
   }
 }

@@ -273,7 +273,7 @@ export RUMDL_CACHE_DIR="${RUMDL_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/rumdl
 export GLAMOUR_STYLE="${GLAMOUR_STYLE:-$HOME/.config/glamour/styles/catppuccin-custom-dark.json}"
 
 # Redirect project-local TypeScript CLI launchers through the managed compiler
-_dotfiles_compiler_preload="$HOME/.local/lib/typescript/compiler.mjs"
+_dotfiles_compiler_preload="$HOME/.local/lib/typescript/compiler.mts"
 if [[ -f "$_dotfiles_compiler_preload" ]]; then
 	case "${NODE_OPTIONS:-}" in
 		*"$_dotfiles_compiler_preload"*) ;;

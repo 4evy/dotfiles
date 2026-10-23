@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "bun build --compile src/cli.ts --outfile dist/workstation",
-    "check": "tsc --noEmit -p tsconfig.json && bun run check:fallow",
+    "check": "tsrs --noEmit -p tsconfig.json && bun run check:fallow",
     "check:fallow": "bun x --no-install fallow dead-code --config .fallowrc.jsonc && bun x --no-install fallow health --complexity --max-crap 0 --config .fallowrc.jsonc",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsrs --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "fast-xml-parser": "5.11.2",
@@ -18,6 +18,6 @@
   },
   "devDependencies": {
     "@types/bun": "1.4.3",
-    "typescript": "7.0.2"
+    "tsrs": "0.18.0-ts7.1.0-dev.20260929"
   }
 }
