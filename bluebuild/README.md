@@ -16,3 +16,5 @@ BlueBuild CLI in the operations shell.
   schema, but these recipes use v2.
   The packaged CLI forwards `switch --skip-validation` to its internal generator
   so switching uses those schema checks instead of repeating v1 validation.
+  Schema downloads, including remote `$ref` files, have 10-second connect and
+  30-second read timeouts. The validator retains upstream's three attempts.
