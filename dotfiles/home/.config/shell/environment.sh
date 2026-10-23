@@ -208,6 +208,16 @@ unset _dotfiles_new_path _dotfiles_path_entry _dotfiles_path_remainder
 unset -f _dotfiles_path_append_once
 
 if [[ "$_dotfiles_os" == Linux && ! -e /etc/NIXOS ]]; then
+	# Nix ncurses omits host terminfo paths, including Ghostty's entry on Fedora
+	# Keep caller overrides and the empty entry for compiled-in defaults
+	for _dotfiles_terminfo in /usr/local/share/terminfo /usr/share/terminfo; do
+		case ":${TERMINFO_DIRS:-}:" in
+			*":$_dotfiles_terminfo:"*) ;;
+			*) export TERMINFO_DIRS="${TERMINFO_DIRS-}:$_dotfiles_terminfo" ;;
+		esac
+	done
+	unset _dotfiles_terminfo
+
 	_dotfiles_hjem_share="${XDG_STATE_HOME:-$HOME/.local/state}/hjem/standalone/current-profile/share"
 	case ":${XDG_DATA_DIRS:-}:" in
 		*":$_dotfiles_hjem_share:"*) ;;

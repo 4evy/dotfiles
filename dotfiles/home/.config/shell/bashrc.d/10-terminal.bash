@@ -18,11 +18,22 @@
 #                       ⠘⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠛
 
 # 01 / terminal integration
-# Load Ghostty integration and fall back when its terminfo is unavailable.
-if [[ -n "${GHOSTTY_RESOURCES_DIR:-}" ]] &&
-	[[ -r "${GHOSTTY_RESOURCES_DIR}/shell-integration/bash/ghostty.bash" ]]; then
-	builtin source "${GHOSTTY_RESOURCES_DIR}/shell-integration/bash/ghostty.bash"
+# SSH does not forward Ghostty's client resource paths, so use host-local files
+_dotfiles_ghostty_resources="${GHOSTTY_RESOURCES_DIR:-}"
+if [[ -z "$_dotfiles_ghostty_resources" && -n "${SSH_CONNECTION:-}" &&
+	"${TERM:-}" == xterm-ghostty && -t 0 && -t 1 ]]; then
+	case "$OSTYPE" in
+		darwin*) _dotfiles_ghostty_resources=/Applications/Ghostty.app/Contents/Resources/ghostty ;;
+		linux*) _dotfiles_ghostty_resources=/usr/share/ghostty ;;
+	esac
+	# Retain no-cursor behavior and do not install wrappers in remote shells
+	GHOSTTY_SHELL_FEATURES="${GHOSTTY_SHELL_FEATURES-title}"
 fi
+if [[ -n "$_dotfiles_ghostty_resources" &&
+	-r "$_dotfiles_ghostty_resources/shell-integration/bash/ghostty.bash" ]]; then
+	builtin source "$_dotfiles_ghostty_resources/shell-integration/bash/ghostty.bash"
+fi
+unset _dotfiles_ghostty_resources
 
 if [[ "${TERM:-}" == "xterm-ghostty" ]] && ! infocmp xterm-ghostty &>/dev/null; then
 	export TERM=xterm-256color

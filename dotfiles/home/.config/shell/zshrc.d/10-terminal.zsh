@@ -23,6 +23,23 @@
 #                  ⠛⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠚⠃
 
 # A1 / terminal integration
+# SSH does not forward Ghostty's client resource paths, so use host-local files
+_dotfiles_ghostty_resources="${GHOSTTY_RESOURCES_DIR:-}"
+if [[ -z "$_dotfiles_ghostty_resources" && -n "${SSH_CONNECTION:-}" \
+  && "${TERM:-}" == xterm-ghostty && -t 0 && -t 1 ]]; then
+  case "$OSTYPE" in
+    darwin*) _dotfiles_ghostty_resources=/Applications/Ghostty.app/Contents/Resources/ghostty ;;
+    linux*) _dotfiles_ghostty_resources=/usr/share/ghostty ;;
+  esac
+  # Retain no-cursor behavior and do not install wrappers in remote shells
+  GHOSTTY_SHELL_FEATURES="${GHOSTTY_SHELL_FEATURES-title}"
+fi
+if [[ -n "$_dotfiles_ghostty_resources" \
+  && -r "$_dotfiles_ghostty_resources/shell-integration/zsh/ghostty-integration" ]]; then
+  source "$_dotfiles_ghostty_resources/shell-integration/zsh/ghostty-integration"
+fi
+unset _dotfiles_ghostty_resources
+
 if [[ "${TERM:-}" == "xterm-ghostty" ]]; then
   zmodload zsh/terminfo 2>/dev/null
   if [[ -z "${terminfo[colors]-}" ]]; then
@@ -81,9 +98,4 @@ _dotfiles_refresh_terminal_theme() {
   esac
   return 0
 }
-fi
-
-if [[ -n "${GHOSTTY_RESOURCES_DIR:-}" ]] \
-  && [[ -r "${GHOSTTY_RESOURCES_DIR}/shell-integration/zsh/ghostty-integration" ]]; then
-  source "${GHOSTTY_RESOURCES_DIR}/shell-integration/zsh/ghostty-integration"
 fi
