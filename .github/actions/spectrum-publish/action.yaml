@@ -16,9 +16,13 @@ runs:
     - name: Sign Image
       env:
         IMAGE_REF: ${{ inputs.image-ref }}
+        REGISTRY_USERNAME: ${{ github.actor }}
+        REGISTRY_PASSWORD: ${{ github.token }}
       shell: bash
       run: |
         set -euo pipefail
+        printf '%s' "$REGISTRY_PASSWORD" |
+          cosign login ghcr.io --username "$REGISTRY_USERNAME" --password-stdin
         cosign sign --yes "$IMAGE_REF"
 
     - name: Attest Build Provenance

@@ -38,6 +38,8 @@ runs:
         BB_CACHE_LAYERS: "true"
         BB_BUILD_RETRY_PUSH: ${{ inputs.publish }}
         BB_BUILD_RETRY_COUNT: "3"
+        # Keep rootful Podman credentials out of the runner's user auth file
+        REGISTRY_AUTH_FILE: ${{ runner.temp }}/spectrum-build-auth.json
         RUST_LOG_STYLE: always
         CLICOLOR_FORCE: "1"
       shell: bash
