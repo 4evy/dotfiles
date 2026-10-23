@@ -49,6 +49,7 @@ try {
       files: [...sources.keys()].filter((path) => /\.[cm]?[jt]sx?$/.test(path)),
     }),
   );
+  // Nested runtime dependencies must also be declared in dotfiles/package.json
   await symlink(join(source, "node_modules"), join(staging, "node_modules"), "dir");
 
   const compiler = Bun.spawn(

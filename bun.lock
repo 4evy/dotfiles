@@ -32,6 +32,7 @@
         "@types/bun": "catalog:",
         "tsrs": "catalog:",
         "typescript": "catalog:",
+        "vscode-jsonrpc": "9.0.3",
       },
     },
   },
@@ -440,6 +441,8 @@
     "undici-types": ["undici-types@8.12.2", "", {}, "sha512-VoMeD2O0KdHhcn+oPqOrpivN+7aDOklVSwOLD7JNjbzV1CboAFek9IFOXnreoufTUtAsCsOK0iETiERPNR/fDA=="],
 
     "valibot": ["valibot@1.5.0", "", { "peerDependencies": { "typescript": ">=5" }, "optionalPeers": ["typescript"] }, "sha512-nil6AkP2TChWL43Z5uJ6GTxX01CUA+g8LWUM+N/rB9NBbkUMaUsi9PUNzlUPgoKASgmx9f7eGOYpJ04/fSa6FQ=="],
+
+    "vscode-jsonrpc": ["vscode-jsonrpc@9.0.3", "", {}, "sha512-qETYf9PCl1lVfwR+oBmMfc4vP2nqLNA35ABxorw3j06+xlKRgDVxbLgKm4Y/xPL0YWdeDjLoI4ImICIT3nB0zQ=="],
 
     "webdriver-bidi-protocol": ["webdriver-bidi-protocol@0.4.2", "", {}, "sha512-VSV+fzfChirL3e7jay2yUC7B4HQCGtEWEg/MSSQbK+qWbqeGlRLlXTzPpYr3XGUvbpDHumWZBJxgesg4N7dbtA=="],
 
