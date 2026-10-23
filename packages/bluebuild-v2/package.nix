@@ -13,6 +13,13 @@ rustPlatform.buildRustPackage {
   pname = "bluebuild";
   inherit version src;
 
+  # Forward switch's validation policy to its internal Containerfile generator
+  postPatch = ''
+    substituteInPlace src/commands/switch.rs \
+      --replace-fail '.recipe(&self.recipe)' \
+        '.recipe(&self.recipe).skip_validation(self.skip_validation)'
+  '';
+
   cargoLock.lockFile = "${src}/Cargo.lock";
   buildFeatures = [
     "bootc"
