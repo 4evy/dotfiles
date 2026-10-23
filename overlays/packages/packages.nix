@@ -38,6 +38,7 @@ let
   };
   packageFiles = {
     bluebuild-v2 = ../../packages/bluebuild-v2/package.nix;
+    # Use the managed Bun runtime rather than bypassing its upstream override
     dotfiles-workstation = ../../packages/workstation/package.nix;
     hyper-window-tiling = ../../packages/hyper-window-tiling/package.nix;
     theme-run = ../../packages/theme-run/package.nix;
@@ -46,9 +47,6 @@ let
   };
 
   packageArgs = {
-    dotfiles-workstation = {
-      inherit (unstable) bun;
-    };
     toshy-runtime = {
       # Toshy replaces packageOverrides, so extend its interpreter's package set
       # before applying upstream's pins without affecting other Python runtimes
