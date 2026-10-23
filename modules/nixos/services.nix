@@ -12,6 +12,15 @@ let
     runCommand
     rustdesk-flutter
     ;
+  # Preserve the setup helper's relative imports in the store
+  applicationsSource = lib.fileset.toSource {
+    root = ../..;
+    fileset = lib.fileset.unions [
+      ../../scripts/setup/applications.ts
+      ../../lib/typescript/commands.ts
+      ../../lib/typescript/errors.ts
+    ];
+  };
   # Import the rootfs once so shared policy files remain in one store tree
   rootfs = lib.sources.cleanSourceWith {
     src = ../../bluebuild/files/system;
@@ -88,7 +97,7 @@ in
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
       preStart = ''
-        ${lib.getExe bun} ${../../scripts/setup/applications.ts} rustdesk
+        ${lib.getExe bun} ${applicationsSource}/scripts/setup/applications.ts rustdesk
       '';
       environment.HOME = "/root";
       serviceConfig = {

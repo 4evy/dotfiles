@@ -43,7 +43,7 @@ let
         mv zig-pkg "$out"
       '';
 in
-stdenvNoCC.mkDerivation {
+stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "ghostty-patched";
   version = "1.3.2-dev.${lib.substring 0 7 revision}";
   src = source;
@@ -98,7 +98,7 @@ stdenvNoCC.mkDerivation {
       -Doptimize=ReleaseFast -Demit-test-exe=false \
       -Dxcframework-target=native \
       -Dxcodebuild-disable-package-manifest-sandbox=true \
-      -Dversion-string=${lib.escapeShellArg "1.3.2-dev.${lib.substring 0 7 revision}"}; then
+      -Dversion-string=${lib.escapeShellArg finalAttrs.version}; then
       for log in "$HOME"/xcodebuild.*.log; do
         if [ -f "$log" ]; then
           cat "$log" >&2
@@ -125,4 +125,4 @@ stdenvNoCC.mkDerivation {
     mainProgram = "ghostty";
     platforms = [ "aarch64-darwin" ];
   };
-}
+})

@@ -1,6 +1,6 @@
 {
   lib,
-  stdenv,
+  stdenvNoCC,
   bun,
   bun2nix,
   makeWrapper,
@@ -13,7 +13,7 @@ let
   metadata = lib.importJSON ./package.json;
   inherit (aiTools) farstep-native;
   inherit (bun2nix) hook;
-  wrapperArgs = lib.optionals stdenv.hostPlatform.isLinux [
+  wrapperArgs = lib.optionals stdenvNoCC.hostPlatform.isLinux [
     "--prefix"
     "PATH"
     ":"
@@ -30,7 +30,8 @@ let
     ])
   ];
 in
-stdenv.mkDerivation {
+# Bun embeds its own runtime, so bundling does not need a C/C++ toolchain
+stdenvNoCC.mkDerivation {
   pname = metadata.name;
   inherit (metadata) version;
   src = lib.fileset.toSource {

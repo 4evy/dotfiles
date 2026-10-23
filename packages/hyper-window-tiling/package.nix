@@ -1,5 +1,5 @@
 {
-  stdenv,
+  stdenvNoCC,
   lib,
   bun,
   bun2nix,
@@ -42,7 +42,8 @@ let
   '';
 
   mkTilingExtension = lib.extendMkDerivation {
-    constructDrv = stdenv.mkDerivation;
+    # Both desktop extensions bundle JavaScript without a native compiler
+    constructDrv = stdenvNoCC.mkDerivation;
     extendDrvArgs = _: args: {
       inherit version src bunDeps;
       strictDeps = true;

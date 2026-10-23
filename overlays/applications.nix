@@ -17,16 +17,18 @@ let
   patched = inputs.patches.packages.${system};
   inherit (patched) ghostty jj kanata;
   inherit (inputs.nixcord.packages.${system}) discord equicord;
-  heliumDarwin = helium-browser.overrideAttrs (old: rec {
-    version = "0.19.4.1";
-    src = fetchurl {
-      url = "https://github.com/imputnet/helium-macos/releases/download/${version}/helium_${version}_arm64-macos.dmg";
-      hash = "sha256-Ew5DEAjyXe2dUiEL36hmsKzlnQTNqv8Hx3kx+9f5MyE=";
-    };
-    passthru = (old.passthru or { }) // {
-      upstreamVersion = version;
-    };
-  });
+  heliumDarwin = helium-browser.overrideAttrs (
+    finalAttrs: old: {
+      version = "0.19.4.1";
+      src = fetchurl {
+        url = "https://github.com/imputnet/helium-macos/releases/download/${finalAttrs.version}/helium_${finalAttrs.version}_arm64-macos.dmg";
+        hash = "sha256-Ew5DEAjyXe2dUiEL36hmsKzlnQTNqv8Hx3kx+9f5MyE=";
+      };
+      passthru = (old.passthru or { }) // {
+        upstreamVersion = finalAttrs.version;
+      };
+    }
+  );
   hostGraphics =
     package: commands:
     if stdenv.hostPlatform.isDarwin then

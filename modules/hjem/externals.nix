@@ -30,27 +30,13 @@ let
       target = ".fzf-tab-completion";
     }
   ];
+  # Preserve symlink leaves and omit empty directories, as Hjem needs files
   files =
     source: target:
-    let
-      entries = lib.readDir source;
-      entry =
-        name:
-        let
-          path = source + "/${name}";
-          destination = "${target}/${name}";
-        in
-        if entries.${name} == "directory" then
-          files path destination
-        else
-          [
-            {
-              source = path;
-              target = destination;
-            }
-          ];
-    in
-    lib.concatMap entry (lib.attrNames entries);
+    map (path: {
+      source = path;
+      target = "${target}/${lib.removePrefix "${toString source}/" (toString path)}";
+    }) (lib.filesystem.listFilesRecursive source);
   font = {
     type = "symlink";
     source = inputs.source-noto-color-emoji.outPath;

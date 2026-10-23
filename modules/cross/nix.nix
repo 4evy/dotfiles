@@ -25,6 +25,9 @@ in
     nix = {
       extraOptions = lib.modules.mkIf (githubTokenFile != null) "!include ${toString githubTokenFile}";
 
+      # Keep login-shell NIX_PATH and nix.conf on the same input mappings
+      nixPath = nixPathEntries;
+
       settings = {
         trusted-users = [
           config.local.user.name
@@ -54,7 +57,7 @@ in
           "flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs="
           "vicinae.cachix.org-1:1kDrfienkGHPYbkpNj1mWTr7Fm1+zcenzgTizIcI3oc="
         ];
-        nix-path = nixPathEntries;
+        nix-path = config.nix.nixPath;
         flake-registry = lib.modules.mkIf config.nixpkgs.hostPlatform.isLinux "";
       };
 
