@@ -11,7 +11,8 @@
     "**/*.js",
     "**/*.jsx",
     "**/*.mjs",
-    "**/*.cjs"
+    "**/*.cjs",
+    "home/.*/**/*"
   ],
   "exclude": ["**/node_modules/**", "**/dist/**", "**/build/**", "**/tmp/**"]
 }
