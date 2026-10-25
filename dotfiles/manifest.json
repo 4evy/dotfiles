@@ -519,6 +519,24 @@
       "systems": ["darwin"]
     },
     {
+      "source": ".config/super-engineering/commands/commit.md",
+      "target": ".config/super-engineering/commands/commit.md",
+      "systems": ["darwin"]
+    },
+    {
+      "source": ".config/super-engineering/commands/rebase.md",
+      "target": ".config/super-engineering/commands/rebase.md",
+      "systems": ["darwin"]
+    },
+    {
+      "source": ".config/super-engineering/commands/commit.md",
+      "target": ".omp/agent/commands/commit.md"
+    },
+    {
+      "source": ".config/super-engineering/commands/rebase.md",
+      "target": ".omp/agent/commands/rebase.md"
+    },
+    {
       "source": ".config/theme-run/config.toml",
       "target": ".config/theme-run/config.toml"
     },

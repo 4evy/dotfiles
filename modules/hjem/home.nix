@@ -258,7 +258,53 @@ let
         cp -p "$settings" "$temporary/original"
         # Redirection truncates contents but keeps the mode for the final rename
         cp -p "$settings" "$temporary/updated"
-        jq -s '.[0] * .[1]' "$temporary/original" "$config" >"$temporary/updated"
+        # App actions and provider slash commands use the same prompt sources
+        # The manifest also installs them under .omp/agent/commands for discovery
+        jq -n --slurpfile preferences "$config" \
+          --rawfile commit "$home/.config/super-engineering/commands/commit.md" \
+          --rawfile rebase "$home/.config/super-engineering/commands/rebase.md" '
+          $preferences[0] * {
+            ai_tier: {
+              custom_commands: [
+                {
+                  id: "299605c4-2761-4df7-b898-f60369434ff1",
+                  name: "Commit by domain",
+                  command: ($commit | rtrimstr("\n")),
+                  auto_submit: true,
+                  dispatch_mode: "inject_current_chat",
+                  view_preference: "default"
+                },
+                {
+                  id: "f3ca99ff-ea59-41c5-97f6-ceabc6a08d47",
+                  name: "Rebase onto upstream",
+                  command: ($rebase | rtrimstr("\n")),
+                  auto_submit: true,
+                  dispatch_mode: "inject_current_chat",
+                  view_preference: "default"
+                },
+                # Keep Session default unchanged and wait for a user prompt
+                {
+                  id: "1f59deeb-37f9-43e0-be66-360e6e154a2a",
+                  name: "Quick chat",
+                  command: "Handle the next request in this fresh chat.",
+                  auto_submit: false,
+                  dispatch_mode: "new_tab",
+                  view_preference: "chat",
+                  provider_preset_key: "omp",
+                  model_id: "openai-codex/gpt-6-luna"
+                }
+              ]
+            }
+          }
+        ' >"$temporary/managed"
+        # Stable IDs replace only these commands, preserving personal additions
+        jq -s '
+          reduce .[1].ai_tier.custom_commands[] as $command
+            (.[0] * (.[1] | del(.ai_tier.custom_commands));
+             .ai_tier.custom_commands =
+               ((.ai_tier.custom_commands // [] |
+                 map(select(.id != $command.id))) + [$command]))
+        ' "$temporary/original" "$temporary/managed" >"$temporary/updated"
 
         # Preserve app-serialized floats and unrelated settings
         # when managed preferences already match
