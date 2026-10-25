@@ -90,6 +90,6 @@ runs:
       run: |-
         set -euo pipefail
         image_ref=${IMAGE_REF,,}
-        digest=$(skopeo inspect "docker://$image_ref:latest" | jq -r .Digest)
+        digest=$(skopeo inspect --format '{{.Digest}}' "docker://$image_ref:latest")
         echo "ref=$image_ref@$digest" >>"$GITHUB_OUTPUT"
         echo "digest=$digest" >>"$GITHUB_OUTPUT"
