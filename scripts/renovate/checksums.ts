@@ -32,7 +32,7 @@ export async function updateBunBootstrap() {
 export async function updateMise() {
   const path = join(root, ".github/actions/setup-check-tools/action.yaml");
   const content = await Bun.file(path).text();
-  const version = content.match(/version=(v[\d.]+)/)?.[1];
+  const version = content.match(/version: (v[\d.]+)/)?.[1];
   if (!version) throw new Error("Missing mise bootstrap version");
   const checksums = await (
     await download(
@@ -40,8 +40,13 @@ export async function updateMise() {
     )
   ).text();
   const updated = content.replace(
-    /platform=([^\s]+)\n(\s+)checksum=[a-f0-9]{64}/g,
-    (_, platform: string, indent: string) => {
+    /(LINUX_X64|MACOS_ARM64|MACOS_X64)_SHA256: [a-f0-9]{64}/g,
+    (_, runner: "LINUX_X64" | "MACOS_ARM64" | "MACOS_X64") => {
+      const platform = {
+        LINUX_X64: "linux-x64",
+        MACOS_ARM64: "macos-arm64",
+        MACOS_X64: "macos-x64",
+      }[runner];
       const asset = `mise-${version}-${platform}`;
       const hash = checksums
         .split("\n")
@@ -49,7 +54,7 @@ export async function updateMise() {
         .find(([, name]) => name?.replace(/^\*?(?:\.\/)?/, "") === asset)?.[0];
       if (!hash || !/^[a-f0-9]{64}$/.test(hash))
         throw new Error(`Missing checksum for ${asset}`);
-      return `platform=${platform}\n${indent}checksum=${hash}`;
+      return `${runner}_SHA256: ${hash}`;
     },
   );
   if (updated !== content) await Bun.write(path, updated);
