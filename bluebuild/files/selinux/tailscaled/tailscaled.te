@@ -1,4 +1,4 @@
-policy_module(tailscaled, 1.1.2)
+policy_module(tailscaled, 1.1.3)
 
 # Adapted from https://github.com/abhiseksanyal/tailscale-selinux-policy
 # under the BSD-3-Clause license in this directory.
@@ -36,8 +36,8 @@ files_type(tailscale_var_cache_t)
 type tailscale_var_run_t;
 files_pid_file(tailscale_var_run_t)
 
-# Tailscale SSH creates a private /tmp/auth-agent* directory for each forwarded
-# SSH agent. Keep those objects separate from generic tmp_t content.
+# Tailscale SSH creates forwarded-agent directories and forwarding sockets
+# directly under /tmp. Keep those objects separate from generic tmp_t content
 type tailscale_tmp_t;
 files_tmp_file(tailscale_tmp_t)
 
@@ -79,7 +79,7 @@ files_pid_filetrans(tailscaled_t, tailscale_var_run_t, dir, "tailscale")
 
 manage_dirs_pattern(tailscaled_t, tailscale_tmp_t, tailscale_tmp_t)
 manage_sock_files_pattern(tailscaled_t, tailscale_tmp_t, tailscale_tmp_t)
-files_tmp_filetrans(tailscaled_t, tailscale_tmp_t, dir)
+files_tmp_filetrans(tailscaled_t, tailscale_tmp_t, { dir sock_file })
 
 ########################################
 #

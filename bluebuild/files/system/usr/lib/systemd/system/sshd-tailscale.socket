@@ -1,0 +1,14 @@
+[Unit]
+Description=OpenSSH forwarding over Tailscale
+Documentation=man:sshd(8)
+
+[Socket]
+# Keep the alternate SSH endpoint off physical network interfaces
+ListenStream=2222
+BindToDevice=tailscale0
+BindIPv6Only=both
+Accept=yes
+
+[Install]
+# Start after Tailscale creates its interface, not during early socket setup
+WantedBy=sys-subsystem-net-devices-tailscale0.device

@@ -25,6 +25,7 @@ modules:
         - podman.socket
         - rustdesk.service
         - spectrum-tailscale-policy.service
+        - sshd-tailscale.socket
         - systemd-oomd.service
         - systemd-oomd.socket
         - tailscaled.service
@@ -53,6 +54,8 @@ modules:
         done
         semodule -n -i /usr/share/selinux/packages/spectrum/tailscaled.pp /usr/share/selinux/packages/spectrum/rustdesk.pp
         rm -rf /tmp/spectrum-selinux /tmp/spectrum-policy-sources
+      # OpenSSH owns forwarding sockets as the authenticated user
+      - semanage port -a -N -t ssh_port_t -p tcp 2222
       - install -d -m 0755 /nix /var/roothome
       - dconf update
       - touch /nix/.spectrum-mountpoint
