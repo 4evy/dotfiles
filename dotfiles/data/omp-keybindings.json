@@ -1,0 +1,5 @@
+{
+  "app.clipboard.copyResponse": ["ctrl+o", "super+o"],
+  "app.tools.expand": ["alt+o"],
+  "app.tools.toggleVisibility": ["ctrl+shift+o", "super+shift+o"]
+}

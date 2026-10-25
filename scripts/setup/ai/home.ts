@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { chmod, copyFile, mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
+import keybindings from "../../../dotfiles/data/omp-keybindings.json";
 
 export async function prepareAiHome(
   source: string,
@@ -84,6 +85,23 @@ export async function prepareAiHome(
           }),
         ),
         { mode: 0o600 },
+      );
+    } else if (file.path === ".omp/agent/keybindings.yml") {
+      const current = existsSync(join(home, file.path))
+        ? (Bun.YAML.parse(await readFile(join(home, file.path), "utf8")) as Record<
+            string,
+            unknown
+          >)
+        : {};
+      const managed = Bun.YAML.parse(
+        await readFile(join(exported, file.path), "utf8"),
+      ) as Record<string, unknown>;
+      await writeFile(
+        target,
+        Bun.YAML.stringify(merge(merge(current, managed), keybindings)),
+        {
+          mode: 0o600,
+        },
       );
     } else if (file.path === ".config/opencode/opencode.json") {
       const managed = await Bun.file(join(exported, file.path)).json();

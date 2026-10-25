@@ -9,6 +9,7 @@ _: {
     enable = true;
     user.enable = true;
     farstep.desktop.enable = true;
+    omp.keybindings = builtins.fromJSON (builtins.readFile ../../dotfiles/data/omp-keybindings.json);
     chatgpt = {
       enable = true;
       package = null;
