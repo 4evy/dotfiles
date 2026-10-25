@@ -5,6 +5,7 @@ import {
   constants,
   existsSync,
   mkdirSync,
+  mkdtempDisposableSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -257,39 +258,35 @@ class Workstation implements AsyncDisposable {
       log("Activating image-provisioned Homebrew");
       await this.command(["sudo", "systemctl", "start", "brew-setup.service"]);
     } else {
-      const temporary = mkdtempSync(join(tmpdir(), "dotfiles-bootstrap."));
-      try {
-        const installer = join(temporary, "homebrew-install.sh");
-        const url = this.env.HOMEBREW_INSTALLER_URL ?? homebrewURL;
-        const checksum = (this.env.HOMEBREW_INSTALLER_CHECKSUM ?? homebrewSHA256)
-          .replace(/^sha256:/, "")
-          .toLowerCase();
-        if (!/^[0-9a-f]{64}$/.test(checksum))
-          throw new Error("Homebrew installer requires a valid SHA-256 checksum");
-        log("Downloading the Homebrew installer");
-        await this.command([
-          "curl",
-          "-fsSL",
-          "--retry",
-          "3",
-          "--retry-delay",
-          "1",
-          "-o",
-          installer,
-          url,
-        ]);
-        if (
-          createHash("sha256").update(readFileSync(installer)).digest("hex") !==
-          checksum
-        )
-          throw new Error("Homebrew installer checksum mismatch");
-        log(`Installing Homebrew into ${this.brewPrefix}`);
-        await this.command(["bash", installer], {
-          env: { ...this.env, NONINTERACTIVE: "1" },
-        });
-      } finally {
-        rmSync(temporary, { recursive: true, force: true });
-      }
+      using workspace = mkdtempDisposableSync(join(tmpdir(), "dotfiles-bootstrap."));
+      const temporary = workspace.path;
+      const installer = join(temporary, "homebrew-install.sh");
+      const url = this.env.HOMEBREW_INSTALLER_URL ?? homebrewURL;
+      const checksum = (this.env.HOMEBREW_INSTALLER_CHECKSUM ?? homebrewSHA256)
+        .replace(/^sha256:/, "")
+        .toLowerCase();
+      if (!/^[0-9a-f]{64}$/.test(checksum))
+        throw new Error("Homebrew installer requires a valid SHA-256 checksum");
+      log("Downloading the Homebrew installer");
+      await this.command([
+        "curl",
+        "-fsSL",
+        "--retry",
+        "3",
+        "--retry-delay",
+        "1",
+        "-o",
+        installer,
+        url,
+      ]);
+      if (
+        createHash("sha256").update(readFileSync(installer)).digest("hex") !== checksum
+      )
+        throw new Error("Homebrew installer checksum mismatch");
+      log(`Installing Homebrew into ${this.brewPrefix}`);
+      await this.command(["bash", installer], {
+        env: { ...this.env, NONINTERACTIVE: "1" },
+      });
     }
     if (!executable(brew)) throw new Error(`Homebrew did not create ${brew}`);
   }

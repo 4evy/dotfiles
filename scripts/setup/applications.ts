@@ -4,7 +4,7 @@ import {
   existsSync,
   lstatSync,
   mkdirSync,
-  mkdtempSync,
+  mkdtempDisposableSync,
   readFileSync,
   readlinkSync,
   rmSync,
@@ -45,39 +45,36 @@ function run(
 }
 
 function avatar(profile: string, cache: string): void {
-  const temporary = mkdtempSync(join(cache, "avatar."));
-  try {
-    const download = join(temporary, "avatar");
-    const png = join(temporary, "avatar.png");
-    run([
-      "curl",
-      "--fail",
-      "--silent",
-      "--show-error",
-      "--location",
-      "https://github.com/4evy.png?size=256",
-      "--output",
-      download,
-    ]);
-    run([
-      "magick",
-      download,
-      "-auto-orient",
-      "-strip",
-      "-resize",
-      "256x256^",
-      "-gravity",
-      "center",
-      "-extent",
-      "256x256",
-      `PNG:${png}`,
-    ]);
-    const target = join(profile, "Custom Avatar Picture.png");
-    if (!existsSync(target) || !readFileSync(target).equals(readFileSync(png)))
-      copyFileSync(png, target);
-  } finally {
-    rmSync(temporary, { recursive: true, force: true });
-  }
+  using workspace = mkdtempDisposableSync(join(cache, "avatar."));
+  const temporary = workspace.path;
+  const download = join(temporary, "avatar");
+  const png = join(temporary, "avatar.png");
+  run([
+    "curl",
+    "--fail",
+    "--silent",
+    "--show-error",
+    "--location",
+    "https://github.com/4evy.png?size=256",
+    "--output",
+    download,
+  ]);
+  run([
+    "magick",
+    download,
+    "-auto-orient",
+    "-strip",
+    "-resize",
+    "256x256^",
+    "-gravity",
+    "center",
+    "-extent",
+    "256x256",
+    `PNG:${png}`,
+  ]);
+  const target = join(profile, "Custom Avatar Picture.png");
+  if (!existsSync(target) || !readFileSync(target).equals(readFileSync(png)))
+    copyFileSync(png, target);
 }
 
 function privatePayload(root: string): Record<string, unknown> {

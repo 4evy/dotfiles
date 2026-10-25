@@ -1,4 +1,4 @@
-import { copyFile, mkdtemp, rm } from "node:fs/promises";
+import { copyFile, mkdtempDisposable } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -55,41 +55,32 @@ if (changed.has("flake.nix") || changed.has("flake.lock")) {
 
 const chatgpt = "dotfiles/home/.local/share/nix/chatgpt";
 if (changed.has(`${chatgpt}/flake.lock`)) {
-  const staging = await mkdtemp(join(tmpdir(), "chatgpt-lock-"));
-  try {
-    // Recompute the managed lock in an isolated flake directory
-    await copyFile(
-      join(root, chatgpt, "private_flake.nix"),
-      join(staging, "flake.nix"),
-    );
-    await copyFile(
-      join(root, chatgpt, "private_flake.lock"),
-      join(staging, "flake.lock"),
-    );
-    await run(["nix", "flake", "update"], staging);
-    await copyFile(
-      join(staging, "flake.lock"),
-      join(root, chatgpt, "private_flake.lock"),
-    );
-  } finally {
-    await rm(staging, { recursive: true, force: true });
-  }
+  await using workspace = await mkdtempDisposable(join(tmpdir(), "chatgpt-lock-"));
+  const staging = workspace.path;
+  // Recompute the managed lock in an isolated flake directory
+  await copyFile(join(root, chatgpt, "private_flake.nix"), join(staging, "flake.nix"));
+  await copyFile(
+    join(root, chatgpt, "private_flake.lock"),
+    join(staging, "flake.lock"),
+  );
+  await run(["nix", "flake", "update"], staging);
+  await copyFile(
+    join(staging, "flake.lock"),
+    join(root, chatgpt, "private_flake.lock"),
+  );
 }
 
 const yazi = "dotfiles/home/.config/yazi/package.toml";
 if (changed.has(yazi)) {
-  const staging = await mkdtemp(join(tmpdir(), "yazi-packages-"));
-  try {
-    // Recompute plugin hashes in an isolated config, never in the user's Yazi
-    await copyFile(join(root, yazi), join(staging, "package.toml"));
-    await run(["ya", "pkg", "install"], staging, {
-      ...process.env,
-      YAZI_CONFIG_HOME: staging,
-    });
-    await copyFile(join(staging, "package.toml"), join(root, yazi));
-  } finally {
-    await rm(staging, { recursive: true, force: true });
-  }
+  await using workspace = await mkdtempDisposable(join(tmpdir(), "yazi-packages-"));
+  const staging = workspace.path;
+  // Recompute plugin hashes in an isolated config, never in the user's Yazi
+  await copyFile(join(root, yazi), join(staging, "package.toml"));
+  await run(["ya", "pkg", "install"], staging, {
+    ...process.env,
+    YAZI_CONFIG_HOME: staging,
+  });
+  await copyFile(join(staging, "package.toml"), join(root, yazi));
 }
 
 for (const directory of [
