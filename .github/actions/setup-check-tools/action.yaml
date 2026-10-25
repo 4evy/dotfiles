@@ -37,10 +37,11 @@ runs:
         curl -fsSL --retry 3 --retry-delay 1 \
           "https://github.com/jdx/mise/releases/download/$MISE_VERSION/mise-$MISE_VERSION-$platform" \
           -o "$temporary/mise"
+        # BSD sha256sum requires an explicit stdin operand in check mode
         if command -v sha256sum >/dev/null 2>&1; then
-          printf '%s  %s\n' "$checksum" "$temporary/mise" | sha256sum -c
+          printf '%s  %s\n' "$checksum" "$temporary/mise" | sha256sum -c -
         else
-          printf '%s  %s\n' "$checksum" "$temporary/mise" | shasum -a 256 -c
+          printf '%s  %s\n' "$checksum" "$temporary/mise" | shasum -a 256 -c -
         fi
         install -m 755 "$temporary/mise" "$bin/mise"
         export PATH="$bin:$PATH"
