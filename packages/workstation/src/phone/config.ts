@@ -33,28 +33,13 @@ const optionalDriver = v.pipe(
   v.nullable(v.string()),
   v.transform((value) => value || null),
 );
-const boolean = v.union([
-  v.boolean(),
-  v.pipe(
-    v.string(),
-    v.toLowerCase(),
-    v.picklist([
-      "1",
-      "on",
-      "true",
-      "yes",
-      "t",
-      "y",
-      "0",
-      "off",
-      "false",
-      "no",
-      "f",
-      "n",
-    ]),
-    v.transform((value) => ["1", "on", "true", "yes", "t", "y"].includes(value)),
-  ),
-]);
+const boolean = v.pipe(
+  v.unknown(),
+  v.parseBoolean({
+    truthy: [true, "1", "on", "true", "yes", "t", "y"],
+    falsy: [false, "0", "off", "false", "no", "f", "n"],
+  }),
+);
 const configSchema = v.pipe(
   objectInput,
   v.object({
