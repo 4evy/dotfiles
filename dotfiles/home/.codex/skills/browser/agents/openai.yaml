@@ -1,3 +1,4 @@
+---
 interface:
   display_name: "Browser"
   short_description: "Control the in-app browser with unified Computer Use"
