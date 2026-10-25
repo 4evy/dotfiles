@@ -41,7 +41,9 @@ jobs:
         uses: ./.github/actions/setup-nix # zizmor: ignore[self-repository]
 
       - name: Check Generated Bun Dependencies
-        run: just bun nix check
+        run: >-
+          nix shell --inputs-from . nixpkgs#deadnix nixpkgs#nixfmt
+          --command just bun nix check
 
       - name: Check Flake and Repository
         run: just nix ci check
