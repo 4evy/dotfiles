@@ -55,14 +55,6 @@ if [[ -n "$_zoxide_bin" ]]; then
     }
   fi
 
-  z() {
-    __zoxide_z "$@"
-  }
-
-  zi() {
-    __zoxide_zi "$@"
-  }
-
   _dotfiles_zoxide_complete() {
     emulate -L zsh
     setopt localoptions no_aliases

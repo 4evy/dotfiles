@@ -55,7 +55,7 @@
   },
   {
     "target": ".cache/zoxide/init.zsh",
-    "command": ["zoxide", "init", "zsh", "--no-cmd"],
+    "command": ["zoxide", "init", "zsh"],
     "requireCommand": "zoxide",
     "required": true
   },
@@ -176,13 +176,13 @@
   },
   {
     "target": ".local/share/bash-completion/completions/opencode",
-    "command": ["bash", "@REPOSITORY@/scripts/hjem/shell/shell.sh", "opencode", "bash"],
+    "command": ["opencode", "--completions", "bash"],
     "requireCommand": "opencode",
     "required": true
   },
   {
     "target": ".cache/zsh/completions/_opencode",
-    "command": ["bash", "@REPOSITORY@/scripts/hjem/shell/shell.sh", "opencode", "zsh"],
+    "command": ["opencode", "--completions", "zsh"],
     "requireCommand": "opencode",
     "required": true
   }

@@ -4,13 +4,6 @@ set -euo pipefail
 tool=$1
 shell=$2
 case "$tool:$shell" in
-	opencode:bash | opencode:zsh)
-		help=$(opencode --help)
-		case "$help" in
-			*--completions*) exec opencode --completions "$shell" ;;
-			*) SHELL="/bin/$shell" exec opencode completion ;;
-		esac
-		;;
 	fzf:zsh)
 		fzf --zsh | sed \
 			-e '/^### completion\.zsh ###$/,$d' \
