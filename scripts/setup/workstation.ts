@@ -1,19 +1,20 @@
 #!/usr/bin/env bun
 import { createHash } from "node:crypto";
 import {
-  chmodSync,
   existsSync,
   lstatSync,
   mkdirSync,
-  mkdtempSync,
+  mkdtempDisposableSync,
   readdirSync,
   readFileSync,
+  readlinkSync,
   renameSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
-import { join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { run as runCommand, shellQuote } from "../../lib/typescript/commands.ts";
 
 const root = resolve(import.meta.dir, "../..");
@@ -44,6 +45,19 @@ function sourceHash(): string {
   return hash.digest("hex");
 }
 
+function managedLauncher(launcher: string, name: string, executable: string): boolean {
+  const entry = lstatSync(launcher, { throwIfNoEntry: false });
+  if (entry?.isSymbolicLink())
+    return resolve(dirname(launcher), readlinkSync(launcher)) === executable;
+  if (!entry?.isFile()) return false;
+  // Recognize only the exact launchers installed before multicall symlinks
+  const argument = name === "workstation" ? "" : `${shellQuote(name)} `;
+  return (
+    readFileSync(launcher, "utf8") ===
+    `#!/bin/sh\nexec ${shellQuote(executable)} ${argument}"$@"\n`
+  );
+}
+
 function useImage(
   fingerprint: string,
   bin: string,
@@ -64,14 +78,17 @@ function useImage(
       );
     for (const name of ["workstation", ...commands]) {
       const launcher = join(bin, name);
-      const entry = lstatSync(launcher, { throwIfNoEntry: false });
-      if (!entry?.isFile()) continue;
-      const argument = name === "workstation" ? "" : `${shellQuote(name)} `;
-      const contents = `#!/bin/sh\nexec ${shellQuote(executable)} ${argument}"$@"\n`;
-      if (readFileSync(launcher, "utf8") === contents) rmSync(launcher);
+      if (managedLauncher(launcher, name, executable)) rmSync(launcher);
     }
-    rmSync(executable, { force: true });
-    rmSync(stamp, { force: true });
+    const localStamp = lstatSync(stamp, { throwIfNoEntry: false });
+    if (
+      localStamp?.isFile() &&
+      /^[a-f0-9]{64}$/.test(readFileSync(stamp, "utf8").trim()) &&
+      lstatSync(executable, { throwIfNoEntry: false })?.isFile()
+    ) {
+      rmSync(executable);
+      rmSync(stamp);
+    }
     return true;
   }
   return false;
@@ -97,30 +114,44 @@ function install(): void {
     readFileSync(stamp, "utf8").trim() !== fingerprint
   ) {
     run([process.execPath, "install", "--frozen-lockfile", "--ignore-scripts"]);
-    const temporary = mkdtempSync(join(data, ".build-"));
-    try {
-      const output = join(temporary, "workstation");
-      run([process.execPath, "build", "--compile", "src/cli.ts", "--outfile", output]);
-      run([output, "--help"], true);
-      renameSync(output, executable);
-      writeFileSync(stamp, `${fingerprint}\n`);
-    } finally {
-      rmSync(temporary, { recursive: true, force: true });
-    }
+    using workspace = mkdtempDisposableSync(join(data, ".build-"));
+    const temporary = workspace.path;
+    const output = join(temporary, "workstation");
+    // Machine helpers must not load configuration from the caller's project
+    run([
+      process.execPath,
+      "build",
+      "--compile",
+      "--no-compile-autoload-dotenv",
+      "--no-compile-autoload-bunfig",
+      "src/cli.ts",
+      "--outfile",
+      output,
+    ]);
+    run([output, "--help"], true);
+    renameSync(output, executable);
+    writeFileSync(stamp, `${fingerprint}\n`);
   }
   const commands = run([executable, "--help"], true).trim().split("\n").slice(1);
   if (!commands.length || commands.some((name) => !/^[a-z][a-z0-9-]*$/.test(name)))
     throw new Error("The workstation executable returned invalid command names");
-  for (const name of ["workstation", ...commands]) {
+  const names = ["workstation", ...commands];
+  for (const name of names) {
     const launcher = join(bin, name);
-    if (lstatSync(launcher, { throwIfNoEntry: false })?.isSymbolicLink())
-      rmSync(launcher);
-    const argument = name === "workstation" ? "" : `${shellQuote(name)} `;
-    writeFileSync(
-      launcher,
-      `#!/bin/sh\nexec ${shellQuote(executable)} ${argument}"$@"\n`,
-    );
-    chmodSync(launcher, 0o755);
+    if (
+      lstatSync(launcher, { throwIfNoEntry: false }) &&
+      !managedLauncher(launcher, name, executable)
+    )
+      throw new Error(
+        `Refusing to replace unmanaged workstation launcher: ${launcher}`,
+      );
+  }
+  for (const name of names) {
+    const launcher = join(bin, name);
+    const entry = lstatSync(launcher, { throwIfNoEntry: false });
+    if (entry?.isSymbolicLink()) continue;
+    if (entry) rmSync(launcher);
+    symlinkSync(executable, launcher);
   }
 }
 

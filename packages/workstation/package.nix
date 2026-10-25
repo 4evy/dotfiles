@@ -76,9 +76,9 @@ stdenvNoCC.mkDerivation {
   installPhase = ''
     runHook preInstall
     install -Dm755 dist/workstation "$out/libexec/workstation"
-    makeWrapper "$out/libexec/workstation" "$out/bin/workstation" ${lib.escapeShellArgs wrapperArgs}
+    makeWrapper "$out/libexec/workstation" "$out/bin/workstation" --inherit-argv0 ${lib.escapeShellArgs wrapperArgs}
     while IFS= read -r command; do
-      makeWrapper "$out/bin/workstation" "$out/bin/$command" --add-flags "$command"
+      ln -s workstation "$out/bin/$command"
     done < commands
     runHook postInstall
   '';

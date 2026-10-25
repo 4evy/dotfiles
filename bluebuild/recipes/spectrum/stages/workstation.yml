@@ -50,8 +50,7 @@ modules:
           install -Dm755 dist/workstation /out/usr/bin/workstation && \
           bun -e 'import { commands } from "./src/cli.ts"; console.log(Object.keys(commands).join("\n"))' | \
           while IFS= read -r command; do \
-            printf '#!/bin/sh\nexec /usr/bin/workstation %s "$@"\n' "$command" > "/out/usr/bin/$command"; \
-            chmod 755 "/out/usr/bin/$command"; \
+            ln -s workstation "/out/usr/bin/$command"; \
           done; \
           mkdir -p /out/usr/share/dotfiles; \
           bun /src/scripts/setup/workstation.ts --fingerprint > /out/usr/share/dotfiles/workstation.sha256

@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { basename } from "node:path";
 import { UsageError } from "../../../lib/typescript/errors.ts";
 import { discord } from "./apps/discord/discord.ts";
 import { syncEquicordSettings } from "./apps/discord/settings.ts";
@@ -61,12 +62,14 @@ function help(command?: string): void {
 }
 
 if (import.meta.main) {
-  // Bun exposes the same two leading argv entries in source and compiled mode
-  const [command, ...args] = process.argv.slice(2);
+  // Bun preserves the invocation name in argv0, not execPath or argv[0]
+  const invokedAs = basename(process.argv0);
+  const args = process.argv.slice(2);
+  const command = Object.hasOwn(commands, invokedAs) ? invokedAs : args.shift();
   try {
     if (!command || command === "--help" || command === "-h") help();
     else {
-      const action = commands[command];
+      const action = Object.hasOwn(commands, command) ? commands[command] : undefined;
       if (!action) throw new UsageError(`Unknown workstation command: ${command}`);
       if (args.includes("--help") || args.includes("-h")) help(command);
       else process.exitCode = (await action(args)) ?? 0;
