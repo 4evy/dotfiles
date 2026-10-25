@@ -14,26 +14,28 @@ in
   inherit (unstable) go_1_27;
 
   # Keep the managed runtime on the stable release ahead of the nixpkgs pin
-  bun = unstable.bun.overrideAttrs (finalAttrs: previous: {
-    version = "1.4.3";
-    src = finalAttrs.passthru.sources.${unstable.stdenvNoCC.hostPlatform.system};
-    passthru = previous.passthru // {
-      sources = {
-        aarch64-darwin = unstable.fetchurl {
-          url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-darwin-aarch64.zip";
-          hash = "sha256-gK/UwGm0am+o8+xSC+vHUKeEPkqNW5WD0prUNsAKNAM=";
-        };
-        aarch64-linux = unstable.fetchurl {
-          url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-linux-aarch64.zip";
-          hash = "sha256-76mBPaXtckI7+Ef5FujSxHwNd2rdlyNUAmp14Q2pqiE=";
-        };
-        x86_64-linux = unstable.fetchurl {
-          url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-linux-x64-baseline.zip";
-          hash = "sha256-H8LtrIQxApCeOhvh2NmALMYHHPB05n6IIx9P/g+LOXs=";
+  bun = unstable.bun.overrideAttrs (
+    finalAttrs: previous: {
+      version = "1.4.3";
+      src = finalAttrs.passthru.sources.${unstable.stdenvNoCC.hostPlatform.system};
+      passthru = previous.passthru // {
+        sources = {
+          aarch64-darwin = unstable.fetchurl {
+            url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-darwin-aarch64.zip";
+            hash = "sha256-gK/UwGm0am+o8+xSC+vHUKeEPkqNW5WD0prUNsAKNAM=";
+          };
+          aarch64-linux = unstable.fetchurl {
+            url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-linux-aarch64.zip";
+            hash = "sha256-76mBPaXtckI7+Ef5FujSxHwNd2rdlyNUAmp14Q2pqiE=";
+          };
+          x86_64-linux = unstable.fetchurl {
+            url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-linux-x64-baseline.zip";
+            hash = "sha256-H8LtrIQxApCeOhvh2NmALMYHHPB05n6IIx9P/g+LOXs=";
+          };
         };
       };
-    };
-  });
+    }
+  );
 
   solaar =
     (solaar.override {
