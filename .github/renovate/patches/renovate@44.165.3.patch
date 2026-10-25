@@ -101,6 +101,16 @@ index b2d1e37..1c8952c 100644
  	let status;
  	try {
  		await syncGit();
+@@ -904,6 +910,9 @@ async function mergeBranch(branchName) {
+ 		await gitRetry(() => git.push("origin", config.currentBranch));
+ 		incLimitedValue("Commits");
+ 	} catch (err) {
++		// A rejected master push must not leak staged updates into the next branch
++		// Restore extraction's base, including renamed patches and Python pins
++		await git.reset(["--hard", config.currentBranchSha]);
+ 		logger.debug({
+ 			baseBranch: config.currentBranch,
+ 			baseSha: config.currentBranchSha,
 @@ -1095,7 +1101,13 @@ async function prepareCommit({ branchName, files, message, trailers, force = fal
  	}
  }

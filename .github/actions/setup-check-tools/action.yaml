@@ -10,45 +10,44 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Select Mise Checksum
-      id: mise
+    # Bootstrap directly because the repository allowlist excludes mise-action
+    - name: Install Check Tools
       shell: bash
       env:
+        MISE_VERSION: v2026.10.12
         LINUX_X64_SHA256: 72404716768b5b044cbd5170136d3d795cbd592658b6e932b66f0f8d67a54875
         MACOS_ARM64_SHA256: 0cb03302051f844c9f9dddc4d53e3c5c9ea5fdd72ee1ca7fd3e3b1a55ac34ddf
         MACOS_X64_SHA256: 471a885e775cf5022372d4c5c2f426228e8e1f48cdc4dca5cc718547cb390cab
-      run: |-
-        set -euo pipefail
-        case "$RUNNER_OS-$RUNNER_ARCH" in
-          Linux-X64) checksum=$LINUX_X64_SHA256 ;;
-          macOS-ARM64) checksum=$MACOS_ARM64_SHA256 ;;
-          macOS-X64) checksum=$MACOS_X64_SHA256 ;;
-          *) echo 'Unsupported runner platform' >&2; exit 1 ;;
-        esac
-        printf 'sha256=%s\n' "$checksum" >> "$GITHUB_OUTPUT"
-
-    - name: Install Check Tools
-      uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
-      env:
+        TOOLS: ${{ inputs.tools }}
         # Trust only the version file, not arbitrary repository mise configuration
         MISE_TRUSTED_CONFIG_PATHS: ${{ env.MISE_TRUSTED_CONFIG_PATHS || format('{0}/.tool-versions', github.workspace) }}
-      with:
-        version: v2026.10.12
-        sha256: ${{ steps.mise.outputs.sha256 }}
-        install_args: ${{ inputs.tools }}
-        monorepo: false
-        cache: false
-        env: false
-        export_path: false
-        add_shims_to_path: false
-
-    - name: Export Selected Tool Paths
-      shell: bash
-      env:
-        TOOLS: ${{ inputs.tools }}
-      run: |- # zizmor: ignore[github-env] mise resolves pinned tools from .tool-versions
+        MISE_GITHUB_TOKEN: ${{ github.token }}
+      run: |- # zizmor: ignore[github-env] export the verified bootstrap and pinned tool paths only
         set -euo pipefail
+        case "$RUNNER_OS-$RUNNER_ARCH" in
+          Linux-X64) platform=linux-x64; checksum=$LINUX_X64_SHA256 ;;
+          macOS-ARM64) platform=macos-arm64; checksum=$MACOS_ARM64_SHA256 ;;
+          macOS-X64) platform=macos-x64; checksum=$MACOS_X64_SHA256 ;;
+          *) echo 'Unsupported runner platform' >&2; exit 1 ;;
+        esac
+        bin="$RUNNER_TEMP/check-tools/bin"
+        mkdir -p "$bin"
+        temporary=$(mktemp -d)
+        trap 'rm -rf "$temporary"' EXIT
+        curl -fsSL --retry 3 --retry-delay 1 \
+          "https://github.com/jdx/mise/releases/download/$MISE_VERSION/mise-$MISE_VERSION-$platform" \
+          -o "$temporary/mise"
+        if command -v sha256sum >/dev/null 2>&1; then
+          printf '%s  %s\n' "$checksum" "$temporary/mise" | sha256sum --check
+        else
+          printf '%s  %s\n' "$checksum" "$temporary/mise" | shasum -a 256 --check
+        fi
+        install -m 755 "$temporary/mise" "$bin/mise"
+        export PATH="$bin:$PATH"
         read -r -a tools <<< "$TOOLS"
+        mise install "${tools[@]}"
+        # Export only selected tools, not mise shims or repository environment
+        printf '%s\n' "$bin" >> "$GITHUB_PATH"
         for tool in "${tools[@]}"; do
           dirname "$(mise which "$tool")" >> "$GITHUB_PATH"
         done

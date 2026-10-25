@@ -73,20 +73,19 @@ export async function updateMise() {
       runs: v.object({
         steps: v.array(
           v.object({
-            uses: v.optional(v.string()),
-            with: v.optional(v.record(v.string(), v.unknown())),
+            env: v.optional(v.record(v.string(), v.unknown())),
           }),
         ),
       }),
     }),
     Bun.YAML.parse(content),
   );
-  const installers = action.runs.steps.filter((step) =>
-    step.uses?.startsWith("jdx/mise-action@"),
+  const installers = action.runs.steps.filter(
+    (step) => step.env?.MISE_VERSION !== undefined,
   );
   const [installer] = installers;
   if (installers.length !== 1) throw new Error("Expected one mise install step");
-  const version = installer?.with?.version;
+  const version = installer?.env?.MISE_VERSION;
   if (typeof version !== "string" || !/^v\S+$/.test(version))
     throw new Error("Missing mise bootstrap version");
   const checksums = parseChecksums(

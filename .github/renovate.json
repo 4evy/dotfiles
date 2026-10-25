@@ -143,7 +143,7 @@
       "customType": "regex",
       "description": "Track the checksum-verified mise bootstrap",
       "managerFilePatterns": ["/^\\.github/actions/setup-check-tools/action\\.yaml$/"],
-      "matchStrings": ["version: (?<currentValue>v[^\\s]+)"],
+      "matchStrings": ["MISE_VERSION: (?<currentValue>v[^\\s]+)"],
       "depNameTemplate": "jdx/mise",
       "datasourceTemplate": "github-releases"
     },

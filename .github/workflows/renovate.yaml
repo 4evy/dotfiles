@@ -22,10 +22,6 @@ jobs:
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    permissions:
-      # Never grant issues or pull-requests write access under any circumstances
-      # Only new commits on top of master may be published by this bot
-      contents: write # needed to fast-forward master with dependency commits
     steps:
       - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -66,6 +62,8 @@ jobs:
         env:
           LOG_LEVEL: info
           RENOVATE_EXIT_CODE_FOR_ERRORS: "true"
-          RENOVATE_TOKEN: ${{ github.token }}
+          # Separate OAuth token with repo and workflow scopes
+          # The source patch still forbids creating PRs and Issues
+          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
           RENOVATE_CONFIG_FILE: .github/renovate/src/config.cjs
           RENOVATE_REPOSITORIES: '["${{ github.repository }}"]'
