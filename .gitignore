@@ -23,6 +23,8 @@ Thumbs.db
 .pre-commit-config.yaml
 .fallow/
 fallow/
+!/tools/tiling/vendor/fallow/
+!/tools/tiling/vendor/fallow/**
 
 # Local secrets
 .env
@@ -33,8 +35,7 @@ fallow/
 # Dependencies
 **/packages/
 !/packages/
-!/modules/nixos/packages/
-!/overlays/packages/
+!/nix/overlays/packages/
 __pycache__/
 *.py[cod]
 node_modules/
@@ -62,12 +63,12 @@ tmp/
 
 /.bluebuild-scripts_*
 
-/bluebuild/recipes/spectrum/sources/*
-!/bluebuild/recipes/spectrum/sources/sources.ts
+/systems/spectrum/recipes/spectrum/sources/*
+!/systems/spectrum/recipes/spectrum/sources/sources.ts
 
 /Sources/
 
 # Cached shell initialization is generated from tracked Hjem templates
-!/dotfiles/home/.cache/
-!/dotfiles/home/.cache/**/
-!/dotfiles/home/.cache/**/*.tmpl
+!/home/files/.cache/
+!/home/files/.cache/**/
+!/home/files/.cache/**/*.tmpl

@@ -9,12 +9,12 @@
     "ignoreUnknown": true,
     "includes": [
       "**",
-      "!!bluebuild/files/system/usr/lib/systemd",
-      "!!packages/hyper-window-tiling/vendor",
+      "!!systems/spectrum/files/system/usr/lib/systemd",
+      "!!tools/tiling/vendor",
       "!!**/*.md",
       "!!**/*.yaml",
       "!!**/*.yml",
-      "!!dotfiles/home/Library/Application Support/sh.cider.genten/themes/**/*.scss"
+      "!!home/files/Library/Application Support/sh.cider.genten/themes/**/*.scss"
     ]
   },
   "formatter": {
@@ -31,7 +31,7 @@
   },
   "overrides": [
     {
-      "includes": ["packages/equicord-settings/css/css.css"],
+      "includes": ["home/applications/discord/equicord/css/css.css"],
       "linter": {
         "rules": {
           "complexity": {

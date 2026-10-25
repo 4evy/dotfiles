@@ -1,0 +1,74 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/module-list-v1.json
+modules:
+  # Builder outputs and repository-local configuration deliberately follow
+  # remote-heavy modules. Changes here invalidate only this assembly tail.
+  - type: containerfile
+    snippets:
+      - COPY --from=ghcr.io/blue-build/cli:main-installer@sha256:487bd4f628cc5ddcce820dc9e37108beacb57b57a5ac9c0448ac26bef3b48cb6 /out/bluebuild /usr/bin/bluebuild
+
+  - type: copy@v1
+    from: workstation
+    src: /out/usr
+    dest: /usr
+
+  - type: copy@v1
+    from: ghostty
+    src: /out/usr
+    dest: /usr
+
+  - type: copy@v1
+    from: hyper-window-tiling
+    src: /src/gnome/metadata.json
+    dest: /usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/metadata.json
+
+  - type: copy@v1
+    from: hyper-window-tiling
+    src: /src/dist/gnome/extension.js
+    dest: /usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/extension.js
+
+  - type: copy@v1
+    from: hyper-window-tiling
+    src: /src/gnome/schemas/org.gnome.shell.extensions.hyper-window-tiling.gschema.xml
+    dest: /usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/schemas/org.gnome.shell.extensions.hyper-window-tiling.gschema.xml
+
+  - type: copy@v1
+    from: hyper-window-tiling
+    src: /src/kde/metadata.json
+    dest: /usr/share/kwin/scripts/hyper-window-tiling/metadata.json
+
+  - type: copy@v1
+    from: hyper-window-tiling
+    src: /src/dist/kde/contents/code/main.js
+    dest: /usr/share/kwin/scripts/hyper-window-tiling/contents/code/main.js
+
+  - type: copy@v1
+    from: kanata
+    src: /out/usr
+    dest: /usr
+
+  - type: copy@v1
+    src: systems/spectrum/files/system
+    dest: /
+
+  - type: copy@v1
+    src: systems/spectrum/files/selinux
+    dest: /tmp/spectrum-policy-sources
+
+  - type: copy@v1
+    src: packages/solaar/tray.patch
+    dest: /tmp/solaar-no-tray.patch
+
+  - type: script@v2
+    source: ghcr.io/blue-build/modules/script:v2@sha256:fa4455089da980cb871c804521786ffa74c534987df4251a90eba850fe4a7d86
+    snippets:
+      - patch --batch --forward -p2 -d /usr/lib/python3.14/site-packages < /tmp/solaar-no-tray.patch
+      - rm /tmp/solaar-no-tray.patch
+
+  - type: copy@v1
+    src: packages/kanata/kanata.kbd
+    dest: /usr/libexec/dotfiles/kanata/kanata.kbd
+
+  - type: copy@v1
+    src: home/theme/palette/palette.json
+    dest: /usr/share/dotfiles/catppuccin_custom_palette.json

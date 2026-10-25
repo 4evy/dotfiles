@@ -10,7 +10,7 @@ check: lint complexity dead::code dependencies typecheck
     uv sync --check
     bytecode_dir=$(mktemp -d)
     trap 'rm -rf "$bytecode_dir"' EXIT
-    PYTHONPYCACHEPREFIX="$bytecode_dir" uv run python -m compileall -q packages/toshy-user scripts/setup/toshy.py
+    PYTHONPYCACHEPREFIX="$bytecode_dir" uv run python -m compileall -q packages/toshy/user tools/setup/toshy.py
 
 [group('check')]
 lint:

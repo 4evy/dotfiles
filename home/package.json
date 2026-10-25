@@ -1,0 +1,20 @@
+{
+  "name": "dotfiles-js",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "bun run typecheck",
+    "typecheck": "bun run deploy/check/typescript.ts"
+  },
+  "devDependencies": {
+    "@tailnet/tailscaled": "0.1.2",
+    "@types/bun": "catalog:",
+    "tsrs": "catalog:",
+    "@oh-my-pi/pi-coding-agent": "18.12.6",
+    "@oh-my-pi/pi-tui": "18.12.6",
+    "vscode-jsonrpc": "10.0.0"
+  },
+  "dependencies": {
+    "valibot": "1.5.0"
+  }
+}

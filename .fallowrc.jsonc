@@ -1,18 +1,18 @@
 {
   "$schema": "./node_modules/fallow/schema.json",
   "entry": [
-    "scripts/**/*.ts",
-    "packages/macos/**/*.ts",
-    "packages/source/*.ts",
-    "packages/ghostty-patched/prepare.ts",
-    "packages/chatgpt/**/*.ts",
-    "bluebuild/recipes/spectrum/sources/sources.ts",
-    "dotfiles/home/.omp/agent/extensions/**/*.ts",
-    "dotfiles/home/.local/lib/{ghostty,helium,helix,solaar,vscode}/*.ts"
+    "tools/{setup,renovate}/**/*.ts",
+    "tools/workstation/install.ts",
+    "systems/modules/darwin/**/*.ts",
+    "packages/ghostty/source/*.ts",
+    "systems/spectrum/recipes/spectrum/sources/sources.ts",
+    "home/{deploy,applications,theme}/**/*.ts",
+    "home/files/.omp/agent/extensions/**/*.ts",
+    "home/files/.local/lib/{ghostty,helium,helix,solaar,vscode}/*.ts"
   ],
   "ignorePatterns": [
-    "!dotfiles/home/.local/**",
-    "!dotfiles/home/.omp/**",
+    "!home/files/.local/**",
+    "!home/files/.omp/**",
     ".jj/**",
     ".venv/**",
     ".cache/**",
@@ -20,8 +20,8 @@
     "zig-pkg/**",
     "zig-out/**",
     // This independently locked package runs Fallow through its own check script
-    "packages/workstation/**",
-    "packages/omp/upstream/**",
-    "packages/hyper-window-tiling/vendor/**"
+    "tools/workstation/src/**",
+    "tools/workstation/assets/**",
+    "tools/tiling/vendor/**"
   ]
 }

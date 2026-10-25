@@ -10,7 +10,7 @@
   flake = {
     nixosModules.default = {
       imports = [
-        ../../modules/nixos
+        ../../systems/modules/nixos
         inputs.ai.nixosModules.default
         "${inputs.source-toshy}/nix/nixos-module.nix"
         inputs.tweezle.nixosModules.default
@@ -23,7 +23,7 @@
         dotfilesEquicordSettings = equicord.settings;
       };
     };
-    nixosConfigurations = import ../../hosts/linux {
+    nixosConfigurations = import ../../systems/hosts/linux {
       inherit inputs;
       nixosModule = config.flake.nixosModules.default;
     };

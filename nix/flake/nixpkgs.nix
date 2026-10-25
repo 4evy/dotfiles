@@ -2,7 +2,7 @@
 {
   _class = "flake";
 
-  flake.overlays = import ../../overlays { inherit inputs; };
+  flake.overlays = import ../overlays { inherit inputs; };
 
   perSystem = { system, ... }: {
     _module.args.pkgs = import inputs.nixpkgs {

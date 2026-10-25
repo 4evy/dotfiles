@@ -1,0 +1,189 @@
+[
+  {
+    "target": ".cache/atuin/init.bash",
+    "command": ["atuin", "init", "bash", "--disable-up-arrow"],
+    "requireCommand": "atuin",
+    "required": true
+  },
+  {
+    "target": ".cache/atuin/init.zsh",
+    "command": ["atuin", "init", "zsh", "--disable-up-arrow"],
+    "requireCommand": "atuin",
+    "required": true
+  },
+  {
+    "target": ".cache/broot/init.bash",
+    "command": ["broot", "--print-shell-function", "bash"],
+    "requireCommand": "broot",
+    "required": true
+  },
+  {
+    "target": ".cache/broot/init.zsh",
+    "command": ["broot", "--print-shell-function", "zsh"],
+    "requireCommand": "broot",
+    "required": true
+  },
+  {
+    "target": ".cache/fzf/init.bash",
+    "command": ["fzf", "--bash"],
+    "requireCommand": "fzf",
+    "required": true
+  },
+  {
+    "target": ".cache/fzf/init.zsh",
+    "command": ["bash", "@REPOSITORY@/home/deploy/shell/shell.sh", "fzf", "zsh"],
+    "requireCommand": "fzf",
+    "required": true
+  },
+  {
+    "target": ".cache/starship/init.bash",
+    "command": ["bash", "@REPOSITORY@/home/deploy/shell/shell.sh", "starship", "bash"],
+    "requireCommand": "starship",
+    "required": true
+  },
+  {
+    "target": ".cache/starship/init.zsh",
+    "command": ["bash", "@REPOSITORY@/home/deploy/shell/shell.sh", "starship", "zsh"],
+    "requireCommand": "starship",
+    "required": true
+  },
+  {
+    "target": ".cache/zoxide/init.bash",
+    "command": ["zoxide", "init", "bash", "--cmd", "cd"],
+    "requireCommand": "zoxide",
+    "required": true
+  },
+  {
+    "target": ".cache/zoxide/init.zsh",
+    "command": ["zoxide", "init", "zsh"],
+    "requireCommand": "zoxide",
+    "required": true
+  },
+  {
+    "target": ".local/share/bash-completion/completions/atuin.bash",
+    "command": [
+      "env",
+      "SHELL=/bin/bash",
+      "atuin",
+      "gen-completions",
+      "--shell",
+      "bash"
+    ],
+    "requireCommand": "atuin",
+    "required": true
+  },
+  {
+    "target": ".cache/zsh/completions/_atuin",
+    "command": ["env", "SHELL=/bin/zsh", "atuin", "gen-completions", "--shell", "zsh"],
+    "requireCommand": "atuin",
+    "required": true
+  },
+  {
+    "target": ".local/share/bash-completion/completions/cargo",
+    "command": ["env", "SHELL=/bin/bash", "rustup", "completions", "bash", "cargo"],
+    "requireCommand": "rustup",
+    "required": true
+  },
+  {
+    "target": ".cache/zsh/completions/_cargo",
+    "command": ["env", "SHELL=/bin/zsh", "rustup", "completions", "zsh", "cargo"],
+    "requireCommand": "rustup",
+    "required": true
+  },
+  {
+    "target": ".local/share/bash-completion/completions/delta",
+    "command": ["env", "SHELL=/bin/bash", "delta", "--generate-completion", "bash"],
+    "requireCommand": "delta",
+    "required": true
+  },
+  {
+    "target": ".cache/zsh/completions/_delta",
+    "command": ["env", "SHELL=/bin/zsh", "delta", "--generate-completion", "zsh"],
+    "requireCommand": "delta",
+    "required": true
+  },
+  {
+    "target": ".local/share/bash-completion/completions/deno",
+    "command": ["env", "SHELL=/bin/bash", "deno", "completions", "bash"],
+    "requireCommand": "deno",
+    "required": true
+  },
+  {
+    "target": ".cache/zsh/completions/_deno",
+    "command": ["env", "SHELL=/bin/zsh", "deno", "completions", "zsh"],
+    "requireCommand": "deno",
+    "required": true
+  },
+  {
+    "target": ".local/share/bash-completion/completions/gh",
+    "command": ["env", "SHELL=/bin/bash", "gh", "completion", "--shell", "bash"],
+    "requireCommand": "gh",
+    "required": true
+  },
+  {
+    "target": ".cache/zsh/completions/_gh",
+    "command": ["env", "SHELL=/bin/zsh", "gh", "completion", "--shell", "zsh"],
+    "requireCommand": "gh",
+    "required": true
+  },
+  {
+    "target": ".local/share/bash-completion/completions/jj",
+    "command": ["env", "SHELL=/bin/bash", "jj", "util", "completion", "bash"],
+    "requireCommand": "jj",
+    "required": true
+  },
+  {
+    "target": ".cache/zsh/completions/_jj",
+    "command": ["env", "SHELL=/bin/zsh", "jj", "util", "completion", "zsh"],
+    "requireCommand": "jj",
+    "required": true
+  },
+  {
+    "target": ".local/share/bash-completion/completions/op",
+    "command": ["env", "SHELL=/bin/bash", "op", "completion", "bash"],
+    "requireCommand": "op",
+    "required": true
+  },
+  {
+    "target": ".cache/zsh/completions/_op",
+    "command": ["env", "SHELL=/bin/zsh", "op", "completion", "zsh"],
+    "requireCommand": "op",
+    "required": true
+  },
+  {
+    "target": ".local/share/bash-completion/completions/rustup",
+    "command": ["env", "SHELL=/bin/bash", "rustup", "completions", "bash"],
+    "requireCommand": "rustup",
+    "required": true
+  },
+  {
+    "target": ".cache/zsh/completions/_rustup",
+    "command": ["env", "SHELL=/bin/zsh", "rustup", "completions", "zsh"],
+    "requireCommand": "rustup",
+    "required": true
+  },
+  {
+    "target": ".local/share/bash-completion/completions/starship",
+    "command": ["env", "SHELL=/bin/bash", "starship", "completions", "bash"],
+    "requireCommand": "starship",
+    "required": true
+  },
+  {
+    "target": ".cache/zsh/completions/_starship",
+    "command": ["env", "SHELL=/bin/zsh", "starship", "completions", "zsh"],
+    "requireCommand": "starship",
+    "required": true
+  },
+  {
+    "target": ".local/share/bash-completion/completions/opencode",
+    "command": ["opencode", "--completions", "bash"],
+    "requireCommand": "opencode",
+    "required": true
+  },
+  {
+    "target": ".cache/zsh/completions/_opencode",
+    "command": ["opencode", "--completions", "zsh"],
+    "requireCommand": "opencode",
+    "required": true
+  }
+]

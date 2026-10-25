@@ -1,7 +1,7 @@
 # Activate the complete Hjem-managed home generation
 [group('setup')]
 apply: (_doctor 'apply')
-    bun {{ quote(repo_dir / 'scripts/hjem/hjem.ts') }} apply
+    bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} apply
 
 # Apply Helium extensions, settings, and the Catppuccin Custom themes
 [group('setup')]
@@ -31,27 +31,27 @@ helium: (_doctor 'reconcile')
         exit 1
       fi
     fi
-    bun scripts/setup/applications.ts helium
+    bun home/applications/helium/apply.ts
 
 # Prepare Homebrew and uv for workstation setup
 [group('setup')]
 [positional-arguments]
 bootstrap *args:
-    scripts/setup/setup.sh bootstrap "$@"
+    tools/setup/setup.sh bootstrap "$@"
 
 [doc('Install userland, apply dotfiles, then configure the host.')]
 [group('setup')]
 [positional-arguments]
 setup *args:
-    scripts/setup/setup.sh setup "$@"
+    tools/setup/setup.sh setup "$@"
 
 # Refresh userland, dotfiles, and host stages on an already-bootstrapped machine
 [group('setup')]
 update:
-    DOTFILES_HOMEBREW_UPGRADE=1 scripts/setup/setup.sh setup
+    DOTFILES_HOMEBREW_UPGRADE=1 tools/setup/setup.sh setup
 
 # Build and activate the macOS system configuration
 [group('setup')]
 [macos]
 darwin:
-    scripts/setup/setup.sh setup --only host
+    tools/setup/setup.sh setup --only host

@@ -1,7 +1,0 @@
-{
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@oh-my-pi/pi-tui": "18.11.3"
-  }
-}

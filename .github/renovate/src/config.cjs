@@ -4,7 +4,7 @@
 // branches local; retain those guards when upgrading Renovate
 // The no-PR result must retain Renovate's typed outcome, including blocked updates
 module.exports = {
-  allowedCommands: ["^bun scripts/renovate/artifacts\\.ts$"],
+  allowedCommands: ["^bun tools/renovate/artifacts\\.ts$"],
   onboarding: false,
   requireConfig: "required",
   force: {

@@ -84,7 +84,7 @@
               }
             );
         };
-        equicord-settings = callPackage ../../packages/equicord-settings/package.nix {
+        equicord-settings = callPackage ../../home/applications/discord/equicord/package.nix {
           inherit (equicord) quickCss;
           settings = equicord.settings.jsonConfig;
         };
@@ -92,7 +92,7 @@
       // lib.optionalAttrs isLinux {
         dotfiles-user-tools = buildEnv {
           name = "dotfiles-user-tools";
-          paths = import ../../modules/hjem/packages.nix { inherit pkgs; };
+          paths = import ../../home/deploy/nix/packages.nix { inherit pkgs; };
           extraOutputsToInstall = [ "man" ];
         };
         inherit (pkgs)

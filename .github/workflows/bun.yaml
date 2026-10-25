@@ -41,8 +41,8 @@ jobs:
         with:
           cache-dependency-path: |
             bun.lock
-            packages/hyper-window-tiling/bun.lock
-            packages/workstation/bun.lock
+            tools/tiling/bun.lock
+            tools/workstation/bun.lock
           cache-scope: workspace
 
       - name: Install Dependencies

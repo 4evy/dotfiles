@@ -1,6 +1,6 @@
 go 1.27.3
 
 use (
-	./packages/records
-	./packages/theme-run
+	./tools/records
+	./tools/theme/run
 )

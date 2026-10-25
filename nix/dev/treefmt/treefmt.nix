@@ -107,8 +107,8 @@
 
             shfmt = {
               includes = lib.mkAfter [
-                "dotfiles/home/.local/bin/*"
-                "bluebuild/files/system/usr/bin/*"
+                "home/files/.local/bin/*"
+                "systems/spectrum/files/system/usr/bin/*"
               ];
               excludes = [
                 "*.py"
@@ -122,16 +122,16 @@
             template = {
               command = templateFormatter;
               includes = [
-                "packages/workstation/assets/desktop/gtk/gtk.css.in"
-                "packages/workstation/assets/desktop/gtk/legacy.css.in"
+                "tools/workstation/assets/desktop/gtk/gtk.css.in"
+                "tools/workstation/assets/desktop/gtk/legacy.css.in"
               ];
             };
 
             xmllint.includes = lib.mkAfter [
               "*.plist"
               "*.plist.in"
-              "dotfiles/home/.config/fontconfig/conf.d/45-interface-fonts.conf"
-              "dotfiles/home/.config/fontconfig/conf.d/50-code-monospace.conf"
+              "home/files/.config/fontconfig/conf.d/45-interface-fonts.conf"
+              "home/files/.config/fontconfig/conf.d/50-code-monospace.conf"
             ];
 
             zig = {

@@ -1,22 +1,21 @@
-# Start from an empty build context and add back only Spectrum image inputs.
+# Start from an empty build context and add back only Spectrum image inputs
 *
 
 !.yamllint
 !LICENSE
 
-!bluebuild/
-!bluebuild/**
-
-!files/
-!files/dnf/
-!files/dnf/**
+!systems/
+!systems/spectrum/
+!systems/spectrum/**
 
 # BlueBuild extracts embedded build helpers here before building the image
 !.bluebuild-scripts_*/
 !.bluebuild-scripts_*/**
 
-!dotfiles/
-!dotfiles/**
+!home/
+!home/**
+home/records/
+home/records/**
 
 !flake.lock
 
@@ -25,58 +24,53 @@
 !lib/typescript/
 !lib/typescript/**
 
-!scripts/
-!scripts/setup/
-!scripts/setup/workstation.ts
+!tools/
+!tools/workstation/
+tools/workstation/*
+!tools/workstation/package.json
+!tools/workstation/bun.lock
+!tools/workstation/install.ts
+!tools/workstation/assets/
+!tools/workstation/assets/**
+!tools/workstation/src/
+!tools/workstation/src/**
+!tools/tiling/
+tools/tiling/*
+!tools/tiling/package.json
+!tools/tiling/bun.lock
+!tools/tiling/vendor/
+!tools/tiling/vendor/**
+!tools/tiling/tsconfig.json
+!tools/tiling/src/
+!tools/tiling/src/**
+!tools/tiling/gnome/
+!tools/tiling/gnome/**
+!tools/tiling/kde/
+!tools/tiling/kde/**
+!tools/theme/
+!tools/theme/run/
+tools/theme/run/*
+!tools/theme/run/go.mod
+!tools/theme/run/go.sum
+!tools/theme/run/package.nix
+!tools/theme/run/cmd/
+!tools/theme/run/cmd/**
+!tools/theme/run/internal/
+!tools/theme/run/internal/**
 
 !packages/
 packages/*
-!packages/source/
-!packages/source/**
 !packages/solaar/
 !packages/solaar/tray.patch
-!packages/workstation/
-packages/workstation/*
-!packages/workstation/package.json
-!packages/workstation/bun.lock
-!packages/workstation/assets/
-!packages/workstation/assets/**
-!packages/workstation/src/
-!packages/workstation/src/**
-!packages/ghostty-patched/
-!packages/ghostty-patched/build.sh
-!packages/ghostty-patched/prepare.ts
-!packages/ghostty-patched/zig17-dependencies.json
-!packages/ghostty-patched/zig17.patch
-!packages/hyper-window-tiling/
-packages/hyper-window-tiling/*
-!packages/hyper-window-tiling/package.json
-!packages/hyper-window-tiling/bun.lock
-!packages/hyper-window-tiling/vendor/
-!packages/hyper-window-tiling/vendor/**
-!packages/hyper-window-tiling/tsconfig.json
-!packages/hyper-window-tiling/src/
-!packages/hyper-window-tiling/src/**
-!packages/hyper-window-tiling/gnome/
-!packages/hyper-window-tiling/gnome/**
-!packages/hyper-window-tiling/kde/
-!packages/hyper-window-tiling/kde/**
+!packages/ghostty/
+!packages/ghostty/build.sh
+!packages/ghostty/source/
+!packages/ghostty/source/**
 !packages/kanata/
 !packages/kanata/kanata.kbd
-!packages/kanata-with-cmd/
-packages/kanata-with-cmd/*
-!packages/kanata-with-cmd/build.sh
-!packages/theme-run/
-packages/theme-run/*
-!packages/theme-run/go.mod
-!packages/theme-run/go.sum
-!packages/theme-run/package.nix
-!packages/theme-run/cmd/
-!packages/theme-run/cmd/**
-!packages/theme-run/internal/
-!packages/theme-run/internal/**
+!packages/kanata/build.sh
 
-# Never send local generated state if it appears under an included path.
+# Never send local generated state if it appears under an included path
 **/.DS_Store
 **/.rumdl_cache/
 **/.zig-cache/

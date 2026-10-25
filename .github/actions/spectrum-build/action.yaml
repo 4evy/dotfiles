@@ -45,8 +45,8 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        bun bluebuild/recipes/spectrum/sources/sources.ts
-        sudo --preserve-env "$BLUEBUILD" build -v --compression-format zstd --skip-validation --no-sign bluebuild/recipes/spectrum.yml
+        bun systems/spectrum/recipes/spectrum/sources/sources.ts
+        sudo --preserve-env "$BLUEBUILD" build -v --compression-format zstd --skip-validation --no-sign systems/spectrum/recipes/spectrum.yml
 
     # BlueBuild enables registry caching only when publishing. PR builds read
     # Podman's cache from the same repository without exporting cache layers

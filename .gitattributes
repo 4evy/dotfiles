@@ -19,11 +19,11 @@
 .containerignore linguist-detectable
 
 # Classify native shell entry points and substitution inputs by language
-dotfiles/home/.bash* linguist-language=Shell
-dotfiles/home/.zsh* linguist-language=Shell
-dotfiles/home/.gitconfig linguist-language=gitconfig linguist-detectable
+home/files/.bash* linguist-language=Shell
+home/files/.zsh* linguist-language=Shell
+home/files/.gitconfig linguist-language=gitconfig linguist-detectable
 *.css.in linguist-language=CSS
-dotfiles/home/.gitignore_global linguist-language=Ignore-List linguist-detectable
+home/files/.gitignore_global linguist-language=Ignore-List linguist-detectable
 
 # Cover config formats whose extensions are either too generic or unknown to
 # Linguist, while still using known Linguist language names where available.
@@ -55,14 +55,14 @@ dotfiles/home/.gitignore_global linguist-language=Ignore-List linguist-detectabl
 # data rather than documentation, so include them without inventing a DSL.
 .python-version linguist-language=Text linguist-detectable
 .tool-versions linguist-language=Text linguist-detectable
-dotfiles/home/.config/fastfetch/*.txt linguist-language=Text linguist-detectable
-dotfiles/home/.ssh/allowed_signers linguist-language=Text linguist-detectable
-dotfiles/home/.ssh/known_hosts.d/* linguist-language=Text linguist-detectable
-dotfiles/home/.zprofile linguist-language=Shell
+home/files/.config/fastfetch/*.txt linguist-language=Text linguist-detectable
+home/files/.ssh/allowed_signers linguist-language=Text linguist-detectable
+home/files/.ssh/known_hosts.d/* linguist-language=Text linguist-detectable
+home/files/.zprofile linguist-language=Shell
 
 # Linguist vendors TypeScript declaration files globally. These declarations
 # describe local extension runtimes and should count with the package sources.
-packages/hyper-window-tiling/src/**/*.d.ts -linguist-vendored
+tools/tiling/src/**/*.d.ts -linguist-vendored
 
 # These files are checked in generated/runtime artifacts built from package
 # sources, host discovery, encryption tools, dependency resolvers, or schemas.
@@ -76,7 +76,7 @@ packages/hyper-window-tiling/src/**/*.d.ts -linguist-vendored
 package-lock.json linguist-generated
 pnpm-lock.yaml linguist-generated
 pnpm-lock.yml linguist-generated
-hosts/**/hardware-configuration.nix linguist-generated
-packages/hyper-window-tiling/bun.nix linguist-generated
-packages/**/dist/** linguist-generated
+systems/hosts/**/hardware-configuration.nix linguist-generated
+tools/tiling/bun.nix linguist-generated
+tools/**/dist/** linguist-generated
 secrets/*.yaml linguist-generated

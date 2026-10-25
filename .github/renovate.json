@@ -27,7 +27,7 @@
       "customType": "regex",
       "description": "Track the published BlueBuild main installer digest",
       "managerFilePatterns": [
-        "/^bluebuild\\/recipes\\/spectrum\\/modules\\/local\\.yml$/"
+        "/^systems\\/spectrum\\/recipes\\/spectrum\\/modules\\/local\\.yml$/"
       ],
       "matchStrings": [
         "COPY --from=(?<depName>ghcr\\.io/blue-build/cli):(?<currentValue>main-installer)@(?<currentDigest>sha256:[a-f0-9]+)"
@@ -52,8 +52,8 @@
       "customType": "regex",
       "description": "Track the pinned Spectrum Bluefin base image",
       "managerFilePatterns": [
-        "/^bluebuild\\/recipes\\/spectrum\\.yml$/",
-        "/^bluebuild\\/recipes\\/spectrum\\.lock$/"
+        "/^systems\\/spectrum\\/recipes\\/spectrum\\.yml$/",
+        "/^systems\\/spectrum\\/recipes\\/spectrum\\.lock$/"
       ],
       "matchStrings": [
         "registry:\\s+ghcr\\.io\\n\\s+repository:\\s+projectbluefin/bluefin-nvidia\\n\\s+tag:\\s+(?<currentValue>[^\\s@]+)\\n\\s+digest:\\s+(?<currentDigest>sha256:[a-f0-9]+)",
@@ -66,7 +66,9 @@
     {
       "customType": "regex",
       "description": "Track pinned Spectrum builder images",
-      "managerFilePatterns": ["/^bluebuild\\/recipes\\/spectrum\\/stages\\/.*\\.yml$/"],
+      "managerFilePatterns": [
+        "/^systems\\/spectrum\\/recipes\\/spectrum\\/stages\\/.*\\.yml$/"
+      ],
       "matchStrings": [
         "from:\\s+(?<depName>[^\\s:@]+(?:/[^\\s:@]+)+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]+)",
         "COPY --from=(?<depName>[^\\s:@]+(?:/[^\\s:@]+)+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]+)"
@@ -78,7 +80,7 @@
       "customType": "regex",
       "description": "Track annotated GitHub release assets in the Spectrum recipe",
       "managerFilePatterns": [
-        "/^bluebuild\\/recipes\\/spectrum(?:\\.yml|\\/.*\\.yml)$/"
+        "/^systems\\/spectrum\\/recipes\\/spectrum(?:\\.yml|\\/.*\\.yml)$/"
       ],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\s+- https://github\\.com/[^\\s]+/releases/download/v?(?<currentValue>[^/\\s]+)/[^\\s]+"
@@ -88,7 +90,7 @@
       "customType": "regex",
       "description": "Track pinned BlueBuild module image digests",
       "managerFilePatterns": [
-        "/^bluebuild\\/recipes\\/spectrum(?:\\.yml|\\/.*\\.yml)$/"
+        "/^systems\\/spectrum\\/recipes\\/spectrum(?:\\.yml|\\/.*\\.yml)$/"
       ],
       "matchStrings": [
         "source:\\s+(?<depName>ghcr\\.io/blue-build/modules/[a-z-]+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
@@ -192,7 +194,7 @@
     {
       "customType": "regex",
       "description": "Track the checksum-verified Translate Web Pages extension",
-      "managerFilePatterns": ["/^browser/helium\\.toml$/"],
+      "managerFilePatterns": ["/^home/applications/helium/config\\.toml$/"],
       "matchStrings": [
         "version = \"(?<currentValue>[^\"\\s]+)\"\\s+url = \"https://github\\.com/FilipePS/Traduzir-paginas-web/releases/download/[^\"\\s]+\""
       ],
@@ -203,7 +205,7 @@
     {
       "customType": "regex",
       "description": "Track all revision-pinned Yazi plugins",
-      "managerFilePatterns": ["/^dotfiles/home/\\.config/yazi/package\\.toml$/"],
+      "managerFilePatterns": ["/^home/files/\\.config/yazi/package\\.toml$/"],
       "matchStrings": [
         "use = \"(?<depName>[^\":]+)(?::[^\"\\s]+)?\"\\s+rev = \"(?<currentDigest>[a-f0-9]{7,40})\""
       ],
@@ -216,7 +218,7 @@
       "customType": "regex",
       "description": "Track the ChatGPT Linux RPM from its first-party repository",
       "managerFilePatterns": [
-        "/^dotfiles/home/\\.local/share/nix/chatgpt/package\\.nix$/"
+        "/^home/files/\\.local/share/nix/chatgpt/package\\.nix$/"
       ],
       "matchStrings": ["  version = \"(?<currentValue>[^\"\\s]+)\";"],
       "depNameTemplate": "chatgpt",
@@ -228,9 +230,7 @@
     {
       "customType": "regex",
       "description": "Track the ChatGPT flake lock",
-      "managerFilePatterns": [
-        "/^dotfiles/home/\\.local/share/nix/chatgpt/flake\\.lock$/"
-      ],
+      "managerFilePatterns": ["/^home/files/\\.local/share/nix/chatgpt/flake\\.lock$/"],
       "matchStringsStrategy": "recursive",
       "matchStrings": [
         "\"nixpkgs\": \\{[\\s\\S]+?\"original\"",
@@ -253,7 +253,7 @@
     {
       "customType": "regex",
       "description": "Track the checksum-verified Bun bootstrap",
-      "managerFilePatterns": ["/^scripts/setup/setup\\.sh$/"],
+      "managerFilePatterns": ["/^tools/setup/setup\\.sh$/"],
       "matchStrings": [
         "https://github\\.com/oven-sh/bun/releases/download/bun-v(?<currentValue>[^/]+)/"
       ],
@@ -266,7 +266,7 @@
     {
       "description": "Extract Bun toolchain versions from bun-v release tags",
       "matchManagers": ["custom.regex"],
-      "matchFileNames": ["bluebuild/recipes/spectrum/stages/**"],
+      "matchFileNames": ["systems/spectrum/recipes/spectrum/stages/**"],
       "matchDepNames": ["oven-sh/bun"],
       "extractVersion": "^bun-v(?<version>.*)$"
     },
@@ -335,23 +335,23 @@
     }
   },
   "postUpgradeTasks": {
-    "commands": ["bun scripts/renovate/artifacts.ts"],
+    "commands": ["bun tools/renovate/artifacts.ts"],
     "fileFilters": [
       "flake.lock",
-      "packages/**/bun.nix",
+      "tools/**/bun.nix",
       "**/bun.lock",
       "**/package.json",
-      "packages/theme-run/package.nix",
+      "tools/theme/run/package.nix",
       ".github/renovate/patches/**",
       ".github/actions/setup-check-tools/action.yaml",
-      "browser/helium.toml",
-      "dotfiles/home/.config/yazi/package.toml",
-      "dotfiles/home/.local/share/nix/chatgpt/*",
+      "home/applications/helium/config.toml",
+      "home/files/.config/yazi/package.toml",
+      "home/files/.local/share/nix/chatgpt/*",
       "go.work",
       "go.work.sum",
-      "packages/**/go.mod",
-      "packages/**/go.sum",
-      "scripts/setup/setup.sh",
+      "tools/**/go.mod",
+      "tools/**/go.sum",
+      "tools/setup/setup.sh",
       "biome.jsonc"
     ],
     "executionMode": "branch"

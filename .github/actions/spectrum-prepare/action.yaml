@@ -47,7 +47,7 @@ runs:
 
     - name: Verify Locked Bluefin Base
       env:
-        BASE_LOCK: bluebuild/recipes/spectrum.lock
+        BASE_LOCK: systems/spectrum/recipes/spectrum.lock
       shell: bash
       run: |
         set -euo pipefail

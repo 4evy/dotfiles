@@ -121,7 +121,6 @@
   "ty.path": ["ty"],
   "ruff.importStrategy": "fromEnvironment",
   "ruff.path": ["ruff"],
-  "ruff.nativeServer": "on",
   "nix.enableLanguageServer": true,
   "nix.serverPath": "nixd",
   "nix.formatterPath": "nixfmt",
@@ -219,6 +218,11 @@
     "editor.formatOnSave": true
   },
   "[jsonc]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnSave": true
+  },
+  // Keep editor formatting consistent with the repository's Biome CSS checks
+  "[css]": {
     "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnSave": true
   },

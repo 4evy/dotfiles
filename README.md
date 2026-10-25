@@ -102,7 +102,7 @@ sudo nixos-rebuild switch --flake .#nixos
 Requires macOS 27 or newer. From the cloned repo, I run:
 
 ``` bash
-scripts/setup/setup.sh setup
+tools/setup/setup.sh setup
 ```
 
 The script asks for administrator and 1Password access when needed
@@ -112,6 +112,27 @@ The script asks for administrator and 1Password access when needed
 Multiword commands use spaces, such as `just records edit` and
 `just spectrum build`. Run `just --list --list-submodules` to list commands,
 or `just help <command> [subcommand...]` for usage.
+
+## Source layout
+
+I group source files by responsibility:
+
+| Directory            | Responsibility                                               |
+| -------------------- | ------------------------------------------------------------ |
+| `home/files/`        | Native home-relative configuration sources                   |
+| `home/applications/` | Personal application settings and reconciliation             |
+| `home/deploy/`       | Home rendering, generation, activation, and checks           |
+| `home/theme/`        | Shared personal appearance policy                            |
+| `systems/`           | Host composition, system modules, and Spectrum image sources |
+| `tools/`             | First-party programs, installers, setup, and update tooling  |
+| `packages/`          | Upstream software customizations and package recipes         |
+| `nix/`               | Flake composition, overlays, and development infrastructure  |
+| `lib/`               | Implementation shared by multiple components                 |
+| `just/`              | Public command entrypoints                                   |
+| `secrets/`           | Encrypted records and settings                               |
+
+The root `recipes` symlink points to `systems/spectrum/recipes` because the
+pinned BlueBuild CLI resolves recipe imports through that entrypoint
 
 ## License
 

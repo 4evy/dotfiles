@@ -7,10 +7,10 @@ dependencies = []
 
 [dependency-groups]
 dev = [
-  "complexipy>=8.0.1,<9",
+  "complexipy>=8.1.0,<9",
   "deptry>=0.25.1,<0.26",
-  "ruff>=0.17.1,<0.18",
-  "ty>=0.0.89,<0.1",
+  "ruff>=0.17.2,<0.18",
+  "ty>=0.0.91,<0.1",
   "vulture>=2.16,<3",
 ]
 
@@ -112,9 +112,9 @@ max-complexity = 10
 
 [tool.ruff.lint.per-file-ignores]
 # Toshy executes these slices inside its config namespace and supplies the API.
-"packages/toshy-user/slices/*.py" = ["runtime-import-in-type-checking-block"]
+"packages/toshy/user/slices/*.py" = ["runtime-import-in-type-checking-block"]
 # This variable name is Toshy's public configuration interface.
-"packages/toshy-user/slices/kbtype_override.py" = [
+"packages/toshy/user/slices/kbtype_override.py" = [
   "mixed-case-variable-in-global-scope",
 ]
 
@@ -133,10 +133,10 @@ preview = true
 
 [tool.ty.environment]
 python-version = "3.14"
-extra-paths = ["./", "./packages/toshy-user"]
+extra-paths = ["./", "./packages/toshy/user"]
 
 [tool.ty.src]
-include = ["packages/toshy-user", "scripts/setup/toshy.py"]
+include = ["packages/toshy/user", "tools/setup/toshy.py"]
 
 [tool.ty.rules]
 all = "error"
@@ -147,11 +147,11 @@ error-on-warning = true
 [tool.vulture]
 exclude = ["*/node_modules/*", "*/__pycache__/*"]
 min_confidence = 100
-paths = ["packages/toshy-user", "scripts/setup/toshy.py"]
+paths = ["packages/toshy/user", "tools/setup/toshy.py"]
 sort_by_size = true
 
 [tool.deptry]
-root = ["packages/toshy-user", "scripts"]
+root = ["packages/toshy/user", "tools/setup"]
 # Keep first-party setup.py helpers in dependency discovery.
 exclude = [
   "(^|.*/)(venv|\\.venv|\\.direnv|\\.git|\\.jj|node_modules|zig-pkg|build|dist)(/|$)",
@@ -165,4 +165,4 @@ DEP001 = ["xwaykeyz"]
 exclude = ["**/node_modules/**", "**/__pycache__/**"]
 failed = true
 max-complexity-allowed = 15
-paths = ["packages/toshy-user", "scripts/setup/toshy.py"]
+paths = ["packages/toshy/user", "tools/setup/toshy.py"]

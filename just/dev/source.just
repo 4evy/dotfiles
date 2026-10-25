@@ -1,11 +1,11 @@
-_lint-nix: (_run-files 'deadnix' ['*.nix', ':(exclude)hosts/linux/hardware-configuration.nix'] ['--fail'])
+_lint-nix: (_run-files 'deadnix' ['*.nix', ':(exclude)systems/hosts/linux/hardware-configuration.nix'] ['--fail'])
     for file in {{ quote(git_files(['*.nix'])) }}; do
       [[ -f $file && ! -L $file ]] || continue
       nix-instantiate --parse "$file" >/dev/null
     done
     statix check .
 
-_lint-xml: (_run-files 'bun' ['*.plist', '*.xml'] ['scripts/check/xml.ts'])
+_lint-xml: (_run-files 'bun' ['*.plist', '*.xml'] ['home/deploy/check/xml.ts'])
 
 # These substitution templates are build inputs, outside the managed home tree
 _lint-input-templates:
@@ -16,7 +16,7 @@ _lint-input-templates:
       rendered_file="$temporary_dir/${file%.in}"
       mkdir -p "${rendered_file%/*}"
       sed -E 's/@[A-Za-z_][A-Za-z0-9_]*@/template_value/g' "$file" > "$rendered_file"
-      bun scripts/check/xml.ts "$rendered_file"
+      bun home/deploy/check/xml.ts "$rendered_file"
     done
 
 _lint-shell-files:

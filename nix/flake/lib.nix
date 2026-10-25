@@ -5,7 +5,7 @@
   ...
 }:
 let
-  equicord = import ../../packages/equicord-settings { inherit inputs lib; };
+  equicord = import ../../home/applications/discord/equicord { inherit inputs lib; };
 in
 {
   _class = "flake";

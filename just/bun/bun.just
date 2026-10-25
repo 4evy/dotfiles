@@ -12,5 +12,5 @@ check: (_doctor 'bun')
 [group('dev')]
 install:
     bun install --frozen-lockfile
-    bun install --cwd packages/hyper-window-tiling --frozen-lockfile
-    bun install --cwd packages/workstation --frozen-lockfile --ignore-scripts
+    bun install --cwd tools/tiling --frozen-lockfile
+    bun install --cwd tools/workstation --frozen-lockfile --ignore-scripts

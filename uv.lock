@@ -82,10 +82,10 @@ dev = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "complexipy", specifier = ">=8.0.1,<9" },
+    { name = "complexipy", specifier = ">=8.1.0,<9" },
     { name = "deptry", specifier = ">=0.25.1,<0.26" },
-    { name = "ruff", specifier = ">=0.17.1,<0.18" },
-    { name = "ty", specifier = ">=0.0.89,<0.1" },
+    { name = "ruff", specifier = ">=0.17.2,<0.18" },
+    { name = "ty", specifier = ">=0.0.91,<0.1" },
     { name = "vulture", specifier = ">=2.16,<3" },
 ]
 

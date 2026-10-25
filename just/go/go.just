@@ -13,7 +13,7 @@ _go-check modules: *(_go-format *modules)
     go test {{ quote(modules / '...') }}
     go vet {{ quote(modules / '...') }}
     golangci-lint run {{ quote(modules / '...') }}
-    CGO_ENABLED=0 go build -o /dev/null ./packages/theme-run/cmd/theme-run
+    CGO_ENABLED=0 go build -o /dev/null ./tools/theme/run/cmd/theme-run
 
 _go-format module:
     unformatted=$(find {{ quote(module) }} -type f -name '*.go' -exec gofmt -l {} +)

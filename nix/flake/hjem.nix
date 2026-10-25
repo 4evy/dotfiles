@@ -16,7 +16,7 @@
       in
       withSystem runtime.system (
         { pkgs, ... }:
-        import ../../modules/hjem/home.nix {
+        import ../../home/deploy/nix/home.nix {
           inherit pkgs inputs;
           inherit (runtime) environment;
         }
@@ -29,13 +29,13 @@
         let
           inherit (pkgs) callPackage writeText;
           runtime = lib.fromJSON runtimeJSON;
-          configuration = import ../../modules/hjem {
+          configuration = import ../../home/deploy/nix {
             inherit pkgs;
             inherit (runtime) environment;
             packages = lib.attrValues {
               inherit (inputs.hjem.packages.x86_64-linux) hjem;
               inherit (self'.packages) dotfiles-nix-tools dotfiles-apps dotfiles-user-tools;
-              chatgpt = callPackage ../../dotfiles/home/.local/share/nix/chatgpt/package.nix { };
+              chatgpt = callPackage ../../home/files/.local/share/nix/chatgpt/package.nix { };
             };
           };
         in
@@ -45,6 +45,6 @@
 
   perSystem = { system, pkgs, ... }: {
     packages.hjem = inputs.hjem.packages.${system}.hjem;
-    packages.hjem-files = import ../../modules/hjem/home.nix { inherit pkgs inputs; };
+    packages.hjem-files = import ../../home/deploy/nix/home.nix { inherit pkgs inputs; };
   };
 }

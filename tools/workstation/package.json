@@ -1,0 +1,23 @@
+{
+  "name": "dotfiles-workstation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun build --compile --no-compile-autoload-dotenv --no-compile-autoload-bunfig src/cli.ts --outfile dist/workstation",
+    "check": "bun run tsrs --noEmit -p tsconfig.json && bun run check:fallow",
+    "check:fallow": "bun run fallow dead-code --config .fallowrc.jsonc && bun run fallow health --complexity --max-crap 0 --config .fallowrc.jsonc",
+    "typecheck": "bun run tsrs --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "fast-xml-parser": "5.11.2",
+    "fast-xml-validator": "1.4.2",
+    "fflate": "0.8.3",
+    "suncalc": "2.1.1",
+    "valibot": "1.5.0"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4",
+    "tsrs": "0.18.0-ts7.1.0-dev.20260929"
+  }
+}

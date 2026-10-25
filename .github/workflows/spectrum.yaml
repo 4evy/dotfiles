@@ -12,17 +12,17 @@ on:
       - .github/workflows/spectrum.yaml
       - Justfile
       - just/**
-      - bluebuild/**
-      - files/dnf/**
-      - dotfiles/data/palette/palette.json
+      - systems/spectrum/**
+      - home/theme/palette/palette.json
       - recipes
       - flake.lock
       - flake.nix
       - lib/**
       - nix/**
-      - overlays/**
       - packages/**
-      - scripts/setup/workstation.ts
+      - tools/workstation/**
+      - tools/tiling/**
+      - tools/theme/run/**
   workflow_dispatch:
 
 concurrency:

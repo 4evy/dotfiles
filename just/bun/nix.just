@@ -5,7 +5,7 @@ set default-list
 # Keep every independently locked Bun package's Nix cache in sync
 [group('check')]
 check:
-    for package in packages/hyper-window-tiling packages/workstation; do
+    for package in tools/tiling tools/workstation; do
       generated_dir=$(mktemp -d)
       trap 'rm -rf "$generated_dir"' EXIT
       generated="$generated_dir/bun.nix"
@@ -25,11 +25,11 @@ check:
 # Regenerate all independent dependency caches from their locked graphs
 [group('dev')]
 update:
-    for package in packages/hyper-window-tiling packages/workstation; do
+    for package in tools/tiling tools/workstation; do
       nix run .#bun2nix -- \
         --lock-file "$package/bun.lock" \
         --copy-prefix "./" \
         --output-file "$package/bun.nix"
       deadnix --edit "$package/bun.nix"
     done
-    nix fmt -- packages/hyper-window-tiling/bun.nix packages/workstation/bun.nix
+    nix fmt -- tools/tiling/bun.nix tools/workstation/bun.nix

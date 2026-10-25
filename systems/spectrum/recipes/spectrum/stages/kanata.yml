@@ -1,0 +1,46 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/stage-v1.json
+name: kanata
+# Use the final image's Fedora release and runtime libraries.
+from: ${BASE_IMAGE}
+modules:
+  # Install build dependencies before copying changing source inputs
+  - type: dnf@v1
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:4fa89e050fbbc397ec7c04ed11339a5f430cc339224facaa8b8ce65e07d39921
+    install:
+      install-weak-deps: false
+      packages:
+        - cargo
+        - gcc
+        - git
+        - jq
+        - pkgconf-pkg-config
+        - python3
+        - rust
+        - systemd-devel
+
+  - type: copy@v1
+    src: systems/spectrum/recipes/spectrum/sources/kanata.json
+    dest: /src/sources.json
+
+  - type: copy@v1
+    src: systems/spectrum/recipes/spectrum/sources/patches.json
+    dest: /src/patches.json
+
+  - type: copy@v1
+    src: packages/kanata/build.sh
+    dest: /src/build-kanata.sh
+
+  - type: containerfile
+    snippets:
+      - |-
+        RUN \
+          --mount=type=cache,id=spectrum-kanata-cargo-registry-v1,sharing=locked,target=/root/.cargo/registry \
+          --mount=type=cache,id=spectrum-kanata-cargo-git-v1,sharing=locked,target=/root/.cargo/git \
+          --mount=type=cache,id=spectrum-kanata-target-v1,sharing=locked,target=/build/kanata-source/target \
+          SOURCE_LOCK=/src/sources.json \
+          SOURCE_PIN=kanata-homebrew \
+          PATCHES_LOCK=/src/patches.json \
+          PATCH_STACK=kanata \
+          PREFIX=/out/usr \
+          bash /src/build-kanata.sh

@@ -13,7 +13,7 @@
       _class = "darwin";
       _file = "${toString moduleLocation}#darwin.modules.default";
       imports = [
-        ../../modules/darwin
+        ../../systems/modules/darwin
         inputs.ai.darwinModules.default
         inputs.nixcord.darwinModules.nixcord
       ];
@@ -25,7 +25,7 @@
     darwin.configurations.evy = inputs.darwin.lib.darwin.system {
       modules = [
         config.flake.darwin.modules.default
-        ../../hosts/macos/configuration.nix
+        ../../systems/hosts/macos/configuration.nix
       ];
     };
   };

@@ -237,7 +237,9 @@
         "status",
         "reboot",
         "install",
+        "build",
         "setup",
+        "reconcile",
         "apply",
         "shell",
         "spectrum",
@@ -254,22 +256,66 @@
     {
       "id": "nixPackage",
       "type": "pickString",
-      "description": "Package output for this system (see nix/flake/packages.nix; Linux-only outputs require the Linux checkout)",
+      "description": "Flake package output (Linux-only selections require the Linux checkout)",
       "default": "default",
       "options": [
         "default",
-        "bluebuild-v2",
+        "ai-configs",
+        "ai-tools",
+        {
+          "label": "Linux only",
+          "value": "bluebuild-v2"
+        },
         "bun2nix",
-        "check-jsonschema",
+        {
+          "label": "Linux only",
+          "value": "check-jsonschema"
+        },
+        "dotfiles-apps",
         "dotfiles-nix-tools",
+        {
+          "label": "Linux only",
+          "value": "dotfiles-user-tools"
+        },
         "dotfiles-workstation",
         "equicord-settings",
-        "hyper-window-tiling-gnome",
-        "hyper-window-tiling-kde",
-        "kmscon",
+        "farstep",
+        "farstep-native",
+        "ghidra-mcp",
+        "ghostty-patched",
+        "helium-browser",
+        "helix",
+        "hjem",
+        "hjem-files",
+        {
+          "label": "Linux only",
+          "value": "hyper-window-tiling-gnome"
+        },
+        {
+          "label": "Linux only",
+          "value": "hyper-window-tiling-kde"
+        },
+        "jj-patched",
+        "kanata-with-cmd",
+        {
+          "label": "Linux only",
+          "value": "kmscon"
+        },
+        {
+          "label": "Linux only",
+          "value": "nixcord-discord"
+        },
         "theme-run",
-        "toshy-runtime",
-        "uresourced"
+        {
+          "label": "Linux only",
+          "value": "toshy-runtime"
+        },
+        "tweezle",
+        {
+          "label": "Linux only",
+          "value": "uresourced"
+        },
+        "yt-dlp-script"
       ]
     }
   ],

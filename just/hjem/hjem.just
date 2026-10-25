@@ -9,7 +9,7 @@ _secrets:
     {{ just_command }} sops check
 
 _hjem-platform platform:
-    bun scripts/check/hjem.ts {{ quote(platform) }}
+    bun home/deploy/check/home.ts {{ quote(platform) }}
 # Build or activate the Hjem home environment
 [arg('action', help='switch to activate, or build to prepare without activating')]
 [group('setup')]
@@ -19,9 +19,9 @@ _activate action:
       *) printf '%s\n' 'Expected switch or build' >&2; exit 2 ;;
     esac
     if [[ $(uname) == Linux && ! -e /etc/NIXOS ]]; then
-      bun {{ quote(repo_dir / 'scripts/hjem/hjem.ts') }} {{ quote('packages-' + action) }}
+      bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} {{ quote('packages-' + action) }}
     fi
-    bun {{ quote(repo_dir / 'scripts/hjem/hjem.ts') }} {{ quote(if action == 'switch' { 'apply' } else { 'build' }) }}
+    bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} {{ quote(if action == 'switch' { 'apply' } else { 'build' }) }}
     if [[ {{ quote(action) }} == switch && $(uname) == Linux && ! -e /etc/NIXOS ]]; then
       profile="${XDG_STATE_HOME:-$HOME/.local/state}/hjem/standalone/current-profile"
       if command -v systemctl >/dev/null 2>&1 && systemctl --user show-environment >/dev/null 2>&1; then

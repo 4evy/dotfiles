@@ -1,0 +1,83 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/stage-v1.json
+name: ghostty
+# Use the final image's Fedora release and runtime libraries.
+from: ${BASE_IMAGE}
+modules:
+  # Install build dependencies before copying changing source inputs
+  - type: dnf@v1
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:4fa89e050fbbc397ec7c04ed11339a5f430cc339224facaa8b8ce65e07d39921
+    install:
+      install-weak-deps: false
+      packages:
+        - blueprint-compiler
+        - dbus-devel
+        - fontconfig-devel
+        - freetype-devel
+        - gcc
+        - gcc-c++
+        - gettext
+        - git
+        - gtk4-devel
+        - gtk4-layer-shell-devel
+        - jq
+        - libadwaita-devel
+        - libdrm-devel
+        - libglvnd-devel
+        - libxkbcommon-devel
+        - libxml2-devel
+        - mesa-libgbm-devel
+        - ncurses-devel
+        - openssl
+        - pango-devel
+        - patch
+        - python3
+        - pkgconf-pkg-config
+        - tar
+        - xz
+
+  - type: copy@v1
+    from: docker.io/oven/bun:1.4.4@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d
+    src: /usr/local/bin/bun
+    dest: /usr/local/bin/bun
+
+  # Keep Ghostty's source inputs independent from unrelated flake updates
+  - type: copy@v1
+    src: systems/spectrum/recipes/spectrum/sources/ghostty.json
+    dest: /src/sources.json
+
+  - type: copy@v1
+    src: systems/spectrum/recipes/spectrum/sources/patches.json
+    dest: /src/patches.json
+
+  - type: copy@v1
+    src: packages/ghostty/build.sh
+    dest: /src/build-ghostty.sh
+
+  - type: copy@v1
+    src: packages/ghostty/source/source.ts
+    dest: /src/source.ts
+
+  - type: copy@v1
+    src: packages/ghostty/source/download.ts
+    dest: /src/download.ts
+
+  # BlueBuild's package-manager mounts cache the toolchain install above. The
+  # built-in Containerfile module adds compiler-specific caches as well, so a
+  # source or patch update can reuse unchanged Zig compilation artifacts.
+  - type: containerfile
+    snippets:
+      - |-
+        RUN \
+          --mount=type=cache,id=spectrum-ghostty-zig-global-v1,sharing=locked,target=/build/zig-cache \
+          --mount=type=cache,id=spectrum-ghostty-zig-local-v1,sharing=locked,target=/build/source/.zig-cache \
+          SOURCE_LOCK=/src/sources.json \
+          SOURCE_PIN=ghostty \
+          ZIG_PIN=ghostty-zig-x86-64-linux \
+          PATCHES_LOCK=/src/patches.json \
+          PATCH_STACK=ghostty \
+          PREFIX=/out/usr \
+          ARTIFACT=/out/usr/bin/ghostty \
+          VERSION_PREFIX=1.3.2-dev \
+          BUILD_ARGUMENTS="-j1 -Dcpu=baseline -Doptimize=ReleaseFast -Demit-test-exe=false" \
+          bash /src/build-ghostty.sh

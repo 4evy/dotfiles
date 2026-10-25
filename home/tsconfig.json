@@ -1,0 +1,18 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "erasableSyntaxOnly": false
+  },
+  "include": [
+    "files/**/*.ts",
+    "files/**/*.tsx",
+    "files/**/*.mts",
+    "files/**/*.cts",
+    "files/**/*.js",
+    "files/**/*.jsx",
+    "files/**/*.mjs",
+    "files/**/*.cjs",
+    "files/.*/**/*"
+  ],
+  "exclude": ["**/node_modules/**", "**/dist/**", "**/build/**", "**/tmp/**"]
+}

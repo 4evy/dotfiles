@@ -5,4 +5,4 @@ set default-list
 # Preview pending Hjem-managed home changes
 [group('setup')]
 diff: (_doctor 'apply')
-    bun {{ quote(repo_dir / 'scripts/hjem/hjem.ts') }} diff
+    bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} diff

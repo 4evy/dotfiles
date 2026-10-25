@@ -10,7 +10,7 @@
       deadnix = {
         enable = true;
         excludes = [
-          "hosts/linux/hardware-configuration.nix"
+          "systems/hosts/linux/hardware-configuration.nix"
         ];
       };
       statix.enable = true;

@@ -12,7 +12,7 @@ _check-worktree-paths:
     for file in {{ quote(git_files([])) }}; do
       if [[ -L $file && ! -e $file ]]; then
         target=$(readlink "$file")
-        if [[ $file == bluebuild/files/system/* && $target == /* && -e bluebuild/files/system$target ]]; then
+        if [[ $file == systems/spectrum/files/system/* && $target == /* && -e systems/spectrum/files/system$target ]]; then
           continue
         fi
         printf 'broken symlink: %s\n' "$file" >&2

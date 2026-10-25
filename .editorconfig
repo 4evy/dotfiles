@@ -11,7 +11,7 @@ trim_trailing_whitespace = true
 [*.{py,py.in,py.j2,pyi,pyw}]
 indent_size = 4
 
-[{bluebuild/files/system/usr/bin/open,dotfiles/home/.local/bin/helix-rumdl-lsp}]
+[{systems/spectrum/files/system/usr/bin/open,home/files/.local/bin/helix-rumdl-lsp}]
 indent_size = 4
 
 [*.{rs,zig,zon}]
@@ -35,7 +35,7 @@ binary_next_line = false
 simplify = false
 switch_case_indent = true
 
-[{dotfiles/home/.bash*,dotfiles/home/.zprofile,dotfiles/home/.local/bin/codex-node-repl-browser-trust,dotfiles/home/.local/bin/solaar-no-tray,dotfiles/home/.local/lib/sops/sops.sh}]
+[{home/files/.bash*,home/files/.zprofile,home/files/.local/bin/codex-node-repl-browser-trust,home/files/.local/bin/solaar-no-tray,home/files/.local/lib/sops/sops.sh}]
 indent_style = tab
 indent_size = tab
 binary_next_line = false
