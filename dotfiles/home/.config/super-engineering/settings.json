@@ -1,0 +1,57 @@
+{
+  "experimental": {
+    "provider_launch_flags": {
+      "omp": "--approval-mode yolo --config \"@HOME@/.config/super-engineering/omp.yml\""
+    }
+  },
+  "theme_mode": "system",
+  "terminal_color_scheme": "catppuccin",
+  "default_chrome_theme": {
+    "light": {
+      "chrome": {
+        "hue": 220.0,
+        "saturation": 0.02448979578912258,
+        "brightness": 0.9607843160629272,
+        "intensity": 1.0,
+        "alpha": 1.0,
+        "appearance": "Light"
+      },
+      "accent": {
+        "hue": 348.18182373046875,
+        "saturation": 0.26938775181770325,
+        "brightness": 0.9607843160629272,
+        "prominence": 1.0
+      },
+      "highlight": {
+        "hue": 197.58621215820312,
+        "saturation": 0.4833333194255829,
+        "brightness": 0.9411764740943909,
+        "prominence": 1.0
+      },
+      "accent_style": "vivid"
+    },
+    "dark": {
+      "chrome": {
+        "hue": 240.0,
+        "saturation": 0.3478260934352875,
+        "brightness": 0.18039216101169586,
+        "intensity": 1.0,
+        "alpha": 1.0,
+        "appearance": "Dark"
+      },
+      "accent": {
+        "hue": 348.18182373046875,
+        "saturation": 0.26938775181770325,
+        "brightness": 0.9607843160629272,
+        "prominence": 1.0
+      },
+      "highlight": {
+        "hue": 197.58621215820312,
+        "saturation": 0.4833333194255829,
+        "brightness": 0.9411764740943909,
+        "prominence": 1.0
+      },
+      "accent_style": "vivid"
+    }
+  }
+}

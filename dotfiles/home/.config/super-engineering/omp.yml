@@ -1,0 +1,6 @@
+---
+goal:
+  enabled: true
+  continuationModes:
+    - interactive
+    - rpc

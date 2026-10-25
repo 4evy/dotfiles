@@ -509,6 +509,16 @@
       "systems": ["linux"]
     },
     {
+      "source": ".config/super-engineering/settings.json",
+      "target": ".config/super-engineering/settings.json",
+      "systems": ["darwin"]
+    },
+    {
+      "source": ".config/super-engineering/omp.yml",
+      "target": ".config/super-engineering/omp.yml",
+      "systems": ["darwin"]
+    },
+    {
       "source": ".config/theme-run/config.toml",
       "target": ".config/theme-run/config.toml"
     },
@@ -870,6 +880,12 @@
       "systems": ["darwin", "linux"],
       "onChange": false,
       "name": "rustdesk.sh"
+    },
+    {
+      "source": "super-engineering/super-engineering.sh",
+      "onChange": false,
+      "systems": ["darwin"],
+      "name": "super_engineering_settings.sh"
     },
     {
       "source": "vscode/vscode.sh",
