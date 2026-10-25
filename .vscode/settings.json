@@ -110,7 +110,6 @@
   "git.branchProtection": ["main", "master"],
   "git.branchProtectionPrompt": "alwaysCommitToNewBranch",
   "git.branchRandomName.enable": true,
-  "js/ts.experimental.useTsgo": true,
   "js/ts.preferences.preferTypeOnlyAutoImports": true,
   "js/ts.updateImportsOnFileMove.enabled": "always",
   "python.languageServer": "None",

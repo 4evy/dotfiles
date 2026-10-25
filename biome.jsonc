@@ -7,7 +7,11 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!!bluebuild/files/system/usr/lib/systemd"]
+    "includes": [
+      "**",
+      "!!bluebuild/files/system/usr/lib/systemd",
+      "!!packages/hyper-window-tiling/vendor"
+    ]
   },
   "formatter": {
     "enabled": true,

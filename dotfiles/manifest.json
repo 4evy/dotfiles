@@ -676,12 +676,8 @@
       "executable": true
     },
     {
-      "source": ".local/lib/typescript/upstream.mts",
-      "target": ".local/lib/typescript/upstream.mts"
-    },
-    {
-      "source": ".local/lib/typescript/tsrs.sh",
-      "target": ".local/bin/tscn",
+      "source": ".local/lib/typescript/runtime.sh",
+      "target": ".local/bin/bunx",
       "executable": true
     },
     {

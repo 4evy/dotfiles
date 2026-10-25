@@ -10,7 +10,6 @@
     "@tailnet/tailscaled": "0.1.2",
     "@types/bun": "catalog:",
     "tsrs": "catalog:",
-    "typescript": "catalog:",
     "@oh-my-pi/pi-coding-agent": "18.11.3",
     "@oh-my-pi/pi-tui": "18.11.3",
     "vscode-jsonrpc": "9.0.3"

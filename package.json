@@ -8,8 +8,7 @@
     ],
     "catalog": {
       "@types/bun": "1.4.3",
-      "tsrs": "0.18.0-ts7.1.0-dev.20260929",
-      "typescript": "7.0.2"
+      "tsrs": "0.18.0-ts7.1.0-dev.20260929"
     }
   },
   "scripts": {
@@ -26,9 +25,8 @@
     "@types/bun": "catalog:",
     "@types/culori": "4.0.1",
     "culori": "4.0.2",
-    "fallow": "3.33.1",
-    "tsrs": "catalog:",
-    "typescript": "catalog:"
+    "fallow": "file:packages/hyper-window-tiling/vendor/fallow",
+    "tsrs": "catalog:"
   },
   "dependencies": {
     "effect": "4.0.5",

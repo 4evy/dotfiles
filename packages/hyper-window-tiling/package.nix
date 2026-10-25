@@ -26,6 +26,7 @@ let
       (packageRoot + /package.json)
       (packageRoot + /src)
       (packageRoot + /tsconfig.json)
+      (packageRoot + /vendor)
     ];
   };
 

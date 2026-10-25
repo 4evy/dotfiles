@@ -21,6 +21,7 @@
     "zig-out/**",
     // This independently locked package runs Fallow through its own check script
     "packages/workstation/**",
-    "packages/omp/upstream/**"
+    "packages/omp/upstream/**",
+    "packages/hyper-window-tiling/vendor/**"
   ]
 }

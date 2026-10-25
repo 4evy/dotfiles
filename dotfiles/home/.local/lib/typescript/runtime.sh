@@ -1,5 +1,6 @@
 #!/bin/sh
-# GUI applications may not inherit the shell's compiler preloads
+# node, bun, and bunx share these defaults, including in GUI-launched processes
+# In particular, bunx --bun runs compilers without invoking the node wrapper
 preload="@HOME@/.local/lib/typescript/compiler.mts"
 case "${NODE_OPTIONS:-}" in
 	*"$preload"*) ;;

@@ -20,7 +20,7 @@
     "@girs/gjs": "5.5.0",
     "@girs/gnome-shell": "50.0.4",
     "@types/bun": "1.4.3",
-    "fallow": "3.33.1",
+    "fallow": "file:vendor/fallow",
     "tsrs": "0.18.0-ts7.1.0-dev.20260929"
   }
 }

@@ -1,4 +1,4 @@
 {
   "$schema": "./node_modules/fallow/schema.json",
-  "ignorePatterns": ["extension.js"]
+  "ignorePatterns": ["extension.js", "vendor/**"]
 }

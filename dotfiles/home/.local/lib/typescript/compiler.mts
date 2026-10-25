@@ -3,8 +3,8 @@ import { realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-// Redirect TypeScript CLI entrypoints without changing project dependencies
-// Native binaries executed directly and TypeScript API imports are unaffected
+// Redirect third-party TypeScript CLI entrypoints to the managed Rust compiler
+// Project checks select tsrs directly, independent of this preload
 // Resolve before matching so renamed symlinks cannot bypass the default
 let resolved = "";
 if (process.argv[1]) {
@@ -15,7 +15,7 @@ if (process.argv[1]) {
   }
 }
 if (
-  /\/(?:typescript|@typescript\/native-preview)\/(?:bin\/(?:tsc|tsgo)|lib\/(?:_?tsc|tsgo)\.js)$/.test(
+  /\/(?:typescript|@typescript\/native(?:-preview)?)\/(?:bin\/(?:tsc|tsgo)|lib\/(?:_?tsc|tsgo)\.js)$/.test(
     resolved,
   )
 ) {
