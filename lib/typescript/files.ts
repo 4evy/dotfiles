@@ -4,7 +4,6 @@ import {
   chmodSync,
   closeSync,
   constants,
-  existsSync,
   fchmodSync,
   fsyncSync,
   mkdirSync,
@@ -18,8 +17,13 @@ import {
 import { basename, dirname, normalize } from "node:path";
 import { DotfilesError } from "./errors.ts";
 
-export async function writeJson(path: string, value: unknown): Promise<void> {
-  await Bun.write(path, `${JSON.stringify(value, null, 2)}\n`);
+// Write JSON atomically and report whether content or permissions changed
+export function writeJson(
+  path: string,
+  value: unknown,
+  mode: number | string = 0o644,
+): boolean {
+  return writeIfChanged(path, `${JSON.stringify(value, null, 2)}\n`, mode);
 }
 
 function safePath(path: string): string {
@@ -64,14 +68,14 @@ export function writeIfChanged(
   mode: number | string = 0o644,
 ): boolean {
   const destination = safePath(path);
-  const data = Buffer.from(content);
+  const data =
+    typeof content === "string"
+      ? Buffer.from(content)
+      : Buffer.from(content.buffer, content.byteOffset, content.byteLength);
   const permission = octalMode(mode);
-  if (
-    existsSync(destination) &&
-    statSync(destination).isFile() &&
-    readFileSync(destination).equals(data)
-  ) {
-    if ((statSync(destination).mode & 0o7777) === permission) return false;
+  const status = statSync(destination, { throwIfNoEntry: false });
+  if (status?.isFile() && readFileSync(destination).equals(data)) {
+    if ((status.mode & 0o7777) === permission) return false;
     chmodSync(destination, permission);
     return true;
   }
