@@ -9,8 +9,7 @@ import {
 export const root = join(import.meta.dir, "../..");
 
 export async function execute(command: string[], cwd = root, env = process.env) {
-  const result = await Effect.runPromise(executeEffect(command, { cwd, env }));
-  return { ...result, stdout: result.stdout.trim(), stderr: result.stderr.trim() };
+  return Effect.runPromise(executeEffect(command, { cwd, env }));
 }
 
 export async function run(command: string[], cwd = root, env = process.env) {

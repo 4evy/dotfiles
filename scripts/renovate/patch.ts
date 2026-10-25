@@ -1,20 +1,28 @@
 import { mkdtempDisposable, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { Effect } from "effect";
 import * as v from "valibot";
-import { writeJson } from "../../lib/typescript/files.ts";
-import { download } from "../../lib/typescript/http.ts";
-import { run } from "../../lib/typescript/process.ts";
-import { root } from "./process.ts";
+import { writeIfChanged, writeJson } from "../../lib/typescript/files.ts";
+import { download, root, run } from "./process.ts";
 
 export async function updateRenovatePatch() {
   const directory = join(root, ".github/renovate");
   const path = join(directory, "package.json");
-  const manifest = await Bun.file(path).json();
-  const version: string = manifest.devDependencies.renovate;
-  const [previous] = Object.keys(manifest.patchedDependencies);
-  if (!previous) throw new Error("The commits-only Renovate patch is missing");
+  const manifest = v.parse(
+    v.looseObject({
+      devDependencies: v.looseObject({ renovate: v.string() }),
+      patchedDependencies: v.record(v.string(), v.string()),
+    }),
+    await Bun.file(path).json(),
+  );
+  const version = manifest.devDependencies.renovate;
+  const previousPatches = Object.entries(manifest.patchedDependencies).filter(
+    ([name]) => name.startsWith("renovate@"),
+  );
+  const [previousPatch] = previousPatches;
+  if (previousPatches.length !== 1 || !previousPatch)
+    throw new Error("Expected one commits-only Renovate patch");
+  const [previous, patchPath] = previousPatch;
   if (previous === `renovate@${version}`) return;
 
   // Never accept an unpatched Renovate upgrade: PRs and issues are forbidden
@@ -22,40 +30,31 @@ export async function updateRenovatePatch() {
   // Require the complete old patch to apply before changing its version binding
   await using workspace = await mkdtempDisposable(join(tmpdir(), "renovate-patch-"));
   const staging = workspace.path;
-  // Keep staging alive until the Effect settles, including rejected commands
-  return await Effect.runPromise(
-    Effect.gen(function* () {
-      const response = yield* download(
-        `https://registry.npmjs.org/renovate/${version}`,
-      );
-      const metadata = v.parse(
-        v.object({
-          dist: v.object({
-            tarball: v.pipe(v.string(), v.url()),
-            integrity: v.string(),
-          }),
-        }),
-        yield* Effect.tryPromise(() => response.json()),
-      );
-      const tarball = yield* download(metadata.dist.tarball);
-      const archive = new Uint8Array(
-        yield* Effect.tryPromise(() => tarball.arrayBuffer()),
-      );
-      const integrity = `sha512-${new Bun.CryptoHasher("sha512").update(archive).digest("base64")}`;
-      if (integrity !== metadata.dist.integrity)
-        return yield* Effect.fail(new Error("Renovate archive integrity check failed"));
-      const archivePath = join(staging, "source.tar.gz");
-      yield* Effect.tryPromise(() => Bun.write(archivePath, archive));
-      yield* run(["tar", "-xzf", archivePath, "--strip-components=1", "-C", staging]);
-      const oldPatch = join(directory, manifest.patchedDependencies[previous]);
-      yield* run(["git", "apply", "--check", oldPatch], { cwd: staging });
-      yield* run(["git", "apply", oldPatch], { cwd: staging });
-      const newPatch = `patches/renovate@${version}.patch`;
-      const content = yield* Effect.tryPromise(() => Bun.file(oldPatch).text());
-      yield* Effect.tryPromise(() => Bun.write(join(directory, newPatch), content));
-      manifest.patchedDependencies = { [`renovate@${version}`]: newPatch };
-      yield* Effect.try(() => writeJson(path, manifest));
-      yield* Effect.tryPromise(() => rm(oldPatch));
+  const response = await download(`https://registry.npmjs.org/renovate/${version}`);
+  const metadata = v.parse(
+    v.object({
+      dist: v.object({
+        tarball: v.pipe(v.string(), v.url()),
+        integrity: v.string(),
+      }),
     }),
+    await response.json(),
   );
+  const tarball = await download(metadata.dist.tarball);
+  const archive = new Uint8Array(await tarball.arrayBuffer());
+  const integrity = `sha512-${new Bun.CryptoHasher("sha512").update(archive).digest("base64")}`;
+  if (integrity !== metadata.dist.integrity)
+    throw new Error("Renovate archive integrity check failed");
+  const archivePath = join(staging, "source.tar.gz");
+  await Bun.write(archivePath, archive);
+  await run(["tar", "-xzf", archivePath, "--strip-components=1", "-C", staging]);
+  const oldPatch = join(directory, patchPath);
+  await run(["git", "apply", "--check", oldPatch], staging);
+  await run(["git", "apply", oldPatch], staging);
+  const newPatch = `patches/renovate@${version}.patch`;
+  writeIfChanged(join(directory, newPatch), await Bun.file(oldPatch).text());
+  delete manifest.patchedDependencies[previous];
+  manifest.patchedDependencies[`renovate@${version}`] = newPatch;
+  writeJson(path, manifest);
+  await rm(oldPatch);
 }

@@ -1,73 +1,148 @@
+import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import * as v from "valibot";
+import { writeIfChanged } from "../../lib/typescript/files.ts";
 import { download, root } from "./process.ts";
+
+function parseChecksums(content: string): Map<string, string> {
+  const checksums = new Map<string, string>();
+  for (const line of content.split(/\r?\n/)) {
+    const match = line.match(/^[ \t]*([a-f\d]{64})[ \t]+\*?(?:\.\/)?(.+?)\s*$/i);
+    if (!match?.[1] || !match[2]) continue;
+    const hash = match[1].toLowerCase();
+    const previous = checksums.get(match[2]);
+    if (previous && previous !== hash)
+      throw new Error(`Conflicting checksums for ${match[2]}`);
+    checksums.set(match[2], hash);
+  }
+  return checksums;
+}
+
+function checksumFor(checksums: Map<string, string>, asset: string): string {
+  const hash = checksums.get(asset);
+  if (!hash) throw new Error(`Missing checksum for ${asset}`);
+  return hash;
+}
+
+function replaceOnce(
+  content: string,
+  pattern: RegExp,
+  replacement: (match: RegExpMatchArray) => string,
+  description: string,
+): string {
+  const matches = [...content.matchAll(pattern)];
+  const [match] = matches;
+  if (matches.length !== 1 || !match) throw new Error(`Expected one ${description}`);
+  return (
+    content.slice(0, match.index) +
+    replacement(match) +
+    content.slice(match.index + match[0].length)
+  );
+}
 
 export async function updateBunBootstrap() {
   const path = join(root, "scripts/setup/setup.sh");
   const content = await Bun.file(path).text();
   const version = content.match(/releases\/download\/bun-v([^/]+)\//)?.[1];
   if (!version) throw new Error("Missing Bun bootstrap version");
-  const checksums = await (
-    await download(
-      `https://github.com/oven-sh/bun/releases/download/bun-v${version}/SHASUMS256.txt`,
-    )
-  ).text();
+  const checksums = parseChecksums(
+    await (
+      await download(
+        `https://github.com/oven-sh/bun/releases/download/bun-v${version}/SHASUMS256.txt`,
+      )
+    ).text(),
+  );
+  let count = 0;
   const updated = content.replace(
-    /archive=([^\s]+)\n(\s+)expected=[a-f0-9]{64}/g,
-    (_, archive: string, indent: string) => {
-      const hash = checksums
-        .split("\n")
-        .map((line) => line.trim().split(/\s+/))
-        .find(
-          ([, name]) => name?.replace(/^\*?(?:\.\/)?/, "") === `${archive}.zip`,
-        )?.[0];
-      if (!hash || !/^[a-f0-9]{64}$/.test(hash))
-        throw new Error(`Missing checksum for ${archive}`);
-      return `archive=${archive}\n${indent}expected=${hash}`;
+    /(^[ \t]*archive=([^\s]+)\r?\n[ \t]*expected=)[^\s]+/gm,
+    (_, prefix: string, archive: string) => {
+      count++;
+      return `${prefix}${checksumFor(checksums, `${archive}.zip`)}`;
     },
   );
-  if (updated !== content) await Bun.write(path, updated);
+  if (!count || count !== [...content.matchAll(/^[ \t]*archive=/gm)].length)
+    throw new Error("Missing Bun bootstrap checksum bindings");
+  writeIfChanged(path, updated, (await stat(path)).mode & 0o777);
 }
 
 export async function updateMise() {
   const path = join(root, ".github/actions/setup-check-tools/action.yaml");
   const content = await Bun.file(path).text();
-  const version = content.match(/version: (v[\d.]+)/)?.[1];
-  if (!version) throw new Error("Missing mise bootstrap version");
-  const checksums = await (
-    await download(
-      `https://github.com/jdx/mise/releases/download/${version}/SHASUMS256.txt`,
-    )
-  ).text();
-  const updated = content.replace(
-    /(LINUX_X64|MACOS_ARM64|MACOS_X64)_SHA256: [a-f0-9]{64}/g,
-    (_, runner: "LINUX_X64" | "MACOS_ARM64" | "MACOS_X64") => {
-      const platform = {
-        LINUX_X64: "linux-x64",
-        MACOS_ARM64: "macos-arm64",
-        MACOS_X64: "macos-x64",
-      }[runner];
-      const asset = `mise-${version}-${platform}`;
-      const hash = checksums
-        .split("\n")
-        .map((line) => line.trim().split(/\s+/))
-        .find(([, name]) => name?.replace(/^\*?(?:\.\/)?/, "") === asset)?.[0];
-      if (!hash || !/^[a-f0-9]{64}$/.test(hash))
-        throw new Error(`Missing checksum for ${asset}`);
-      return `${runner}_SHA256: ${hash}`;
-    },
+  const action = v.parse(
+    v.object({
+      runs: v.object({
+        steps: v.array(
+          v.object({
+            uses: v.optional(v.string()),
+            with: v.optional(v.record(v.string(), v.unknown())),
+          }),
+        ),
+      }),
+    }),
+    Bun.YAML.parse(content),
   );
-  if (updated !== content) await Bun.write(path, updated);
+  const installers = action.runs.steps.filter((step) =>
+    step.uses?.startsWith("jdx/mise-action@"),
+  );
+  const [installer] = installers;
+  if (installers.length !== 1) throw new Error("Expected one mise install step");
+  const version = installer?.with?.version;
+  if (typeof version !== "string" || !/^v\S+$/.test(version))
+    throw new Error("Missing mise bootstrap version");
+  const checksums = parseChecksums(
+    await (
+      await download(
+        `https://github.com/jdx/mise/releases/download/${version}/SHASUMS256.txt`,
+      )
+    ).text(),
+  );
+  const platforms = {
+    LINUX_X64: "linux-x64",
+    MACOS_ARM64: "macos-arm64",
+    MACOS_X64: "macos-x64",
+  };
+  let updated = content;
+  for (const [runner, platform] of Object.entries(platforms)) {
+    const hash = checksumFor(checksums, `mise-${version}-${platform}`);
+    updated = replaceOnce(
+      updated,
+      new RegExp(`^([ \\t]*${runner}_SHA256:[ \\t]*)[^\\s]+`, "gm"),
+      (match) => `${match[1]}${hash}`,
+      `${runner} mise checksum binding`,
+    );
+  }
+  writeIfChanged(path, updated);
 }
 
 export async function updateBrowser() {
   const path = join(root, "browser/helium.toml");
   const content = await Bun.file(path).text();
-  const match = content.match(
-    /version = "([^"\s]+)"\s+url = "([^"\s]+)"\s+sha256 = "([^"\s]+)"/,
+  const config = v.parse(
+    v.object({
+      extensions: v.object({
+        crx: v.array(
+          v.object({
+            id: v.string(),
+            version: v.string(),
+            url: v.pipe(v.string(), v.url()),
+            sha256: v.string(),
+          }),
+        ),
+      }),
+    }),
+    Bun.TOML.parse(content),
   );
-  if (!match?.[1] || !match[2] || !match[3]) throw new Error("Missing browser CRX pin");
-  const version = match[1];
+  const pins = config.extensions.crx.filter(
+    (entry) => entry.id === "bolggfoncklhniejomgplkjcllmnonbh",
+  );
+  const [pin] = pins;
+  if (pins.length !== 1 || !pin) throw new Error("Expected one browser TWP CRX pin");
+  const version = pin.version;
+  // Retain the pinned Chromium variant rather than switching MV2/MV3 assets
+  const variant = new URL(pin.url).pathname.match(
+    /\/TWP_[^/]+?_(Chromium[^/]*)\.crx$/,
+  )?.[1];
+  if (!variant) throw new Error("Unsupported browser TWP CRX asset name");
   const release = v.parse(
     v.object({
       assets: v.array(
@@ -84,32 +159,58 @@ export async function updateBrowser() {
     ).json(),
   );
   const assets = release.assets.filter(
-    (asset) =>
-      asset.name.startsWith(`TWP_${version}_Chromium`) && asset.name.endsWith(".crx"),
+    (asset) => asset.name === `TWP_${version}_${variant}.crx`,
   );
   const [asset] = assets;
   if (assets.length !== 1 || !asset)
-    throw new Error(`Expected one Chromium CRX asset for TWP ${version}`);
+    throw new Error(`Expected one ${variant} CRX asset for TWP ${version}`);
   const url = asset.browser_download_url;
   const bytes = await (await download(url)).arrayBuffer();
   const hash = `sha256-${new Bun.CryptoHasher("sha256").update(bytes).digest("base64")}`;
+  let found = false;
   const updated = content.replace(
-    match[0],
-    `version = "${version}"\nurl = "${url}"\nsha256 = "${hash}"`,
+    /^\[\[extensions\.crx\]\][^\r\n]*\r?\n(?:(?!^\[)[\s\S])*/gm,
+    (block) => {
+      const entry = v.parse(
+        v.object({
+          extensions: v.object({ crx: v.array(v.object({ id: v.string() })) }),
+        }),
+        Bun.TOML.parse(block),
+      );
+      if (entry.extensions.crx[0]?.id !== pin.id) return block;
+      found = true;
+      let updated = block;
+      for (const [key, value] of Object.entries({ url, sha256: hash })) {
+        updated = replaceOnce(
+          updated,
+          new RegExp(`^([ \\t]*${key}[ \\t]*=[ \\t]*")[^"\\r\\n]*(")`, "gm"),
+          (match) => `${match[1]}${value}${match[2]}`,
+          `browser TWP ${key} binding`,
+        );
+      }
+      return updated;
+    },
   );
-  if (updated !== content) await Bun.write(path, updated);
+  if (!found) throw new Error("Missing browser TWP CRX table");
+  writeIfChanged(path, updated);
 }
 
 export async function updateChatgpt() {
   const path = join(root, "dotfiles/home/.local/share/nix/chatgpt/package.nix");
   const content = await Bun.file(path).text();
-  const version = content.match(/^ {2}version = "([^"\s]+)";/m)?.[1];
+  const version = content.match(/^[ \t]+version = "([^"\s]+)";/m)?.[1];
   if (!version) throw new Error("Missing ChatGPT version");
   const url = `https://persistent.oaistatic.com/codex-app-prod/linux/rpm/x86_64/chatgpt-${version}-1.x86_64.rpm`;
   // Hash the requested release rather than silently selecting a different version
   const hash = `sha256-${new Bun.CryptoHasher("sha256").update(await (await download(url)).arrayBuffer()).digest("base64")}`;
-  const updated = content
-    .replace(/^ {4}url = "[^"\n]+";/m, `    url = "${url}";`)
-    .replace(/^ {4}hash = "[^"\n]+";/m, `    hash = "${hash}";`);
-  if (updated !== content) await Bun.write(path, updated);
+  let updated = content;
+  for (const [key, value] of Object.entries({ url, hash })) {
+    updated = replaceOnce(
+      updated,
+      new RegExp(`^([ \\t]+${key} = ")[^"\\r\\n]+(";)$`, "gm"),
+      (match) => `${match[1]}${value}${match[2]}`,
+      `ChatGPT source ${key} binding`,
+    );
+  }
+  writeIfChanged(path, updated);
 }

@@ -1,4 +1,4 @@
-import { mkdir, mkdtempDisposable, readFile } from "node:fs/promises";
+import { mkdir, mkdtempDisposable } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as v from "valibot";
@@ -12,16 +12,20 @@ export async function validateGhostty() {
     JSON.parse(await run(["nix", "eval", ".#patchStackSources", "--json"])),
   );
   const patches = await run(["nix", "eval", ".#lib.patchesSource", "--raw"]);
-  const compiler = JSON.parse(
-    await run([
-      "nix",
-      "flake",
-      "prefetch",
-      "--json",
-      "--inputs-from",
-      ".",
-      "source-ghostty-zig-x86-64-linux",
-    ]),
+  // Renovate runs on x86_64 Linux, matching this pinned compiler input
+  const compiler = v.parse(
+    v.object({ storePath: v.pipe(v.string(), v.minLength(1)) }),
+    JSON.parse(
+      await run([
+        "nix",
+        "flake",
+        "prefetch",
+        "--json",
+        "--inputs-from",
+        ".",
+        "source-ghostty-zig-x86-64-linux",
+      ]),
+    ),
   ).storePath;
   const repository = sources.ghostty.canonical.match(
     /^https:\/\/github\.com\/([^/]+\/[^/]+?)(?:\.git)?$/,
@@ -45,7 +49,7 @@ export async function validateGhostty() {
   await run(["tar", "-xzf", archive, "--strip-components=1", "-C", source]);
   await run(["tar", "-xJf", compiler, "--strip-components=1", "-C", zig]);
   const series = join(patches, "stacks/ghostty/patches");
-  const entries = (await readFile(join(series, "series"), "utf8"))
+  const entries = (await Bun.file(join(series, "series")).text())
     .split("\n")
     .map((entry) => entry.trim())
     .filter((entry) => entry && !entry.startsWith("#"));
