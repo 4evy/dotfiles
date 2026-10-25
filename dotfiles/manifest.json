@@ -589,11 +589,6 @@
       "mutable": true
     },
     {
-      "source": ".local/lib/solaar/solaar.ts",
-      "target": ".local/lib/solaar/solaar.ts",
-      "executable": true
-    },
-    {
       "source": ".local/lib/sops/sops.sh",
       "target": ".local/lib/sops/sops.sh",
       "executable": true
@@ -637,11 +632,6 @@
       "source": ".local/bin/helium-user-agent",
       "target": ".local/bin/helium-user-agent",
       "symlink": true
-    },
-    {
-      "source": ".local/lib/helix/launch.sh",
-      "target": ".local/bin/helix-rumdl-lsp",
-      "executable": true
     },
     {
       "source": ".local/lib/vscode/launch.sh",
@@ -828,17 +818,18 @@
   ],
   "hooks": [
     {
-      "source": "external/external.sh",
+      "command": ["@HOME@/.local/lib/external/external.sh"],
       "onChange": false,
       "name": "90_external_cli.sh"
     },
     {
-      "source": "desktop/desktop.sh",
+      "command": ["bun", "@REPOSITORY@/scripts/setup/desktop.ts"],
       "onChange": false,
       "name": "desktop_integrations.sh"
     },
     {
       "source": "discord/discord.sh",
+      "systems": ["linux"],
       "onChange": false,
       "name": "discord_equicord.sh"
     },
@@ -848,27 +839,31 @@
       "name": "ghostty_dreamy_swirl.sh"
     },
     {
-      "source": "helium/helium.sh",
+      "command": ["bun", "@REPOSITORY@/scripts/setup/applications.ts", "helium"],
       "onChange": false,
       "name": "helium.sh"
     },
     {
       "source": "nix/nix.sh",
+      "systems": ["darwin", "linux"],
       "onChange": false,
       "name": "nix_github_auth.sh"
     },
     {
-      "source": "applications/applications.sh",
+      "command": ["bun", "@REPOSITORY@/scripts/setup/ai/ai.ts", "configure"],
+      "systems": ["darwin"],
       "onChange": false,
       "name": "private_application_configurer.sh"
     },
     {
       "source": "raycast/raycast.sh",
+      "systems": ["darwin"],
       "onChange": false,
       "name": "raycast.sh"
     },
     {
       "source": "rustdesk/rustdesk.sh",
+      "systems": ["darwin", "linux"],
       "onChange": false,
       "name": "rustdesk.sh"
     },
@@ -878,7 +873,8 @@
       "name": "vscode_catppuccin_custom_icons.sh"
     },
     {
-      "source": "workstation/workstation.sh",
+      "command": ["bun", "@REPOSITORY@/scripts/setup/workstation.ts"],
+      "systems": ["darwin", "linux"],
       "onChange": true,
       "inputs": [
         "packages/workstation/src",
@@ -899,6 +895,7 @@
     },
     {
       "source": "gnome/gnome.sh",
+      "systems": ["linux"],
       "onChange": true,
       "inputs": [
         "dotfiles/data/palette/palette.json",
@@ -910,7 +907,8 @@
       "name": "gnome_catppuccin_custom_accent.sh"
     },
     {
-      "source": "kanata/kanata.sh",
+      "command": ["just", "--justfile", "@REPOSITORY@/Justfile", "darwin"],
+      "systems": ["darwin"],
       "onChange": true,
       "inputs": [
         "dotfiles/home/.config/kanata/kanata-macos.kbd",
@@ -923,6 +921,7 @@
     },
     {
       "source": "lsp/lsp.sh",
+      "systems": ["darwin", "linux"],
       "onChange": true,
       "inputs": [
         "dotfiles/home/.local/lib/typescript/package.json",
@@ -932,6 +931,7 @@
     },
     {
       "source": "macos/macos.sh",
+      "systems": ["darwin"],
       "onChange": true,
       "inputs": [
         "dotfiles/data/palette/palette.json",
@@ -940,13 +940,15 @@
       "name": "macos_catppuccin_custom_appearance.sh"
     },
     {
-      "source": "omp/omp.sh",
+      "command": ["bun", "install", "--cwd", "@HOME@/.omp/agent", "--ignore-scripts"],
+      "systems": ["darwin", "linux"],
       "onChange": true,
       "inputs": ["dotfiles/home/.omp/agent/package.json"],
       "name": "omp_theme_dependencies.sh"
     },
     {
       "source": "terminal/terminal.sh",
+      "systems": ["darwin"],
       "onChange": true,
       "inputs": [
         "packages/workstation/src/macos/terminal.ts",
@@ -955,7 +957,8 @@
       "name": "terminal_app_catppuccin_custom.sh"
     },
     {
-      "source": "toshy/toshy.sh",
+      "command": ["python3.14", "@REPOSITORY@/scripts/setup/toshy.py"],
+      "systems": ["linux"],
       "onChange": true,
       "inputs": [
         "scripts/setup/toshy.py",

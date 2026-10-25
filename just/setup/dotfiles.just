@@ -1,7 +1,7 @@
 # Activate the complete Hjem-managed home generation
 [group('setup')]
 apply: (_doctor 'apply')
-    scripts/hjem/hjem.sh apply
+    bun {{ quote(repo_dir / 'scripts/hjem/hjem.ts') }} apply
 
 # Apply Helium extensions, settings, and the Catppuccin Custom themes
 [group('setup')]

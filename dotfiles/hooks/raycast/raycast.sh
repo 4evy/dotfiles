@@ -1,8 +1,6 @@
 #!/bin/sh
 set -eu
 
-[ "$(uname -s)" = Darwin ] || exit 0
-
 source='/Applications/Nix Apps/Raycast.app'
 manager='/run/current-system/sw/bin/raycast-manager'
 target='/Applications/Raycast.app'

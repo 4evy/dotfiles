@@ -19,9 +19,9 @@ _activate action:
       *) printf '%s\n' 'Expected switch or build' >&2; exit 2 ;;
     esac
     if [[ $(uname) == Linux && ! -e /etc/NIXOS ]]; then
-      {{ quote(repo_dir / 'scripts/hjem/hjem.sh') }} {{ quote('packages-' + action) }}
+      bun {{ quote(repo_dir / 'scripts/hjem/hjem.ts') }} {{ quote('packages-' + action) }}
     fi
-    {{ quote(repo_dir / 'scripts/hjem/hjem.sh') }} {{ quote(if action == 'switch' { 'apply' } else { 'build' }) }}
+    bun {{ quote(repo_dir / 'scripts/hjem/hjem.ts') }} {{ quote(if action == 'switch' { 'apply' } else { 'build' }) }}
     if [[ {{ quote(action) }} == switch && $(uname) == Linux && ! -e /etc/NIXOS ]]; then
       profile="${XDG_STATE_HOME:-$HOME/.local/state}/hjem/standalone/current-profile"
       if command -v systemctl >/dev/null 2>&1 && systemctl --user show-environment >/dev/null 2>&1; then

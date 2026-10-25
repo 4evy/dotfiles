@@ -26,7 +26,7 @@ type Entry = {
 };
 type Manifest = { version: number; files: Entry[] };
 type Hook = {
-  source: string;
+  command: string[];
   onchange: boolean;
   name: string;
   inputs?: string[];
@@ -293,7 +293,8 @@ async function hooks(output: string) {
   for (const hook of entries.sort((a, b) => a.name.localeCompare(b.name))) {
     const marker = join(hashes, createHash("sha256").update(hook.name).digest("hex"));
     const previous = (await exists(marker)) ? await readFile(marker, "utf8") : "";
-    const fingerprint = createHash("sha256").update(await readFile(hook.source));
+    // Script hooks use immutable store paths, argv hooks declare mutable inputs
+    const fingerprint = createHash("sha256").update(JSON.stringify(hook.command));
     for (const input of hook.inputs || []) {
       await fingerprintInput(fingerprint, resolve(repository, input));
     }
@@ -304,7 +305,7 @@ async function hooks(output: string) {
       continue;
     }
     console.error(`Applying ${hook.name}`);
-    await run([hook.source]);
+    await run(hook.command);
     await writeFile(marker, hash, { mode: 0o600 });
   }
 }

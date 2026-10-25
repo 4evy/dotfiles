@@ -95,7 +95,8 @@ formatter = { command = "nixfmt" }
 language-servers = ["nil"]
 
 [language-server.rumdl]
-command = "helix-rumdl-lsp"
+command = "bun"
+args = ["@HOME@/.local/lib/helix/helix.ts"]
 
 [language-server.ruff]
 command = "ruff"

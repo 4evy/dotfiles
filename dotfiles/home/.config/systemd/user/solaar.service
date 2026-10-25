@@ -7,9 +7,9 @@ StartLimitBurst=3
 
 [Service]
 Type=simple
-# Keep the managed Bun runtime available without an inherited shell PATH
-Environment=PATH=%S/hjem/standalone/current-profile/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/run/current-system/sw/bin
-ExecStart=%h/.local/lib/solaar/solaar.ts
+# Resolve the managed profile before host executables without a launcher
+ExecSearchPath=%S/hjem/standalone/current-profile/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/run/current-system/sw/bin
+ExecStart=solaar --window=hide --no-tray
 Restart=on-failure
 RestartSec=5
 

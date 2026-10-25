@@ -90,15 +90,20 @@ let
     entry:
     let
       name = entry.name or entry.source;
-      source = writeTextFile {
-        name = "hjem-hook-${name}";
-        executable = true;
-        text = substitute (lib.readFile (../../dotfiles/hooks + "/${entry.source}"));
-      };
+      command =
+        if entry ? command then
+          map substitute entry.command
+        else
+          [
+            (toString (writeTextFile {
+              name = "hjem-hook-${name}";
+              executable = true;
+              text = substitute (lib.readFile (../../dotfiles/hooks + "/${entry.source}"));
+            }))
+          ];
     in
     {
-      inherit name;
-      source = toString source;
+      inherit name command;
       onchange = entry.onChange or false;
       inputs = map substitute (entry.inputs or [ ]);
     }

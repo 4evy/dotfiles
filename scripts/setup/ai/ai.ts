@@ -1,12 +1,13 @@
 #!/usr/bin/env bun
 import { existsSync } from "node:fs";
-import { cp, mkdir, mkdtemp, rename, rm } from "node:fs/promises";
+import { cp, mkdir, mkdtempDisposable, rename, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { prepareAiHome } from "./home.ts";
 
 const root = resolve(import.meta.dir, "../../..");
 
+// Hjem setup must run before repository npm dependencies are installed
 async function run(argv: string[], cwd = root, env = process.env): Promise<string> {
   const process = Bun.spawn(argv, {
     cwd,
@@ -78,13 +79,12 @@ if (action !== "apply" || process.platform === "linux") {
       : "";
   if (missingSource) {
     await mkdir(parent, { recursive: true });
-    const staging = await mkdtemp(join(parent, ".install-"));
-    try {
+    {
+      await using workspace = await mkdtempDisposable(join(parent, ".install-"));
+      const staging = workspace.path;
       await cp(sourcePath, staging, { recursive: true, mode: 0 });
       await run(["chmod", "-R", "u+w", staging]);
       await rename(staging, source);
-    } finally {
-      await rm(staging, { recursive: true, force: true });
     }
   }
   await run(["bun", "install", "--frozen-lockfile", "--ignore-scripts"], source);
@@ -121,8 +121,11 @@ if (action !== "apply" || process.platform === "linux") {
   } else if (action === "configure") {
     await run(["bun", "tools/scripts/cli/cli.ts", "chatgpt", "configure"], source);
   } else {
-    const temporary = await mkdtemp(join(tmpdir(), "dotfiles-ai-configs-"));
-    try {
+    {
+      await using workspace = await mkdtempDisposable(
+        join(tmpdir(), "dotfiles-ai-configs-"),
+      );
+      const temporary = workspace.path;
       const hostFile = join(temporary, "host.json");
       const host = JSON.parse(
         await run(
@@ -167,8 +170,11 @@ if (action !== "apply" || process.platform === "linux") {
       );
       const generated = join(root, ".generated");
       await mkdir(generated, { recursive: true, mode: 0o700 });
-      const staging = await mkdtemp(join(generated, ".ai-configs-"));
-      try {
+      {
+        await using stagingDirectory = await mkdtempDisposable(
+          join(generated, ".ai-configs-"),
+        );
+        const staging = stagingDirectory.path;
         await prepareAiHome(
           source,
           builds[0].outputs.out,
@@ -188,14 +194,10 @@ if (action !== "apply" || process.platform === "linux") {
           throw error;
         }
         await rm(backup, { recursive: true, force: true });
-      } finally {
-        await rm(staging, { recursive: true, force: true });
       }
-    } finally {
-      await rm(temporary, { recursive: true, force: true });
     }
     if (action === "apply")
-      await run(["bash", "scripts/hjem/hjem.sh", "apply"], root, {
+      await run(["bun", join(root, "scripts/hjem/hjem.ts"), "apply"], root, {
         ...process.env,
         DOTFILES_AI_PREPARED: "1",
       });
