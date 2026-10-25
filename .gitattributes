@@ -1,13 +1,12 @@
-# Keep source files portable and prevent binary assets from entering text
-# normalization or diff pipelines.
+# Normalize tracked text, including platform variants, to portable LF endings
 * text=auto eol=lf
-*.png binary
 
 # Include data/config languages in GitHub language statistics. Linguist omits
 # these from the language breakdown by default, but this repo treats them as
 # first-class source for editor, OS, provisioning, and application behavior.
 *.json linguist-detectable
 *.jsonc linguist-detectable
+*.ron linguist-detectable
 *.plist linguist-detectable
 *.tmTheme linguist-detectable
 *.toml linguist-detectable
@@ -16,31 +15,51 @@
 *.yml linguist-detectable
 .gitattributes linguist-detectable -linguist-vendored
 .gitignore linguist-detectable -linguist-vendored
-.containerignore linguist-detectable
+.containerignore linguist-language=Ignore-List linguist-detectable
 
-# Classify native shell entry points and substitution inputs by language
+# Classify native entry points and substitution inputs by language
 home/files/.bash* linguist-language=Shell
 home/files/.zsh* linguist-language=Shell
-home/files/.gitconfig linguist-language=gitconfig linguist-detectable
+home/files/.quiltrc linguist-language=Shell
+*.gitconfig linguist-detectable
 *.css.in linguist-language=CSS
+*.gjs linguist-language=JavaScript
+home/files/.config/homebrew/Brewfile.private linguist-language=Ruby
 home/files/.gitignore_global linguist-language=Ignore-List linguist-detectable
+systems/spectrum/files/system/etc/default/* linguist-language=Shell
+
+# Deployment selects these platform-specific inputs by their final suffix
+*.jsonc.darwin linguist-language=JSONC linguist-detectable
+*.jsonc.linux linguist-language=JSONC linguist-detectable
+*.glsl.darwin linguist-language=GLSL
+*.glsl.linux linguist-language=GLSL
+*.toml.darwin linguist-language=TOML linguist-detectable
+*.toml.linux linguist-language=TOML linguist-detectable
 
 # Cover config formats whose extensions are either too generic or unknown to
 # Linguist, while still using known Linguist language names where available.
 .clang-format linguist-detectable
+.editorconfig linguist-detectable
+.luacheckrc linguist-detectable
 .shellcheckrc linguist-detectable
 .yamllint linguist-language=YAML linguist-detectable
+.yamlfmt linguist-language=YAML linguist-detectable
 *.conf linguist-language=INI linguist-detectable
 *.fc linguist-language=sepolicy linguist-detectable
 *.if linguist-language=sepolicy linguist-detectable
+*.ghostty linguist-language=INI linguist-detectable
 *.path linguist-language=INI linguist-detectable
 *.repo linguist-language=INI linguist-detectable
-*.rules linguist-language=INI linguist-detectable
+*.socket linguist-detectable
 *.service linguist-detectable
 *.timer linguist-detectable
 *.desktop linguist-detectable
 *.te linguist-detectable
 *.theme linguist-language=INI linguist-detectable
+home/files/.config/fontconfig/**/*.conf linguist-language=XML
+home/files/.config/fontconfig/**/*.conf.* linguist-language=XML linguist-detectable
+home/files/.local/share/flatpak/overrides/* linguist-language=INI linguist-detectable
+systems/spectrum/files/system/etc/dconf/db/local.d/* linguist-language=INI linguist-detectable
 # Linguist does not have a Kanata language entry; Kanata config uses
 # s-expression syntax, so Scheme is the closest supported highlighter.
 **/*.kbd linguist-language=Scheme
@@ -56,13 +75,21 @@ home/files/.gitignore_global linguist-language=Ignore-List linguist-detectable
 .python-version linguist-language=Text linguist-detectable
 .tool-versions linguist-language=Text linguist-detectable
 home/files/.config/fastfetch/*.txt linguist-language=Text linguist-detectable
+home/files/.config/bat/config linguist-language=Text linguist-detectable
+home/files/.config/fzf/*.opts linguist-language=Text linguist-detectable
+*.hjson linguist-language=Text linguist-detectable
+*.preset linguist-language=Text linguist-detectable
+*.rules linguist-language=Text linguist-detectable
 home/files/.ssh/allowed_signers linguist-language=Text linguist-detectable
 home/files/.ssh/known_hosts.d/* linguist-language=Text linguist-detectable
-home/files/.zprofile linguist-language=Shell
+systems/spectrum/files/system/etc/ssh/authorized_keys/* linguist-language=Text linguist-detectable
 
 # Linguist vendors TypeScript declaration files globally. These declarations
 # describe local extension runtimes and should count with the package sources.
-tools/tiling/src/**/*.d.ts -linguist-vendored
+tools/*/src/**/*.d.ts -linguist-vendored
+
+# Keep the upstream Fallow launcher and schema out of local source statistics
+tools/tiling/vendor/** linguist-vendored
 
 # These files are checked in generated/runtime artifacts built from package
 # sources, host discovery, encryption tools, dependency resolvers, or schemas.
@@ -77,6 +104,8 @@ package-lock.json linguist-generated
 pnpm-lock.yaml linguist-generated
 pnpm-lock.yml linguist-generated
 systems/hosts/**/hardware-configuration.nix linguist-generated
-tools/tiling/bun.nix linguist-generated
-tools/**/dist/** linguist-generated
+tools/*/bun.nix linguist-generated
+go.sum linguist-generated
+go.work.sum linguist-generated
+home/theme/palette/palette.json linguist-generated
 secrets/*.yaml linguist-generated
