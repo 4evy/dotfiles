@@ -60,22 +60,17 @@ brewup() {
 # update applies userland state, rebuild provisions the host, and check runs
 # syntax and lint validation.
 
-update() (
-	cd "$_dotfiles_repo_path" || exit
-	just update "$@"
-)
+update() {
+	just --justfile "$_dotfiles_repo_path/Justfile" update "$@"
+}
 
-check() (
-	cd "$_dotfiles_repo_path" || exit
-	just check "$@"
-)
+check() {
+	just --justfile "$_dotfiles_repo_path/Justfile" check "$@"
+}
 
 if [[ $(uname -s) == Darwin ]]; then
 	rebuild() {
-		(
-			cd "$_dotfiles_repo_path" &&
-				just darwin "$@"
-		)
+		just --justfile "$_dotfiles_repo_path/Justfile" darwin "$@"
 	}
 
 	micfix() {
@@ -84,17 +79,11 @@ if [[ $(uname -s) == Darwin ]]; then
 else
 	if [[ -e /etc/NIXOS ]]; then
 		rebuild() {
-			(
-				cd "$_dotfiles_repo_path" &&
-					sudo nixos-rebuild switch --flake .#nixos "$@"
-			)
+			sudo nixos-rebuild switch --flake "$_dotfiles_repo_path#nixos" "$@"
 		}
 	else
 		rebuild() {
-			(
-				cd "$_dotfiles_repo_path" &&
-					just spectrum switch "$@"
-			)
+			just --justfile "$_dotfiles_repo_path/Justfile" spectrum switch "$@"
 		}
 	fi
 
