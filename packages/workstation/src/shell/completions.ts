@@ -1,7 +1,7 @@
 import { existsSync, lstatSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import * as v from "valibot";
-import { run, which } from "../../../../lib/typescript/commands.ts";
+import { run } from "../../../../lib/typescript/commands.ts";
 import { DotfilesError } from "../../../../lib/typescript/errors.ts";
 import { ensureDirectory, writeIfChanged } from "../../../../lib/typescript/files.ts";
 
@@ -16,7 +16,7 @@ const commandsSchema = v.pipe(
 );
 
 function capture(command: string[], target: string, shell: string): void {
-  const executable = which(command[0] ?? "");
+  const executable = Bun.which(command[0] ?? "");
   if (!executable) {
     const existing = lstatSync(target, { throwIfNoEntry: false });
     if (existing?.isFile() || existing?.isSymbolicLink()) rmSync(target);

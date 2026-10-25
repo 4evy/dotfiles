@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { freemem, loadavg, release, totalmem } from "node:os";
-import { output, run, which } from "../../../../lib/typescript/commands.ts";
+import { output, run } from "../../../../lib/typescript/commands.ts";
 import { flatpakRefs } from "../linux/desktop.ts";
 
 function section(name: string): void {
@@ -12,7 +12,7 @@ function printCommand(args: string[]): string {
   return result.stdout;
 }
 function printIfAvailable(command: string, ...args: string[]): boolean {
-  if (!which(command)) return false;
+  if (!Bun.which(command)) return false;
   printCommand([command, ...args]);
   return true;
 }
@@ -43,7 +43,7 @@ function auditGraphics(): void {
   section("graphics");
   printIfAvailable("lspci", "-nnk", "-d", "::03xx");
   if (existsSync("/dev/dri")) printIfAvailable("ls", "-l", "/dev/dri");
-  if (which("lsmod"))
+  if (Bun.which("lsmod"))
     console.log(
       matchingLines(
         output(["lsmod"], { check: false }),
@@ -59,7 +59,7 @@ function auditGraphics(): void {
         `${device} vendor=${readText(`${device}/vendor`)} device=${readText(`${device}/device`)}`,
       );
   printIfAvailable("nvidia-smi");
-  if (which("rpm"))
+  if (Bun.which("rpm"))
     console.log(
       matchingLines(
         output(["rpm", "-qa"], { check: false }),
@@ -83,7 +83,7 @@ function auditGraphicsAPIs(): void {
 }
 function auditFlatpakGL(): void {
   section("flatpak-gl");
-  if (!which("flatpak")) return;
+  if (!Bun.which("flatpak")) return;
   printCommand(["flatpak", "--gl-drivers"]);
   for (const runtime of flatpakRefs("runtimes"))
     if (/nvidia|org\.freedesktop\.Platform\.(GL|VAAPI)/i.test(runtime.id))
@@ -114,14 +114,14 @@ function auditPowerAndDesktop(): void {
     `load=${JSON.stringify(loadavg())} memory_used=${memoryPercent().toFixed(1)}%`,
   );
   section("failed-units");
-  if (which("systemctl")) {
+  if (Bun.which("systemctl")) {
     printCommand(["systemctl", "--failed", "--no-pager"]);
     printCommand(["systemctl", "--user", "--failed", "--no-pager"]);
   }
   section("gnome");
   printIfAvailable("gsettings", "get", "org.gnome.shell", "enabled-extensions");
   printIfAvailable("gnome-extensions", "list", "--enabled");
-  if (which("journalctl"))
+  if (Bun.which("journalctl"))
     console.log(
       matchingLines(
         output(["journalctl", "--user", "-b", "--no-pager", "-p", "warning..alert"], {
@@ -135,7 +135,7 @@ function auditPowerAndDesktop(): void {
 }
 function auditProcessesAndLogs(): void {
   section("chromium");
-  if (which("ps"))
+  if (Bun.which("ps"))
     console.log(
       matchingLines(
         output(["ps", "-eo", "pid,ppid,pcpu,pmem,comm,args", "--sort=-pcpu"], {
@@ -146,7 +146,7 @@ function auditProcessesAndLogs(): void {
       ),
     );
   section("kernel-gpu");
-  if (which("journalctl"))
+  if (Bun.which("journalctl"))
     console.log(
       matchingLines(
         output(["journalctl", "-k", "-b", "--no-pager"], { check: false }),
@@ -156,7 +156,7 @@ function auditProcessesAndLogs(): void {
       ),
     );
   section("hot-processes");
-  if (which("ps"))
+  if (Bun.which("ps"))
     console.log(
       output(["ps", "-eo", "pid,ppid,ni,pri,psr,pcpu,pmem,comm,args", "--sort=-pcpu"], {
         check: false,

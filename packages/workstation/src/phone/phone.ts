@@ -10,10 +10,9 @@ import {
   execProcess,
   requireCommands,
   run,
-  which,
 } from "../../../../lib/typescript/commands.ts";
 import { DotfilesError } from "../../../../lib/typescript/errors.ts";
-import { ensureDirectory, writeIfChanged } from "../../../../lib/typescript/files.ts";
+import { ensureDirectory, writeJson } from "../../../../lib/typescript/files.ts";
 import { cachePath } from "../../../../lib/typescript/paths.ts";
 import type { PhoneConfig } from "./config.ts";
 import { normalizeIP, phoneConfig, targetCacheSchema } from "./config.ts";
@@ -329,11 +328,7 @@ class PhoneMirror {
       return cached;
     }
     ensureDirectory(dirname(this.#cache), 0o700);
-    writeIfChanged(
-      this.#cache,
-      `${JSON.stringify({ name: this.#config.name, ip: host }, null, 2)}\n`,
-      0o600,
-    );
+    writeJson(this.#cache, { name: this.#config.name, ip: host }, 0o600);
     return host;
   }
   #hydrateGUIEnvironment(): void {
@@ -341,7 +336,7 @@ class PhoneMirror {
     const runtime = `/run/user/${process.getuid?.()}`;
     if (!this.#environment.XDG_RUNTIME_DIR && existsSync(runtime))
       this.#environment.XDG_RUNTIME_DIR = runtime;
-    if (!which("systemctl")) return;
+    if (!Bun.which("systemctl")) return;
     const result = this.#execute(["systemctl", "--user", "show-environment"], {
       timeout: 5,
     });

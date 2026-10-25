@@ -1,4 +1,3 @@
-import { constants } from "node:os";
 import { DotfilesError } from "./errors.ts";
 
 export type RunOptions = {
@@ -13,12 +12,8 @@ export type RunOptions = {
 };
 export type CommandResult = { code: number; stdout: string; stderr: string };
 
-export function which(name: string, path?: string): string | undefined {
-  return Bun.which(name, path === undefined ? {} : { PATH: path }) ?? undefined;
-}
-
 export function requireCommands(...names: string[]): void {
-  const missing = names.find((name) => !which(name));
+  const missing = names.find((name) => !Bun.which(name));
   if (missing) throw new DotfilesError(`Required command is not available: ${missing}`);
 }
 
@@ -32,7 +27,7 @@ function spawn(argv: string[], options: RunOptions) {
         : "inherit";
   return Bun.spawnSync(argv, {
     ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
-    env: { ...process.env, ...options.env },
+    env: options.env ? { ...process.env, ...options.env } : process.env,
     stdin: options.input === undefined ? "inherit" : Buffer.from(options.input),
     stdout,
     stderr: options.stderr ?? (options.capture ? "pipe" : "inherit"),
@@ -52,14 +47,7 @@ export function run(argv: string[], options: RunOptions = {}): CommandResult {
   try {
     const result = spawn(argv, options);
     const completed = {
-      code:
-        result.exitCode ??
-        (result.signalCode
-          ? 128 +
-            (Object.entries(constants.signals).find(
-              ([name]) => name === result.signalCode,
-            )?.[1] ?? 0)
-          : 1),
+      code: result.exitCode,
       stdout: result.stdout?.toString() ?? "",
       stderr: result.stderr?.toString() ?? "",
     };
@@ -85,6 +73,7 @@ export function output(
   return run(argv, { ...options, capture: true }).stdout.replace(/\n+$/, "");
 }
 
+// Keep POSIX quoting stable for exact legacy launcher recognition
 export function shellQuote(value: string): string {
   return /^[A-Za-z0-9_@%+=:,./-]+$/.test(value)
     ? value
@@ -97,7 +86,7 @@ export function execProcess(
   env: NodeJS.ProcessEnv = process.env,
   argumentZero = path,
 ): never {
-  const executable = which(path);
+  const executable = Bun.which(path);
   if (!executable) throw new DotfilesError(`Command is not available: ${path}`);
   if (!process.execve)
     throw new DotfilesError("This Bun version does not support process.execve");

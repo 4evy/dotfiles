@@ -2,7 +2,6 @@ import { join } from "node:path";
 import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
 import { parseArgs } from "node:util";
-import { which } from "../../../../lib/typescript/commands.ts";
 import { UsageError } from "../../../../lib/typescript/errors.ts";
 import { writeIfChanged } from "../../../../lib/typescript/files.ts";
 import { configHome } from "../../../../lib/typescript/paths.ts";
@@ -33,7 +32,7 @@ export async function gnomeAccent(args: string[]): Promise<number> {
     options: { once: { type: "boolean" }, watch: { type: "boolean" } },
   });
   if (values.once && values.watch) throw new UsageError("Use either --once or --watch");
-  if (!which("gjs")) {
+  if (!Bun.which("gjs")) {
     apply("default");
     return 0;
   }

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import {
   existsSync,
-  mkdtempSync,
+  mkdtempDisposableSync,
   readdirSync,
   readFileSync,
   rmSync,
@@ -10,9 +10,9 @@ import {
 import { dirname, join, relative } from "node:path";
 import { zipSync } from "fflate";
 import * as v from "valibot";
-import { output, run, which } from "../../../../../lib/typescript/commands.ts";
+import { output, run } from "../../../../../lib/typescript/commands.ts";
 import { DotfilesError } from "../../../../../lib/typescript/errors.ts";
-import { ensureDirectory } from "../../../../../lib/typescript/files.ts";
+import { ensureDirectory, writeJson } from "../../../../../lib/typescript/files.ts";
 import type { Palette } from "../../lib/theme.ts";
 import { color, palettes } from "../../lib/theme.ts";
 
@@ -89,10 +89,6 @@ function copyIcons(source: string, destination: string, palette: Palette): void 
   }
 }
 
-function writeJSON(path: string, value: unknown): void {
-  writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
-}
-
 function files(directory: string): string[] {
   const result: string[] = [];
   // Sort by path components to match pathlib's content-version traversal
@@ -143,7 +139,7 @@ function buildVSIX(extension: string, destination: string, version: string): voi
 }
 
 export function vscodeIcons(): void {
-  const code = which("code");
+  const code = Bun.which("code");
   if (!code) return;
   const upstream = output([code, "--locate-extension", upstreamId]).trim();
   if (!upstream) return;
@@ -151,39 +147,36 @@ export function vscodeIcons(): void {
     throw new DotfilesError("Code reported a missing Catppuccin extension");
   // Invalidate the upstream activation sentinel when Hjem changes the palette
   rmSync(join(upstream, "themes/.flag"), { force: true });
-  const temporary = mkdtempSync(join(dirname(upstream), `.${extensionId}-`));
-  try {
-    const extension = ensureDirectory(join(temporary, "extension"));
-    writeJSON(join(extension, "theme.json"), buildTheme(upstream));
-    for (const variant of ["dark", "light"] as const)
-      copyIcons(
-        join(upstream, "dist/unflavored"),
-        join(extension, "icons", variant),
-        palettes[variant],
-      );
-    const version = contentVersion(extension);
-    writeJSON(join(extension, "package.json"), {
-      name: customName,
-      displayName: "Catppuccin Custom — Catppuccin Icons",
-      description: "Catppuccin file icon shapes using the Catppuccin Custom palette.",
-      version,
-      publisher,
-      engines: { vscode: "^1.83.0" },
-      categories: ["Themes"],
-      contributes: {
-        iconThemes: [
-          {
-            id: customName,
-            label: "Catppuccin Custom — Catppuccin Icons",
-            path: "./theme.json",
-          },
-        ],
-      },
-    });
-    const vsix = join(temporary, `${extensionId}-${version}.vsix`);
-    buildVSIX(extension, vsix, version);
-    run([code, "--install-extension", vsix, "--force"]);
-  } finally {
-    rmSync(temporary, { recursive: true, force: true });
-  }
+  using workspace = mkdtempDisposableSync(join(dirname(upstream), `.${extensionId}-`));
+  const temporary = workspace.path;
+  const extension = ensureDirectory(join(temporary, "extension"));
+  writeJson(join(extension, "theme.json"), buildTheme(upstream));
+  for (const variant of ["dark", "light"] as const)
+    copyIcons(
+      join(upstream, "dist/unflavored"),
+      join(extension, "icons", variant),
+      palettes[variant],
+    );
+  const version = contentVersion(extension);
+  writeJson(join(extension, "package.json"), {
+    name: customName,
+    displayName: "Catppuccin Custom — Catppuccin Icons",
+    description: "Catppuccin file icon shapes using the Catppuccin Custom palette.",
+    version,
+    publisher,
+    engines: { vscode: "^1.83.0" },
+    categories: ["Themes"],
+    contributes: {
+      iconThemes: [
+        {
+          id: customName,
+          label: "Catppuccin Custom — Catppuccin Icons",
+          path: "./theme.json",
+        },
+      ],
+    },
+  });
+  const vsix = join(temporary, `${extensionId}-${version}.vsix`);
+  buildVSIX(extension, vsix, version);
+  run([code, "--install-extension", vsix, "--force"]);
 }

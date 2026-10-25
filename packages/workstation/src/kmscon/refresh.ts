@@ -4,7 +4,7 @@ import { parseArgs } from "node:util";
 import * as v from "valibot";
 import { output, run } from "../../../../lib/typescript/commands.ts";
 import { UsageError } from "../../../../lib/typescript/errors.ts";
-import { writeIfChanged } from "../../../../lib/typescript/files.ts";
+import { writeJson } from "../../../../lib/typescript/files.ts";
 
 const ttys = new Set(Array.from({ length: 6 }, (_, index) => `tty${index + 1}`));
 const stateSchema = v.pipe(
@@ -70,9 +70,9 @@ export function kmsconRefresh(args: string[]): number {
       failed = true;
     }
   }
-  writeIfChanged(
-    values.state,
-    `${JSON.stringify({ config_sha256: digest, pending_ttys: [...remaining].sort() }, null, 2)}\n`,
-  );
+  writeJson(values.state, {
+    config_sha256: digest,
+    pending_ttys: [...remaining].sort(),
+  });
   return failed ? 1 : 0;
 }
