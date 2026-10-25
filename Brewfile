@@ -256,3 +256,7 @@ vscode "yoavbls.pretty-ts-errors"
 
 # Fonts
 cask "font-jetbrains-mono-nerd-font" if OS.mac?
+
+# Evaluate private entries in the same Bundle DSL without copying the manifest
+private_brewfile = File.expand_path("~/.config/homebrew/Brewfile.private")
+instance_eval(File.read(private_brewfile), private_brewfile) if File.file?(private_brewfile)

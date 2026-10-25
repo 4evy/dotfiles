@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { run } from "../../lib/typescript/commands.ts";
@@ -22,24 +21,17 @@ export function sandbox(prefix: string, restore: boolean): void {
 }
 
 export function bundle(prefix: string, upgrade: boolean): void {
-  let content = readFileSync(join(ROOT, "Brewfile"), "utf8");
-  const privateFile = join(homedir(), ".config/homebrew/Brewfile.private");
-  if (existsSync(privateFile)) content += `\n${readFileSync(privateFile, "utf8")}`;
   sandbox(prefix, false);
-  const temporary = mkdtempSync(join(tmpdir(), "dotfiles-brew."));
   try {
-    const brewfile = join(temporary, "Brewfile");
-    writeFileSync(brewfile, content);
     run([
       join(prefix, "bin/brew"),
       "bundle",
       "install",
       upgrade ? "--upgrade" : "--no-upgrade",
       "--file",
-      brewfile,
+      join(ROOT, "Brewfile"),
     ]);
   } finally {
-    rmSync(temporary, { recursive: true, force: true });
     sandbox(prefix, true);
   }
 }
