@@ -485,53 +485,53 @@ const setupSteps: Step[] = [
   },
 ];
 
-function expandOnly(args: string[]): string[] {
-  const result: string[] = [];
-  let active = false;
-  let needsValue = false;
-  for (const arg of args) {
-    if (arg.startsWith("--")) {
-      if (needsValue) throw new Error("--only requires at least one step");
-      active = arg === "--only";
-      needsValue = active;
-      if (active) continue;
-    }
-    if (active) {
-      result.push("--only", arg);
-      needsValue = false;
-    } else result.push(arg);
-  }
-  if (needsValue) throw new Error("--only requires at least one step");
-  return result;
-}
+const commands: Record<string, Step[]> = {
+  bootstrap: bootstrapSteps,
+  setup: setupSteps,
+};
+const usage = "Usage: setup.ts bootstrap|setup [--only STEP...] [--from STEP] [--plan]";
 
 function options(args: string[]): { steps: Step[]; plan: boolean } {
   const [command, ...flags] = args;
-  if (command !== "bootstrap" && command !== "setup")
-    throw new Error(
-      "Usage: setup.ts bootstrap|setup [--only STEP...] [--from STEP] [--plan]",
-    );
-  const all = command === "bootstrap" ? bootstrapSteps : setupSteps;
-  const { values } = parseArgs({
-    args: expandOnly(flags),
+  const all =
+    command !== undefined && Object.hasOwn(commands, command)
+      ? commands[command]
+      : undefined;
+  if (!all) throw new Error(usage);
+  const { values, tokens } = parseArgs({
+    args: flags,
+    allowPositionals: true,
+    tokens: true,
     options: {
       plan: { type: "boolean", default: false },
       from: { type: "string" },
       only: { type: "string", multiple: true },
     },
   });
-  const { from, only, plan } = values;
-  if (from !== undefined && only !== undefined)
-    throw new Error("Use either --only or --from");
-  for (const name of only ?? (from ? [from] : []))
+  // Only --only consumes following positional step names, until the next option
+  const only: string[] = [];
+  let acceptingSteps = false;
+  for (const token of tokens) {
+    if (token.kind === "option") {
+      acceptingSteps = token.name === "only";
+      if (acceptingSteps && token.value !== undefined) only.push(token.value);
+    } else if (token.kind === "positional") {
+      if (!acceptingSteps) throw new Error(`Unexpected argument: ${token.value}`);
+      only.push(token.value);
+    } else acceptingSteps = false;
+  }
+  const { from, plan } = values;
+  if (from !== undefined && only.length) throw new Error("Use either --only or --from");
+  for (const name of from === undefined ? only : [from])
     if (!all.some((step) => step.name === name))
       throw new Error(`Unknown ${command} step: ${name}`);
   return {
-    steps: from
-      ? all.slice(all.findIndex((step) => step.name === from))
-      : only
-        ? all.filter((step) => only.includes(step.name))
-        : all,
+    steps:
+      from !== undefined
+        ? all.slice(all.findIndex((step) => step.name === from))
+        : only.length
+          ? all.filter((step) => only.includes(step.name))
+          : all,
     plan,
   };
 }
@@ -539,9 +539,7 @@ function options(args: string[]): { steps: Step[]; plan: boolean } {
 if (import.meta.main) {
   try {
     if (Bun.argv.includes("--help") || Bun.argv.includes("-h")) {
-      console.log(
-        "Usage: setup.ts bootstrap|setup [--only STEP...] [--from STEP] [--plan]",
-      );
+      console.log(usage);
       console.log(`Setup steps: ${setupSteps.map((step) => step.name).join(", ")}`);
     } else {
       if (process.geteuid?.() === 0)
