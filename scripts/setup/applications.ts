@@ -8,12 +8,13 @@ import {
   readFileSync,
   readlinkSync,
   rmSync,
+  statSync,
   symlinkSync,
-  writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { run as runCommand } from "../../lib/typescript/commands.ts";
+import { writeIfChanged } from "../../lib/typescript/files.ts";
 
 const macOS = process.platform === "darwin";
 
@@ -175,34 +176,26 @@ export function helium(): void {
   );
 }
 
+// RustDesk options are strings, including numeric ports and empty flags
+// Bun normalizes changed TOML and drops comments, semantic no-ops keep bytes
 export function updateTomlOptions(path: string, values: Record<string, string>): void {
   const original = existsSync(path) ? readFileSync(path, "utf8") : "";
-  let content = original;
-  const match = /^\[options\][ \t]*(?:#.*)?$/m.exec(content);
-  let start: number;
-  let end: number;
-  if (match) {
-    start = match.index + match[0].length;
-    const next = /^\[/m.exec(content.slice(start));
-    end = next ? start + next.index : content.length;
-  } else {
-    content += "\n[options]\n";
-    start = content.length;
-    end = start;
-  }
-  let section = content.slice(start, end);
+  const config = object(Bun.TOML.parse(original));
+  const options = config.options === undefined ? {} : object(config.options);
+  let changed = false;
   for (const [key, value] of Object.entries(values)) {
-    const pattern = new RegExp(
-      `^[ \\t]*${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[ \\t]*=.*$`,
-      "m",
-    );
-    if (pattern.test(section))
-      section = section.replace(pattern, () => `${key} = ${value}`);
-    else section = `${section.replace(/\n+$/, "")}\n${key} = ${value}\n`;
+    if (options[key] === value) continue;
+    options[key] = value;
+    changed = true;
   }
-  const updated = content.slice(0, start) + section + content.slice(end);
-  Bun.TOML.parse(updated);
-  if (updated !== original) writeFileSync(path, updated);
+  if (!changed) return;
+  config.options = options;
+  const mode = statSync(path, { throwIfNoEntry: false })?.mode;
+  writeIfChanged(
+    path,
+    Bun.TOML.stringify(config),
+    mode === undefined ? 0o600 : mode & 0o7777,
+  );
 }
 
 function linkRustdesk(home: string): void {
@@ -223,19 +216,24 @@ export function rustdesk(): void {
     : join(process.env.XDG_CONFIG_HOME ?? join(home, ".config"), "rustdesk");
   mkdirSync(directory, { recursive: true });
   const options: Record<string, string> = {
-    "direct-server": '"Y"',
-    "direct-access-port": '"21118"',
+    "direct-server": "Y",
+    "direct-access-port": "21118",
   };
-  if (!macOS) options["stop-service"] = '""';
+  if (!macOS) options["stop-service"] = "";
   updateTomlOptions(join(directory, "RustDesk2.toml"), options);
   if (macOS) linkRustdesk(home);
 }
 
 if (import.meta.main) {
+  const operations: Record<string, () => void> = { helium, rustdesk };
+  const usage = "Usage: applications.ts helium|rustdesk";
   const args = process.argv.slice(2);
-  if (args.length === 1 && args[0] === "helium") helium();
-  else if (args.length === 1 && args[0] === "rustdesk") rustdesk();
-  else if (args.length === 1 && ["-h", "--help"].includes(args[0] ?? ""))
-    console.log("Usage: applications.ts helium|rustdesk");
-  else throw new Error("Usage: applications.ts helium|rustdesk");
+  const command = args[0];
+  if (args.length !== 1 || command === undefined) throw new Error(usage);
+  const operation = Object.hasOwn(operations, command)
+    ? operations[command]
+    : undefined;
+  if (command === "-h" || command === "--help") console.log(usage);
+  else if (operation) operation();
+  else throw new Error(usage);
 }
