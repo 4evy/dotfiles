@@ -2,6 +2,7 @@
 // Updates must only add commits on top of master, with no PR fallback on failure
 // The pinned source patch blocks both platform creation APIs and keeps staging
 // branches local; retain those guards when upgrading Renovate
+// The no-PR result must retain Renovate's typed outcome, including blocked updates
 module.exports = {
   allowedCommands: ["^bun scripts/renovate/artifacts\\.ts$"],
   onboarding: false,

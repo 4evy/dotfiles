@@ -128,13 +128,20 @@ diff --git a/dist/workers/repository/update/pr/index.js b/dist/workers/repositor
 index fd15030..f320a57 100644
 --- a/dist/workers/repository/update/pr/index.js
 +++ b/dist/workers/repository/update/pr/index.js
-@@ -68,6 +68,9 @@ function addPullRequestNoteIfAttestationHasBeenLost(upgrade, currentReleaseHasAt
+@@ -68,6 +68,16 @@ function addPullRequestNoteIfAttestationHasBeenLost(upgrade, currentReleaseHasAt
  	}
  }
  async function ensurePr(prConfig) {
 +	// This bot only adds commits on top of master and must never create any PRs
 +	// Leave failed updates in the job logs, even when branch automerge cannot run
-+	return null;
++	if (prConfig.forcePr || prConfig.artifactErrors?.length) {
++		logger.error({
++			artifactErrors: prConfig.artifactErrors,
++			branchAutomergeFailureMessage: prConfig.branchAutomergeFailureMessage
++		}, "Dependency update could not be automerged");
++		return { type: "without-pr", prBlockedBy: "Error" };
++	}
++	return { type: "without-pr", prBlockedBy: "BranchAutomerge" };
  	const config = { ...prConfig };
  	const filteredPrConfig = generatePrBodyFingerprintConfig(config);
  	const prBodyFingerprint = fingerprint(filteredPrConfig);
