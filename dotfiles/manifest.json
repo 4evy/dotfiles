@@ -520,8 +520,7 @@
     },
     {
       "source": ".config/super-engineering/omp.yml",
-      "target": ".config/super-engineering/omp.yml",
-      "systems": ["darwin"]
+      "target": ".config/super-engineering/omp.yml"
     },
     {
       "source": ".config/super-engineering/commands/commit.md",

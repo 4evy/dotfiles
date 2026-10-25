@@ -1,7 +1,7 @@
 {
   "experimental": {
     "provider_launch_flags": {
-      "omp": "--approval-mode yolo --config \"@HOME@/.config/super-engineering/omp.yml\""
+      "omp": "--approval-mode yolo --config \"~/.config/super-engineering/omp.yml\""
     }
   },
   "theme_mode": "system",

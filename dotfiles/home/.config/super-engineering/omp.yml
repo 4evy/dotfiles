@@ -1,4 +1,6 @@
 ---
+# Deploy on both hosts and keep ~ literal in the launcher's --config path
+# OMP resolves it on the runtime host, which may differ from the app host
 goal:
   enabled: true
   continuationModes:
