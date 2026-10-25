@@ -10,7 +10,9 @@
     "includes": [
       "**",
       "!!bluebuild/files/system/usr/lib/systemd",
-      "!!packages/hyper-window-tiling/vendor"
+      "!!packages/hyper-window-tiling/vendor",
+      // Hjem renders these SCSS templates before they become valid source
+      "!!dotfiles/home/Library/Application Support/sh.cider.genten/themes/**/*.scss"
     ]
   },
   "formatter": {
@@ -24,6 +26,15 @@
     "rules": {
       "preset": "recommended"
     }
+  },
+  // Keep the existing rumdl and yamlfmt/yamllint ownership
+  "markdown": {
+    "formatter": { "enabled": false },
+    "linter": { "enabled": false }
+  },
+  "yaml": {
+    "formatter": { "enabled": false },
+    "linter": { "enabled": false }
   },
   "overrides": [
     {

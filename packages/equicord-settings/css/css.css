@@ -327,12 +327,12 @@
 
 /* Lazy profile-theme chunks redeclare these tokens on their theme root. */
 .visual-refresh
-:is(
-  .user-profile-modal,
-  .user-profile-modal-v2,
-  .user-profile-popout,
-  .user-profile-sidebar.user-profile-sidebar-redesign
-) {
+  :is(
+    .user-profile-modal,
+    .user-profile-modal-v2,
+    .user-profile-popout,
+    .user-profile-sidebar.user-profile-sidebar-redesign
+  ) {
   --user-profile-overlay-background: var(--catppuccin-custom-surfaceRaised);
   --user-profile-overlay-background-hover: var(--catppuccin-custom-accentSurface);
   --user-profile-background-hover: var(--catppuccin-custom-accentSurface);
@@ -429,9 +429,10 @@
 
 /* Voice-state glows are emitted from literal RGB channels. */
 :is(
-  .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-  .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-) [class*="greenGlow_"] {
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+  )
+  [class*="greenGlow_"] {
   background: color-mix(in srgb, var(--catppuccin-custom-positive) 10%, transparent);
 }
 
@@ -465,9 +466,10 @@
 
 /* Media and forum-card fades contain literal native neutral colors. */
 :is(
-  .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-  .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-) div[class^="overlay_"][class*="darkThemeGradient_"] {
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+  )
+  div[class^="overlay_"][class*="darkThemeGradient_"] {
   background: linear-gradient(
     0deg,
     var(--catppuccin-custom-base) 0,
