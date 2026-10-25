@@ -7,22 +7,30 @@ import { run } from "../../lib/typescript/commands.ts";
 const ROOT = process.env.DOTFILES_REPO ?? resolve(import.meta.dir, "../..");
 const MACOS = process.platform === "darwin";
 
-export function sandbox(prefix: string, restore: boolean): void {
+function updateSandbox(prefix: string, before: string, after: string): void {
   const path = join(prefix, "Library/Homebrew/extend/os/mac/sandbox.rb");
   if (!existsSync(path)) return;
-  const before = restore ? "allow" : "deny";
-  const after = restore ? "deny" : "allow";
   const source = readFileSync(path, "utf8");
-  const updated = source.replaceAll(
-    `        (${before} mach-lookup)\n`,
-    `        (${after} mach-lookup)\n`,
-  );
+  const updated = source.replaceAll(before, after);
   if (source !== updated) writeFileSync(path, updated);
 }
 
+const deniedRule = "        (deny mach-lookup)\n";
+const allowedRule = "        (allow mach-lookup)\n";
+
+export function sandbox(prefix: string, restore: boolean): void {
+  updateSandbox(
+    prefix,
+    restore ? allowedRule : deniedRule,
+    restore ? deniedRule : allowedRule,
+  );
+}
+
 export function bundle(prefix: string, upgrade: boolean): void {
-  sandbox(prefix, false);
+  // Mark only our temporary rules so cleanup preserves existing allows and updates
+  const temporaryRule = "        (allow mach-lookup) ; dotfiles bundle\n";
   try {
+    updateSandbox(prefix, deniedRule, temporaryRule);
     run([
       join(prefix, "bin/brew"),
       "bundle",
@@ -32,7 +40,7 @@ export function bundle(prefix: string, upgrade: boolean): void {
       join(ROOT, "Brewfile"),
     ]);
   } finally {
-    sandbox(prefix, true);
+    updateSandbox(prefix, temporaryRule, deniedRule);
   }
 }
 
