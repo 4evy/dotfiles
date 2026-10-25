@@ -143,8 +143,9 @@ for (const { directory, inputs, nix } of [
     "--",
     "--lock-file",
     `${directory}/bun.lock`,
+    // Local dependencies resolve beside the generated bun.nix
     "--copy-prefix",
-    directory,
+    "./",
     "--output-file",
     output,
   ]);

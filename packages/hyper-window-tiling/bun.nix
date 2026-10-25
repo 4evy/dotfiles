@@ -271,7 +271,7 @@
     url = "https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz";
     hash = "sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==";
   };
-  "fallow" = copyPathToStore packages/hyper-window-tilingvendor/fallow;
+  "fallow" = copyPathToStore ./vendor/fallow;
   "kwin-api@6.7.1" = fetchurl {
     url = "https://registry.npmjs.org/kwin-api/-/kwin-api-6.7.1.tgz";
     hash = "sha512-I3CoszQa3N63/MVbL6mVGLpTr+zz/ivli417scAIFeIBLhGuJxv2msyVLbx+OglauCj+Mv7XLjIH8HWrRCQeow==";

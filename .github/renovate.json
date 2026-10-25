@@ -278,6 +278,7 @@
         "source-toshy",
         "source-uresourced",
         "determinate",
+        "bun2nix",
         "nixpkgs"
       ],
       "enabled": false
