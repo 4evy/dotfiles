@@ -30,8 +30,11 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        sudo apt-get update
-        sudo apt-get install --yes podman skopeo
+        # Use the locked container stack instead of Ubuntu's older cache exporter
+        podman_store=$(nix build --inputs-from . --out-link /tmp/podman-result --print-out-paths 'nixpkgs#podman^out')
+        skopeo_store=$(nix build --inputs-from . --out-link /tmp/skopeo-result --print-out-paths 'nixpkgs#skopeo^out')
+        sudo ln --symbolic --force "$podman_store/bin/podman" /usr/local/bin/podman
+        sudo ln --symbolic --force "$skopeo_store/bin/skopeo" /usr/local/bin/skopeo
         sudo podman info
 
     - name: Install Cosign
