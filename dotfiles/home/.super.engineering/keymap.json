@@ -1,0 +1,15 @@
+[
+  {
+    "bindings": {
+      "cmd-left": "workspace::ActivatePrevTab",
+      "cmd-{": null,
+      "cmd-right": "workspace::ActivateNextTab",
+      "cmd-}": null
+    }
+  },
+  {
+    "context": "Input",
+    "bindings": {},
+    "disabled_defaults": ["cmd-left", "cmd-right"]
+  }
+]

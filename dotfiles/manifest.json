@@ -509,6 +509,11 @@
       "systems": ["linux"]
     },
     {
+      "source": ".super.engineering/keymap.json",
+      "target": ".super.engineering/keymap.json",
+      "systems": ["darwin"]
+    },
+    {
       "source": ".config/super-engineering/settings.json",
       "target": ".config/super-engineering/settings.json",
       "systems": ["darwin"]
