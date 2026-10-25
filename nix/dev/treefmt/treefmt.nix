@@ -8,7 +8,6 @@
     let
       inherit (pkgs)
         go_1_27
-        swift-format
         unstable
         writeShellApplication
         zig
@@ -54,6 +53,7 @@
             useEditorConfig = true;
           };
           stylua.enable = true;
+          swift-format.enable = true;
           taplo.enable = true;
           xmllint.enable = true;
           yamlfmt.enable = true;
@@ -119,17 +119,11 @@
             stylua.includes = lib.mkAfter [ ".luacheckrc" ];
             yamlfmt.includes = lib.mkAfter [ ".yamlfmt" ];
 
-            swift-format = {
-              command = lib.getExe swift-format;
-              includes = [ "*.swift" ];
-              options = [ "--in-place" ];
-            };
-
             template = {
               command = templateFormatter;
               includes = [
-                "*.in"
-                "*.j2"
+                "packages/workstation/assets/desktop/gtk/gtk.css.in"
+                "packages/workstation/assets/desktop/gtk/legacy.css.in"
               ];
             };
 
