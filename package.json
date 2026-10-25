@@ -20,7 +20,7 @@
     "typecheck": "bun run tsrs -p tsconfig.json && bun run --sequential --workspaces typecheck && bun run --cwd packages/hyper-window-tiling typecheck && bun run --cwd packages/workstation typecheck"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.2",
+    "@biomejs/biome": "2.5.15",
     "@catppuccin/palette": "1.8.0",
     "@types/bun": "catalog:",
     "@types/culori": "4.0.1",

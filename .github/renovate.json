@@ -290,6 +290,11 @@
       "enabled": false
     },
     {
+      "description": "Keep Biome aligned with the formatter in the pinned Nixpkgs inputs",
+      "matchPackageNames": ["@biomejs/biome"],
+      "allowedVersions": "2.5.15"
+    },
+    {
       "description": "Ghostty's pinned source requires the Zig 0.16 compiler API series",
       "matchPackageNames": ["zig"],
       "allowedVersions": ">=0.16.0 <0.17.0"
