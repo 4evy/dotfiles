@@ -41,13 +41,6 @@ light_theme = "catppuccin-custom-light"
 env = { ATUIN_CONFIG_DIR = "{home}/.config/atuin-{theme}", ATUIN_THEME_DIR = "{home}/.config/atuin/themes" }
 
 [[integration]]
-name = "bat"
-strategy = "environment"
-dark_theme = "Catppuccin Custom Dark"
-light_theme = "Catppuccin Custom Light"
-env = { BAT_THEME = "{theme}" }
-
-[[integration]]
 name = "delta"
 strategy = "environment"
 dark_theme = "catppuccin-custom-dark"
@@ -119,11 +112,6 @@ programs = ["atuin"]
 integration = "atuin"
 
 [[runner]]
-name = "bat"
-programs = ["bat"]
-integration = "bat"
-
-[[runner]]
 name = "delta"
 programs = ["delta"]
 env_unset = ["NO_COLOR"]
@@ -162,8 +150,3 @@ name = "starship"
 programs = ["starship"]
 env_unset = ["NO_COLOR"]
 integration = "starship"
-
-[[runner]]
-name = "helix"
-aliases = ["hx"]
-programs = ["hx", "helix"]

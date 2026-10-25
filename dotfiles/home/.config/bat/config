@@ -1,0 +1,5 @@
+# Keep terminal-aware custom colors when output is redirected with --color=always
+# BAT_THEME=dark or BAT_THEME=light overrides automatic selection
+--theme=auto:always
+--theme-dark="Catppuccin Custom Dark"
+--theme-light="Catppuccin Custom Light"

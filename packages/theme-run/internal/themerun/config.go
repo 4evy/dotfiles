@@ -2,7 +2,6 @@ package themerun
 
 import (
 	"bytes"
-	"cmp"
 	_ "embed"
 	"errors"
 	"fmt"
@@ -42,8 +41,6 @@ const (
 	assignmentSeparator    = "="
 	environmentReference   = "$"
 	themePlaceholder       = "{theme}"
-	contextPlaceholder     = "{context}"
-	directoryPlaceholder   = "{directory}"
 	homePlaceholder        = "{home}"
 	terminalFallbackName   = "*"
 	activeEnvironmentValue = "1"
@@ -87,10 +84,6 @@ const (
 	TemporaryLocationSystem TemporaryLocation = "system"
 	TemporaryLocationCache  TemporaryLocation = "cache"
 )
-
-type ValidationFormat string
-
-const ValidationTOML ValidationFormat = "toml"
 
 type Variables map[string]string
 
@@ -154,29 +147,20 @@ type Runner struct {
 }
 
 type Integration struct {
-	Name                     string              `toml:"name"`
-	Strategy                 IntegrationStrategy `toml:"strategy"`
-	DisplayName              string              `toml:"display_name"`
-	DarkTheme                string              `toml:"dark_theme"`
-	LightTheme               string              `toml:"light_theme"`
-	Arguments                []string            `toml:"arguments"`
-	Env                      Variables           `toml:"env"`
-	ContextTable             string              `toml:"context_table"`
-	ContextField             string              `toml:"context_field"`
-	ContextValue             string              `toml:"context_value"`
-	ContextPathFlags         []string            `toml:"context_path_flags"`
-	ContextPathPrefixes      []string            `toml:"context_path_prefixes"`
-	ContextArgumentSeparator string              `toml:"context_argument_separator"`
-	ContextDirectoryCommands [][]string          `toml:"context_directory_commands"`
-	DefaultConfig            string              `toml:"default_config"`
-	Assignment               string              `toml:"assignment"`
-	ConfigFlags              []string            `toml:"config_flags"`
-	ConfigOutputFlag         string              `toml:"config_output_flag"`
-	TemporaryPrefix          string              `toml:"temporary_prefix"`
-	TemporaryLocation        TemporaryLocation   `toml:"temporary_location"`
-	CacheSubdirectory        string              `toml:"cache_subdirectory"`
-	Quote                    string              `toml:"quote"`
-	Validation               ValidationFormat    `toml:"validation"`
+	Name              string              `toml:"name"`
+	Strategy          IntegrationStrategy `toml:"strategy"`
+	DarkTheme         string              `toml:"dark_theme"`
+	LightTheme        string              `toml:"light_theme"`
+	Arguments         []string            `toml:"arguments"`
+	Env               Variables           `toml:"env"`
+	DefaultConfig     string              `toml:"default_config"`
+	Assignment        string              `toml:"assignment"`
+	ConfigFlags       []string            `toml:"config_flags"`
+	ConfigOutputFlag  string              `toml:"config_output_flag"`
+	TemporaryPrefix   string              `toml:"temporary_prefix"`
+	TemporaryLocation TemporaryLocation   `toml:"temporary_location"`
+	CacheSubdirectory string              `toml:"cache_subdirectory"`
+	Quote             string              `toml:"quote"`
 }
 
 type fragment struct {
@@ -243,7 +227,6 @@ func (m *Manifest) loadFragment(contents []byte, source string) error {
 		m.Runners[item.Name] = item
 	}
 	for _, item := range value.Integrations {
-		item.DisplayName = cmp.Or(item.DisplayName, item.Name)
 		m.Integrations[item.Name] = item
 	}
 	return nil
@@ -330,10 +313,6 @@ func containsPlaceholder(values []string, placeholder string) bool {
 	return slices.ContainsFunc(values, func(value string) bool {
 		return strings.Contains(value, placeholder)
 	})
-}
-
-func hasEmpty(values []string) bool {
-	return slices.Contains(values, "")
 }
 
 func CurrentEnvironment() Variables {

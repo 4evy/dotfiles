@@ -97,7 +97,6 @@ func (i Integration) Validate() error {
 			validation.Required, validation.In(TemporaryLocationSystem, TemporaryLocationCache))),
 		validation.Field(&i.CacheSubdirectory, validation.Required.When(config && i.TemporaryLocation == TemporaryLocationCache)),
 		validation.Field(&i.Quote, validation.When(config, validation.Required, validation.In("'", "\""))),
-		validation.Field(&i.Validation, validation.When(config, validation.In(ValidationTOML))),
 	); err != nil {
 		return err
 	}
@@ -105,16 +104,6 @@ func (i Integration) Validate() error {
 	case IntegrationStrategyArguments:
 		if !containsPlaceholder(i.Arguments, themePlaceholder) {
 			return fmt.Errorf("argument strategy must use %s", themePlaceholder)
-		}
-		contextFields := []string{i.ContextTable, i.ContextField, i.ContextValue}
-		usesContext := slices.ContainsFunc(contextFields, func(field string) bool { return field != "" })
-		if usesContext && (hasEmpty(contextFields) || !containsPlaceholder(i.Arguments, contextPlaceholder)) {
-			return errors.New("directory context policy is incomplete")
-		}
-		for _, command := range i.ContextDirectoryCommands {
-			if !containsPlaceholder(command, directoryPlaceholder) {
-				return fmt.Errorf("directory context command must use %s", directoryPlaceholder)
-			}
 		}
 	case IntegrationStrategyConfig:
 		if !strings.HasSuffix(i.TemporaryPrefix, temporarySuffix) || filepath.Base(i.TemporaryPrefix) != i.TemporaryPrefix {

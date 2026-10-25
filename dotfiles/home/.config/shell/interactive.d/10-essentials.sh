@@ -59,7 +59,6 @@ alias btop="theme-run btop"
 alias htop="theme-run btop"
 alias top="theme-run btop"
 
-alias bat="theme-run bat"
 alias delta="theme-run delta"
 alias gitui="theme-run gitui"
 alias glow="theme-run glow"

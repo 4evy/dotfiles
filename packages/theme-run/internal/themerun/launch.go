@@ -15,7 +15,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/pelletier/go-toml/v2"
 	"golang.org/x/sys/unix"
 )
 
@@ -96,7 +95,7 @@ func PrepareInvocation(manifest *Manifest, runner Runner, requested string, extr
 	} else {
 		mode = Detect(manifest.Runtime, env, true)
 	}
-	prepared, err := Prepare(manifest.Runtime, integration, extra, env, mode)
+	prepared, err := Prepare(integration, extra, env, mode)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +122,7 @@ func PrepareInvocation(manifest *Manifest, runner Runner, requested string, extr
 	return &Invocation{Argv: argv, Environment: childEnv, TemporaryPath: prepared.TemporaryPath}, nil
 }
 
-func Prepare(runtime Runtime, integration *Integration, extra []string, env Variables, mode Theme) (Prepared, error) {
+func Prepare(integration *Integration, extra []string, env Variables, mode Theme) (Prepared, error) {
 	if integration == nil {
 		return Prepared{Args: slices.Clone(extra)}, nil
 	}
@@ -133,17 +132,9 @@ func Prepare(runtime Runtime, integration *Integration, extra []string, env Vari
 	}
 	switch integration.Strategy {
 	case IntegrationStrategyArguments:
-		context := ""
-		if integration.ContextTable != "" {
-			var err error
-			context, err = directoryContext(runtime, *integration, extra, env)
-			if err != nil {
-				return Prepared{}, err
-			}
-		}
 		result := Prepared{}
 		for _, template := range integration.Arguments {
-			result.Args = append(result.Args, render(template, themeName, context))
+			result.Args = append(result.Args, strings.ReplaceAll(template, themePlaceholder, themeName))
 		}
 		result.Args = append(result.Args, extra...)
 		return result, nil
@@ -155,10 +146,7 @@ func Prepare(runtime Runtime, integration *Integration, extra []string, env Vari
 		} else if err != nil {
 			return Prepared{}, err
 		}
-		patched, err := patchConfig(contents, *integration, themeName)
-		if err != nil {
-			return Prepared{}, fmt.Errorf("patch %s: %w", integration.DisplayName, err)
-		}
+		patched := patchAssignment(contents, integration.Assignment, integration.Quote[0], themeName)
 		temporaryPath, err := makeTemporary(*integration, patched, env)
 		if err != nil {
 			return Prepared{}, err
@@ -169,7 +157,7 @@ func Prepare(runtime Runtime, integration *Integration, extra []string, env Vari
 	case IntegrationStrategyEnvironment:
 		result := Prepared{Args: slices.Clone(extra), Environment: make(Variables)}
 		for key, template := range integration.Env {
-			value := render(template, themeName, "")
+			value := strings.ReplaceAll(template, themePlaceholder, themeName)
 			value = strings.ReplaceAll(value, homePlaceholder, env[homeEnvironment])
 			result.Environment[key] = value
 		}
@@ -293,92 +281,6 @@ func findInterpreter(interpreter Interpreter, env Variables) (string, error) {
 	return "", errors.New("interpreter not found")
 }
 
-func render(template, themeName, context string) string {
-	return strings.NewReplacer(
-		themePlaceholder, themeName,
-		contextPlaceholder, context,
-	).Replace(template)
-}
-
-func argumentValue(arguments, flags, prefixes []string, separator string) string {
-	result := ""
-	for index := 0; index < len(arguments); index++ {
-		argument := arguments[index]
-		if separator != "" && argument == separator {
-			break
-		}
-		if slices.Contains(flags, argument) && index+1 < len(arguments) {
-			index++
-			result = arguments[index]
-		}
-		for _, prefix := range prefixes {
-			if strings.HasPrefix(argument, prefix) && len(argument) > len(prefix) {
-				result = argument[len(prefix):]
-			}
-		}
-	}
-	return result
-}
-
-func directoryContext(runtime Runtime, integration Integration, arguments []string, env Variables) (string, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	directoryValue := cmp.Or(argumentValue(arguments, integration.ContextPathFlags, integration.ContextPathPrefixes, integration.ContextArgumentSeparator), cwd)
-	directory := canonicalDirectory(cwd, directoryValue)
-	directories := []string{directory}
-	seen := map[string]bool{directory: true}
-	for _, commandTemplate := range integration.ContextDirectoryCommands {
-		command := make([]string, len(commandTemplate))
-		for index, argument := range commandTemplate {
-			command[index] = strings.ReplaceAll(argument, directoryPlaceholder, directory)
-		}
-		output, err := runCommandOutput(runtime, env, command)
-		if err != nil {
-			continue
-		}
-		relatedText := strings.TrimSpace(output)
-		if relatedText == "" || strings.ContainsRune(relatedText, lineFeed) {
-			continue
-		}
-		related := canonicalDirectory(directory, relatedText)
-		info, err := os.Stat(related)
-		if err != nil || !info.IsDir() || seen[related] {
-			continue
-		}
-		seen[related] = true
-		directories = append(directories, related)
-	}
-	table := make(map[string]map[string]string, len(directories))
-	for _, path := range directories {
-		table[path] = map[string]string{
-			integration.ContextField: integration.ContextValue,
-		}
-	}
-	var output bytes.Buffer
-	encoder := toml.NewEncoder(&output)
-	encoder.SetTablesInline(true)
-	if err := encoder.Encode(map[string]any{integration.ContextTable: table}); err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(output.String()), nil
-}
-
-func canonicalDirectory(base, value string) string {
-	path := value
-	if !filepath.IsAbs(path) {
-		path = filepath.Join(base, path)
-	}
-	if real, err := filepath.EvalSymlinks(path); err == nil {
-		return real
-	}
-	if absolute, err := filepath.Abs(path); err == nil {
-		return absolute
-	}
-	return filepath.Clean(path)
-}
-
 func configArguments(integration Integration, arguments []string, env Variables) (string, []string) {
 	path := ""
 	foundPath := false
@@ -414,28 +316,6 @@ func configArguments(integration Integration, arguments []string, env Variables)
 		path = filepath.Join(env[homeEnvironment], integration.DefaultConfig)
 	}
 	return path, filtered
-}
-
-func patchConfig(contents []byte, integration Integration, value string) ([]byte, error) {
-	if integration.Validation != ValidationTOML {
-		return patchAssignment(contents, integration.Assignment, integration.Quote[0], value), nil
-	}
-
-	document := make(map[string]any)
-	if len(contents) != 0 {
-		if err := toml.Unmarshal(contents, &document); err != nil {
-			return nil, err
-		}
-	}
-	if current, exists := document[integration.Assignment]; exists {
-		switch current.(type) {
-		case string, map[string]any:
-		default:
-			return nil, errors.New("assignment must be a string or table")
-		}
-	}
-	document[integration.Assignment] = value
-	return toml.Marshal(document)
 }
 
 func patchAssignment(contents []byte, key string, quote byte, value string) []byte {

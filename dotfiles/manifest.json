@@ -114,6 +114,10 @@
       "systems": ["linux"]
     },
     {
+      "source": ".config/bat/config",
+      "target": ".config/bat/config"
+    },
+    {
       "source": ".config/bat/themes/Catppuccin Custom Dark.tmTheme",
       "target": ".config/bat/themes/Catppuccin Custom Dark.tmTheme",
       "nixGenerated": true
