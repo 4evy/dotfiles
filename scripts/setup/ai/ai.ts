@@ -20,10 +20,20 @@ async function run(argv: string[], cwd = root, env = process.env): Promise<strin
   return output.trim();
 }
 
+const actions = {
+  apply: { generate: true, provisionFarstep: true },
+  generate: { generate: true, provisionFarstep: true },
+  setup: { generate: false, provisionFarstep: true },
+  configure: { generate: false, provisionFarstep: false },
+  activate: { generate: false, provisionFarstep: false },
+};
+const usage = "Usage: ai.ts [apply|generate|setup|configure|activate]";
 const action = Bun.argv[2] ?? "apply";
+if (!Object.hasOwn(actions, action)) throw new Error(usage);
+const rules = actions[action as keyof typeof actions];
 const setupArguments = Bun.argv.slice(3);
-if (!["apply", "generate", "setup", "configure", "activate"].includes(action))
-  throw new Error("Usage: ai.ts [apply|generate|setup|configure|activate]");
+if (action !== "setup" && setupArguments.length)
+  throw new Error(`${action} does not accept arguments`);
 
 if (action === "activate") {
   const home = homedir();
@@ -64,7 +74,7 @@ if (action !== "apply" || process.platform === "linux") {
   const source = join(parent, revision);
   const missingSource = !(await Bun.file(join(source, "flake.nix")).exists());
   const sourcePath =
-    missingSource || action === "apply" || action === "generate"
+    missingSource || rules.generate
       ? JSON.parse(
           await run([
             "nix",
@@ -87,27 +97,34 @@ if (action !== "apply" || process.platform === "linux") {
       await rename(staging, source);
     }
   }
-  await run(["bun", "install", "--frozen-lockfile", "--ignore-scripts"], source);
+  await run(
+    [process.execPath, "install", "--frozen-lockfile", "--ignore-scripts"],
+    source,
+  );
   let farstepPackage = "";
   if (
     process.platform === "linux" &&
     !existsSync("/etc/NIXOS") &&
-    ["apply", "generate", "setup"].includes(action)
+    rules.provisionFarstep
   ) {
-    const state = process.env.XDG_STATE_HOME ?? join(homedir(), ".local/state");
+    const state = join(
+      process.env.XDG_STATE_HOME ?? join(homedir(), ".local/state"),
+      "farstep",
+    );
+    await mkdir(state, { recursive: true });
     farstepPackage = await run([
       "nix",
       "build",
       `${root}#farstep`,
       "--out-link",
-      join(state, "farstep/package"),
+      join(state, "package"),
       "--print-out-paths",
     ]);
   }
   if (action === "setup") {
     await run(
       [
-        "bun",
+        process.execPath,
         "--eval",
         'const { setup } = await import("./tools/scripts/setup/setup.ts"); await setup(Bun.argv.slice(1), { background: process.env.HJEM_ACTIVATING === "1" });',
         "codex",
@@ -119,8 +136,11 @@ if (action !== "apply" || process.platform === "linux") {
       { ...process.env, AI_TOOLS_FLAKE: root },
     );
   } else if (action === "configure") {
-    await run(["bun", "tools/scripts/cli/cli.ts", "chatgpt", "configure"], source);
-  } else {
+    await run(
+      [process.execPath, "tools/scripts/cli/cli.ts", "chatgpt", "configure"],
+      source,
+    );
+  } else if (rules.generate) {
     {
       await using workspace = await mkdtempDisposable(
         join(tmpdir(), "dotfiles-ai-configs-"),
@@ -129,7 +149,7 @@ if (action !== "apply" || process.platform === "linux") {
       const hostFile = join(temporary, "host.json");
       const host = JSON.parse(
         await run(
-          ["bun", "config/settings/generate/generate.ts", "--print-host"],
+          [process.execPath, "config/settings/generate/generate.ts", "--print-host"],
           source,
         ),
       );
@@ -141,7 +161,7 @@ if (action !== "apply" || process.platform === "linux") {
       if (process.platform === "linux")
         host.codexCli = await run(
           [
-            "bun",
+            process.execPath,
             "--eval",
             'import { findBinary } from "./tools/scripts/setup/binary.ts"; console.log(findBinary("codex"));',
           ],
@@ -197,7 +217,7 @@ if (action !== "apply" || process.platform === "linux") {
       }
     }
     if (action === "apply")
-      await run(["bun", join(root, "scripts/hjem/hjem.ts"), "apply"], root, {
+      await run([process.execPath, join(root, "scripts/hjem/hjem.ts"), "apply"], root, {
         ...process.env,
         DOTFILES_AI_PREPARED: "1",
       });

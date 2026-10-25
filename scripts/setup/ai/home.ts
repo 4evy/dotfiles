@@ -56,10 +56,8 @@ export async function prepareAiHome(
       await writeFile(target, contents, { mode: 0o600 });
     } else if (file.path === ".omp/agent/config.yml") {
       const current = existsSync(join(home, file.path))
-        ? (Bun.YAML.parse(await readFile(join(home, file.path), "utf8")) as Record<
-            string,
-            unknown
-          >)
+        ? ((Bun.YAML.parse(await readFile(join(home, file.path), "utf8")) ??
+            {}) as Record<string, unknown>)
         : {};
       const managed = Bun.YAML.parse(
         await readFile(join(exported, file.path), "utf8"),
@@ -88,10 +86,8 @@ export async function prepareAiHome(
       );
     } else if (file.path === ".omp/agent/keybindings.yml") {
       const current = existsSync(join(home, file.path))
-        ? (Bun.YAML.parse(await readFile(join(home, file.path), "utf8")) as Record<
-            string,
-            unknown
-          >)
+        ? ((Bun.YAML.parse(await readFile(join(home, file.path), "utf8")) ??
+            {}) as Record<string, unknown>)
         : {};
       const managed = Bun.YAML.parse(
         await readFile(join(exported, file.path), "utf8"),
