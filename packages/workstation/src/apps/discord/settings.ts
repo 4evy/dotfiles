@@ -1,12 +1,13 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { run, which } from "../../../../../lib/typescript/commands.ts";
+import { run } from "../../../../../lib/typescript/commands.ts";
 import { DotfilesError } from "../../../../../lib/typescript/errors.ts";
 import {
   ensureDirectory,
-  isExecutable,
   writeIfChanged,
 } from "../../../../../lib/typescript/files.ts";
+import { configHome } from "../../../../../lib/typescript/paths.ts";
+import { configureGPU } from "./discord.ts";
 
 export function syncEquicordSettings(): void {
   if (process.platform === "darwin") return;
@@ -14,10 +15,8 @@ export function syncEquicordSettings(): void {
   const repository = process.env.HJEM_WORKING_TREE;
   if (!home || !repository)
     throw new DotfilesError("HJEM_HOME_DIR and HJEM_WORKING_TREE are required");
-  let command = join(home, ".local/bin/discord-equicord");
-  if (!existsSync(command)) command = which("discord-equicord") ?? command;
-  if (isExecutable(command)) run([command, "--configure-only"]);
-  const nix = which("nix");
+  configureGPU(join(configHome(), "discord"));
+  const nix = Bun.which("nix");
   if (!nix) {
     console.log("Equicord settings install skipped: nix is not available");
     return;

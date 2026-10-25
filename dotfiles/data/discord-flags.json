@@ -1,0 +1,5 @@
+[
+  "--ozone-platform-hint=auto",
+  "--disable-gpu-process-crash-limit",
+  "--enable-gpu-rasterization"
+]

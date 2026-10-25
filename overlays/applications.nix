@@ -121,6 +121,9 @@ in
     withEquicord = true;
     inherit equicord;
     withKrisp = true;
+    commandLineArgs = lib.optionals stdenv.hostPlatform.isLinux (
+      lib.importJSON ../dotfiles/data/discord-flags.json
+    );
   }) [ "Discord" ];
   jj-patched = jj;
   kanata-with-cmd = kanata.overrideAttrs {

@@ -1,4 +1,9 @@
-{ dotfilesEquicordSettings, ... }:
+{
+  dotfilesEquicordSettings,
+  lib,
+  pkgs,
+  ...
+}:
 {
   _class = null;
 
@@ -8,6 +13,9 @@
       vencord.enable = false;
       equicord.enable = true;
       krisp.enable = true;
+      commandLineArgs = lib.optionals pkgs.stdenv.hostPlatform.isLinux (
+        lib.importJSON ../../dotfiles/data/discord-flags.json
+      );
     };
     inherit (dotfilesEquicordSettings) quickCss;
   };
