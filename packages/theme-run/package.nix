@@ -24,7 +24,7 @@ buildGo127Module {
     ];
   };
 
-  vendorHash = "sha256-w8XaNzsuJSIwe/XgGjCC/b4odS28RyORZYxYGdLHdcw=";
+  vendorHash = "sha256-ReCF4q2JzqWnJHKqptUskB+stvrfWzgC4cgDEfjwePM=";
   subPackages = [ "cmd/theme-run" ];
 
   ldflags = [

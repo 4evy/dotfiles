@@ -2,7 +2,7 @@
   "name": "hyper-window-tiling",
   "version": "1.0.0",
   "private": true,
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "type": "module",
   "scripts": {
     "build": "bun run typecheck && bun run build:gnome && bun run build:kde",

@@ -71,7 +71,7 @@ index ba6239e..4fe237d 100644
  	const base = targetBranch;
  	const head = `${config.repository.split("/")[0]}:${sourceBranch}`;
 diff --git a/dist/util/git/index.js b/dist/util/git/index.js
-index b2d1e37..3bdc552 100644
+index d5014d1..0eed4e4 100644
 --- a/dist/util/git/index.js
 +++ b/dist/util/git/index.js
 @@ -619,6 +619,8 @@ async function resetHardFromRemote(remoteAndBranch) {
@@ -135,7 +135,7 @@ index b2d1e37..3bdc552 100644
  	await git.raw([
  		"update-ref",
 diff --git a/dist/workers/repository/update/pr/index.js b/dist/workers/repository/update/pr/index.js
-index fd15030..f320a57 100644
+index fd15030..970587f 100644
 --- a/dist/workers/repository/update/pr/index.js
 +++ b/dist/workers/repository/update/pr/index.js
 @@ -68,6 +68,16 @@ function addPullRequestNoteIfAttestationHasBeenLost(upgrade, currentReleaseHasAt
@@ -156,7 +156,7 @@ index fd15030..f320a57 100644
  	const filteredPrConfig = generatePrBodyFingerprintConfig(config);
  	const prBodyFingerprint = fingerprint(filteredPrConfig);
 diff --git a/package.json b/package.json
-index 735203b..b566744 100644
+index 96e8808..43a0898 100644
 --- a/package.json
 +++ b/package.json
 @@ -83,7 +83,7 @@

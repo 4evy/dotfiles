@@ -4,7 +4,7 @@ go 1.27.2
 
 require (
 	github.com/alecthomas/kong v1.16.1
-	github.com/charmbracelet/ultraviolet v0.0.0-20261008173134-6b8d4baf91b4
+	github.com/charmbracelet/ultraviolet v0.0.0-20261023060817-a45b7c86333f
 	github.com/charmbracelet/x/ansi v0.11.9
 	github.com/go-ozzo/ozzo-validation/v4 v4.4.1
 	github.com/nanmu42/limitio v1.0.0

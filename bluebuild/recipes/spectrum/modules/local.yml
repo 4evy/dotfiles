@@ -5,7 +5,7 @@ modules:
   # remote-heavy modules. Changes here invalidate only this assembly tail.
   - type: containerfile
     snippets:
-      - COPY --from=ghcr.io/blue-build/cli:main-installer@sha256:2b0a0eb5f8ce42ac30b05ec88a2f883e51ffb8a21e5e881b9cd939a674fa01f6 /out/bluebuild /usr/bin/bluebuild
+      - COPY --from=ghcr.io/blue-build/cli:main-installer@sha256:487bd4f628cc5ddcce820dc9e37108beacb57b57a5ac9c0448ac26bef3b48cb6 /out/bluebuild /usr/bin/bluebuild
 
   - type: copy@v1
     from: workstation

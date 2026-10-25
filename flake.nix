@@ -85,7 +85,7 @@
         flake-parts.follows = "flake-parts";
         git-hooks-nix.follows = "git-hooks-nix";
       };
-      url = "https://flakehub.com/f/DeterminateSystems/determinate/=3.23.3";
+      url = "https://flakehub.com/f/DeterminateSystems/determinate/=3.24.0";
     };
 
     darwin = {
@@ -119,7 +119,7 @@
 
     source-oh-my-zsh = {
       flake = false;
-      url = "github:ohmyzsh/ohmyzsh/964ddf789b022b6958b27d02d7fa54f552de21e9";
+      url = "github:ohmyzsh/ohmyzsh/d2b7f557cceaddb16ba89bbf8200d8a8df35c4d8";
     };
     source-zsh-autosuggestions = {
       flake = false;
@@ -135,7 +135,7 @@
     };
     source-oh-my-bash = {
       flake = false;
-      url = "github:ohmybash/oh-my-bash/abf846186ab0a8a41ec5888e827ece6277dfe446";
+      url = "github:ohmybash/oh-my-bash/4d86087c31b867a30ddaaea270804839b0988e74";
     };
     source-fzf-tab-completion = {
       flake = false;
@@ -148,7 +148,7 @@
 
     source-bluebuild-cli = {
       flake = false;
-      url = "github:blue-build/cli/2591122d18d079b41df5ba419ed315e0cff03d1a";
+      url = "github:blue-build/cli/3142bd836f4f5a9c8e15b757243edbe0e818c3de";
     };
 
     source-ghostty-zig-aarch64-linux = {
@@ -168,7 +168,7 @@
 
     source-karabiner-vhid-package = {
       flake = false;
-      url = "file+https://github.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/releases/download/v8.6.0/Karabiner-DriverKit-VirtualHIDDevice-8.6.0.pkg";
+      url = "file+https://github.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/releases/download/v8.7.0/Karabiner-DriverKit-VirtualHIDDevice-8.7.0.pkg";
     };
 
     source-kmscon = {
@@ -199,7 +199,7 @@
       };
       # Support Bun's v2/v3 lockfiles until upstream merges bun2nix#110
       # https://github.com/nix-community/bun2nix/pull/110
-      url = "github:nix-community/bun2nix/0456acb1b7394fc14c414b056aa889df5124943a";
+      url = "github:nix-community/bun2nix/0f2a1f0b6f42cebe3b149bf62d38754c5e0e9729";
     };
 
     eupkgs.inputs.nixpkgs.follows = "nixpkgs-unstable";

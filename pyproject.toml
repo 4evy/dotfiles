@@ -2,7 +2,7 @@
 name = "dotfiles-toshy"
 version = "0.1.0"
 description = "Repository checks for Toshy configuration"
-requires-python = ">=3.14,<3.15"
+requires-python = ">=3.15,<3.16"
 dependencies = []
 
 [dependency-groups]
