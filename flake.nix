@@ -56,10 +56,13 @@
   description = "My dotfiles";
 
   inputs = {
+    # Retain Home Manager for AI's flake module and Darwin program modules
     ai = {
       inputs = {
+        bun2nix.follows = "bun2nix";
         flake-parts.follows = "flake-parts";
         nix-darwin.follows = "";
+        nixpkgs.follows = "nixpkgs";
         treefmt-nix.follows = "treefmt-nix";
       };
       url = "github:4evy/ai";
@@ -76,16 +79,29 @@
       url = "github:4evy/tweezle";
     };
 
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/=3.23.3";
+    determinate = {
+      # Share dev tooling, not Nix's release build and regression package sets
+      inputs.nix.inputs = {
+        flake-parts.follows = "flake-parts";
+        git-hooks-nix.follows = "git-hooks-nix";
+      };
+      url = "https://flakehub.com/f/DeterminateSystems/determinate/=3.23.3";
+    };
 
     darwin = {
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        determinate.follows = "determinate";
+        nixpkgs.follows = "nixpkgs";
+      };
       url = "github:4evy/ndw";
     };
 
     sops-nix.inputs.nixpkgs.follows = "";
     sops-nix.url = "github:Mic92/sops-nix";
 
+    # Numen and Soulver's main package sets follow this transitively
+    # Soulver keeps its separate libxml2 ABI compatibility pin
+    vicinae.inputs.nixpkgs.follows = "nixpkgs";
     vicinae.url = "github:vicinaehq/vicinae";
 
     hjem = {
@@ -192,12 +208,18 @@
 
     nixcord = {
       inputs = {
+        # These frameworks are only used by upstream module checks
+        home-manager.follows = "";
+        nix-darwin.follows = "";
         nixpkgs.follows = "nixpkgs-unstable";
+        nixpkgs-ci.follows = "nixpkgs-unstable";
+        nixpkgs-packages.follows = "nixpkgs-unstable";
         treefmt-nix.follows = "treefmt-nix";
       };
       url = "github:4evy/nixcord";
     };
 
+    # Keep the faster-moving package channel separate from the main system set
     nixpkgs-unstable.url = "https://channels.nixos.org/nixos-unstable-small/nixexprs.tar.zst";
     nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
 
