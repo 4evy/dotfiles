@@ -842,13 +842,11 @@
       "name": "desktop_integrations.sh"
     },
     {
-      "source": "discord/discord.sh",
       "systems": ["linux"],
       "onChange": false,
       "name": "discord_equicord.sh"
     },
     {
-      "source": "ghostty/ghostty.sh",
       "onChange": false,
       "name": "ghostty_dreamy_swirl.sh"
     },
@@ -858,7 +856,6 @@
       "name": "helium.sh"
     },
     {
-      "source": "nix/nix.sh",
       "systems": ["darwin", "linux"],
       "onChange": false,
       "name": "nix_github_auth.sh"
@@ -870,25 +867,21 @@
       "name": "private_application_configurer.sh"
     },
     {
-      "source": "raycast/raycast.sh",
       "systems": ["darwin"],
       "onChange": false,
       "name": "raycast.sh"
     },
     {
-      "source": "rustdesk/rustdesk.sh",
       "systems": ["darwin", "linux"],
       "onChange": false,
       "name": "rustdesk.sh"
     },
     {
-      "source": "super-engineering/super-engineering.sh",
       "onChange": false,
       "systems": ["darwin"],
       "name": "super_engineering_settings.sh"
     },
     {
-      "source": "vscode/vscode.sh",
       "onChange": false,
       "name": "vscode_catppuccin_custom_icons.sh"
     },
@@ -908,13 +901,11 @@
       "name": "80_repository_workstation_tool.sh"
     },
     {
-      "source": "bat/bat.sh",
       "onChange": true,
       "inputs": ["dotfiles/data/palette/palette.json"],
       "name": "bat_catppuccin_custom.sh"
     },
     {
-      "source": "gnome/gnome.sh",
       "systems": ["linux"],
       "onChange": true,
       "inputs": [
@@ -940,7 +931,6 @@
       "name": "kanata.sh"
     },
     {
-      "source": "lsp/lsp.sh",
       "systems": ["darwin", "linux"],
       "onChange": true,
       "inputs": [
@@ -950,7 +940,6 @@
       "name": "lsp_dependencies.sh"
     },
     {
-      "source": "macos/macos.sh",
       "systems": ["darwin"],
       "onChange": true,
       "inputs": [
@@ -967,7 +956,6 @@
       "name": "omp_theme_dependencies.sh"
     },
     {
-      "source": "terminal/terminal.sh",
       "systems": ["darwin"],
       "onChange": true,
       "inputs": [
@@ -992,7 +980,6 @@
       "name": "toshy.sh"
     },
     {
-      "source": "yazi/yazi.sh",
       "onChange": true,
       "inputs": ["dotfiles/home/.config/yazi/package.toml"],
       "name": "yazi_init.sh"

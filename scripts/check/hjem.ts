@@ -1,6 +1,8 @@
 #!/usr/bin/env bun
-import { readFileSync, statSync } from "node:fs";
-import { basename, isAbsolute, join, resolve } from "node:path";
+import { statSync } from "node:fs";
+import { basename, extname, isAbsolute, join, resolve } from "node:path";
+import * as v from "valibot";
+import { run } from "../../lib/typescript/commands.ts";
 import { buildHjemOutput } from "../hjem/nix.ts";
 import { validateXML } from "./xml.ts";
 
@@ -10,64 +12,96 @@ const platform = Bun.argv[2];
 if (!platform || !platforms.includes(platform) || Bun.argv.length !== 3)
   throw new Error(`Usage: bun scripts/check/hjem.ts ${platforms.join("|")}`);
 
-function run(command: string[], cwd = repository): void {
-  const result = Bun.spawnSync(command, {
-    cwd,
-    env: process.env,
-    stdout: "inherit",
-    stderr: "inherit",
-  });
-  if (result.exitCode !== 0)
-    throw new Error(`${command[0]} exited with status ${result.exitCode}`);
-}
+type Validator = (contents: string, path: string) => void;
+const bash: Validator = (_, path) => {
+  run(["bash", "-n", path], { cwd: repository });
+};
+const zsh: Validator = (_, path) => {
+  run(["zsh", "-n", path], { cwd: repository });
+};
+const js = new Bun.Transpiler({ loader: "js" });
+const ts = new Bun.Transpiler({ loader: "ts" });
+const jsx = new Bun.Transpiler({ loader: "jsx" });
+const tsx = new Bun.Transpiler({ loader: "tsx" });
+const scripts: Record<string, Validator> = {
+  ".js": (contents) => js.transformSync(contents),
+  ".mjs": (contents) => js.transformSync(contents),
+  ".cjs": (contents) => js.transformSync(contents),
+  ".ts": (contents) => ts.transformSync(contents),
+  ".mts": (contents) => ts.transformSync(contents),
+  ".cts": (contents) => ts.transformSync(contents),
+  ".jsx": (contents) => jsx.transformSync(contents),
+  ".tsx": (contents) => tsx.transformSync(contents),
+  ".bash": bash,
+  ".sh": bash,
+  ".zsh": zsh,
+};
+const validators: Record<string, Validator> = {
+  ...scripts,
+  ".json": (contents) => JSON.parse(contents),
+  ".toml": Bun.TOML.parse,
+  ".plist": validateXML,
+  ".xml": validateXML,
+  ".tmTheme": validateXML,
+  ".zshenv": zsh,
+  ".zshrc": zsh,
+  ".zprofile": zsh,
+  ".bashenv": bash,
+  ".bashrc": bash,
+  ".bash_profile": bash,
+};
+const shells: Record<string, Validator> = { bash, sh: bash, zsh };
 
 const output = await buildHjemOutput(repository, "hjemHome", {
   ...process.env,
   HJEM_WORKING_TREE: repository,
   HJEM_PLATFORM: platform === "darwin" ? "darwin" : "linux",
-  HJEM_OS_RELEASE_ID: platform === "darwin" ? "" : platform,
 });
-const manifest = JSON.parse(readFileSync(join(output, "manifest.json"), "utf8"));
-const hooks = JSON.parse(readFileSync(join(output, "hooks.json"), "utf8"));
-const paths: string[] = [
-  ...manifest.files
-    .map((entry: { source: string }) => entry.source)
-    .filter(
-      (path: string) =>
-        /^[a-z0-9]{32}-hjem-/.test(basename(path)) &&
-        statSync(path, { throwIfNoEntry: false })?.isFile(),
-    ),
-  ...hooks.flatMap((entry: { command: string[] }) =>
-    entry.command.filter(
-      (path) =>
-        isAbsolute(path) &&
-        (/^[a-z0-9]{32}-hjem-hook-/.test(basename(path)) ||
-          /\.(?:[cm]?[jt]s|bash|sh|zsh)$/.test(path)) &&
-        statSync(path, { throwIfNoEntry: false })?.isFile(),
-    ),
+const manifest = v.parse(
+  v.object({ files: v.array(v.object({ source: v.string(), target: v.string() })) }),
+  await Bun.file(join(output, "manifest.json")).json(),
+);
+const hooks = v.parse(
+  v.array(v.object({ command: v.array(v.string()) })),
+  await Bun.file(join(output, "hooks.json")).json(),
+);
+const paths = [
+  // Only Nix-generated home sources need this check, not external packages
+  ...manifest.files.filter(({ source }) =>
+    /^[a-z0-9]{32}-hjem-/.test(basename(source)),
+  ),
+  ...hooks.flatMap(({ command }) =>
+    command
+      .filter(
+        (path) =>
+          isAbsolute(path) &&
+          (basename(path).startsWith("hjem-hook-") || scripts[extname(path)]),
+      )
+      .map((source) => ({ source, target: source })),
   ),
 ];
 let checked = 0;
-for (const path of paths) {
-  const contents = readFileSync(path, "utf8");
-  if (!contents.trim()) continue;
+for (const { source, target } of paths) {
+  if (!statSync(source, { throwIfNoEntry: false })?.isFile()) continue;
+  const contents = await Bun.file(source).text();
+  // A store source can lose its extension, and dotfiles have no extname
+  const syntax = extname(target) || basename(target);
+  let validate = Object.hasOwn(validators, syntax) ? validators[syntax] : undefined;
+  if (!validate && contents.startsWith("#!")) {
+    const [interpreter, ...args] =
+      contents.slice(2).split("\n", 1)[0]?.trim().split(/\s+/) ?? [];
+    const program = basename(interpreter ?? "");
+    // env -S splits the remaining shebang into a command and its arguments
+    const command = program === "env" ? args[args[0] === "-S" ? 1 : 0] : program;
+    const shell = basename(command ?? "");
+    if (Object.hasOwn(shells, shell)) validate = shells[shell];
+  }
+  if (!validate) continue;
   try {
-    if (path.endsWith(".json")) JSON.parse(contents);
-    else if (path.endsWith(".toml")) Bun.TOML.parse(contents);
-    else if (/\.(?:plist|xml|tmTheme)$/.test(path)) validateXML(contents);
-    else if (/\.(?:[cm]?[jt]s)$/.test(path))
-      new Bun.Transpiler({ loader: path.endsWith("ts") ? "ts" : "js" }).transformSync(
-        contents,
-      );
-    else if (/\.(?:zsh|zshenv|zshrc)$/.test(path)) run(["zsh", "-n", path]);
-    else if (
-      /\.(?:bash|sh|bashenv|bashrc|bash_profile|zprofile)$/.test(path) ||
-      /^#!.*\/(?:ba)?sh\b/.test(contents)
-    )
-      run(["bash", "-n", path]);
+    validate(contents, source);
     checked++;
   } catch (error) {
-    throw new Error(`Generated Hjem target: ${path} (${platform})`, {
+    throw new Error(`Generated Hjem target: ${target} from ${source} (${platform})`, {
       cause: error,
     });
   }
