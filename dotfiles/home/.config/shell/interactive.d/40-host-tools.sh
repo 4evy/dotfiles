@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # shellcheck disable=SC2154
 #              ⢀⣠⢤⠤⡤⢤⣀
 #            ⣠⠾⡙⢌⠢⡑⢌⠢⡙⢝⢦⡀
@@ -54,7 +55,8 @@ _dotfiles_start_ghidra_mcp_for_cxg() {
 	if [[ $(uname -s) == Linux ]]; then
 		systemctl --user start ghidra-mcp.service || return
 	elif [[ $(uname -s) == Darwin ]]; then
-		local domain="gui/$(id -u)"
+		local domain
+		domain="gui/$(id -u)"
 		local label
 		local found=0
 		for label in org.ai-tools.ghidra-mcp org.nix-community.home.ghidra-mcp org.nixos.ghidra-mcp; do

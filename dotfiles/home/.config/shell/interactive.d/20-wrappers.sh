@@ -1,3 +1,5 @@
+# shellcheck shell=bash
+# shellcheck disable=SC2154
 #                                                  ⢠⢞⡭⣽⣶⣾⡭⣝⢦
 #                                                  ⢸⡸⡤⣿⡛⣻⡧⡼⣸
 #                                                   ⠳⣝⢿⣽⣽⢟⡵⠃
@@ -26,6 +28,7 @@
 #                    ⠈⠓⡗⠒⡗⠋    ⠉⠉⠉⠉⠉⠁                   ⠈ ⠈
 
 # A4 / aliases and wrappers
+# The shell-specific 20-core module sets _dotfiles_repo_path
 
 alias oo="opencode"
 alias hja='bun "$_dotfiles_repo_path/scripts/hjem/hjem.ts" apply'

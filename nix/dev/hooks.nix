@@ -21,7 +21,11 @@
       luacheck.enable = true;
       ruff.enable = true;
       rumdl.enable = true;
-      shellcheck.enable = true;
+      shellcheck = {
+        enable = true;
+        # ShellCheck does not parse Zsh
+        exclude_types = [ "zsh" ];
+      };
       treefmt.enable = true;
       yamllint.enable = true;
       zizmor = {
