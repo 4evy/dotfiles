@@ -197,7 +197,9 @@
         nixpkgs.follows = "nixpkgs";
         treefmt-nix.follows = "treefmt-nix";
       };
-      url = "github:nix-community/bun2nix";
+      # Support Bun's v2/v3 lockfiles until upstream merges bun2nix#110
+      # https://github.com/nix-community/bun2nix/pull/110
+      url = "github:nix-community/bun2nix/0456acb1b7394fc14c414b056aa889df5124943a";
     };
 
     eupkgs.inputs.nixpkgs.follows = "nixpkgs-unstable";
