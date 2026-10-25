@@ -12,12 +12,12 @@
     }
   },
   "scripts": {
-    "check": "bun run check:biome && bun x --no-install tsrs -p tsconfig.json && bun run --sequential --workspaces check && bun run --cwd packages/hyper-window-tiling check && bun run --cwd packages/workstation check",
-    "check:biome": "bun x --no-install biome check .",
-    "format": "bun x --no-install biome check --write .",
-    "lint": "bun x --no-install biome lint .",
-    "lint:fix": "bun x --no-install biome lint --write .",
-    "typecheck": "bun x --no-install tsrs -p tsconfig.json && bun run --sequential --workspaces typecheck && bun run --cwd packages/hyper-window-tiling typecheck && bun run --cwd packages/workstation typecheck"
+    "check": "bun run check:biome && bun run tsrs -p tsconfig.json && bun run --sequential --workspaces check && bun run --cwd packages/hyper-window-tiling check && bun run --cwd packages/workstation check",
+    "check:biome": "bun run biome check .",
+    "format": "bun run biome check --write .",
+    "lint": "bun run biome lint .",
+    "lint:fix": "bun run biome lint --write .",
+    "typecheck": "bun run tsrs -p tsconfig.json && bun run --sequential --workspaces typecheck && bun run --cwd packages/hyper-window-tiling typecheck && bun run --cwd packages/workstation typecheck"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

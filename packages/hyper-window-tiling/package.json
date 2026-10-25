@@ -8,10 +8,10 @@
     "build": "bun run typecheck && bun run build:gnome && bun run build:kde",
     "build:gnome": "bun build src/gnome/extension.ts --format=esm --target=browser --minify --external='gi://*' --external='resource:///*' --outfile=dist/gnome/extension.js",
     "build:kde": "bun build src/kde/main.ts --format=iife --target=browser --minify --outfile=dist/kde/contents/code/main.js",
-    "check": "bun run fallow && bun run build && bun run check:dist",
+    "check": "bun run check:fallow && bun run build && bun run check:dist",
     "check:dist": "bun build dist/gnome/extension.js --target=browser --external='gi://*' --external='resource:///*' --outfile=/tmp/hyper-window-tiling-gnome-check.js && bun build dist/kde/contents/code/main.js --target=browser --outfile=/tmp/hyper-window-tiling-kde-check.js",
-    "fallow": "bun x --no-install fallow audit --format compact --quiet --gate all",
-    "typecheck": "bun x --no-install tsrs --noEmit -p tsconfig.json"
+    "check:fallow": "bun run fallow audit --format compact --quiet --gate all",
+    "typecheck": "bun run tsrs --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "kwin-api": "6.7.1"
