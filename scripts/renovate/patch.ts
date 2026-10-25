@@ -48,11 +48,27 @@ export async function updateRenovatePatch() {
   const archivePath = join(staging, "source.tar.gz");
   await Bun.write(archivePath, archive);
   await run(["tar", "-xzf", archivePath, "--strip-components=1", "-C", staging]);
+  await rm(archivePath);
+  await run(["git", "init", "--quiet"], staging);
+  await run(["git", "add", "--all", "--force"], staging);
   const oldPatch = join(directory, patchPath);
   await run(["git", "apply", "--check", oldPatch], staging);
   await run(["git", "apply", oldPatch], staging);
   const newPatch = `patches/renovate@${version}.patch`;
-  writeIfChanged(join(directory, newPatch), await Bun.file(oldPatch).text());
+  // Bun needs exact hunk coordinates, even when git apply accepts old offsets
+  const patch = await run(
+    [
+      "git",
+      "diff",
+      "--binary",
+      "--no-ext-diff",
+      "--no-color",
+      "--src-prefix=a/",
+      "--dst-prefix=b/",
+    ],
+    staging,
+  );
+  writeIfChanged(join(directory, newPatch), `${patch}\n`);
   delete manifest.patchedDependencies[previous];
   manifest.patchedDependencies[`renovate@${version}`] = newPatch;
   writeJson(path, manifest);

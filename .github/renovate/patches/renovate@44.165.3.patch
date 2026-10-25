@@ -71,7 +71,7 @@ index ba6239e..4fe237d 100644
  	const base = targetBranch;
  	const head = `${config.repository.split("/")[0]}:${sourceBranch}`;
 diff --git a/dist/util/git/index.js b/dist/util/git/index.js
-index b2d1e37..1c8952c 100644
+index b2d1e37..3bdc552 100644
 --- a/dist/util/git/index.js
 +++ b/dist/util/git/index.js
 @@ -619,6 +619,8 @@ async function resetHardFromRemote(remoteAndBranch) {
@@ -111,7 +111,7 @@ index b2d1e37..1c8952c 100644
  		logger.debug({
  			baseBranch: config.currentBranch,
  			baseSha: config.currentBranchSha,
-@@ -1095,7 +1101,13 @@ async function prepareCommit({ branchName, files, message, trailers, force = fal
+@@ -1095,7 +1104,13 @@ async function prepareCommit({ branchName, files, message, trailers, force = fal
  	}
  }
  async function pushCommit({ sourceRef, targetRef, files, pushOptions }) {
@@ -125,7 +125,7 @@ index b2d1e37..1c8952c 100644
  	logger.debug(`Pushing refSpec ${sourceRef}:${targetRef ?? sourceRef}`);
  	let result = false;
  	try {
-@@ -1176,6 +1188,8 @@ let remoteRefsExist = false;
+@@ -1176,6 +1191,8 @@ let remoteRefsExist = false;
  *
  */
  async function pushCommitToRenovateRef(commitSha, refName) {
