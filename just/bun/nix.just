@@ -11,7 +11,7 @@ check:
       generated="$generated_dir/bun.nix"
       nix run .#bun2nix -- \
         --lock-file "$package/bun.lock" \
-        --copy-prefix "$package" \
+        --copy-prefix "./" \
         --output-file "$generated"
       deadnix --edit "$generated"
       nixfmt "$generated"
@@ -28,7 +28,7 @@ update:
     for package in packages/hyper-window-tiling packages/workstation; do
       nix run .#bun2nix -- \
         --lock-file "$package/bun.lock" \
-        --copy-prefix "$package" \
+        --copy-prefix "./" \
         --output-file "$package/bun.nix"
       deadnix --edit "$package/bun.nix"
     done
