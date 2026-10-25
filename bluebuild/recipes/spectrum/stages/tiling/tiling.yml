@@ -11,6 +11,10 @@ modules:
     src: packages/hyper-window-tiling/bun.lock
     dest: /src/bun.lock
 
+  - type: copy@v1
+    src: packages/hyper-window-tiling/vendor
+    dest: /src/vendor
+
   # Keep dependency installation cached when extension source or metadata changes
   - type: containerfile
     snippets:

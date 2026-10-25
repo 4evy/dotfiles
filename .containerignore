@@ -52,6 +52,8 @@ packages/workstation/*
 packages/hyper-window-tiling/*
 !packages/hyper-window-tiling/package.json
 !packages/hyper-window-tiling/bun.lock
+!packages/hyper-window-tiling/vendor/
+!packages/hyper-window-tiling/vendor/**
 !packages/hyper-window-tiling/tsconfig.json
 !packages/hyper-window-tiling/src/
 !packages/hyper-window-tiling/src/**
