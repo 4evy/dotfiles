@@ -9,6 +9,7 @@
   .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
   .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
 ) {
+  /* Equicord still consumes legacy brand, text, and background tokens */
   --brand-experiment: var(--catppuccin-custom-brand);
   --brand-experiment-500: var(--catppuccin-custom-brand);
   --control-brand-foreground: var(--catppuccin-custom-pink);
@@ -51,6 +52,8 @@
   --icon-feedback-positive: var(--catppuccin-custom-positive);
   --icon-feedback-warning: var(--catppuccin-custom-warning);
   --channel-text-area-placeholder: var(--catppuccin-custom-placeholder);
+  --input-background-default: var(--catppuccin-custom-surfaceRaised);
+  --input-background-error-default: var(--catppuccin-custom-errorSurface);
   --input-icon-default: var(--catppuccin-custom-iconMuted);
   --input-placeholder-text-default: var(--catppuccin-custom-placeholder);
   --input-text-default: var(--catppuccin-custom-text);
@@ -116,11 +119,21 @@
   --radio-background-selected-hover: var(--catppuccin-custom-messageActionHover);
   --radio-foreground-active: var(--catppuccin-custom-messageAction);
   --radio-thumb-background-active: var(--catppuccin-custom-messageActionForeground);
+  --switch-background-default: var(--catppuccin-custom-toolbarControl);
+  --switch-background-hover: var(--catppuccin-custom-toolbarControlHover);
+  --switch-background-active: var(--catppuccin-custom-messageActionHover);
   --switch-background-selected-default: var(--catppuccin-custom-messageAction);
   --switch-background-selected-hover: var(--catppuccin-custom-messageActionHover);
+  --switch-border-default: var(--border-normal);
+  --switch-border-hover: var(--border-strong);
+  --switch-border-selected-default: var(--catppuccin-custom-messageAction);
+  --switch-border-selected-hover: var(--catppuccin-custom-messageActionHover);
+  --switch-thumb-background-default: var(--catppuccin-custom-text);
   --switch-thumb-background-selected-default: var(
     --catppuccin-custom-messageActionForeground
   );
+  --switch-thumb-icon-default: var(--catppuccin-custom-toolbarControl);
+  --switch-thumb-icon-active: var(--catppuccin-custom-messageAction);
   --togglebutton-background-selected: color-mix(
     in srgb,
     var(--catppuccin-custom-brand) 16%,
@@ -213,7 +226,29 @@
   --info-danger-foreground: var(--catppuccin-custom-critical-foreground);
   --info-help-foreground: var(--catppuccin-custom-infoForeground);
 
-  --message-reacted-background-default: var(--catppuccin-custom-accentSurface);
+  /* Current reactions have independent background, border, and text states */
+  --reaction-background-default: color-mix(
+    in srgb,
+    var(--catppuccin-custom-text) 12%,
+    transparent
+  );
+  --reaction-background-hover: color-mix(
+    in srgb,
+    var(--catppuccin-custom-text) 16%,
+    transparent
+  );
+  --reaction-background-active: color-mix(
+    in srgb,
+    var(--catppuccin-custom-text) 20%,
+    transparent
+  );
+  --reaction-border-hover: var(--border-subtle);
+  --reaction-border-active: var(--border-strong);
+  --reaction-border-reacted-default: var(--catppuccin-custom-brand);
+  --reaction-text-default: var(--catppuccin-custom-textMuted);
+  --reaction-text-hover: var(--catppuccin-custom-text);
+  --reaction-text-active: var(--catppuccin-custom-text);
+  --reaction-text-reacted-default: var(--catppuccin-custom-pink);
   --reaction-background-reacted-default: color-mix(
     in srgb,
     var(--catppuccin-custom-brand) 24%,
@@ -318,6 +353,18 @@
   );
 }
 
+/* Light-mode selected reactions bypass semantics with legacy brand ramps */
+:is(.visual-refresh.theme-light, .visual-refresh .theme-light)
+[class*="reaction_"][class*="reactionMe_"] {
+  background-color: var(--reaction-background-reacted-default);
+}
+
+:is(.visual-refresh.theme-light, .visual-refresh .theme-light)
+  [class*="reaction_"][class*="reactionMe_"]
+  [class*="reactionCount_"] {
+  color: var(--reaction-text-reacted-default);
+}
+
 /* MemberCount binds its labels directly to Discord's legacy color ramps. */
 .visual-refresh .vc-membercount-widget {
   --color-online: var(--catppuccin-custom-positive-foreground);
@@ -390,12 +437,12 @@
   --background-surface-highest: var(--catppuccin-custom-surfaceRaised);
   --background-gradient-highest: var(--catppuccin-custom-canvas);
   --channeltextarea-background: var(--catppuccin-custom-surfaceRaised);
-  --chat-input-container-background: var(--catppuccin-custom-surfaceRaised);
+  --chat-background-default: var(--catppuccin-custom-surfaceRaised);
   --catppuccin-custom-composer: var(--catppuccin-custom-surfaceRaised);
   --catppuccin-custom-composer-border: var(--catppuccin-custom-input);
 }
 
-/* Native composer layers do not consistently consume their semantic token. */
+/* The composer prefers the shared gradient token over chat-background-default */
 :is(
     .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
     .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
@@ -406,12 +453,36 @@
   border-color: var(--catppuccin-custom-composer-border) !important;
 }
 
-/* Mana switches write Discord's brand color into an inline style. */
+/*
+ * Mana resolves color constants in JS rather than reading CSS variables
+ * Keep its geometry, focus ring, and disabled opacity, but override its paint
+ * Equal-specificity states run from default through hover, selected, and pressed
+ */
 :is(
     .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
     .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
-  label:has(input[role="switch"]:checked)
+  label:has(input[role="switch"])
+  > [data-mana-component="switch"] {
+  background-color: var(--switch-background-default) !important;
+  border-color: var(--switch-border-default) !important;
+}
+
+:is(
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+  )
+  label:where(:not([data-disabled]):hover):has(input[role="switch"])
+  > [data-mana-component="switch"] {
+  background-color: var(--switch-background-hover) !important;
+  border-color: var(--switch-border-hover) !important;
+}
+
+:is(
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+  )
+  label:has(input[role="switch"]:where(:checked))
   > [data-mana-component="switch"] {
   background-color: var(--switch-background-selected-default) !important;
   border-color: var(--switch-border-selected-default) !important;
@@ -421,10 +492,65 @@
     .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
     .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
-  label:hover:has(input[role="switch"]:checked)
+  label:where(:not([data-disabled]):hover):has(input[role="switch"]:where(:checked))
   > [data-mana-component="switch"] {
   background-color: var(--switch-background-selected-hover) !important;
   border-color: var(--switch-border-selected-hover) !important;
+}
+
+:is(
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+  )
+  label:where(:not([data-disabled]):active):has(input[role="switch"])
+  > [data-mana-component="switch"] {
+  background-color: var(--switch-background-active) !important;
+}
+
+:is(
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+  )
+  label:has(input[role="switch"])
+  > [data-mana-component="switch"]
+  > svg
+  > rect {
+  fill: var(--switch-thumb-background-default) !important;
+}
+
+:is(
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+  )
+  label:where(:has(input:checked), :not([data-disabled]):active):has(
+    input[role="switch"]
+  )
+  > [data-mana-component="switch"]
+  > svg
+  > rect {
+  fill: var(--switch-thumb-background-selected-default) !important;
+}
+
+:is(
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+  )
+  label:has(input[role="switch"])
+  > [data-mana-component="switch"]
+  path {
+  fill: var(--switch-thumb-icon-default) !important;
+}
+
+:is(
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+  )
+  label:where(:has(input:checked), :not([data-disabled]):active):has(
+    input[role="switch"]
+  )
+  > [data-mana-component="switch"]
+  path {
+  fill: var(--switch-thumb-icon-active) !important;
 }
 
 /* Voice-state glows are emitted from literal RGB channels. */
