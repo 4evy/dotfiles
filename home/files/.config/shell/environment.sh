@@ -291,7 +291,13 @@ if [[ -f "$_dotfiles_compiler_preload" ]]; then
 fi
 unset _dotfiles_compiler_preload
 
-# 05 / terminal color capability
+# 05 / terminal capabilities
+
+# Zed can inherit Ghostty's marker, but not its graphics support
+if [[ "${TERM_PROGRAM:-}" == zed ]]; then
+	unset GHOSTTY_RESOURCES_DIR
+fi
+
 # Tailscale SSH accepts LC_* variables but drops COLORTERM, so carry the
 # client's color capability through LC_COLORTERM and restore it on arrival
 if [[ -z "${COLORTERM:-}" && -n "${SSH_CONNECTION:-}" ]]; then
