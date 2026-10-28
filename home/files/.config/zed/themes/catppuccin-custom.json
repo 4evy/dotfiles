@@ -1,0 +1,1521 @@
+{
+  "$schema": "https://zed.dev/schema/themes/v0.2.0.json",
+  "name": "Catppuccin Custom",
+  "author": "Evy and Catppuccin contributors",
+  "themes": [
+    {
+      "name": "Catppuccin Custom Dark",
+      "appearance": "dark",
+      "style": {
+        "accents": [
+          "@COLOR_DARK_ACCENT@",
+          "@COLOR_DARK_ACCENTBLUE@",
+          "@COLOR_DARK_LAVENDER@",
+          "@COLOR_DARK_SAPPHIRE@",
+          "@COLOR_DARK_GREEN@",
+          "@COLOR_DARK_YELLOW@",
+          "@COLOR_DARK_PEACH@",
+          "@COLOR_DARK_RED@"
+        ],
+        "vim.normal.foreground": "@COLOR_DARK_ACCENTFOREGROUND@",
+        "vim.helix_normal.foreground": "@COLOR_DARK_ACCENTFOREGROUND@",
+        "vim.visual.foreground": "@COLOR_DARK_ACCENTFOREGROUND@",
+        "vim.helix_select.foreground": "@COLOR_DARK_ACCENTFOREGROUND@",
+        "vim.insert.foreground": "@COLOR_DARK_ACCENTFOREGROUND@",
+        "vim.visual_line.foreground": "@COLOR_DARK_ACCENTFOREGROUND@",
+        "vim.visual_block.foreground": "@COLOR_DARK_ACCENTFOREGROUND@",
+        "vim.replace.foreground": "@COLOR_DARK_ACCENTFOREGROUND@",
+        "vim.normal.background": "@COLOR_DARK_ACCENT@",
+        "vim.helix_normal.background": "@COLOR_DARK_ACCENT@",
+        "vim.visual.background": "@COLOR_DARK_LAVENDER@",
+        "vim.helix_select.background": "@COLOR_DARK_LAVENDER@",
+        "vim.insert.background": "@COLOR_DARK_GREEN@",
+        "vim.visual_line.background": "@COLOR_DARK_LAVENDER@",
+        "vim.visual_block.background": "@COLOR_DARK_MAUVE@",
+        "vim.replace.background": "@COLOR_DARK_MAROON@",
+        "background.appearance": "opaque",
+        "border": "@COLOR_DARK_BORDER@",
+        "border.variant": "@COLOR_DARK_SIDEBARBORDER@",
+        "border.focused": "@COLOR_DARK_FOCUS@",
+        "border.selected": "@COLOR_DARK_FOCUS@",
+        "border.transparent": "@COLOR_DARK_BASE@00",
+        "border.disabled": "@COLOR_DARK_OVERLAY0@",
+        "elevated_surface.background": "@COLOR_DARK_SURFACEOVERLAY@",
+        "surface.background": "@COLOR_DARK_SURFACE@",
+        "background": "@COLOR_DARK_CANVAS@",
+        "element.background": "@COLOR_DARK_INPUT@",
+        "element.hover": "@COLOR_DARK_TOOLBARCONTROLHOVER@",
+        "element.active": "@COLOR_DARK_SIDEBARROWACTIVE@",
+        "element.selected": "@COLOR_DARK_SIDEBARROWSELECTED@",
+        "element.disabled": "@COLOR_DARK_SURFACE0@",
+        "drop_target.background": "@COLOR_DARK_ACCENTBLUE@33",
+        "ghost_element.background": "@COLOR_DARK_BASE@00",
+        "ghost_element.hover": "@COLOR_DARK_SIDEBARROWHOVER@",
+        "ghost_element.active": "@COLOR_DARK_SIDEBARROWACTIVE@",
+        "ghost_element.selected": "@COLOR_DARK_SIDEBARROWSELECTED@",
+        "ghost_element.disabled": "@COLOR_DARK_SURFACE0@",
+        "text": "@COLOR_DARK_TEXT@",
+        "text.muted": "@COLOR_DARK_TEXTMUTED@",
+        "text.placeholder": "@COLOR_DARK_PLACEHOLDER@",
+        "text.disabled": "@COLOR_DARK_OVERLAY0@",
+        "text.accent": "@COLOR_DARK_UPDATEFOREGROUND@",
+        "icon": "@COLOR_DARK_TEXT@",
+        "icon.muted": "@COLOR_DARK_ICONMUTED@",
+        "icon.disabled": "@COLOR_DARK_OVERLAY0@",
+        "icon.placeholder": "@COLOR_DARK_PLACEHOLDER@",
+        "icon.accent": "@COLOR_DARK_UPDATEFOREGROUND@",
+        "status_bar.background": "@COLOR_DARK_CRUST@",
+        "title_bar.background": "@COLOR_DARK_TOOLBAR@",
+        "title_bar.inactive_background": "@COLOR_DARK_SURFACE@",
+        "toolbar.background": "@COLOR_DARK_TOOLBAR@",
+        "tab_bar.background": "@COLOR_DARK_CRUST@",
+        "tab.inactive_background": "@COLOR_DARK_SURFACE@",
+        "tab.active_background": "@COLOR_DARK_CODEBACKGROUND@",
+        "search.match_background": "@COLOR_DARK_ACCENTBLUE@40",
+        "search.active_match_background": "@COLOR_DARK_ACCENT@66",
+        "panel.background": "@COLOR_DARK_SIDEBAR@",
+        "panel.focused_border": "@COLOR_DARK_FOCUS@",
+        "panel.indent_guide": "@COLOR_DARK_SIDEBARCONTROLSURFACE@99",
+        "panel.indent_guide_active": "@COLOR_DARK_HIGHLIGHTHIGH@",
+        "panel.indent_guide_hover": "@COLOR_DARK_FOCUS@",
+        "panel.overlay_background": "@COLOR_DARK_SURFACEOVERLAY@",
+        "pane.focused_border": "@COLOR_DARK_FOCUS@",
+        "pane_group.border": "@COLOR_DARK_SIDEBARBORDER@",
+        "scrollbar.thumb.background": "@COLOR_DARK_TERMINALSCROLLBAR@80",
+        "scrollbar.thumb.hover_background": "@COLOR_DARK_TERMINALSCROLLBARHOVER@",
+        "scrollbar.thumb.active_background": "@COLOR_DARK_TERMINALSCROLLBARHOVER@",
+        "scrollbar.thumb.border": "@COLOR_DARK_BASE@00",
+        "scrollbar.track.background": "@COLOR_DARK_CANVAS@",
+        "scrollbar.track.border": "@COLOR_DARK_BASE@00",
+        "minimap.thumb.background": "@COLOR_DARK_ACCENT@33",
+        "minimap.thumb.hover_background": "@COLOR_DARK_ACCENT@66",
+        "minimap.thumb.active_background": "@COLOR_DARK_ACCENT@99",
+        "minimap.thumb.border": "@COLOR_DARK_BASE@00",
+        "editor.foreground": "@COLOR_DARK_CODEFOREGROUND@",
+        "editor.background": "@COLOR_DARK_CODEBACKGROUND@",
+        "editor.gutter.background": "@COLOR_DARK_CODEBACKGROUND@",
+        "editor.subheader.background": "@COLOR_DARK_SURFACE@",
+        "editor.active_line.background": "@COLOR_DARK_SURFACE0@66",
+        "editor.highlighted_line.background": "@COLOR_DARK_SURFACE1@66",
+        "editor.line_number": "@COLOR_DARK_PLACEHOLDER@",
+        "editor.active_line_number": "@COLOR_DARK_UPDATEFOREGROUND@",
+        "editor.invisible": "@COLOR_DARK_OVERLAY2@66",
+        "editor.wrap_guide": "@COLOR_DARK_SURFACE1@",
+        "editor.active_wrap_guide": "@COLOR_DARK_SURFACE2@",
+        "editor.document_highlight.bracket_background": "@COLOR_DARK_FOCUS@26",
+        "editor.document_highlight.read_background": "@COLOR_DARK_TEXTMUTED@29",
+        "editor.document_highlight.write_background": "@COLOR_DARK_TEXTMUTED@40",
+        "editor.indent_guide": "@COLOR_DARK_SURFACE0@99",
+        "editor.indent_guide_active": "@COLOR_DARK_SURFACE2@",
+        "terminal.background": "@COLOR_DARK_TERMINALBACKGROUND@",
+        "terminal.ansi.background": "@COLOR_DARK_TERMINALBACKGROUND@",
+        "terminal.foreground": "@COLOR_DARK_TERMINALFOREGROUND@",
+        "terminal.dim_foreground": "@COLOR_DARK_TEXTMUTED@",
+        "terminal.bright_foreground": "@COLOR_DARK_TERMINALFOREGROUND@",
+        "terminal.ansi.black": "@COLOR_DARK_ANSIBLACK@",
+        "terminal.ansi.white": "@COLOR_DARK_ANSIWHITE@",
+        "terminal.ansi.red": "@COLOR_DARK_RED@",
+        "terminal.ansi.green": "@COLOR_DARK_PINE@",
+        "terminal.ansi.yellow": "@COLOR_DARK_YELLOW@",
+        "terminal.ansi.blue": "@COLOR_DARK_BLUE@",
+        "terminal.ansi.magenta": "@COLOR_DARK_PINK@",
+        "terminal.ansi.cyan": "@COLOR_DARK_SKY@",
+        "terminal.ansi.bright_black": "@COLOR_DARK_ANSIBLACK@",
+        "terminal.ansi.bright_white": "@COLOR_DARK_ANSIWHITE@",
+        "terminal.ansi.bright_red": "@COLOR_DARK_RED@",
+        "terminal.ansi.bright_green": "@COLOR_DARK_PINE@",
+        "terminal.ansi.bright_yellow": "@COLOR_DARK_YELLOW@",
+        "terminal.ansi.bright_blue": "@COLOR_DARK_BLUE@",
+        "terminal.ansi.bright_magenta": "@COLOR_DARK_PINK@",
+        "terminal.ansi.bright_cyan": "@COLOR_DARK_SKY@",
+        "terminal.ansi.dim_black": "@COLOR_DARK_ANSIBLACK@",
+        "terminal.ansi.dim_white": "@COLOR_DARK_ANSIWHITE@",
+        "terminal.ansi.dim_red": "@COLOR_DARK_RED@",
+        "terminal.ansi.dim_green": "@COLOR_DARK_PINE@",
+        "terminal.ansi.dim_yellow": "@COLOR_DARK_YELLOW@",
+        "terminal.ansi.dim_blue": "@COLOR_DARK_BLUE@",
+        "terminal.ansi.dim_magenta": "@COLOR_DARK_PINK@",
+        "terminal.ansi.dim_cyan": "@COLOR_DARK_SKY@",
+        "link_text.hover": "@COLOR_DARK_FOCUS@",
+        "conflict": "@COLOR_DARK_PEACH@",
+        "conflict.border": "@COLOR_DARK_PEACH@",
+        "conflict.background": "@COLOR_DARK_PEACH@26",
+        "created": "@COLOR_DARK_SUCCESS@",
+        "created.border": "@COLOR_DARK_SUCCESS@",
+        "created.background": "@COLOR_DARK_SUCCESS@26",
+        "deleted": "@COLOR_DARK_ERROR@",
+        "deleted.border": "@COLOR_DARK_ERROR@",
+        "deleted.background": "@COLOR_DARK_ERROR@26",
+        "hidden": "@COLOR_DARK_TEXTMUTED@",
+        "hidden.border": "@COLOR_DARK_TEXTMUTED@",
+        "hidden.background": "@COLOR_DARK_TEXTMUTED@26",
+        "hint": "@COLOR_DARK_TEXTMUTED@",
+        "hint.border": "@COLOR_DARK_TEXTMUTED@",
+        "hint.background": "@COLOR_DARK_TEXTMUTED@26",
+        "ignored": "@COLOR_DARK_TEXTMUTED@",
+        "ignored.border": "@COLOR_DARK_TEXTMUTED@",
+        "ignored.background": "@COLOR_DARK_TEXTMUTED@26",
+        "modified": "@COLOR_DARK_WARNING@",
+        "modified.border": "@COLOR_DARK_WARNING@",
+        "modified.background": "@COLOR_DARK_WARNING@26",
+        "predictive": "@COLOR_DARK_PLACEHOLDER@",
+        "predictive.border": "@COLOR_DARK_PLACEHOLDER@",
+        "predictive.background": "@COLOR_DARK_PLACEHOLDER@26",
+        "renamed": "@COLOR_DARK_INFO@",
+        "renamed.border": "@COLOR_DARK_INFO@",
+        "renamed.background": "@COLOR_DARK_INFO@26",
+        "info": "@COLOR_DARK_INFO@",
+        "info.border": "@COLOR_DARK_INFO@",
+        "info.background": "@COLOR_DARK_INFO@26",
+        "warning": "@COLOR_DARK_WARNING@",
+        "warning.border": "@COLOR_DARK_WARNING@",
+        "warning.background": "@COLOR_DARK_WARNING@26",
+        "error": "@COLOR_DARK_ERROR@",
+        "error.border": "@COLOR_DARK_ERROR@",
+        "error.background": "@COLOR_DARK_ERROR@26",
+        "success": "@COLOR_DARK_SUCCESS@",
+        "success.border": "@COLOR_DARK_SUCCESS@",
+        "success.background": "@COLOR_DARK_SUCCESS@26",
+        "unreachable": "@COLOR_DARK_ERROR@",
+        "unreachable.border": "@COLOR_DARK_ERROR@",
+        "unreachable.background": "@COLOR_DARK_ERROR@26",
+        "players": [
+          {
+            "cursor": "@COLOR_DARK_TERMINALCURSOR@",
+            "selection": "@COLOR_DARK_TERMINALSELECTION@40",
+            "background": "@COLOR_DARK_ACCENT@"
+          },
+          {
+            "cursor": "@COLOR_DARK_MAUVE@",
+            "selection": "@COLOR_DARK_MAUVE@40",
+            "background": "@COLOR_DARK_MAUVE@"
+          },
+          {
+            "cursor": "@COLOR_DARK_LAVENDER@",
+            "selection": "@COLOR_DARK_LAVENDER@40",
+            "background": "@COLOR_DARK_LAVENDER@"
+          },
+          {
+            "cursor": "@COLOR_DARK_SAPPHIRE@",
+            "selection": "@COLOR_DARK_SAPPHIRE@40",
+            "background": "@COLOR_DARK_SAPPHIRE@"
+          },
+          {
+            "cursor": "@COLOR_DARK_GREEN@",
+            "selection": "@COLOR_DARK_GREEN@40",
+            "background": "@COLOR_DARK_GREEN@"
+          },
+          {
+            "cursor": "@COLOR_DARK_YELLOW@",
+            "selection": "@COLOR_DARK_YELLOW@40",
+            "background": "@COLOR_DARK_YELLOW@"
+          },
+          {
+            "cursor": "@COLOR_DARK_PEACH@",
+            "selection": "@COLOR_DARK_PEACH@40",
+            "background": "@COLOR_DARK_PEACH@"
+          },
+          {
+            "cursor": "@COLOR_DARK_RED@",
+            "selection": "@COLOR_DARK_RED@40",
+            "background": "@COLOR_DARK_RED@"
+          }
+        ],
+        "version_control.added": "@COLOR_DARK_SUCCESS@",
+        "version_control.deleted": "@COLOR_DARK_ERROR@",
+        "version_control.modified": "@COLOR_DARK_WARNING@",
+        "version_control.renamed": "@COLOR_DARK_INFO@",
+        "version_control.conflict": "@COLOR_DARK_PEACH@",
+        "version_control.conflict_marker.ours": "@COLOR_DARK_SUCCESS@33",
+        "version_control.conflict_marker.theirs": "@COLOR_DARK_INFO@33",
+        "version_control.ignored": "@COLOR_DARK_TEXTMUTED@",
+        "debugger.accent": "@COLOR_DARK_ERROR@",
+        "editor.debugger_active_line.background": "@COLOR_DARK_WARNING@26",
+        "element.selection_background": "@COLOR_DARK_ACCENTBLUE@40",
+        "drop_target.border": "@COLOR_DARK_FOCUS@",
+        "panel.overlay_hover": "@COLOR_DARK_SIDEBARROWHOVER@",
+        "editor.code_lens.foreground": "@COLOR_DARK_TEXTMUTED@",
+        "editor.hover_line_number": "@COLOR_DARK_FOCUS@",
+        "editor.diff_hunk.added.background": "@COLOR_DARK_SUCCESS@26",
+        "editor.diff_hunk.added.hollow_background": "@COLOR_DARK_SUCCESS@14",
+        "editor.diff_hunk.added.hollow_border": "@COLOR_DARK_SUCCESS@80",
+        "editor.diff_hunk.deleted.background": "@COLOR_DARK_ERROR@26",
+        "editor.diff_hunk.deleted.hollow_background": "@COLOR_DARK_ERROR@14",
+        "editor.diff_hunk.deleted.hollow_border": "@COLOR_DARK_ERROR@80",
+        "version_control.word_added": "@COLOR_DARK_SUCCESS@40",
+        "version_control.word_deleted": "@COLOR_DARK_ERROR@40",
+        "vim.yank.background": "@COLOR_DARK_ACCENTBLUE@40",
+        "vim.helix_jump_label.foreground": "@COLOR_DARK_FOCUS@",
+        "syntax": {
+          "variable": {
+            "color": "@COLOR_DARK_TEXT@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "variable.builtin": {
+            "color": "@COLOR_DARK_RED@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "variable.parameter": {
+            "color": "@COLOR_DARK_MAROON@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "variable.member": {
+            "color": "@COLOR_DARK_BLUE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "variable.special": {
+            "color": "@COLOR_DARK_RED@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "constant": {
+            "color": "@COLOR_DARK_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "constant.builtin": {
+            "color": "@COLOR_DARK_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "constant.macro": {
+            "color": "@COLOR_DARK_ROSEWATER@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "module": {
+            "color": "@COLOR_DARK_YELLOW@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "label": {
+            "color": "@COLOR_DARK_SAPPHIRE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string": {
+            "color": "@COLOR_DARK_GREEN@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.documentation": {
+            "color": "@COLOR_DARK_TEAL@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.regexp": {
+            "color": "@COLOR_DARK_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.escape": {
+            "color": "@COLOR_DARK_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.special": {
+            "color": "@COLOR_DARK_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.special.path": {
+            "color": "@COLOR_DARK_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.special.symbol": {
+            "color": "@COLOR_DARK_FLAMINGO@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.special.url": {
+            "color": "@COLOR_DARK_ROSEWATER@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "character": {
+            "color": "@COLOR_DARK_TEAL@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "character.special": {
+            "color": "@COLOR_DARK_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "boolean": {
+            "color": "@COLOR_DARK_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "number": {
+            "color": "@COLOR_DARK_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "number.float": {
+            "color": "@COLOR_DARK_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "tag": {
+            "color": "@COLOR_DARK_BLUE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "tag.attribute": {
+            "color": "@COLOR_DARK_YELLOW@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "tag.delimiter": {
+            "color": "@COLOR_DARK_TEAL@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "type": {
+            "color": "@COLOR_DARK_YELLOW@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "type.builtin": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "type.definition": {
+            "color": "@COLOR_DARK_YELLOW@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "type.interface": {
+            "color": "@COLOR_DARK_YELLOW@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "type.super": {
+            "color": "@COLOR_DARK_YELLOW@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "attribute": {
+            "color": "@COLOR_DARK_YELLOW@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "selector.pseudo": {
+            "color": "@COLOR_DARK_YELLOW@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "property": {
+            "color": "@COLOR_DARK_LAVENDER@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "function": {
+            "color": "@COLOR_DARK_BLUE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "function.builtin": {
+            "color": "@COLOR_DARK_RED@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "function.call": {
+            "color": "@COLOR_DARK_BLUE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "function.macro": {
+            "color": "@COLOR_DARK_ROSEWATER@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "function.method": {
+            "color": "@COLOR_DARK_BLUE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "function.method.call": {
+            "color": "@COLOR_DARK_BLUE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "constructor": {
+            "color": "@COLOR_DARK_FLAMINGO@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "operator": {
+            "color": "@COLOR_DARK_SKY@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.modifier": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.type": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.coroutine": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.function": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.operator": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.import": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.repeat": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.return": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.debug": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.exception": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.conditional": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.conditional.ternary": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.directive": {
+            "color": "@COLOR_DARK_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.directive.define": {
+            "color": "@COLOR_DARK_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.export": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "punctuation": {
+            "color": "@COLOR_DARK_OVERLAY2@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "punctuation.delimiter": {
+            "color": "@COLOR_DARK_OVERLAY2@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "punctuation.bracket": {
+            "color": "@COLOR_DARK_OVERLAY2@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "punctuation.special": {
+            "color": "@COLOR_DARK_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "punctuation.special.symbol": {
+            "color": "@COLOR_DARK_FLAMINGO@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "punctuation.list_marker": {
+            "color": "@COLOR_DARK_TEAL@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "comment": {
+            "color": "@COLOR_DARK_OVERLAY2@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.doc": {
+            "color": "@COLOR_DARK_OVERLAY2@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.documentation": {
+            "color": "@COLOR_DARK_OVERLAY2@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.info": {
+            "color": "@COLOR_DARK_TEAL@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.error": {
+            "color": "@COLOR_DARK_RED@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.warning": {
+            "color": "@COLOR_DARK_YELLOW@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.warn": {
+            "color": "@COLOR_DARK_YELLOW@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.hint": {
+            "color": "@COLOR_DARK_BLUE@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.todo": {
+            "color": "@COLOR_DARK_FLAMINGO@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.note": {
+            "color": "@COLOR_DARK_ROSEWATER@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "diff.plus": {
+            "color": "@COLOR_DARK_GREEN@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "diff.minus": {
+            "color": "@COLOR_DARK_RED@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "parameter": {
+            "color": "@COLOR_DARK_MAROON@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "field": {
+            "color": "@COLOR_DARK_BLUE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "namespace": {
+            "color": "@COLOR_DARK_YELLOW@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "float": {
+            "color": "@COLOR_DARK_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "symbol": {
+            "color": "@COLOR_DARK_FLAMINGO@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.regex": {
+            "color": "@COLOR_DARK_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "emphasis.strong": {
+            "color": "@COLOR_DARK_MAROON@",
+            "font_style": null,
+            "font_weight": 700
+          },
+          "emphasis": {
+            "color": "@COLOR_DARK_MAROON@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "embedded": {
+            "color": "@COLOR_DARK_MAROON@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "text.literal": {
+            "color": "@COLOR_DARK_GREEN@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "concept": {
+            "color": "@COLOR_DARK_SAPPHIRE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "enum": {
+            "color": "@COLOR_DARK_TEAL@",
+            "font_style": null,
+            "font_weight": 700
+          },
+          "function.decorator": {
+            "color": "@COLOR_DARK_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "type.class.definition": {
+            "color": "@COLOR_DARK_YELLOW@",
+            "font_style": null,
+            "font_weight": 700
+          },
+          "hint": {
+            "color": "@COLOR_DARK_OVERLAY1@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "link_text": {
+            "color": "@COLOR_DARK_LAVENDER@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "link_uri": {
+            "color": "@COLOR_DARK_BLUE@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "parent": {
+            "color": "@COLOR_DARK_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "predictive": {
+            "color": "@COLOR_DARK_OVERLAY0@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "predoc": {
+            "color": "@COLOR_DARK_RED@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "preproc": {
+            "color": "@COLOR_DARK_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "primary": {
+            "color": "@COLOR_DARK_MAROON@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "tag.doctype": {
+            "color": "@COLOR_DARK_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.doc": {
+            "color": "@COLOR_DARK_TEAL@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "title": {
+            "color": "@COLOR_DARK_RED@",
+            "font_style": null,
+            "font_weight": 800
+          },
+          "variant": {
+            "color": "@COLOR_DARK_RED@",
+            "font_style": null,
+            "font_weight": null
+          }
+        }
+      }
+    },
+    {
+      "name": "Catppuccin Custom Light",
+      "appearance": "light",
+      "style": {
+        "accents": [
+          "@COLOR_LIGHT_ACCENT@",
+          "@COLOR_LIGHT_ACCENTBLUE@",
+          "@COLOR_LIGHT_LAVENDER@",
+          "@COLOR_LIGHT_SAPPHIRE@",
+          "@COLOR_LIGHT_GREEN@",
+          "@COLOR_LIGHT_YELLOW@",
+          "@COLOR_LIGHT_PEACH@",
+          "@COLOR_LIGHT_RED@"
+        ],
+        "vim.normal.foreground": "@COLOR_LIGHT_ACCENTFOREGROUND@",
+        "vim.helix_normal.foreground": "@COLOR_LIGHT_ACCENTFOREGROUND@",
+        "vim.visual.foreground": "@COLOR_LIGHT_ACCENTFOREGROUND@",
+        "vim.helix_select.foreground": "@COLOR_LIGHT_ACCENTFOREGROUND@",
+        "vim.insert.foreground": "@COLOR_LIGHT_ACCENTFOREGROUND@",
+        "vim.visual_line.foreground": "@COLOR_LIGHT_ACCENTFOREGROUND@",
+        "vim.visual_block.foreground": "@COLOR_LIGHT_ACCENTWHITE@",
+        "vim.replace.foreground": "@COLOR_LIGHT_ACCENTFOREGROUND@",
+        "vim.normal.background": "@COLOR_LIGHT_ACCENT@",
+        "vim.helix_normal.background": "@COLOR_LIGHT_ACCENT@",
+        "vim.visual.background": "@COLOR_LIGHT_LAVENDER@",
+        "vim.helix_select.background": "@COLOR_LIGHT_LAVENDER@",
+        "vim.insert.background": "@COLOR_LIGHT_GREEN@",
+        "vim.visual_line.background": "@COLOR_LIGHT_LAVENDER@",
+        "vim.visual_block.background": "@COLOR_LIGHT_MAUVE@",
+        "vim.replace.background": "@COLOR_LIGHT_MAROON@",
+        "background.appearance": "opaque",
+        "border": "@COLOR_LIGHT_BORDER@",
+        "border.variant": "@COLOR_LIGHT_SIDEBARBORDER@",
+        "border.focused": "@COLOR_LIGHT_FOCUS@",
+        "border.selected": "@COLOR_LIGHT_FOCUS@",
+        "border.transparent": "@COLOR_LIGHT_BASE@00",
+        "border.disabled": "@COLOR_LIGHT_OVERLAY0@",
+        "elevated_surface.background": "@COLOR_LIGHT_SURFACEOVERLAY@",
+        "surface.background": "@COLOR_LIGHT_SURFACE@",
+        "background": "@COLOR_LIGHT_CANVAS@",
+        "element.background": "@COLOR_LIGHT_INPUT@",
+        "element.hover": "@COLOR_LIGHT_TOOLBARCONTROLHOVER@",
+        "element.active": "@COLOR_LIGHT_SIDEBARROWACTIVE@",
+        "element.selected": "@COLOR_LIGHT_SIDEBARROWSELECTED@",
+        "element.disabled": "@COLOR_LIGHT_SURFACE0@",
+        "drop_target.background": "@COLOR_LIGHT_ACCENTBLUE@33",
+        "ghost_element.background": "@COLOR_LIGHT_BASE@00",
+        "ghost_element.hover": "@COLOR_LIGHT_SIDEBARROWHOVER@",
+        "ghost_element.active": "@COLOR_LIGHT_SIDEBARROWACTIVE@",
+        "ghost_element.selected": "@COLOR_LIGHT_SIDEBARROWSELECTED@",
+        "ghost_element.disabled": "@COLOR_LIGHT_SURFACE0@",
+        "text": "@COLOR_LIGHT_TEXT@",
+        "text.muted": "@COLOR_LIGHT_TEXTMUTED@",
+        "text.placeholder": "@COLOR_LIGHT_PLACEHOLDER@",
+        "text.disabled": "@COLOR_LIGHT_OVERLAY0@",
+        "text.accent": "@COLOR_LIGHT_UPDATEFOREGROUND@",
+        "icon": "@COLOR_LIGHT_TEXT@",
+        "icon.muted": "@COLOR_LIGHT_ICONMUTED@",
+        "icon.disabled": "@COLOR_LIGHT_OVERLAY0@",
+        "icon.placeholder": "@COLOR_LIGHT_PLACEHOLDER@",
+        "icon.accent": "@COLOR_LIGHT_UPDATEFOREGROUND@",
+        "status_bar.background": "@COLOR_LIGHT_CRUST@",
+        "title_bar.background": "@COLOR_LIGHT_TOOLBAR@",
+        "title_bar.inactive_background": "@COLOR_LIGHT_SURFACE@",
+        "toolbar.background": "@COLOR_LIGHT_TOOLBAR@",
+        "tab_bar.background": "@COLOR_LIGHT_CRUST@",
+        "tab.inactive_background": "@COLOR_LIGHT_SURFACE@",
+        "tab.active_background": "@COLOR_LIGHT_CODEBACKGROUND@",
+        "search.match_background": "@COLOR_LIGHT_ACCENTBLUE@40",
+        "search.active_match_background": "@COLOR_LIGHT_ACCENT@66",
+        "panel.background": "@COLOR_LIGHT_SIDEBAR@",
+        "panel.focused_border": "@COLOR_LIGHT_FOCUS@",
+        "panel.indent_guide": "@COLOR_LIGHT_SIDEBARCONTROLSURFACE@99",
+        "panel.indent_guide_active": "@COLOR_LIGHT_HIGHLIGHTHIGH@",
+        "panel.indent_guide_hover": "@COLOR_LIGHT_FOCUS@",
+        "panel.overlay_background": "@COLOR_LIGHT_SURFACEOVERLAY@",
+        "pane.focused_border": "@COLOR_LIGHT_FOCUS@",
+        "pane_group.border": "@COLOR_LIGHT_SIDEBARBORDER@",
+        "scrollbar.thumb.background": "@COLOR_LIGHT_TERMINALSCROLLBAR@80",
+        "scrollbar.thumb.hover_background": "@COLOR_LIGHT_TERMINALSCROLLBARHOVER@",
+        "scrollbar.thumb.active_background": "@COLOR_LIGHT_TERMINALSCROLLBARHOVER@",
+        "scrollbar.thumb.border": "@COLOR_LIGHT_BASE@00",
+        "scrollbar.track.background": "@COLOR_LIGHT_CANVAS@",
+        "scrollbar.track.border": "@COLOR_LIGHT_BASE@00",
+        "minimap.thumb.background": "@COLOR_LIGHT_ACCENT@33",
+        "minimap.thumb.hover_background": "@COLOR_LIGHT_ACCENT@66",
+        "minimap.thumb.active_background": "@COLOR_LIGHT_ACCENT@99",
+        "minimap.thumb.border": "@COLOR_LIGHT_BASE@00",
+        "editor.foreground": "@COLOR_LIGHT_CODEFOREGROUND@",
+        "editor.background": "@COLOR_LIGHT_CODEBACKGROUND@",
+        "editor.gutter.background": "@COLOR_LIGHT_CODEBACKGROUND@",
+        "editor.subheader.background": "@COLOR_LIGHT_SURFACE@",
+        "editor.active_line.background": "@COLOR_LIGHT_SURFACE0@66",
+        "editor.highlighted_line.background": "@COLOR_LIGHT_SURFACE1@66",
+        "editor.line_number": "@COLOR_LIGHT_PLACEHOLDER@",
+        "editor.active_line_number": "@COLOR_LIGHT_UPDATEFOREGROUND@",
+        "editor.invisible": "@COLOR_LIGHT_OVERLAY2@66",
+        "editor.wrap_guide": "@COLOR_LIGHT_SURFACE1@",
+        "editor.active_wrap_guide": "@COLOR_LIGHT_SURFACE2@",
+        "editor.document_highlight.bracket_background": "@COLOR_LIGHT_FOCUS@26",
+        "editor.document_highlight.read_background": "@COLOR_LIGHT_TEXTMUTED@29",
+        "editor.document_highlight.write_background": "@COLOR_LIGHT_TEXTMUTED@40",
+        "editor.indent_guide": "@COLOR_LIGHT_SURFACE0@99",
+        "editor.indent_guide_active": "@COLOR_LIGHT_SURFACE2@",
+        "terminal.background": "@COLOR_LIGHT_TERMINALBACKGROUND@",
+        "terminal.ansi.background": "@COLOR_LIGHT_TERMINALBACKGROUND@",
+        "terminal.foreground": "@COLOR_LIGHT_TERMINALFOREGROUND@",
+        "terminal.dim_foreground": "@COLOR_LIGHT_TEXTMUTED@",
+        "terminal.bright_foreground": "@COLOR_LIGHT_TERMINALFOREGROUND@",
+        "terminal.ansi.black": "@COLOR_LIGHT_ANSIBLACK@",
+        "terminal.ansi.white": "@COLOR_LIGHT_ANSIWHITE@",
+        "terminal.ansi.red": "@COLOR_LIGHT_RED@",
+        "terminal.ansi.green": "@COLOR_LIGHT_PINE@",
+        "terminal.ansi.yellow": "@COLOR_LIGHT_YELLOW@",
+        "terminal.ansi.blue": "@COLOR_LIGHT_BLUE@",
+        "terminal.ansi.magenta": "@COLOR_LIGHT_PINK@",
+        "terminal.ansi.cyan": "@COLOR_LIGHT_SKY@",
+        "terminal.ansi.bright_black": "@COLOR_LIGHT_ANSIBLACK@",
+        "terminal.ansi.bright_white": "@COLOR_LIGHT_ANSIWHITE@",
+        "terminal.ansi.bright_red": "@COLOR_LIGHT_RED@",
+        "terminal.ansi.bright_green": "@COLOR_LIGHT_PINE@",
+        "terminal.ansi.bright_yellow": "@COLOR_LIGHT_YELLOW@",
+        "terminal.ansi.bright_blue": "@COLOR_LIGHT_BLUE@",
+        "terminal.ansi.bright_magenta": "@COLOR_LIGHT_PINK@",
+        "terminal.ansi.bright_cyan": "@COLOR_LIGHT_SKY@",
+        "terminal.ansi.dim_black": "@COLOR_LIGHT_ANSIBLACK@",
+        "terminal.ansi.dim_white": "@COLOR_LIGHT_ANSIWHITE@",
+        "terminal.ansi.dim_red": "@COLOR_LIGHT_RED@",
+        "terminal.ansi.dim_green": "@COLOR_LIGHT_PINE@",
+        "terminal.ansi.dim_yellow": "@COLOR_LIGHT_YELLOW@",
+        "terminal.ansi.dim_blue": "@COLOR_LIGHT_BLUE@",
+        "terminal.ansi.dim_magenta": "@COLOR_LIGHT_PINK@",
+        "terminal.ansi.dim_cyan": "@COLOR_LIGHT_SKY@",
+        "link_text.hover": "@COLOR_LIGHT_FOCUS@",
+        "conflict": "@COLOR_LIGHT_PEACH@",
+        "conflict.border": "@COLOR_LIGHT_PEACH@",
+        "conflict.background": "@COLOR_LIGHT_PEACH@26",
+        "created": "@COLOR_LIGHT_SUCCESS@",
+        "created.border": "@COLOR_LIGHT_SUCCESS@",
+        "created.background": "@COLOR_LIGHT_SUCCESS@26",
+        "deleted": "@COLOR_LIGHT_ERROR@",
+        "deleted.border": "@COLOR_LIGHT_ERROR@",
+        "deleted.background": "@COLOR_LIGHT_ERROR@26",
+        "hidden": "@COLOR_LIGHT_TEXTMUTED@",
+        "hidden.border": "@COLOR_LIGHT_TEXTMUTED@",
+        "hidden.background": "@COLOR_LIGHT_TEXTMUTED@26",
+        "hint": "@COLOR_LIGHT_TEXTMUTED@",
+        "hint.border": "@COLOR_LIGHT_TEXTMUTED@",
+        "hint.background": "@COLOR_LIGHT_TEXTMUTED@26",
+        "ignored": "@COLOR_LIGHT_TEXTMUTED@",
+        "ignored.border": "@COLOR_LIGHT_TEXTMUTED@",
+        "ignored.background": "@COLOR_LIGHT_TEXTMUTED@26",
+        "modified": "@COLOR_LIGHT_WARNING@",
+        "modified.border": "@COLOR_LIGHT_WARNING@",
+        "modified.background": "@COLOR_LIGHT_WARNING@26",
+        "predictive": "@COLOR_LIGHT_PLACEHOLDER@",
+        "predictive.border": "@COLOR_LIGHT_PLACEHOLDER@",
+        "predictive.background": "@COLOR_LIGHT_PLACEHOLDER@26",
+        "renamed": "@COLOR_LIGHT_INFO@",
+        "renamed.border": "@COLOR_LIGHT_INFO@",
+        "renamed.background": "@COLOR_LIGHT_INFO@26",
+        "info": "@COLOR_LIGHT_INFO@",
+        "info.border": "@COLOR_LIGHT_INFO@",
+        "info.background": "@COLOR_LIGHT_INFO@26",
+        "warning": "@COLOR_LIGHT_WARNING@",
+        "warning.border": "@COLOR_LIGHT_WARNING@",
+        "warning.background": "@COLOR_LIGHT_WARNING@26",
+        "error": "@COLOR_LIGHT_ERROR@",
+        "error.border": "@COLOR_LIGHT_ERROR@",
+        "error.background": "@COLOR_LIGHT_ERROR@26",
+        "success": "@COLOR_LIGHT_SUCCESS@",
+        "success.border": "@COLOR_LIGHT_SUCCESS@",
+        "success.background": "@COLOR_LIGHT_SUCCESS@26",
+        "unreachable": "@COLOR_LIGHT_ERROR@",
+        "unreachable.border": "@COLOR_LIGHT_ERROR@",
+        "unreachable.background": "@COLOR_LIGHT_ERROR@26",
+        "players": [
+          {
+            "cursor": "@COLOR_LIGHT_TERMINALCURSOR@",
+            "selection": "@COLOR_LIGHT_TERMINALSELECTION@40",
+            "background": "@COLOR_LIGHT_ACCENT@"
+          },
+          {
+            "cursor": "@COLOR_LIGHT_MAUVE@",
+            "selection": "@COLOR_LIGHT_MAUVE@4d",
+            "background": "@COLOR_LIGHT_MAUVE@"
+          },
+          {
+            "cursor": "@COLOR_LIGHT_LAVENDER@",
+            "selection": "@COLOR_LIGHT_LAVENDER@4d",
+            "background": "@COLOR_LIGHT_LAVENDER@"
+          },
+          {
+            "cursor": "@COLOR_LIGHT_SAPPHIRE@",
+            "selection": "@COLOR_LIGHT_SAPPHIRE@4d",
+            "background": "@COLOR_LIGHT_SAPPHIRE@"
+          },
+          {
+            "cursor": "@COLOR_LIGHT_GREEN@",
+            "selection": "@COLOR_LIGHT_GREEN@4d",
+            "background": "@COLOR_LIGHT_GREEN@"
+          },
+          {
+            "cursor": "@COLOR_LIGHT_YELLOW@",
+            "selection": "@COLOR_LIGHT_YELLOW@4d",
+            "background": "@COLOR_LIGHT_YELLOW@"
+          },
+          {
+            "cursor": "@COLOR_LIGHT_PEACH@",
+            "selection": "@COLOR_LIGHT_PEACH@4d",
+            "background": "@COLOR_LIGHT_PEACH@"
+          },
+          {
+            "cursor": "@COLOR_LIGHT_RED@",
+            "selection": "@COLOR_LIGHT_RED@4d",
+            "background": "@COLOR_LIGHT_RED@"
+          }
+        ],
+        "version_control.added": "@COLOR_LIGHT_SUCCESS@",
+        "version_control.deleted": "@COLOR_LIGHT_ERROR@",
+        "version_control.modified": "@COLOR_LIGHT_WARNING@",
+        "version_control.renamed": "@COLOR_LIGHT_INFO@",
+        "version_control.conflict": "@COLOR_LIGHT_PEACH@",
+        "version_control.conflict_marker.ours": "@COLOR_LIGHT_SUCCESS@33",
+        "version_control.conflict_marker.theirs": "@COLOR_LIGHT_INFO@33",
+        "version_control.ignored": "@COLOR_LIGHT_TEXTMUTED@",
+        "debugger.accent": "@COLOR_LIGHT_ERROR@",
+        "editor.debugger_active_line.background": "@COLOR_LIGHT_WARNING@26",
+        "element.selection_background": "@COLOR_LIGHT_ACCENTBLUE@40",
+        "drop_target.border": "@COLOR_LIGHT_FOCUS@",
+        "panel.overlay_hover": "@COLOR_LIGHT_SIDEBARROWHOVER@",
+        "editor.code_lens.foreground": "@COLOR_LIGHT_TEXTMUTED@",
+        "editor.hover_line_number": "@COLOR_LIGHT_FOCUS@",
+        "editor.diff_hunk.added.background": "@COLOR_LIGHT_SUCCESS@26",
+        "editor.diff_hunk.added.hollow_background": "@COLOR_LIGHT_SUCCESS@14",
+        "editor.diff_hunk.added.hollow_border": "@COLOR_LIGHT_SUCCESS@80",
+        "editor.diff_hunk.deleted.background": "@COLOR_LIGHT_ERROR@26",
+        "editor.diff_hunk.deleted.hollow_background": "@COLOR_LIGHT_ERROR@14",
+        "editor.diff_hunk.deleted.hollow_border": "@COLOR_LIGHT_ERROR@80",
+        "version_control.word_added": "@COLOR_LIGHT_SUCCESS@40",
+        "version_control.word_deleted": "@COLOR_LIGHT_ERROR@40",
+        "vim.yank.background": "@COLOR_LIGHT_ACCENTBLUE@40",
+        "vim.helix_jump_label.foreground": "@COLOR_LIGHT_FOCUS@",
+        "syntax": {
+          "variable": {
+            "color": "@COLOR_LIGHT_TEXT@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "variable.builtin": {
+            "color": "@COLOR_LIGHT_RED@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "variable.parameter": {
+            "color": "@COLOR_LIGHT_MAROON@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "variable.member": {
+            "color": "@COLOR_LIGHT_BLUE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "variable.special": {
+            "color": "@COLOR_LIGHT_RED@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "constant": {
+            "color": "@COLOR_LIGHT_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "constant.builtin": {
+            "color": "@COLOR_LIGHT_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "constant.macro": {
+            "color": "@COLOR_LIGHT_ROSEWATER@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "module": {
+            "color": "@COLOR_LIGHT_YELLOW@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "label": {
+            "color": "@COLOR_LIGHT_SAPPHIRE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string": {
+            "color": "@COLOR_LIGHT_GREEN@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.documentation": {
+            "color": "@COLOR_LIGHT_TEAL@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.regexp": {
+            "color": "@COLOR_LIGHT_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.escape": {
+            "color": "@COLOR_LIGHT_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.special": {
+            "color": "@COLOR_LIGHT_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.special.path": {
+            "color": "@COLOR_LIGHT_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.special.symbol": {
+            "color": "@COLOR_LIGHT_FLAMINGO@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.special.url": {
+            "color": "@COLOR_LIGHT_ROSEWATER@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "character": {
+            "color": "@COLOR_LIGHT_TEAL@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "character.special": {
+            "color": "@COLOR_LIGHT_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "boolean": {
+            "color": "@COLOR_LIGHT_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "number": {
+            "color": "@COLOR_LIGHT_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "number.float": {
+            "color": "@COLOR_LIGHT_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "tag": {
+            "color": "@COLOR_LIGHT_BLUE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "tag.attribute": {
+            "color": "@COLOR_LIGHT_YELLOW@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "tag.delimiter": {
+            "color": "@COLOR_LIGHT_TEAL@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "type": {
+            "color": "@COLOR_LIGHT_YELLOW@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "type.builtin": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "type.definition": {
+            "color": "@COLOR_LIGHT_YELLOW@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "type.interface": {
+            "color": "@COLOR_LIGHT_YELLOW@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "type.super": {
+            "color": "@COLOR_LIGHT_YELLOW@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "attribute": {
+            "color": "@COLOR_LIGHT_YELLOW@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "selector.pseudo": {
+            "color": "@COLOR_LIGHT_YELLOW@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "property": {
+            "color": "@COLOR_LIGHT_LAVENDER@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "function": {
+            "color": "@COLOR_LIGHT_BLUE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "function.builtin": {
+            "color": "@COLOR_LIGHT_RED@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "function.call": {
+            "color": "@COLOR_LIGHT_BLUE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "function.macro": {
+            "color": "@COLOR_LIGHT_ROSEWATER@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "function.method": {
+            "color": "@COLOR_LIGHT_BLUE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "function.method.call": {
+            "color": "@COLOR_LIGHT_BLUE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "constructor": {
+            "color": "@COLOR_LIGHT_FLAMINGO@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "operator": {
+            "color": "@COLOR_LIGHT_SKY@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.modifier": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.type": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.coroutine": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.function": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.operator": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.import": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.repeat": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.return": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.debug": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.exception": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.conditional": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.conditional.ternary": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.directive": {
+            "color": "@COLOR_LIGHT_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.directive.define": {
+            "color": "@COLOR_LIGHT_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "keyword.export": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "punctuation": {
+            "color": "@COLOR_LIGHT_OVERLAY2@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "punctuation.delimiter": {
+            "color": "@COLOR_LIGHT_OVERLAY2@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "punctuation.bracket": {
+            "color": "@COLOR_LIGHT_OVERLAY2@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "punctuation.special": {
+            "color": "@COLOR_LIGHT_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "punctuation.special.symbol": {
+            "color": "@COLOR_LIGHT_FLAMINGO@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "punctuation.list_marker": {
+            "color": "@COLOR_LIGHT_TEAL@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "comment": {
+            "color": "@COLOR_LIGHT_OVERLAY2@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.doc": {
+            "color": "@COLOR_LIGHT_OVERLAY2@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.documentation": {
+            "color": "@COLOR_LIGHT_OVERLAY2@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.info": {
+            "color": "@COLOR_LIGHT_TEAL@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.error": {
+            "color": "@COLOR_LIGHT_RED@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.warning": {
+            "color": "@COLOR_LIGHT_YELLOW@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.warn": {
+            "color": "@COLOR_LIGHT_YELLOW@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.hint": {
+            "color": "@COLOR_LIGHT_BLUE@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.todo": {
+            "color": "@COLOR_LIGHT_FLAMINGO@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "comment.note": {
+            "color": "@COLOR_LIGHT_ROSEWATER@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "diff.plus": {
+            "color": "@COLOR_LIGHT_GREEN@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "diff.minus": {
+            "color": "@COLOR_LIGHT_RED@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "parameter": {
+            "color": "@COLOR_LIGHT_MAROON@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "field": {
+            "color": "@COLOR_LIGHT_BLUE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "namespace": {
+            "color": "@COLOR_LIGHT_YELLOW@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "float": {
+            "color": "@COLOR_LIGHT_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "symbol": {
+            "color": "@COLOR_LIGHT_FLAMINGO@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.regex": {
+            "color": "@COLOR_LIGHT_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "emphasis.strong": {
+            "color": "@COLOR_LIGHT_MAROON@",
+            "font_style": null,
+            "font_weight": 700
+          },
+          "emphasis": {
+            "color": "@COLOR_LIGHT_MAROON@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "embedded": {
+            "color": "@COLOR_LIGHT_MAROON@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "text.literal": {
+            "color": "@COLOR_LIGHT_GREEN@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "concept": {
+            "color": "@COLOR_LIGHT_SAPPHIRE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "enum": {
+            "color": "@COLOR_LIGHT_TEAL@",
+            "font_style": null,
+            "font_weight": 700
+          },
+          "function.decorator": {
+            "color": "@COLOR_LIGHT_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "type.class.definition": {
+            "color": "@COLOR_LIGHT_YELLOW@",
+            "font_style": null,
+            "font_weight": 700
+          },
+          "hint": {
+            "color": "@COLOR_LIGHT_OVERLAY1@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "link_text": {
+            "color": "@COLOR_LIGHT_LAVENDER@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "link_uri": {
+            "color": "@COLOR_LIGHT_BLUE@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "parent": {
+            "color": "@COLOR_LIGHT_PEACH@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "predictive": {
+            "color": "@COLOR_LIGHT_OVERLAY0@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "predoc": {
+            "color": "@COLOR_LIGHT_RED@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "preproc": {
+            "color": "@COLOR_LIGHT_PINK@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "primary": {
+            "color": "@COLOR_LIGHT_MAROON@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "tag.doctype": {
+            "color": "@COLOR_LIGHT_MAUVE@",
+            "font_style": null,
+            "font_weight": null
+          },
+          "string.doc": {
+            "color": "@COLOR_LIGHT_TEAL@",
+            "font_style": "italic",
+            "font_weight": null
+          },
+          "title": {
+            "color": "@COLOR_LIGHT_RED@",
+            "font_style": null,
+            "font_weight": 800
+          },
+          "variant": {
+            "color": "@COLOR_LIGHT_RED@",
+            "font_style": null,
+            "font_weight": null
+          }
+        }
+      }
+    }
+  ]
+}

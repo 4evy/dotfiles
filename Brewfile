@@ -206,6 +206,9 @@ if OS.mac?
   cask "stats"
   cask "telegram"
   cask "visual-studio-code"
+  # VS Code keymap and Catppuccin are managed in home/files/.config/zed
+  # Compare files with: zed --diff OLD NEW
+  cask "zed"
 end
 
 # Brew Bundle installs these through the native editor CLI on both Spectrum

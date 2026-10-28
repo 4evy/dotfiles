@@ -166,6 +166,7 @@ in
         yaml-language-server
         yq-go
         yt-dlp
+        zed-editor
         zip
         zizmor
         zstd

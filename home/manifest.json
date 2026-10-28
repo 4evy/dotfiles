@@ -600,6 +600,19 @@
       "nixGenerated": true
     },
     {
+      "source": ".config/zed/keymap.json",
+      "target": ".config/zed/keymap.json"
+    },
+    {
+      "source": ".config/zed/settings.json",
+      "target": ".config/zed/settings.json"
+    },
+    {
+      "source": ".config/zed/themes/catppuccin-custom.json",
+      "target": ".config/zed/themes/catppuccin-custom.json",
+      "nixGenerated": true
+    },
+    {
       "source": ".gitconfig",
       "target": ".gitconfig",
       "nixGenerated": true

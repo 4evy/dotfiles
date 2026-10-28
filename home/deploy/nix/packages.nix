@@ -74,6 +74,9 @@ lib.attrValues {
     zoxide
     ;
 
+  # Native GUI editor, with extension-managed language servers
+  inherit (pkgs) zed-editor;
+
   # User fonts belong to the same generation as the user environment
   inherit (nerd-fonts) jetbrains-mono;
   inherit (pkgs) noto-fonts-color-emoji;
