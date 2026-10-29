@@ -192,6 +192,7 @@ if OS.mac?
   cask "1password"
   cask "1password-cli"
   cask "alt-tab"
+  cask "antigravity"
   cask "appcleaner"
   cask "brave-browser"
   cask "firefox"

@@ -107,6 +107,77 @@ let
     '';
   # Inline bodies use stable manifest hook names, not source file paths
   shellHooks = {
+    "antigravity_settings.sh" = {
+      runtimeInputs = lib.attrValues {
+        inherit (pkgs) coreutils diffutils jq;
+      };
+      text = ''
+        home=''${HJEM_HOME_DIR:-$HOME}
+        umask 077
+        # Native clients own mutable settings, authentication and workspace state
+        # Apply with App and CLI closed to avoid stale in-memory saves
+        for kind in app cli ${lib.optionalString (os == "darwin") "storage"}; do
+          case "$kind" in
+            app)
+              settings="$home/.gemini/config/config.json"
+              config="$home/.config/antigravity/app.json"
+              ;;
+            cli)
+              settings="$home/.gemini/antigravity-cli/settings.json"
+              config="$home/.config/antigravity/cli.json"
+              ;;
+            storage)
+              settings="$home/Library/Application Support/Antigravity/app_storage.json"
+              config="$home/.config/antigravity/app.json"
+              ;;
+          esac
+          mkdir -p "$(dirname "$settings")"
+          temporary=$(mktemp -d "$settings.dotfiles.XXXXXX")
+          trap 'rm -rf "$temporary"' EXIT
+          trap 'exit 129' HUP
+          trap 'exit 130' INT
+          trap 'exit 143' TERM
+          existed=false
+          if [ -f "$settings" ]; then
+            existed=true
+            cp -p "$settings" "$temporary/original"
+          else
+            printf '{}\n' >"$temporary/original"
+          fi
+          cp -p "$temporary/original" "$temporary/updated"
+          # App core uses protobuf JSON enum names, UI storage uses raw strings
+          # Recursive object merging leaves all unmanaged fields intact
+          jq -n --slurpfile current "$temporary/original" \
+            --slurpfile preferences "$config" --arg kind "$kind" '
+            $current[0] * (
+              if $kind == "app" then ($preferences[0] | {userSettings})
+              elif $kind == "storage" then $preferences[0].appStorage
+              else $preferences[0]
+              end
+            )
+          ' >"$temporary/updated"
+          if ! jq -e -s '.[0] == .[1]' \
+            "$temporary/original" "$temporary/updated" >/dev/null; then
+            # Refuse to overwrite native settings saved during the merge
+            if { [ "$existed" = true ] &&
+                 ! cmp -s "$settings" "$temporary/original"; } ||
+               { [ "$existed" = false ] && [ -e "$settings" ]; }; then
+              printf '%s\n' 'Antigravity settings changed during apply, run just apply again' >&2
+              exit 1
+            fi
+            # CLI atomically rewrites this private, mutable file at startup
+            if [ "$kind" = cli ]; then
+              chmod 0600 "$temporary/updated"
+            fi
+            mv "$temporary/updated" "$settings"
+          elif [ "$kind" = cli ]; then
+            chmod 0600 "$settings"
+          fi
+          rm -rf "$temporary"
+          trap - EXIT HUP INT TERM
+        done
+      '';
+    };
     "bat_catppuccin_custom.sh".text = ''
       if command -v bat >/dev/null 2>&1; then
         bat cache --build >/dev/null

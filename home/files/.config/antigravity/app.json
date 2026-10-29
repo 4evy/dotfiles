@@ -1,0 +1,29 @@
+{
+  "userSettings": {
+    "permissionPreset": "AGENT_PERMISSION_PRESET_TURBO",
+    "autoExecutionPolicy": "CASCADE_COMMANDS_AUTO_EXECUTION_EAGER",
+    "nonWorkspaceFileAccessPolicy": "AGENT_SETTING_POLICY_ALLOW",
+    "enableTerminalSandbox": false,
+    "artifactReviewMode": "ARTIFACT_REVIEW_MODE_TURBO",
+    "verboseAgentChat": true,
+    "themeMode": "THEME_MODE_INHERIT",
+    "customThemeSeedsLight": {
+      "background": "@COLOR_LIGHT_BASE@",
+      "foregroundOverride": "@COLOR_LIGHT_TEXT@",
+      "primary": "@COLOR_LIGHT_ACCENT@",
+      "primaryForegroundOverride": "@COLOR_LIGHT_ACCENTFOREGROUND@",
+      "codeForegroundOverride": "@COLOR_LIGHT_CODEFOREGROUND@"
+    },
+    "customThemeSeedsDark": {
+      "background": "@COLOR_DARK_BASE@",
+      "foregroundOverride": "@COLOR_DARK_TEXT@",
+      "primary": "@COLOR_DARK_ACCENT@",
+      "primaryForegroundOverride": "@COLOR_DARK_ACCENTFOREGROUND@",
+      "codeForegroundOverride": "@COLOR_DARK_CODEFOREGROUND@"
+    }
+  },
+  "appStorage": {
+    "theme-preset-light": "Catppuccin",
+    "theme-preset-dark": "Catppuccin"
+  }
+}

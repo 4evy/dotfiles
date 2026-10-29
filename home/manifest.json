@@ -79,6 +79,36 @@
       "nixGenerated": true
     },
     {
+      "source": ".config/antigravity/app.json",
+      "target": ".config/antigravity/app.json",
+      "nixGenerated": true
+    },
+    {
+      "source": ".config/antigravity/cli.json",
+      "target": ".config/antigravity/cli.json"
+    },
+    {
+      "source": ".config/antigravity/shared-rules",
+      "target": ".gemini/AGENTS.md",
+      "symlink": true
+    },
+    {
+      "source": ".config/antigravity/skills/commit",
+      "target": ".gemini/config/skills/commit"
+    },
+    {
+      "source": ".config/antigravity/skills/rebase",
+      "target": ".gemini/config/skills/rebase"
+    },
+    {
+      "source": ".config/antigravity/skills/commit",
+      "target": ".gemini/antigravity-cli/skills/commit"
+    },
+    {
+      "source": ".config/antigravity/skills/rebase",
+      "target": ".gemini/antigravity-cli/skills/rebase"
+    },
+    {
       "source": ".config/atuin/config.toml",
       "target": ".config/atuin/config.toml",
       "nixGenerated": true
@@ -900,6 +930,15 @@
       "command": ["@HOME@/.local/lib/external/external.sh"],
       "onChange": false,
       "name": "90_external_cli.sh"
+    },
+    {
+      "onChange": false,
+      "name": "antigravity_settings.sh"
+    },
+    {
+      "command": ["bun", "@REPOSITORY@/home/applications/antigravity/mirror.ts"],
+      "onChange": false,
+      "name": "antigravity_mirror.sh"
     },
     {
       "command": ["bun", "@REPOSITORY@/tools/setup/desktop.ts"],

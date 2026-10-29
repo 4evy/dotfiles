@@ -434,6 +434,10 @@ class Workstation implements AsyncDisposable {
     await this.command([process.execPath, join(root, "tools/workstation/install.ts")]);
   }
 
+  async installAntigravity(): Promise<void> {
+    await this.command([process.execPath, join(root, "tools/setup/antigravity.ts")]);
+  }
+
   async applyDotfiles(): Promise<void> {
     await this.command(["just", "apply"]);
   }
@@ -470,6 +474,11 @@ const setupSteps: Step[] = [
     name: "workstation",
     description: "Install the Bun workstation commands",
     action: (host) => host.installWorkstation(),
+  },
+  {
+    name: "antigravity",
+    description: "Install Antigravity App and CLI",
+    action: (host) => host.installAntigravity(),
   },
   {
     name: "host",

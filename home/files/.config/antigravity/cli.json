@@ -1,0 +1,13 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/settings.json",
+  "agentMode": "accept-edits",
+  "toolPermission": "always-proceed",
+  "artifactReviewPolicy": "always-proceed",
+  "allowNonWorkspaceAccess": true,
+  "enableTerminalSandbox": false,
+  "colorScheme": "terminal",
+  "editor": "auto",
+  "editorMode": "default",
+  "verbosity": "high",
+  "showFeedbackSurvey": false
+}
