@@ -6,7 +6,7 @@ from: ${BASE_IMAGE}
 modules:
   # Install build dependencies before copying changing source inputs
   - type: dnf@v1
-    source: ghcr.io/blue-build/modules/dnf:v1@sha256:4fa89e050fbbc397ec7c04ed11339a5f430cc339224facaa8b8ce65e07d39921
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:e6cffa08197dc55f2cdc9f596e5bae6af4dc82e8a33884ff5a4edccc251b0218
     install:
       install-weak-deps: false
       packages:

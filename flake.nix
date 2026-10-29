@@ -85,7 +85,7 @@
         flake-parts.follows = "flake-parts";
         git-hooks-nix.follows = "git-hooks-nix";
       };
-      url = "https://flakehub.com/f/DeterminateSystems/determinate/=3.24.0";
+      url = "https://flakehub.com/f/DeterminateSystems/determinate/=3.24.1";
     };
 
     darwin = {
@@ -119,7 +119,7 @@
 
     source-oh-my-zsh = {
       flake = false;
-      url = "github:ohmyzsh/ohmyzsh/d2b7f557cceaddb16ba89bbf8200d8a8df35c4d8";
+      url = "github:ohmyzsh/ohmyzsh/17a2b4c3a5855524ad4772a17ada0dc474e2fdf3";
     };
     source-zsh-autosuggestions = {
       flake = false;
@@ -135,7 +135,7 @@
     };
     source-oh-my-bash = {
       flake = false;
-      url = "github:ohmybash/oh-my-bash/4d86087c31b867a30ddaaea270804839b0988e74";
+      url = "github:ohmybash/oh-my-bash/94c2977eda06f230aafa9628fcd869123f01896b";
     };
     source-fzf-tab-completion = {
       flake = false;
