@@ -13,11 +13,9 @@ let
     ;
   inherit (lib.modules) mkIf mkMerge;
   inherit (lib.options) mkEnableOption;
+  # Integer width and empty-array element types still need explicit GVariants
   inherit (lib.gvariant)
-    mkBoolean
     mkInt32
-    mkString
-    mkArray
     mkEmptyArray
     type
     ;
@@ -37,7 +35,7 @@ let
       modifierStr = lib.strings.concatStrings modifiers;
     in
     genAttrs' workspaceNumbers (
-      num: nameValuePair "${prefix}-${num}" (mkArray [ "${super}${modifierStr}${num}" ])
+      num: nameValuePair "${prefix}-${num}" [ "${super}${modifierStr}${num}" ]
     );
 
   copyousExtension = copyous;
@@ -95,20 +93,20 @@ in
           lockAll = true; # Prevents overriding
           settings = {
             "org/gnome/desktop/interface" = {
-              gtk-enable-primary-paste = mkBoolean false;
-              enable-animations = mkBoolean false;
-              clock-show-date = mkBoolean true;
-              clock-show-seconds = mkBoolean true;
-              clock-format = mkString "24h";
-              font-name = mkString "Noto Sans 11";
-              document-font-name = mkString "Noto Sans 12";
-              monospace-font-name = mkString "JetBrainsMono Nerd Font Mono 11";
+              gtk-enable-primary-paste = false;
+              enable-animations = false;
+              clock-show-date = true;
+              clock-show-seconds = true;
+              clock-format = "24h";
+              font-name = "Noto Sans 11";
+              document-font-name = "Noto Sans 12";
+              monospace-font-name = "JetBrainsMono Nerd Font Mono 11";
             };
 
             "org/gnome/desktop/wm/preferences" = {
               num-workspaces = mkInt32 9;
-              button-layout = mkString "close,minimize,maximize:";
-              resize-with-right-button = mkBoolean true;
+              button-layout = "close,minimize,maximize:";
+              resize-with-right-button = true;
             };
 
             /*
@@ -127,11 +125,11 @@ in
               move-to-workspace-right = mkEmptyArray type.string;
               switch-applications = mkEmptyArray type.string;
               switch-applications-backward = mkEmptyArray type.string;
-              switch-windows = mkArray [
+              switch-windows = [
                 "<Alt>Tab"
                 "<Super>Tab"
               ];
-              switch-windows-backward = mkArray [
+              switch-windows-backward = [
                 "<Shift><Alt>Tab"
                 "<Shift><Super>Tab"
               ];
@@ -140,23 +138,23 @@ in
             // generateKeybindings "move-to-workspace" "<Super>" [ "<Shift>" ];
 
             "org/gnome/shell/app-switcher" = {
-              current-workspace-only = mkBoolean false;
+              current-workspace-only = false;
             };
 
             "org/gnome/settings-daemon/plugins/media-keys" = {
-              custom-keybindings = mkArray [
+              custom-keybindings = [
                 "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/vicinae/"
               ];
             };
 
             "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/vicinae" = {
-              name = mkString "Vicinae";
-              command = mkString "vicinae toggle";
-              binding = mkString "<Super><Control><Alt><Shift>F24";
+              name = "Vicinae";
+              command = "vicinae toggle";
+              binding = "<Super><Control><Alt><Shift>F24";
             };
 
             "org/gnome/shell" = {
-              enabled-extensions = mkArray [
+              enabled-extensions = [
                 appindicator.extensionUuid
                 copyousExtensionUuid
                 hyperWindowTilingExtensionUuid
@@ -167,17 +165,17 @@ in
             };
 
             "org/gnome/shell/extensions/hyper-window-tiling" = {
-              move-up = mkArray [ "<Super><Control><Alt><Shift>w" ];
-              move-left = mkArray [ "<Super><Control><Alt><Shift>a" ];
-              move-down = mkArray [ "<Super><Control><Alt><Shift>s" ];
-              move-right = mkArray [ "<Super><Control><Alt><Shift>d" ];
-              move-max-almost = mkArray [ "<Super><Control><Alt><Shift>Return" ];
-              move-max = mkArray [ "<Super><Control><Alt><Shift>backslash" ];
+              move-up = [ "<Super><Control><Alt><Shift>w" ];
+              move-left = [ "<Super><Control><Alt><Shift>a" ];
+              move-down = [ "<Super><Control><Alt><Shift>s" ];
+              move-right = [ "<Super><Control><Alt><Shift>d" ];
+              move-max-almost = [ "<Super><Control><Alt><Shift>Return" ];
+              move-max = [ "<Super><Control><Alt><Shift>backslash" ];
             };
-            "org/gnome/shell/extensions/blur-my-shell/popup".blur = mkBoolean false;
+            "org/gnome/shell/extensions/blur-my-shell/popup".blur = false;
             "org/gnome/shell/extensions/vicinae" = {
-              enable-clipboard-monitoring = mkBoolean true;
-              blocked-applications = mkArray [ "1Password" ];
+              enable-clipboard-monitoring = true;
+              blocked-applications = [ "1Password" ];
             };
           };
         }

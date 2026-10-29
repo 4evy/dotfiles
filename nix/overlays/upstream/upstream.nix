@@ -19,20 +19,20 @@ in
       version = "1.4.4";
       src = finalAttrs.passthru.sources.${unstable.stdenvNoCC.hostPlatform.system};
       passthru = previous.passthru // {
-        sources = {
-          aarch64-darwin = unstable.fetchurl {
-            url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-darwin-aarch64.zip";
-            hash = "sha256-wkDX8My5DCY6hJ/NsJt+5iYw2SE0jtaq/ahrnVd7xRA=";
-          };
-          aarch64-linux = unstable.fetchurl {
-            url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-linux-aarch64.zip";
-            hash = "sha256-uqa7NvUdblhWHgK76oJQOKnfRU9nPW13bou/hvjHhQ4=";
-          };
-          x86_64-linux = unstable.fetchurl {
-            url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-linux-x64-baseline.zip";
-            hash = "sha256-4ERutVmVdy65iUvrrppr42jZhai5Jx7hJEhvmUbu3XY=";
-          };
-        };
+        # Reuse upstream's version-aware URLs with our per-platform hashes
+        sources =
+          lib.mapAttrs
+            (
+              platform: hash:
+              previous.passthru.sources.${platform}.overrideAttrs {
+                inherit hash;
+              }
+            )
+            {
+              aarch64-darwin = "sha256-wkDX8My5DCY6hJ/NsJt+5iYw2SE0jtaq/ahrnVd7xRA=";
+              aarch64-linux = "sha256-uqa7NvUdblhWHgK76oJQOKnfRU9nPW13bou/hvjHhQ4=";
+              x86_64-linux = "sha256-4ERutVmVdy65iUvrrppr42jZhai5Jx7hJEhvmUbu3XY=";
+            };
       };
     }
   );

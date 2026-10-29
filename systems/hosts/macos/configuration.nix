@@ -1,4 +1,4 @@
-_: {
+{ lib, ... }: {
   _class = "darwin";
 
   networking.hostName = "evy";
@@ -17,7 +17,7 @@ _: {
     enable = true;
     user.enable = true;
     farstep.desktop.enable = true;
-    omp.keybindings = builtins.fromJSON (builtins.readFile ../../../home/data/omp/keybindings.json);
+    omp.keybindings = lib.importJSON ../../../home/data/omp/keybindings.json;
     chatgpt = {
       enable = true;
       package = null;

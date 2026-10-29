@@ -18,21 +18,15 @@ let
     ];
   rgb = color: "rgb(${lib.concatMapStringsSep ", " toString (components color)})";
   byteHex = value: lib.toLower (lib.fixedWidthString 2 "0" (lib.toHexString value));
+  # Mix 85% background and 15% foreground with nearest-byte rounding
   surfaceMix =
     colors: color:
     let
-      background = components colors.terminalBackground;
-      foreground = components color;
-      channel =
-        index: lib.div (lib.elemAt background index * 85 + lib.elemAt foreground index * 15 + 50) 100;
+      channels = lib.zipListsWith (
+        background: foreground: byteHex (lib.div (background * 85 + foreground * 15 + 50) 100)
+      ) (components colors.terminalBackground) (components color);
     in
-    "#${
-      lib.concatMapStrings (index: byteHex (channel index)) [
-        0
-        1
-        2
-      ]
-    }";
+    "#${lib.concatStrings channels}";
   colorMarkers =
     lib.concatMap
       (

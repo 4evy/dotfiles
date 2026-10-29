@@ -34,11 +34,12 @@ let
     INFOPATH=${profile}/share/info:''${INFOPATH}
     XDG_DATA_DIRS=${profile}/share:''${XDG_DATA_DIRS:-/usr/local/share:/usr/share}
   '';
+  # Runtime home and state directories may contain XML metacharacters
   fonts = writeText "hjem-fonts.conf" ''
     <?xml version="1.0"?>
     <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
     <fontconfig>
-      <dir>${profile}/share/fonts</dir>
+      <dir>${lib.escapeXML "${profile}/share/fonts"}</dir>
     </fontconfig>
   '';
 in

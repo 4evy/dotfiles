@@ -7,7 +7,6 @@
 }:
 let
   inherit (bun2nix) hook;
-  repositoryRoot = ../..;
   packageRoot = ./.;
   packageMetadata = lib.importJSON (packageRoot + /package.json);
   gnomeMetadata = lib.importJSON (packageRoot + /gnome/metadata.json);
@@ -17,7 +16,8 @@ let
   pluginId = kdeMetadata.KPlugin.Id;
 
   src = lib.fileset.toSource {
-    root = repositoryRoot;
+    # Build scripts and metadata paths are relative to the package root
+    root = packageRoot;
     fileset = lib.fileset.unions [
       (packageRoot + /bun.lock)
       (packageRoot + /gnome/metadata.json)
@@ -48,10 +48,6 @@ let
     extendDrvArgs = _: args: {
       inherit version src bunDeps;
       strictDeps = true;
-
-      postUnpack = ''
-        sourceRoot="$sourceRoot/tools/tiling"
-      '';
 
       nativeBuildInputs =
         lib.attrValues {

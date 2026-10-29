@@ -6,7 +6,7 @@
 }:
 let
   inherit (lib.attrsets) attrValues;
-  inherit (lib.strings) makeSearchPath;
+  inherit (lib.strings) makeSearchPathOutput;
   inherit (pkgs) eupkgs stdenv unstable;
   inherit (unstable)
     llvmPackages
@@ -18,9 +18,8 @@ let
     zlib
     ;
   inherit (llvmPackages) libclang;
-  rustPkgConfigPath = makeSearchPath "lib/pkgconfig" (attrValues {
-    openssl = openssl.dev;
-    zlib = zlib.dev;
+  rustPkgConfigPath = makeSearchPathOutput "dev" "lib/pkgconfig" (attrValues {
+    inherit openssl zlib;
   });
 in
 {

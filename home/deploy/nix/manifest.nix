@@ -22,20 +22,20 @@ let
             }
           );
         };
-        config.files = lib.listToAttrs (
-          # Option names stay stable when other targets are added or removed
-          map (file: {
-            name = lib.strings.sanitizeDerivationName "hjem-${lib.hashString "sha256" file.target}-${baseNameOf file.target}";
-            value = file;
-          }) files
-        );
+        # Option names stay stable when other targets are added or removed
+        config.files = lib.genAttrs' files (file: {
+          name = lib.strings.sanitizeDerivationName "hjem-${lib.hashString "sha256" file.target}-${baseNameOf file.target}";
+          value = file;
+        });
       }
     ];
   };
   targets = map (file: file.target) files;
 in
+# Discard context only for validation, not for the deployed file targets
 assert lib.assertMsg (
-  lib.length targets == lib.length (lib.unique targets)
+  lib.length targets
+  == lib.length (lib.uniqueStrings (map builtins.unsafeDiscardStringContext targets))
 ) "Duplicate public Hjem target";
 {
   version = 3;

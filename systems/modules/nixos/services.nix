@@ -9,7 +9,6 @@ let
     bun
     kmscon
     nerd-fonts
-    runCommand
     rustdesk-flutter
     ;
   # Preserve the setup helper's relative imports in the store
@@ -29,14 +28,23 @@ let
 
   # System and user units, native drop-ins, and their shared canonical policy
   # files stay one tree consumed directly by both NixOS and BlueBuild.
-  spectrumSystemdUnits = runCommand "spectrum-systemd-units" { } ''
-    mkdir -p $out/lib
-    cp -rs ${rootfs}/usr/lib/systemd $out/lib/systemd
-    rm -r $out/lib/systemd/system/rustdesk.service.d \
-      $out/lib/systemd/system/tailscaled.service.d
-    rm $out/lib/systemd/system/spectrum-rustdesk-prepare.service \
-      $out/lib/systemd/system/spectrum-tailscale-policy.service
-  '';
+  # Root at usr to retain lib/systemd without a copy-and-prune derivation
+  spectrumSystemdUnits =
+    let
+      usr = ../../spectrum/files/system/usr;
+      units = usr + "/lib/systemd";
+    in
+    lib.fileset.toSource {
+      root = usr;
+      fileset = lib.fileset.difference units (
+        lib.fileset.unions [
+          (units + "/system/rustdesk.service.d")
+          (units + "/system/tailscaled.service.d")
+          (units + "/system/spectrum-rustdesk-prepare.service")
+          (units + "/system/spectrum-tailscale-policy.service")
+        ]
+      );
+    };
 in
 {
   environment.etc = {

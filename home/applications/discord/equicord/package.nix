@@ -1,8 +1,8 @@
 {
   formats,
   lib,
+  linkFarm,
   quickCss,
-  runCommand,
   settings,
   writeText,
 }:
@@ -10,7 +10,11 @@ let
   quickCssFile = writeText "equicord-quick-css" quickCss;
   settingsFile = (formats.json { }).generate "equicord-settings.json" settings;
 in
-runCommand "equicord-settings"
+# Share immutable JSON/CSS store files with the byte-reading deployer
+(linkFarm "equicord-settings" {
+  "settings.json" = settingsFile;
+  "quickCss.css" = quickCssFile;
+}).overrideAttrs
   {
     meta = {
       description = "Equicord settings shared by NixOS and non-NixOS installations";
@@ -21,8 +25,3 @@ runCommand "equicord-settings"
     };
     strictDeps = true;
   }
-  ''
-    mkdir -p "$out"
-    cp ${settingsFile} "$out/settings.json"
-    cp ${quickCssFile} "$out/quickCss.css"
-  ''
