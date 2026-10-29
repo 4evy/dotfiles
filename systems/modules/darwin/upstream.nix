@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  options,
+  ...
+}:
 let
   alias = from: to: lib.mkAliasOptionModule (lib.splitString "." from) (lib.splitString "." to);
 in
@@ -51,8 +56,9 @@ in
       enable = true;
       config = agent.serviceConfig;
     }) config.launchd.user.agents;
-    programs.zsh.env.extra = config.environment.extraInit;
-    programs.bash.bashrc.extra = config.environment.extraInit;
+    # Preserve upstream mkDefault/mkForce priorities across this bridge
+    programs.zsh.env.extra = lib.modules.mkAliasAndWrapDefsWithPriority lib.id options.environment.extraInit;
+    programs.bash.bashrc.extra = lib.modules.mkAliasAndWrapDefsWithPriority lib.id options.environment.extraInit;
     system.activation.steps = {
       upstream-users = {
         deps = [ "users" ];
