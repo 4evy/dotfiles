@@ -655,17 +655,16 @@
     "source-helix": {
       "flake": false,
       "locked": {
-        "lastModified": 1790682170,
-        "narHash": "sha256-MjTor2TqEuJ61oCaup+SyNaYO/HHlKyNoA5LkvNs8/g=",
-        "owner": "Helix-Unstable",
-        "repo": "helix-unstable",
-        "rev": "ae9f0522a2965fda652640274b438d4bd418d8e8",
+        "lastModified": 1792511964,
+        "narHash": "sha256-blUrBVceXYw1BZ+Jr54E5WqfrXBiyMPYmFHt3iIohZA=",
+        "owner": "gj1118",
+        "repo": "helix",
+        "rev": "9e56642e5fb638d3dfea2be7c122f44d8adad592",
         "type": "github"
       },
       "original": {
-        "owner": "Helix-Unstable",
-        "ref": "unstable",
-        "repo": "helix-unstable",
+        "owner": "gj1118",
+        "repo": "helix",
         "type": "github"
       }
     },

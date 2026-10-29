@@ -14,12 +14,13 @@ line-number = "relative"
 true-color = true
 kitty-keyboard-protocol = "auto"
 mouse = true
-bufferline = "always"
+bufferline = { render-mode = "always" }
 completion-replace = true
 completion-trigger-len = 1
 text-width = 80
 end-of-line-diagnostics = "hint"
 popup-border = "all"
+rounded-corners = true
 rainbow-brackets = true
 
 [editor.cursor-shape]
@@ -32,6 +33,11 @@ layout = ["diagnostics", "code-action-hint", "line-numbers", "spacer", "diff"]
 
 [editor.indent-guides]
 render = true
+
+# Show symbols only; the bufferline and statusline already identify the file
+[editor.breadcrumb]
+enable = true
+path = "none"
 
 [editor.statusline]
 center = ["version-control"]
@@ -66,6 +72,8 @@ auto-document-highlight = true
 inlay-hints-length-limit = 50
 
 [editor.inline-diagnostics]
+# The fork requires this in addition to a severity filter
+show-virtual-lines = true
 cursor-line = "warning"
 
 [editor.file-picker]

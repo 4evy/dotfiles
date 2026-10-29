@@ -163,7 +163,7 @@
 
     source-helix = {
       flake = false;
-      url = "github:Helix-Unstable/helix-unstable/unstable";
+      url = "github:gj1118/helix";
     };
 
     source-karabiner-vhid-package = {
