@@ -17,8 +17,8 @@ repo_dir := justfile_directory()
 just_command := quote([just_executable(), "--justfile", justfile()])
 
 homebrew_prefix := env("HOMEBREW_PREFIX", if host_os == "macos" { "/opt/homebrew" } else { "/home/linuxbrew/.linuxbrew" })
-homebrew_gnu_paths := `bun -e 'import tools from "./data/homebrew/tools.json"; console.log(tools.filter(tool => tool.just).map(tool => tool.formula + "/" + tool.path).join(" "))'`
-homebrew_gnu_path := if host_os == "macos" { homebrew_prefix / "opt" / split(homebrew_gnu_paths) }
+# Use a conditional shell call because backtick dependencies are evaluated eagerly
+homebrew_gnu_path := if host_os == "macos" && env("CI", "") != "true" { homebrew_prefix / "opt" / split(shell('''bun -e 'import tools from "./data/homebrew/tools.json"; console.log(tools.filter(tool => tool.just).map(tool => tool.formula + "/" + tool.path).join(" "))' ''')) } else { [] }
 homebrew_path := homebrew_prefix / ["bin", "sbin"]
 nix_bin_dir := "/nix/var/nix/profiles/default/bin"
 nix_profile_bin_dir := home_directory() / ".nix-profile/bin"
