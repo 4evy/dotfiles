@@ -208,6 +208,8 @@ if OS.mac?
   cask "visual-studio-code"
   # VS Code keymap and Catppuccin are managed in home/files/.config/zed
   # Compare files with: zed --diff OLD NEW
+  # Open saved Linux/Mac projects with Zed's Remote Projects command
+  # Native and Linux Flatpak Zed use the same managed settings and theme
   cask "zed"
 end
 

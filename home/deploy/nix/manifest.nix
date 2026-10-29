@@ -39,10 +39,8 @@ assert lib.assertMsg (
 ) "Duplicate public Hjem target";
 {
   version = 3;
-  files = map (
-    file:
-    hjem.fileToJson file
-    # Copies are regenerated public settings, so replacing local edits is intentional
-    // lib.optionalAttrs (file.type == "copy") { ignore_modification = true; }
-  ) (lib.filter (file: file.enable) (lib.attrValues evaluated.config.files));
+  # Compare copy contents so activation replaces pre-existing app settings
+  files = map hjem.fileToJson (
+    lib.filter (file: file.enable) (lib.attrValues evaluated.config.files)
+  );
 }

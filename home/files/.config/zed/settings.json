@@ -6,6 +6,30 @@
   "session": {
     "trust_all_worktrees": true
   },
+  "ssh_connections": [
+    {
+      "host": "fedora.tail54ae6e.ts.net",
+      "port": 2222,
+      "args": [
+        "-o",
+        "UserKnownHostsFile=%d/.ssh/known_hosts %d/.ssh/known_hosts.d/workstations"
+      ],
+      "username": "evy",
+      "nickname": "Linux",
+      "projects": [{ "paths": ["/var/home/evy/dotfiles"] }]
+    },
+    {
+      "host": "mac-mini.tail54ae6e.ts.net",
+      "port": 22,
+      "args": [
+        "-o",
+        "UserKnownHostsFile=%d/.ssh/known_hosts %d/.ssh/known_hosts.d/workstations"
+      ],
+      "username": "evy",
+      "nickname": "Mac",
+      "projects": [{ "paths": ["/Users/evy/Developer/dotfiles"] }]
+    }
+  ],
   "telemetry": {
     "diagnostics": false,
     "metrics": false

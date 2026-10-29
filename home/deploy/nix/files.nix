@@ -144,16 +144,24 @@ let
       source = (entry.sourceByOS or { }).${os} or entry.source;
       text = replace (lib.readFile (../../files + "/${source}"));
       private = entry.private or false;
+      # Sandboxed apps need real copies, including generated settings
+      mutable = entry.mutable or false;
       executable = entry.executable or false;
     in
     {
       inherit (entry) target;
       inherit executable;
-      type = if private then "copy" else "symlink";
+      type = if private || mutable then "copy" else "symlink";
     }
     // (if entry.symlink or false then { source = lib.removeSuffix "\n" text; } else { inherit text; })
-    // lib.optionalAttrs private {
-      permissions = if executable then "0700" else "0600";
+    // lib.optionalAttrs (private || mutable) {
+      permissions =
+        if private then
+          if executable then "0700" else "0600"
+        else if executable then
+          "0755"
+        else
+          "0644";
     };
 in
 map file (lib.filter enabled manifest.files)

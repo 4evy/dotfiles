@@ -771,6 +771,25 @@
       "systems": ["linux"]
     },
     {
+      "source": ".config/zed/keymap.json",
+      "target": ".var/app/dev.zed.Zed/config/zed/keymap.json",
+      "systems": ["linux"],
+      "mutable": true
+    },
+    {
+      "source": ".config/zed/settings.json",
+      "target": ".var/app/dev.zed.Zed/config/zed/settings.json",
+      "systems": ["linux"],
+      "mutable": true
+    },
+    {
+      "source": ".config/zed/themes/catppuccin-custom.json",
+      "target": ".var/app/dev.zed.Zed/config/zed/themes/catppuccin-custom.json",
+      "systems": ["linux"],
+      "nixGenerated": true,
+      "mutable": true
+    },
+    {
       "source": ".local/share/nix/chatgpt/flake.lock",
       "target": ".local/share/nix/chatgpt/flake.lock",
       "private": true,
@@ -846,6 +865,11 @@
     {
       "source": ".ssh/known_hosts.d/github",
       "target": ".ssh/known_hosts.d/github",
+      "private": true
+    },
+    {
+      "source": ".ssh/known_hosts.d/workstations",
+      "target": ".ssh/known_hosts.d/workstations",
       "private": true
     },
     {
