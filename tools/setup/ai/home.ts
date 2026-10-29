@@ -9,6 +9,7 @@ export async function prepareAiHome(
   exported: string,
   destination: string,
   nativeCli: string,
+  omp: string,
   farstep = join(source, "farstep/farstep"),
 ): Promise<void> {
   const home = homedir();
@@ -138,7 +139,8 @@ export async function prepareAiHome(
     ".local/bin/claude": "apps/claude/claude.ts",
     ".local/bin/codex": "apps/codex/codex.ts",
     ".local/bin/farstep": farstep,
-    ".local/bin/omp": "apps/omp/omp",
+    // Use the followed runtime without re-evaluating the source's standalone lock
+    ".local/bin/omp": omp,
     ".local/bin/opencode": "apps/opencode/opencode.ts",
     ".omp/agent/lib/schema": "apps/omp/lib/schema",
     ".omp/agent/lib/sky": "farstep/sky",

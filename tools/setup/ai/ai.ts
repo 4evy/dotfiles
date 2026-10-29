@@ -73,20 +73,11 @@ if (action !== "apply" || process.platform === "linux") {
   );
   const source = join(parent, revision);
   const missingSource = !(await Bun.file(join(source, "flake.nix")).exists());
-  const sourcePath =
-    missingSource || rules.generate
-      ? JSON.parse(
-          await run([
-            "nix",
-            "flake",
-            "prefetch",
-            "--json",
-            "--inputs-from",
-            root,
-            "ai",
-          ]),
-        ).storePath
-      : "";
+  const sourcePath = missingSource
+    ? JSON.parse(
+        await run(["nix", "flake", "prefetch", "--json", "--inputs-from", root, "ai"]),
+      ).storePath
+    : "";
   if (missingSource) {
     await mkdir(parent, { recursive: true });
     {
@@ -147,6 +138,13 @@ if (action !== "apply" || process.platform === "linux") {
       );
       const temporary = workspace.path;
       const hostFile = join(temporary, "host.json");
+      const runtime = await run([
+        "nix",
+        "build",
+        `${root}#ai-tools`,
+        "--no-link",
+        "--print-out-paths",
+      ]);
       const host = JSON.parse(
         await run(
           [process.execPath, "config/settings/generate/generate.ts", "--print-host"],
@@ -168,26 +166,28 @@ if (action !== "apply" || process.platform === "linux") {
           source,
         );
       await Bun.write(hostFile, JSON.stringify(host));
-      const builds = JSON.parse(
-        await run([
-          "nix",
-          "build",
-          "--impure",
-          "--no-link",
-          "--json",
-          "--file",
-          join(sourcePath, "config/settings/generate/build.nix"),
-          "--argstr",
-          "repository",
-          sourcePath,
-          "--argstr",
-          "system",
-          `${process.arch === "arm64" ? "aarch64" : "x86_64"}-${process.platform}`,
-          "--argstr",
-          "hostFile",
+      const argument = JSON.stringify(
+        JSON.stringify({
+          system: `${process.arch === "arm64" ? "aarch64" : "x86_64"}-${process.platform}`,
           hostFile,
-        ]),
-      );
+        }),
+      ).replaceAll("${", "\\${");
+      const derivation = await run([
+        "nix",
+        "eval",
+        "--impure",
+        "--raw",
+        `${root}#lib.aiConfigs`,
+        "--apply",
+        `build: (build ${argument}).drvPath`,
+      ]);
+      const exported = await run([
+        "nix",
+        "build",
+        `${derivation}^*`,
+        "--no-link",
+        "--print-out-paths",
+      ]);
       const generated = join(root, ".generated");
       await mkdir(generated, { recursive: true, mode: 0o700 });
       {
@@ -197,9 +197,10 @@ if (action !== "apply" || process.platform === "linux") {
         const staging = stagingDirectory.path;
         await prepareAiHome(
           source,
-          builds[0].outputs.out,
+          exported,
           staging,
           host.codexCli ?? "",
+          join(runtime, "bin/omp"),
           host.farstep,
         );
         const destination = join(generated, "ai-configs");

@@ -21,6 +21,16 @@ in
     flake = {
       patchStackSources = inputs.patches.stackSources;
       lib = {
+        # Keep config exports on the same followed inputs as the runtime
+        aiConfigs =
+          runtimeJSON:
+          let
+            runtime = lib.fromJSON runtimeJSON;
+          in
+          inputs.ai.lib.mkConfigs {
+            inherit (runtime) system;
+            host = lib.importJSON runtime.hostFile;
+          };
         patchesSource = inputs.patches.outPath;
         checkNames = lib.genAttrs config.systems (system: lib.attrNames inputs.self.checks.${system});
         equicordQuickCss = equicord.quickCss;
