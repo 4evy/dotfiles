@@ -25,7 +25,7 @@ let
   brewPrefix = configured "HOMEBREW_PREFIX" (
     if os == "darwin" then "/opt/homebrew" else "/home/linuxbrew/.linuxbrew"
   );
-  metadata = lib.importJSON ../../manifest.json;
+  metadata = import ../../manifest.nix;
   enabled = entry: !(entry ? systems) || lib.elem os entry.systems;
   commandAvailable =
     name:

@@ -11,7 +11,7 @@ let
   palette = (lib.importJSON ../../theme/palette/palette.json).catppuccin_custom;
   ompDependencies =
     (lib.importJSON "${inputs.ai}/apps/omp/runtime/upstream/package.json").dependencies;
-  manifest = lib.importJSON ../../manifest.json;
+  manifest = import ../../manifest.nix;
   components =
     color:
     map (offset: lib.fromHexString (lib.substring offset 2 color)) [
