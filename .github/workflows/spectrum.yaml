@@ -6,13 +6,19 @@ on:
     branches: [master]
     paths:
       - .containerignore
-      - .python-version
       - .tool-versions
       - .github/actions/**
       - .github/workflows/spectrum.yaml
+      - bun.lock
+      - package.json
+      - data/**
       - Justfile
       - just/**
       - systems/spectrum/**
+      - home/package.json
+      - home/files/.local/lib/**
+      - home/generators.json
+      - home/deploy/schema.ts
       - home/theme/palette/palette.json
       - recipes
       - flake.lock
@@ -51,17 +57,17 @@ jobs:
 
       - name: Prepare Build
         id: prepare
-        uses: ./.github/actions/spectrum-prepare # zizmor: ignore[self-repository]
+        uses: ./.github/actions/spectrum/prepare # zizmor: ignore[self-repository]
 
       - name: Build and Publish
         id: image
-        uses: ./.github/actions/spectrum-build # zizmor: ignore[self-repository]
+        uses: ./.github/actions/spectrum/build # zizmor: ignore[self-repository]
         with:
           bluebuild: ${{ steps.prepare.outputs.bluebuild }}
           publish: "true"
 
       - name: Sign and Attest
-        uses: ./.github/actions/spectrum-publish # zizmor: ignore[self-repository]
+        uses: ./.github/actions/spectrum/publish # zizmor: ignore[self-repository]
         with:
           image-ref: ${{ steps.image.outputs.image-ref }}
           image-digest: ${{ steps.image.outputs.image-digest }}

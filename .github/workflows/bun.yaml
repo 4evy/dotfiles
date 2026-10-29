@@ -34,15 +34,11 @@ jobs:
           persist-credentials: false
 
       - name: Set Up Check Tools
-        uses: ./.github/actions/setup-check-tools # zizmor: ignore[self-repository]
+        uses: ./.github/actions/setup/check/tools # zizmor: ignore[self-repository]
 
       - name: Set Up Bun
-        uses: ./.github/actions/setup-bun # zizmor: ignore[self-repository]
+        uses: ./.github/actions/setup/bun # zizmor: ignore[self-repository]
         with:
-          cache-dependency-path: |
-            bun.lock
-            tools/tiling/bun.lock
-            tools/workstation/bun.lock
           cache-scope: workspace
 
       - name: Install Dependencies

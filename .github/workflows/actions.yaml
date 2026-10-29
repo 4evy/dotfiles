@@ -33,7 +33,7 @@ jobs:
           persist-credentials: false
 
       - name: Set Up Check Tools
-        uses: ./.github/actions/setup-check-tools # zizmor: ignore[self-repository]
+        uses: ./.github/actions/setup/check/tools # zizmor: ignore[self-repository]
         with:
           tools: just actionlint zizmor
 

@@ -144,7 +144,7 @@
     {
       "customType": "regex",
       "description": "Track the checksum-verified mise bootstrap",
-      "managerFilePatterns": ["/^\\.github/actions/setup-check-tools/action\\.yaml$/"],
+      "managerFilePatterns": ["/^\\.github/actions/setup/check/tools/action\\.yaml$/"],
       "matchStrings": ["MISE_VERSION: (?<currentValue>v[^\\s]+)"],
       "depNameTemplate": "jdx/mise",
       "datasourceTemplate": "github-releases"
@@ -335,7 +335,7 @@
       "**/package.json",
       "tools/theme/run/package.nix",
       ".github/renovate/patches/**",
-      ".github/actions/setup-check-tools/action.yaml",
+      ".github/actions/setup/check/tools/action.yaml",
       "home/applications/helium/config.toml",
       "home/files/.config/yazi/package.toml",
       "home/files/.local/share/nix/chatgpt/*",

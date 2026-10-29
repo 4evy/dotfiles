@@ -4,8 +4,8 @@ description: Install the pinned Bun runtime and restore its dependency download 
 
 inputs:
   cache-dependency-path:
-    description: Newline-separated lockfile patterns used to invalidate the cache.
-    required: true
+    description: Newline-separated lockfile patterns, defaults to the shared project inventory.
+    required: false
   cache-scope:
     description: Stable namespace that prevents unrelated Bun projects sharing entries.
     required: true
@@ -18,12 +18,28 @@ runs:
       with:
         bun-version-file: .tool-versions
 
+    - name: Resolve Bun Lockfiles
+      id: lockfiles
+      shell: bash
+      env:
+        DEPENDENCY_PATHS: ${{ inputs.cache-dependency-path }}
+      run: |
+        {
+          echo 'paths<<BUN_LOCKFILES'
+          if [[ -n "$DEPENDENCY_PATHS" ]]; then
+            printf '%s\n' "$DEPENDENCY_PATHS"
+          else
+            bun -e 'import projects from "./data/bun/projects.json"; console.log(projects.map(project => project.directory === "." ? "bun.lock" : `${project.directory}/bun.lock`).join("\n"))'
+          fi
+          echo BUN_LOCKFILES
+        } >> "$GITHUB_OUTPUT"
+
     - name: Restore Bun Dependency Cache
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.bun/install/cache
         key: >-
           ${{ runner.os }}-${{ runner.arch }}-bun-${{ inputs.cache-scope }}-${{
-          hashFiles(inputs.cache-dependency-path) }}
+          hashFiles(steps.lockfiles.outputs.paths) }}
         restore-keys: >-
           ${{ runner.os }}-${{ runner.arch }}-bun-${{ inputs.cache-scope }}-
