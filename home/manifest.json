@@ -794,6 +794,11 @@
       "systems": ["linux"]
     },
     {
+      "source": ".local/share/nix/chatgpt/update.nix",
+      "target": ".local/share/nix/chatgpt/update.nix",
+      "systems": ["linux"]
+    },
+    {
       "source": ".omp/agent/extensions/pride",
       "target": ".omp/agent/extensions/pride"
     },

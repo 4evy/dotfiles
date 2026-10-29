@@ -193,23 +193,3 @@ export async function updateBrowser() {
   if (!found) throw new Error("Missing browser TWP CRX table");
   writeIfChanged(path, updated);
 }
-
-export async function updateChatgpt() {
-  const path = join(root, "home/files/.local/share/nix/chatgpt/package.nix");
-  const content = await Bun.file(path).text();
-  const version = content.match(/^[ \t]+version = "([^"\s]+)";/m)?.[1];
-  if (!version) throw new Error("Missing ChatGPT version");
-  const url = `https://persistent.oaistatic.com/codex-app-prod/linux/rpm/x86_64/chatgpt-${version}-1.x86_64.rpm`;
-  // Hash the requested release rather than silently selecting a different version
-  const hash = `sha256-${new Bun.CryptoHasher("sha256").update(await (await download(url)).arrayBuffer()).digest("base64")}`;
-  let updated = content;
-  for (const [key, value] of Object.entries({ url, hash })) {
-    updated = replaceOnce(
-      updated,
-      new RegExp(`^([ \\t]+${key} = ")[^"\\r\\n]+(";)$`, "gm"),
-      (match) => `${match[1]}${value}${match[2]}`,
-      `ChatGPT source ${key} binding`,
-    );
-  }
-  writeIfChanged(path, updated);
-}

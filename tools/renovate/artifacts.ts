@@ -2,12 +2,7 @@ import { copyFile, mkdtempDisposable } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { writeIfChanged } from "../../lib/typescript/files.ts";
-import {
-  updateBrowser,
-  updateBunBootstrap,
-  updateChatgpt,
-  updateMise,
-} from "./checksums.ts";
+import { updateBrowser, updateBunBootstrap, updateMise } from "./checksums.ts";
 import { validateGhostty } from "./ghostty.ts";
 import { updateRenovatePatch } from "./patch.ts";
 import { execute, root, run } from "./process.ts";
@@ -40,7 +35,10 @@ const pinUpdates = [
   {
     input: "home/files/.local/share/nix/chatgpt/package.nix",
     update: async () => {
-      await updateChatgpt();
+      await run(
+        ["nix", "run", ".#update-chatgpt", "--", "--version=skip"],
+        join(root, "home/files/.local/share/nix/chatgpt"),
+      );
       await run([
         "deadnix",
         "--fail",

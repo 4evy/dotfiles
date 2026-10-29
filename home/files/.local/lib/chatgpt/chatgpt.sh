@@ -28,8 +28,7 @@ if [[ ! -f $package_dir/flake.nix || ! -f $package_target ]]; then
 fi
 
 if (($#)); then
-	CHATGPT_PACKAGE_FILE="$package_target" \
-		nix run "path:$package_dir#update-chatgpt" -- --check
+	(cd "$package_dir" && nix run .#update-chatgpt -- --check)
 	exit
 fi
 
@@ -38,8 +37,7 @@ if [[ ! -f $repository/Justfile || ! -f $package_source ]]; then
 	exit 1
 fi
 
-CHATGPT_PACKAGE_FILE="$package_source" \
-	nix run "path:$package_dir#update-chatgpt"
+(cd "$(dirname "$package_source")" && nix run .#update-chatgpt)
 just --justfile "$repository/Justfile" apply
 
 if [[ ! -e /etc/NIXOS ]]; then

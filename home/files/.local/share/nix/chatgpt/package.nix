@@ -6,12 +6,9 @@
   cairo,
   coreutils,
   cups,
-  curl,
   dbus,
   expat,
   fetchurl,
-  gnused,
-  gzip,
   glib,
   gtk3,
   lib,
@@ -28,9 +25,8 @@
   libxkbcommon,
   libxrandr,
   libxcb,
-  libxml2,
   makeWrapper,
-  nix,
+  nix-update-script,
   nspr,
   nss,
   pango,
@@ -39,15 +35,14 @@
   stdenv,
   systemd,
   wrapGAppsHook3,
-  writeShellApplication,
 }:
 let
-  unwrapped = stdenv.mkDerivation {
+  unwrapped = stdenv.mkDerivation (finalAttrs: {
     pname = "chatgpt";
     version = "26.1021.22027";
 
     src = fetchurl {
-      url = "https://persistent.oaistatic.com/codex-app-prod/linux/rpm/x86_64/chatgpt-26.1021.22027-1.x86_64.rpm";
+      url = "https://persistent.oaistatic.com/codex-app-prod/linux/rpm/x86_64/chatgpt-${finalAttrs.version}-1.x86_64.rpm";
       name = "chatgpt.x86_64.rpm";
       hash = "sha256-1QaQQ3AaEnYMzgRH92iIWemYjfuwTaqpvgvgt2L/iV8=";
     };
@@ -109,102 +104,13 @@ let
       runHook postInstall
     '';
 
-    passthru.updateScript = writeShellApplication {
-      name = "update-chatgpt";
-      runtimeInputs = lib.attrValues {
-        inherit
-          coreutils
-          curl
-          gnused
-          gzip
-          libxml2
-          nix
-          ;
-      };
-      text = ''
-        check_only=false
-        case "$#" in
-          0) ;;
-          1)
-            if [ "$1" != "--check" ]; then
-              echo "usage: update-chatgpt [--check]" >&2
-              exit 2
-            fi
-            check_only=true
-            ;;
-          *)
-            echo "usage: update-chatgpt [--check]" >&2
-            exit 2
-            ;;
-        esac
-
-        repository_url="https://persistent.oaistatic.com/codex-app-prod/linux/rpm/x86_64"
-        repomd="$(mktemp)"
-        primary="$(mktemp)"
-        trap 'rm -f "$repomd" "$primary"' EXIT
-
-        curl -fsSL "$repository_url/repodata/repomd.xml" -o "$repomd"
-        primary_path="$(xmllint --xpath \
-          'string(//*[local-name()="data"][@type="primary"]/*[local-name()="location"]/@href)' \
-          "$repomd")"
-        curl -fsSL "$repository_url/$primary_path" | gzip -dc > "$primary"
-
-        version="$(xmllint --xpath \
-          'string(//*[local-name()="package"][*[local-name()="name"]="chatgpt"]/*[local-name()="version"]/@ver)' \
-          "$primary")"
-        location="$(xmllint --xpath \
-          'string(//*[local-name()="package"][*[local-name()="name"]="chatgpt"]/*[local-name()="location"]/@href)' \
-          "$primary")"
-        checksum="$(xmllint --xpath \
-          'string(//*[local-name()="package"][*[local-name()="name"]="chatgpt"]/*[local-name()="checksum"][@type="sha256"])' \
-          "$primary")"
-
-        if [ -z "$version" ] || [ -z "$location" ] || [ -z "$checksum" ]; then
-          echo "The ChatGPT RPM metadata is incomplete" >&2
-          exit 1
-        fi
-
-        hash="$(nix hash convert --hash-algo sha256 "$checksum")"
-        url="$repository_url/$location"
-        package_file="''${CHATGPT_PACKAGE_FILE:-''${XDG_DATA_HOME:-$HOME/.local/share}/nix/chatgpt/package.nix}"
-
-        if [ ! -f "$package_file" ]; then
-          echo "The record-managed ChatGPT package is unavailable" >&2
-          exit 1
-        fi
-
-        current_version="$(sed -n 's/^[[:space:]]*version = "\([^"]*\)";/\1/p' "$package_file")"
-        current_url="$(sed -n 's/^[[:space:]]*url = "\([^"]*\)";/\1/p' "$package_file")"
-        current_hash="$(sed -n 's/^[[:space:]]*hash = "\([^"]*\)";/\1/p' "$package_file")"
-
-        if [ -z "$current_version" ] || [ -z "$current_url" ] || [ -z "$current_hash" ]; then
-          echo "The local ChatGPT package metadata is incomplete" >&2
-          exit 1
-        fi
-
-        if [ "$current_version" = "$version" ] && \
-          [ "$current_url" = "$url" ] && \
-          [ "$current_hash" = "$hash" ]; then
-          echo "ChatGPT is up to date at $version"
-          exit 0
-        fi
-
-        if [ "$check_only" = true ]; then
-          echo "ChatGPT $version is available; the package has $current_version" >&2
-          exit 1
-        fi
-
-        updated="$(mktemp "$(dirname "$package_file")/.package.nix.XXXXXX")"
-        trap 'rm -f "$repomd" "$primary" "$updated"' EXIT
-        sed \
-          -e "s|^\([[:space:]]*\)version = \"$current_version\";|\1version = \"$version\";|" \
-          -e "s|^\([[:space:]]*\)url = \"$current_url\";|\1url = \"$url\";|" \
-          -e "s|^\([[:space:]]*\)hash = \"$current_hash\";|\1hash = \"$hash\";|" \
-          "$package_file" > "$updated"
-        chmod --reference="$package_file" "$updated"
-        mv "$updated" "$package_file"
-        echo "Updated ChatGPT from $current_version to $version"
-      '';
+    # RPM discovery lives in update.nix, the standard script refreshes hashes
+    passthru.updateScript = nix-update-script {
+      attrPath = "chatgpt.unwrapped";
+      extraArgs = [
+        "--flake"
+        "--version=skip"
+      ];
     };
 
     meta = {
@@ -215,7 +121,7 @@ let
       platforms = [ "x86_64-linux" ];
       sourceProvenance = lib.attrValues { inherit (lib.sourceTypes) binaryNativeCode; };
     };
-  };
+  });
 in
 runCommand unwrapped.name
   {

@@ -18,7 +18,7 @@
       packages.${system} = {
         inherit chatgpt;
         default = chatgpt;
-        update-chatgpt = chatgpt.updateScript;
+        update-chatgpt = callPackage ./update.nix { inherit chatgpt; };
       };
     };
 }
