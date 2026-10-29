@@ -106,6 +106,7 @@
     "warningSurface": "@COLOR_LIGHT_WARNINGSURFACE@",
     "yellow": "@COLOR_LIGHT_YELLOW@"
   },
+  "ribbon": ["accentBlue", "accentPink", "accentWhite", "accentPink", "accentBlue"],
   "colors": {
     "accent": "pink",
     "border": "border",
@@ -119,14 +120,14 @@
     "text": "text",
     "thinkingText": "textMuted",
     "selectedBg": "highlightMed",
-    "userMessageBg": "messageSurface",
+    "userMessageBg": "",
     "userMessageText": "messageForeground",
-    "customMessageBg": "surface0",
+    "customMessageBg": "",
     "customMessageText": "text",
     "customMessageLabel": "pink",
-    "toolPendingBg": "surface0",
-    "toolSuccessBg": "mantle",
-    "toolErrorBg": "mantle",
+    "toolPendingBg": "",
+    "toolSuccessBg": "",
+    "toolErrorBg": "",
     "toolTitle": "foam",
     "toolOutput": "textMuted",
     "mdHeading": "rose",
@@ -160,7 +161,7 @@
     "thinkingMax": "blue",
     "bashMode": "green",
     "pythonMode": "yellow",
-    "statusLineBg": "crust",
+    "statusLineBg": "",
     "statusLineSep": "border",
     "statusLineModel": "blue",
     "statusLinePath": "pink",
@@ -177,9 +178,14 @@
   },
   "symbols": {
     "overrides": {
-      "icon.model": "🏳️‍⚧️",
+      "icon.model": "",
       "icon.omp": "🏳️‍⚧️",
-      "icon.agents": "🏳️‍🌈"
+      "icon.agents": "",
+      "icon.folder": "",
+      "icon.worktree": "",
+      "icon.scratchFolder": "",
+      "icon.cost": "$",
+      "icon.subscription": "$"
     }
   },
   "export": {

@@ -51,6 +51,7 @@
     user.enable = true;
     farstep.desktop.enable = true;
     omp.keybindings = lib.importJSON ../../../home/data/omp/keybindings.json;
+    omp.settings = lib.importJSON ../../../home/data/omp/config.json;
     chatgpt = {
       enable = true;
       package = null;

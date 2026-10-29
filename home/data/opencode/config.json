@@ -1,0 +1,7 @@
+{
+  "update": "disable",
+  "username": "Evy",
+  "watcher": {
+    "ignore": ["**/.bluebuild-scripts_*/**"]
+  }
+}

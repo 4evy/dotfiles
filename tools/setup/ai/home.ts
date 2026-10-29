@@ -2,7 +2,77 @@ import { existsSync } from "node:fs";
 import { chmod, copyFile, mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
+import ompConfig from "../../../home/data/omp/config.json";
 import keybindings from "../../../home/data/omp/keybindings.json";
+import opencodeConfig from "../../../home/data/opencode/config.json";
+import quotaToast from "../../../home/data/opencode/quota-toast.json";
+
+type Configuration = Record<string, unknown>;
+
+const formats = {
+  toml: {
+    read: async (path: string) => Bun.TOML.parse(await readFile(path, "utf8")),
+    stringify: (value: Configuration) => Bun.TOML.stringify(value),
+  },
+  yaml: {
+    read: async (path: string) => Bun.YAML.parse(await readFile(path, "utf8")),
+    stringify: (value: Configuration) => Bun.YAML.stringify(value),
+  },
+  json: {
+    read: (path: string) => Bun.file(path).json(),
+    stringify: (value: Configuration) => `${JSON.stringify(value, null, 2)}\n`,
+  },
+};
+
+type ConfigRule = {
+  format: keyof typeof formats;
+  preserveCurrent?: boolean;
+  onlyIfCurrentExists?: boolean;
+  // Shallow replacements in the export, before merging with current state
+  managedOverrides?: Configuration;
+  // Deep-merged last, after both current state and the managed export
+  overrides?: Configuration | ((managed: Configuration) => Configuration);
+};
+
+// Native-shaped preferences live in home/data, while merge policy stays here
+const configRules: Record<string, ConfigRule> = {
+  ".codex/config.toml": {
+    format: "toml",
+    preserveCurrent: true,
+    onlyIfCurrentExists: true,
+  },
+  ".omp/agent/config.yml": {
+    format: "yaml",
+    preserveCurrent: true,
+    // Replace exported appearance policy before merging with runtime state
+    managedOverrides: ompConfig,
+  },
+  ".omp/agent/keybindings.yml": {
+    format: "yaml",
+    preserveCurrent: true,
+    overrides: keybindings,
+  },
+  ".config/opencode/opencode.json": {
+    format: "json",
+    // Keep migration-owned preferences independent of the pinned AI export
+    overrides: (managed) => ({
+      ...opencodeConfig,
+      watcher: {
+        ...opencodeConfig.watcher,
+        ignore: [
+          ...new Set([
+            ...((managed.watcher as { ignore?: string[] } | undefined)?.ignore ?? []),
+            ...opencodeConfig.watcher.ignore,
+          ]),
+        ],
+      },
+    }),
+  },
+  ".config/opencode/opencode-quota/quota-toast.json": {
+    format: "json",
+    overrides: quotaToast,
+  },
+};
 
 export async function prepareAiHome(
   source: string,
@@ -48,86 +118,28 @@ export async function prepareAiHome(
       throw new Error("The AI config export contains an invalid destination");
     const target = join(destination, file.path);
     await mkdir(dirname(target), { recursive: true, mode: 0o700 });
-    if (file.path === ".codex/config.toml" && existsSync(join(home, file.path))) {
-      const current = Bun.TOML.parse(await readFile(join(home, file.path), "utf8"));
-      const managed = Bun.TOML.parse(await readFile(join(exported, file.path), "utf8"));
-      const contents = Bun.TOML.stringify(
-        merge(current as Record<string, unknown>, managed as Record<string, unknown>),
-      );
-      await writeFile(target, contents, { mode: 0o600 });
-    } else if (file.path === ".omp/agent/config.yml") {
-      const current = existsSync(join(home, file.path))
-        ? ((Bun.YAML.parse(await readFile(join(home, file.path), "utf8")) ??
-            {}) as Record<string, unknown>)
-        : {};
-      const managed = Bun.YAML.parse(
-        await readFile(join(exported, file.path), "utf8"),
-      ) as Record<string, unknown>;
-      // Preserve runtime state and the pre-migration flat trans-colored ribbon
+    const rule = Object.hasOwn(configRules, file.path)
+      ? configRules[file.path]
+      : undefined;
+    const currentPath = join(home, file.path);
+    if (rule && (!rule.onlyIfCurrentExists || existsSync(currentPath))) {
+      const format = formats[rule.format];
+      const current =
+        rule.preserveCurrent && existsSync(currentPath)
+          ? (((await format.read(currentPath)) ?? {}) as Configuration)
+          : {};
+      const managed = (await format.read(join(exported, file.path))) as Configuration;
+      const config = rule.preserveCurrent
+        ? merge(
+            current,
+            rule.managedOverrides ? { ...managed, ...rule.managedOverrides } : managed,
+          )
+        : managed;
+      const overrides =
+        typeof rule.overrides === "function" ? rule.overrides(managed) : rule.overrides;
       await writeFile(
         target,
-        Bun.YAML.stringify(
-          merge(current, {
-            ...managed,
-            theme: { dark: "catppuccin-custom-dark", light: "catppuccin-custom-light" },
-            statusLine: {
-              preset: "custom",
-              separator: "pipe",
-              transparent: true,
-              contextLine: "percentage",
-              sessionAccent: false,
-              compactThinkingLevel: false,
-              leftSegments: ["vim", "model", "mode", "path"],
-              rightSegments: ["context_pct", "usage", "cost", "token_total"],
-              segmentOptions: { path: { stripWorkPrefix: true, maxLength: 32 } },
-            },
-          }),
-        ),
-        { mode: 0o600 },
-      );
-    } else if (file.path === ".omp/agent/keybindings.yml") {
-      const current = existsSync(join(home, file.path))
-        ? ((Bun.YAML.parse(await readFile(join(home, file.path), "utf8")) ??
-            {}) as Record<string, unknown>)
-        : {};
-      const managed = Bun.YAML.parse(
-        await readFile(join(exported, file.path), "utf8"),
-      ) as Record<string, unknown>;
-      await writeFile(
-        target,
-        Bun.YAML.stringify(merge(merge(current, managed), keybindings)),
-        {
-          mode: 0o600,
-        },
-      );
-    } else if (file.path === ".config/opencode/opencode.json") {
-      const managed = await Bun.file(join(exported, file.path)).json();
-      // Keep migration-owned user preferences independent of the pinned AI export
-      await writeFile(
-        target,
-        `${JSON.stringify(
-          merge(managed, {
-            update: "disable",
-            username: "Evy",
-            watcher: {
-              ignore: [
-                ...new Set([
-                  ...(managed.watcher?.ignore ?? []),
-                  "**/.bluebuild-scripts_*/**",
-                ]),
-              ],
-            },
-          }),
-          null,
-          2,
-        )}\n`,
-        { mode: 0o600 },
-      );
-    } else if (file.path === ".config/opencode/opencode-quota/quota-toast.json") {
-      const managed = await Bun.file(join(exported, file.path)).json();
-      await writeFile(
-        target,
-        `${JSON.stringify(merge(managed, { enabledProviders: ["openai", "xai", "zai"] }), null, 2)}\n`,
+        format.stringify(overrides ? merge(config, overrides) : config),
         { mode: 0o600 },
       );
     } else await copyFile(join(exported, file.path), target);

@@ -1,0 +1,25 @@
+{
+  "theme": {
+    "dark": "catppuccin-custom-dark",
+    "light": "catppuccin-custom-light"
+  },
+  "composer": {
+    "shape": "pi"
+  },
+  "statusLine": {
+    "preset": "custom",
+    "separator": "none",
+    "transparent": true,
+    "contextLine": "percentage",
+    "sessionAccent": false,
+    "compactThinkingLevel": false,
+    "leftSegments": ["vim", "model", "mode", "path"],
+    "rightSegments": ["context_pct", "usage", "cost"],
+    "segmentOptions": {
+      "path": {
+        "stripWorkPrefix": true,
+        "maxLength": 24
+      }
+    }
+  }
+}
