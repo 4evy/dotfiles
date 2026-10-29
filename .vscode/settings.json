@@ -2,6 +2,14 @@
   "files.associations": {
     "Containerfile": "dockerfile",
     "Justfile": "just",
+    "Brewfile.private": "ruby",
+    ".yamlfmt": "yaml",
+    ".yamllint": "yaml",
+    "*.jsonc.{darwin,linux}": "jsonc",
+    "*.glsl.{darwin,linux}": "glsl",
+    "*.toml.{darwin,linux}": "toml",
+    "*.css.in": "css",
+    "*.gjs": "javascript",
 
     "*.m": "objective-c",
     "*.mm": "objective-cpp",
@@ -226,8 +234,14 @@
     "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnSave": true
   },
+  // Use the same YAML formatter and .yamlfmt policy as treefmt
+  // https://github.com/bluebrown/vscode-extension-yamlfmt
   "[yaml]": {
-    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.defaultFormatter": "bluebrown.yamlfmt",
+    "editor.formatOnSave": true
+  },
+  "[github-actions-workflow]": {
+    "editor.defaultFormatter": "bluebrown.yamlfmt",
     "editor.formatOnSave": true
   },
   "[toml]": {
