@@ -284,7 +284,7 @@
       "enabled": false
     },
     {
-      "description": "Let the OMP source pin own all matching runtime and extension dependencies",
+      "description": "Inherit OMP runtime and extension versions from the locked AI flake input",
       "matchManagers": ["npm", "bun"],
       "matchPackageNames": ["@oh-my-pi/**"],
       "enabled": false

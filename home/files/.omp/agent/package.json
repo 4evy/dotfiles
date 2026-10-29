@@ -2,6 +2,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@oh-my-pi/pi-tui": "18.12.6"
+    "@oh-my-pi/pi-tui": "@OMP_PI_TUI_VERSION@"
   }
 }

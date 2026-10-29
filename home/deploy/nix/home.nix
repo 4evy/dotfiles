@@ -82,6 +82,7 @@ let
   applicationFiles = import ./files.nix {
     inherit
       pkgs
+      inputs
       home
       repository
       os

@@ -17,6 +17,7 @@
     "format": "bun run biome check --write .",
     "lint": "bun run biome lint .",
     "lint:fix": "bun run biome lint --write .",
+    "sync:omp": "bun tools/renovate/omp.ts",
     "typecheck": "bun run tsrs -p tsconfig.json && bun run --sequential --workspaces typecheck && bun run --cwd tools/tiling typecheck && bun run --cwd tools/workstation typecheck"
   },
   "devDependencies": {

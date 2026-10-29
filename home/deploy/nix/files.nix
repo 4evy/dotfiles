@@ -1,5 +1,6 @@
 {
   pkgs,
+  inputs,
   home,
   repository,
   os,
@@ -8,6 +9,8 @@
 let
   inherit (pkgs) lib stdenv;
   palette = (lib.importJSON ../../theme/palette/palette.json).catppuccin_custom;
+  ompDependencies =
+    (lib.importJSON "${inputs.ai}/apps/omp/runtime/upstream/package.json").dependencies;
   manifest = lib.importJSON ../../manifest.json;
   components =
     color:
@@ -78,6 +81,11 @@ let
     if path == null then name else path;
   firstCommand = names: fallback: lib.findFirst (path: path != null) fallback (map commandPath names);
   markers = colorMarkers ++ [
+    {
+      # Inherit the deployed extension dependency from the locked AI runtime
+      name = "@OMP_PI_TUI_VERSION@";
+      value = ompDependencies."@oh-my-pi/pi-tui";
+    }
     {
       name = "@PYTHON@";
       value = findCommand "python3.14";

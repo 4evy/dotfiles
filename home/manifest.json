@@ -804,7 +804,8 @@
     },
     {
       "source": ".omp/agent/package.json",
-      "target": ".omp/agent/package.json"
+      "target": ".omp/agent/package.json",
+      "nixGenerated": true
     },
     {
       "source": ".omp/agent/themes/catppuccin-custom-dark.json",

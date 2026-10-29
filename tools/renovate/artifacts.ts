@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { writeIfChanged } from "../../lib/typescript/files.ts";
 import { updateBrowser, updateBunBootstrap, updateMise } from "./checksums.ts";
 import { validateGhostty } from "./ghostty.ts";
+import { updateOmpDependencies } from "./omp.ts";
 import { updateRenovatePatch } from "./patch.ts";
 import { execute, root, run } from "./process.ts";
 
@@ -66,6 +67,7 @@ if (changed.has("package.json")) {
 }
 if (changed.has("flake.nix") || changed.has("flake.lock")) {
   await run(["nix", "flake", "lock"]);
+  await updateOmpDependencies();
   await validateGhostty();
 }
 
@@ -92,6 +94,8 @@ if (changed.has(yazi)) {
   });
   await copyFile(join(staging, "package.toml"), join(root, yazi));
 }
+
+changed = await changedPaths();
 
 // Workspace manifests refresh their owning lockfile, not a nested lockfile
 for (const { directory, inputs, nix } of [
