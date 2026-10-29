@@ -18,6 +18,9 @@ rustPlatform.buildRustPackage {
     substituteInPlace src/commands/switch.rs \
       --replace-fail '.recipe(&self.recipe)' \
         '.recipe(&self.recipe).skip_validation(self.skip_validation)'
+    # Keep explicit drivers from evaluating unused runtime autodetection
+    substituteInPlace process/drivers/types/drivers.rs \
+      --replace-fail '*self.get_or_insert(' '*self.get_or_insert_with(||'
   '';
 
   cargoLock.lockFile = "${src}/Cargo.lock";
