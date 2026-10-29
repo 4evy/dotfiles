@@ -4,6 +4,7 @@
 // branches local; retain those guards when upgrading Renovate
 // The no-PR result must retain Renovate's typed outcome, including blocked updates
 module.exports = {
+  gitAuthor: "4evy <git@evy.pink>",
   allowedCommands: ["^bun tools/renovate/artifacts\\.ts$"],
   onboarding: false,
   requireConfig: "required",
