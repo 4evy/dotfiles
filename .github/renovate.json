@@ -330,7 +330,7 @@
     "commands": ["bun tools/renovate/artifacts.ts"],
     "fileFilters": [
       "flake.lock",
-      "tools/**/bun.nix",
+      "bun.nix",
       "**/bun.lock",
       "**/package.json",
       "tools/theme/run/package.nix",
