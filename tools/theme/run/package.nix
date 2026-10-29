@@ -2,6 +2,7 @@
   buildGoModule,
   go_1_27,
   lib,
+  nix-update-script,
 }:
 
 let
@@ -31,6 +32,15 @@ buildGo127Module {
     "-s"
     "-w"
   ];
+
+  # Local sources have no upstream release, only Go dependency hashes change
+  passthru.updateScript = nix-update-script {
+    attrPath = "theme-run";
+    extraArgs = [
+      "--flake"
+      "--version=skip"
+    ];
+  };
 
   meta = {
     description = "Theme-aware launcher for terminal applications";

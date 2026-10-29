@@ -149,27 +149,7 @@ for (const { directory, inputs, nix } of [
 }
 
 if (changed.has("tools/theme/run/go.mod") || changed.has("tools/theme/run/go.sum")) {
-  // buildGoModule hashes the recursive vendor output, including generated files
-  const derivation = await run([
-    "nix",
-    "eval",
-    "--raw",
-    ".#packages.x86_64-linux.theme-run.goModules",
-    "--apply",
-    'modules: (modules.overrideAttrs (_: { outputHash = ""; outputHashAlgo = "sha256"; })).drvPath',
-  ]);
-  const result = await execute(["nix", "build", "--no-link", `${derivation}^*`]);
-  const hash = result.stderr.match(/got:\s+(sha256-[A-Za-z0-9+/]+=)/)?.[1];
-  if (!hash) throw new Error(`Could not calculate Go vendor hash: ${result.stderr}`);
-  const path = join(root, "tools/theme/run/package.nix");
-  const content = await Bun.file(path).text();
-  const binding = /vendorHash = "[^"\n]+";/g;
-  if ([...content.matchAll(binding)].length !== 1)
-    throw new Error("Expected one Go vendor hash binding");
-  writeIfChanged(
-    path,
-    content.replace(binding, () => `vendorHash = "${hash}";`),
-  );
+  await run(["nix", "run", ".#update-theme-run"]);
   await run(["deadnix", "--fail", "tools/theme/run/package.nix"]);
   await run(["nixfmt", "tools/theme/run/package.nix"]);
 }
