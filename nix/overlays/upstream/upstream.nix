@@ -8,7 +8,7 @@ let
     unstable
     ;
   inherit (prev) kmscon libtsm;
-  inherit (unstable) libnotify python314Packages solaar;
+  inherit (unstable) libnotify python315Packages solaar;
 in
 {
   # Keep the managed runtime on the stable release ahead of the nixpkgs pin
@@ -37,7 +37,7 @@ in
 
   solaar =
     (solaar.override {
-      python3Packages = python314Packages;
+      python3Packages = python315Packages;
     }).overrideAttrs
       (previous: {
         patches = (previous.patches or [ ]) ++ [ ../../../packages/solaar/tray.patch ];

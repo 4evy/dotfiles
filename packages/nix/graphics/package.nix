@@ -2,7 +2,7 @@
   lib,
   stdenvNoCC,
   fetchFromGitHub,
-  python3,
+  unstable,
   patchelf,
 }:
 stdenvNoCC.mkDerivation {
@@ -14,12 +14,13 @@ stdenvNoCC.mkDerivation {
     rev = "5269b233f83880a0b433eafe026f0bc0d8f1a4a9";
     hash = "sha256-QZCKJoypcwgS3tDNSWMjlxEBZtOYPW3eXV24rMzKsac=";
   };
-  nativeBuildInputs = lib.attrValues { inherit python3; };
+  buildInputs = lib.attrValues { inherit (unstable) python315; };
+  nativeCheckInputs = lib.attrValues { inherit (unstable) python315; };
   dontBuild = true;
   doCheck = true;
   checkPhase = ''
     runHook preCheck
-    python3 src/nixglhost_test.py
+    python3.15 src/nixglhost_test.py
     runHook postCheck
   '';
   installPhase = ''

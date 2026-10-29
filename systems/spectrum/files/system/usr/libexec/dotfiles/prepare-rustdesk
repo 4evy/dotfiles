@@ -8,7 +8,7 @@ if ! cmp -s "$source" /var/lib/rustdesk/dotfiles/rustdesk; then
 fi
 ln -sfn "$(dirname "$source")/lib" /var/lib/rustdesk/dotfiles/lib
 
-/usr/bin/python3 - <<'PY'
+/usr/bin/python3.15 - <<'PY'
 import json
 from pathlib import Path
 

@@ -2,7 +2,7 @@
   callPackage,
   dotfilesSourcePins,
   lib,
-  python314,
+  python315,
   symlinkJoin,
 }:
 let
@@ -12,7 +12,7 @@ let
   upstreamRuntime =
     (callPackage "${source}/nix/toshy-runtime.nix" {
       toshySrc = source;
-      python3 = python314;
+      python3 = python315;
     }).overrideAttrs
       {
         doCheck = false;

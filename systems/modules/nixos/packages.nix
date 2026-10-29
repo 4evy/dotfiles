@@ -50,7 +50,7 @@ in
         ;
       inherit (pkgs) theme-run;
       inherit (pkgs) dotfiles-workstation;
-      inherit (unstable) python314;
+      inherit (unstable) python315;
 
       # Host/session spine and editor dependencies.
       inherit (unstable)

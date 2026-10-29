@@ -123,6 +123,12 @@ to encrypt changes and conceal the plaintext again
 compiles a standalone executable with Bun. Go remains installed for general
 development but is no longer required to build this repository's programs
 
+Standalone Python entry points use Nix shebangs to provide Python 3.15 without
+a project environment or lockfile. Run them directly, such as
+`home/files/.local/lib/sops/cache.py --status`. Python editor checks and
+formatting are configured in [`.vscode/settings.json`](.vscode/settings.json).
+Fedora-packaged applications keep their distribution-owned Python runtime
+
 ## Source layout
 
 I group source files by responsibility:

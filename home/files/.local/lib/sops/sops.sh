@@ -38,7 +38,7 @@ if [ "${SOPS_AGE_KEY_CACHE:-}" = "$cache_environment" ]; then
 fi
 
 if [ "$mode" = cache ]; then
-	require_command python3 Python
+	require_command nix 'Nix'
 	cache_helper=${0%/*}/cache.py
 	if [ ! -f "$cache_helper" ]; then
 		cache_helper=${0%/*}/../lib/sops/cache.py
@@ -48,7 +48,7 @@ if [ "$mode" = cache ]; then
 		exit 127
 	fi
 
-	exec python3 "$cache_helper" "$@"
+	exec "$cache_helper" "$@"
 fi
 
 require_command op '1Password CLI'

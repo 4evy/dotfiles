@@ -253,7 +253,7 @@ if [[ "$_dotfiles_os" == Darwin ]]; then
 fi
 
 export BASH_ENV="${BASH_ENV:-$HOME/.bashenv}"
-export UV_PYTHON="${UV_PYTHON:-3.14}"
+export UV_PYTHON="${UV_PYTHON:-3.15}"
 export UV_PYTHON_PREFERENCE="${UV_PYTHON_PREFERENCE:-only-managed}"
 export RUMDL_CACHE_DIR="${RUMDL_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/rumdl}"
 export GLAMOUR_STYLE="${GLAMOUR_STYLE:-$HOME/.config/glamour/styles/catppuccin-custom-dark.json}"

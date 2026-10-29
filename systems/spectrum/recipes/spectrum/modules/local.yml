@@ -66,7 +66,7 @@ modules:
   - type: script@v2
     source: ghcr.io/blue-build/modules/script:v2@sha256:fa4455089da980cb871c804521786ffa74c534987df4251a90eba850fe4a7d86
     snippets:
-      - patch --batch --forward -p2 -d /usr/lib/python3.14/site-packages < /tmp/solaar-no-tray.patch
+      - patch --batch --forward -p2 -d "$(/usr/bin/python3 -c 'import importlib.util; from pathlib import Path; print(Path(importlib.util.find_spec("solaar").origin).parent.parent)')" < /tmp/solaar-no-tray.patch
       - rm /tmp/solaar-no-tray.patch
 
   - type: copy@v1

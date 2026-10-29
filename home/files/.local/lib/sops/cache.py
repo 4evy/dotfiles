@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env nix
+#! nix shell nixpkgs#python315 --command python3.15
 
 import contextlib
 import fcntl

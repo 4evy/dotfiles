@@ -89,7 +89,7 @@ let
     }
     {
       name = "@PYTHON@";
-      value = findCommand "python3.14";
+      value = findCommand "python3.15";
     }
     {
       name = "@CLANG_TIDY@";

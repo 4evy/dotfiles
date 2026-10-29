@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.14
+#!/usr/bin/env python3.15
 keyboards_UserCustom_dct = {
     "kanata": "Windows",
     "kanata output": "Windows",
