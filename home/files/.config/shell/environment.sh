@@ -146,25 +146,10 @@ if [[ ! -e /etc/NIXOS ]]; then
 		_dotfiles_path_append_once "$JAVA_HOME/bin"
 	fi
 	if [[ -n "${HOMEBREW_PREFIX:-}" ]]; then
-		# Formulae that Homebrew intentionally does not link into its main prefix.
-		# Keep this list aligned with the developer-facing keg-only tools in Brewfile.
+		# Hjem pre-renders the shared Homebrew inventory, never parse at startup
 		if [[ "$_dotfiles_os" == Darwin ]]; then
-			_dotfiles_path_append_once \
-				"$HOMEBREW_PREFIX/opt/coreutils/libexec/gnubin" \
-				"$HOMEBREW_PREFIX/opt/findutils/libexec/gnubin" \
-				"$HOMEBREW_PREFIX/opt/gnu-sed/libexec/gnubin" \
-				"$HOMEBREW_PREFIX/opt/grep/libexec/gnubin" \
-				"$HOMEBREW_PREFIX/opt/gawk/libexec/gnubin" \
-				"$HOMEBREW_PREFIX/opt/gnu-tar/libexec/gnubin" \
-				"$HOMEBREW_PREFIX/opt/gnu-which/libexec/gnubin" \
-				"$HOMEBREW_PREFIX/opt/diffutils/libexec/gnubin" \
-				"$HOMEBREW_PREFIX/opt/make/libexec/gnubin" \
-				"$HOMEBREW_PREFIX/opt/gnu-getopt/bin" \
-				"$HOMEBREW_PREFIX/opt/curl/bin" \
-				"$HOMEBREW_PREFIX/opt/file-formula/bin" \
-				"$HOMEBREW_PREFIX/opt/lsof/bin" \
-				"$HOMEBREW_PREFIX/opt/unzip/bin" \
-				"$HOMEBREW_PREFIX/opt/zip/bin"
+			# shellcheck source=/dev/null
+			source "$HOME/.config/shell/homebrew-path.sh"
 		fi
 		_dotfiles_path_append_once "$HOMEBREW_PREFIX/opt/rustup/bin"
 		_dotfiles_path_append_once "$HOMEBREW_PREFIX/bin" "$HOMEBREW_PREFIX/sbin"
@@ -198,7 +183,8 @@ if [[ "$_dotfiles_os" == Darwin ]]; then
 	# Expose Homebrew binutils commands that macOS lacks without replacing Apple's
 	# linker and other native toolchain commands that appeared earlier in PATH.
 	if [[ -n "${HOMEBREW_PREFIX:-}" ]]; then
-		_dotfiles_path_append_once "$HOMEBREW_PREFIX/opt/binutils/bin"
+		# shellcheck source=/dev/null
+		source "$HOME/.config/shell/homebrew-path-tail.sh"
 	fi
 fi
 

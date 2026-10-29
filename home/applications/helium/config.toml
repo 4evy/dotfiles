@@ -163,12 +163,12 @@ ublock_assets = true
 
 [extension_settings]
 files = [
-  "settings/control-panel-for-twitter.json",
-  "settings/enhancer-for-youtube.json",
-  "settings/minimal-twitter-theme.json",
-  "settings/refined-github.json",
-  "settings/ublock-origin.json",
-  "settings/ublock-origin-helium.json",
+  "settings/twitter/control/settings.json",
+  "settings/youtube/enhancer/settings.json",
+  "settings/twitter/minimal/settings.json",
+  "settings/github/refined/settings.json",
+  "settings/ublock/origin/settings.json",
+  "settings/ublock/origin/helium.json",
 ]
 
 [extensions]

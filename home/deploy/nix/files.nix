@@ -12,6 +12,7 @@ let
   ompDependencies =
     (lib.importJSON "${inputs.ai}/apps/omp/runtime/upstream/package.json").dependencies;
   manifest = import ../../manifest.nix;
+  normalizeFile = import ./file/entry.nix { inherit lib; };
   components =
     color:
     map (offset: lib.fromHexString (lib.substring offset 2 color)) [
@@ -142,26 +143,44 @@ let
     entry:
     let
       source = (entry.sourceByOS or { }).${os} or entry.source;
-      text = replace (lib.readFile (../../files + "/${source}"));
-      private = entry.private or false;
-      # Sandboxed apps need real copies, including generated settings
-      mutable = entry.mutable or false;
-      executable = entry.executable or false;
-    in
-    {
-      inherit (entry) target;
-      inherit executable;
-      type = if private || mutable then "copy" else "symlink";
-    }
-    // (if entry.symlink or false then { source = lib.removeSuffix "\n" text; } else { inherit text; })
-    // lib.optionalAttrs (private || mutable) {
-      permissions =
-        if private then
-          if executable then "0700" else "0600"
-        else if executable then
-          "0755"
+      templateText = lib.replaceStrings [ "@GHOSTTY_COMMON@" "@GHOSTTY_KEY_TABLES@" ] (map
+        (path: lib.removeSuffix "\n" (lib.readFile path))
+        [
+          ../../files/.config/ghostty/common.ghostty
+          ../../files/.config/ghostty/key/tables.ghostty
+        ]
+      ) (lib.readFile (../../files + "/${source}"));
+      variant = entry.variant or "dark";
+      variantText =
+        lib.replaceStrings
+          [ "_VARIANT_" "catppuccin_custom_variant" ]
+          [ "_${lib.toUpper variant}_" "catppuccin_custom_${variant}" ]
+          templateText;
+      text = replace (
+        if source == ".config/eza/theme.yml" then
+          lib.replaceStrings [ "_DARK_" ] [ "_${lib.toUpper variant}_" ] variantText
         else
-          "0644";
+          variantText
+      );
+    in
+    normalizeFile entry (
+      if entry.symlink or false then { source = lib.removeSuffix "\n" text; } else { inherit text; }
+    );
+  homebrewPath =
+    append:
+    normalizeFile { target = ".config/shell/homebrew-path${lib.optionalString append "-tail"}.sh"; } {
+      text =
+        lib.concatMapStrings
+          (tool: ''_dotfiles_path_append_once "$HOMEBREW_PREFIX/opt/${tool.formula}/${tool.path}"'' + "\n")
+          (
+            lib.filter (tool: lib.elem "darwin" tool.platforms && (tool.append or false) == append) (
+              lib.importJSON ../../../data/homebrew/tools.json
+            )
+          );
     };
 in
 map file (lib.filter enabled manifest.files)
+++ lib.optionals (os == "darwin") [
+  (homebrewPath false)
+  (homebrewPath true)
+]

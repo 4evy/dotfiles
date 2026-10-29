@@ -51,11 +51,7 @@ _fzf_init() {
 
   init="$(
     setopt pipefail
-    "$fzf_bin" --zsh | sed \
-      -e '/^### completion\.zsh ###$/,$d' \
-      -e '/^  eval \$__fzf_key_bindings_options$/i\
-  __fzf_key_bindings_options=${__fzf_key_bindings_options/ zle on/}\
-  __fzf_key_bindings_options=${__fzf_key_bindings_options/ zle off/}'
+    bash "$HOME/.config/shell/generate-init.sh" fzf zsh
   )" || return
 
   eval "$init"

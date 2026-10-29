@@ -1,17 +1,4 @@
-theme = light:catppuccin-custom-light.conf,dark:catppuccin-custom-dark.conf
-background-image = @HOME@/.config/ghostty/backgrounds/catppuccin-custom-emoji-scatter.png
-background-image-opacity = 0.24
-background-image-position = center
-background-image-fit = cover
-custom-shader = @HOME@/.config/ghostty/shaders/catppuccin-custom-glow.glsl
-custom-shader-animation = false
-adjust-underline-position = 4
-confirm-close-surface = false
-# Closing a tab/split means terminate it; do not retain its PTY for macOS undo.
-undo-timeout = 0
-cursor-style = bar
-cursor-style-blink = false
-font-family = JetBrainsMono Nerd Font Mono
+@GHOSTTY_COMMON@
 command = /bin/zsh
 env = SHELL=/bin/zsh
 font-size = 14
@@ -181,56 +168,4 @@ keybind = performable:escape=end_search
 
 # Ghostty-native one-shot key tables for tabs, splits, scrolling, and editing.
 keybind = super+g=activate_key_table_once:ghostty
-keybind = ghostty/t=new_tab
-keybind = ghostty/n=new_window
-keybind = ghostty/q=quit
-keybind = ghostty/1=goto_tab:1
-keybind = ghostty/2=goto_tab:2
-keybind = ghostty/3=goto_tab:3
-keybind = ghostty/4=goto_tab:4
-keybind = ghostty/5=goto_tab:5
-keybind = ghostty/6=goto_tab:6
-keybind = ghostty/7=goto_tab:7
-keybind = ghostty/8=goto_tab:8
-keybind = ghostty/9=goto_tab:9
-keybind = ghostty/h=goto_split:left
-keybind = ghostty/j=goto_split:down
-keybind = ghostty/k=goto_split:up
-keybind = ghostty/l=goto_split:right
-keybind = ghostty/shift+k=clear_screen
-keybind = ghostty/s=deactivate_key_table
-keybind = chain=activate_key_table_once:ghostty-scrollback
-keybind = ghostty/p=deactivate_key_table
-keybind = chain=activate_key_table_once:ghostty-pane
-keybind = ghostty/r=deactivate_key_table
-keybind = chain=activate_key_table_once:ghostty-resize
-keybind = ghostty/escape=deactivate_key_table
-keybind = ghostty/catch_all=deactivate_key_table
-
-# Helix reads plain text; it does not render terminal color sequences.
-keybind = ghostty-scrollback/e=write_scrollback_file:open
-keybind = ghostty-scrollback/j=scroll_page_lines:1
-keybind = ghostty-scrollback/k=scroll_page_lines:-1
-keybind = ghostty-scrollback/page_down=scroll_page_down
-keybind = ghostty-scrollback/page_up=scroll_page_up
-keybind = ghostty-scrollback/slash=start_search
-keybind = ghostty-scrollback/escape=deactivate_key_table
-keybind = ghostty-scrollback/catch_all=deactivate_key_table
-
-keybind = ghostty-pane/left=new_split:left
-keybind = ghostty-pane/down=new_split:down
-keybind = ghostty-pane/up=new_split:up
-keybind = ghostty-pane/right=new_split:right
-keybind = ghostty-pane/p=goto_split:previous
-keybind = ghostty-pane/x=close_surface
-keybind = ghostty-pane/f=toggle_split_zoom
-keybind = ghostty-pane/escape=deactivate_key_table
-keybind = ghostty-pane/catch_all=deactivate_key_table
-
-keybind = ghostty-resize/left=resize_split:left,20
-keybind = ghostty-resize/down=resize_split:down,20
-keybind = ghostty-resize/up=resize_split:up,20
-keybind = ghostty-resize/right=resize_split:right,20
-keybind = ghostty-resize/equal=equalize_splits
-keybind = ghostty-resize/escape=deactivate_key_table
-keybind = ghostty-resize/catch_all=deactivate_key_table
+@GHOSTTY_KEY_TABLES@

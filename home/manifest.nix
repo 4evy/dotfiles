@@ -3,7 +3,7 @@
   version = 1;
   files = [
     {
-      source = "Library/Application Support/Code/User/settings.json";
+      source = ".config/Code/User/settings.json";
       target = "Library/Application Support/Code/User/settings.json";
       systems = [
         "darwin"
@@ -109,7 +109,7 @@
       target = ".config/antigravity/cli.json";
     }
     {
-      source = ".config/antigravity/shared-rules";
+      source = ".config/antigravity/shared/rules";
       target = ".gemini/AGENTS.md";
       symlink = true;
     }
@@ -217,14 +217,15 @@
       nixGenerated = true;
     }
     {
-      source = ".config/eza-catppuccin-custom-dark/theme.yml";
+      source = ".config/eza/theme.yml";
       target = ".config/eza-catppuccin-custom-dark/theme.yml";
       nixGenerated = true;
     }
     {
-      source = ".config/eza-catppuccin-custom-light/theme.yml";
+      source = ".config/eza/theme.yml";
       target = ".config/eza-catppuccin-custom-light/theme.yml";
       nixGenerated = true;
+      variant = "light";
     }
     {
       source = ".config/fastfetch/apple.txt";
@@ -414,102 +415,42 @@
       ];
       nixGenerated = true;
     }
+  ]
+  ++ (builtins.map
+    (source: {
+      inherit source;
+      target = source;
+    })
+    [
+      ".config/shell/environment.sh"
+      ".config/shell/bashrc.d/10-terminal.bash"
+      ".config/shell/bashrc.d/20-core.bash"
+      ".config/shell/bashrc.d/30-framework.bash"
+      ".config/shell/bashrc.d/40-focus.bash"
+      ".config/shell/bashrc.d/50-integrations.bash"
+      ".config/shell/bashrc.d/70-commands.bash"
+      ".config/shell/bashrc.d/80-navigation.bash"
+      ".config/shell/interactive.d/10-essentials.sh"
+      ".config/shell/interactive.d/20-wrappers.sh"
+      ".config/shell/interactive.d/40-host-tools.sh"
+      ".config/shell/interactive.d/50-repository.sh"
+      ".config/shell/interactive.d/60-navigation.sh"
+      ".config/shell/zshrc.d/10-terminal.zsh"
+      ".config/shell/zshrc.d/20-core.zsh"
+      ".config/shell/zshrc.d/30-framework.zsh"
+      ".config/shell/zshrc.d/40-focus.zsh"
+      ".config/shell/zshrc.d/50-integrations.zsh"
+      ".config/shell/zshrc.d/70-commands.zsh"
+      ".config/shell/zshrc.d/80-navigation.zsh"
+      ".config/shell/interactive.bash"
+      ".config/shell/interactive.common.sh"
+      ".config/shell/interactive.zsh"
+    ]
+  )
+  ++ [
     {
-      source = ".config/shell/environment.sh";
-      target = ".config/shell/environment.sh";
-    }
-    {
-      source = ".config/shell/bashrc.d/10-terminal.bash";
-      target = ".config/shell/bashrc.d/10-terminal.bash";
-    }
-    {
-      source = ".config/shell/bashrc.d/20-core.bash";
-      target = ".config/shell/bashrc.d/20-core.bash";
-    }
-    {
-      source = ".config/shell/bashrc.d/30-framework.bash";
-      target = ".config/shell/bashrc.d/30-framework.bash";
-    }
-    {
-      source = ".config/shell/bashrc.d/40-focus.bash";
-      target = ".config/shell/bashrc.d/40-focus.bash";
-    }
-    {
-      source = ".config/shell/bashrc.d/50-integrations.bash";
-      target = ".config/shell/bashrc.d/50-integrations.bash";
-    }
-    {
-      source = ".config/shell/bashrc.d/70-commands.bash";
-      target = ".config/shell/bashrc.d/70-commands.bash";
-    }
-    {
-      source = ".config/shell/bashrc.d/80-navigation.bash";
-      target = ".config/shell/bashrc.d/80-navigation.bash";
-    }
-    {
-      source = ".config/shell/interactive.d/10-essentials.sh";
-      target = ".config/shell/interactive.d/10-essentials.sh";
-    }
-    {
-      source = ".config/shell/interactive.d/20-wrappers.sh";
-      target = ".config/shell/interactive.d/20-wrappers.sh";
-    }
-    {
-      source = ".config/shell/interactive.d/40-host-tools.sh";
-      target = ".config/shell/interactive.d/40-host-tools.sh";
-    }
-    {
-      source = ".config/shell/interactive.d/50-repository.sh";
-      target = ".config/shell/interactive.d/50-repository.sh";
-    }
-    {
-      source = ".config/shell/interactive.d/60-navigation.sh";
-      target = ".config/shell/interactive.d/60-navigation.sh";
-    }
-    {
-      source = ".config/shell/zshrc.d/10-terminal.zsh";
-      target = ".config/shell/zshrc.d/10-terminal.zsh";
-    }
-    {
-      source = ".config/shell/zshrc.d/20-core.zsh";
-      target = ".config/shell/zshrc.d/20-core.zsh";
-    }
-    {
-      source = ".config/shell/zshrc.d/30-framework.zsh";
-      target = ".config/shell/zshrc.d/30-framework.zsh";
-    }
-    {
-      source = ".config/shell/zshrc.d/40-focus.zsh";
-      target = ".config/shell/zshrc.d/40-focus.zsh";
-    }
-    {
-      source = ".config/shell/zshrc.d/50-integrations.zsh";
-      target = ".config/shell/zshrc.d/50-integrations.zsh";
-    }
-    {
-      source = ".config/shell/zshrc.d/70-commands.zsh";
-      target = ".config/shell/zshrc.d/70-commands.zsh";
-    }
-    {
-      source = ".config/shell/zshrc.d/80-navigation.zsh";
-      target = ".config/shell/zshrc.d/80-navigation.zsh";
-    }
-    {
-      source = ".config/shell/interactive.bash";
-      target = ".config/shell/interactive.bash";
-    }
-    {
-      source = ".config/shell/interactive.common.sh";
-      target = ".config/shell/interactive.common.sh";
-    }
-    {
-      source = ".config/shell/interactive.zsh";
-      target = ".config/shell/interactive.zsh";
-    }
-    {
-      source = ".config/shell/completion-commands.json";
-      target = ".config/shell/completion-commands.json";
-      private = true;
+      source = ".config/shell/init/generate.sh";
+      target = ".config/shell/generate-init.sh";
     }
     {
       source = ".config/shell/zoxide.bash";
@@ -527,31 +468,23 @@
       source = ".config/solaar/rules.yaml";
       target = ".config/solaar/rules.yaml";
     }
-    {
-      source = ".config/starship-catppuccin-custom-dark.toml";
-      target = ".config/starship-catppuccin-custom-dark.toml";
-      nixGenerated = true;
-    }
-    {
-      source = ".config/starship-catppuccin-custom-light.toml";
-      target = ".config/starship-catppuccin-custom-light.toml";
-      nixGenerated = true;
-    }
-    {
-      source = ".config/starship-catppuccin-custom-terminal-dark.toml";
-      target = ".config/starship-catppuccin-custom-terminal-dark.toml";
-      nixGenerated = true;
-    }
-    {
-      source = ".config/starship-catppuccin-custom-terminal-light.toml";
-      target = ".config/starship-catppuccin-custom-terminal-light.toml";
-      nixGenerated = true;
-    }
-    {
+  ]
+  ++ (builtins.map
+    (target: {
       source = ".config/starship.toml";
-      target = ".config/starship.toml";
+      inherit target;
       nixGenerated = true;
-    }
+      variant = if builtins.match ".*-light\\.toml" target != null then "light" else "dark";
+    })
+    [
+      ".config/starship-catppuccin-custom-dark.toml"
+      ".config/starship-catppuccin-custom-light.toml"
+      ".config/starship-catppuccin-custom-terminal-dark.toml"
+      ".config/starship-catppuccin-custom-terminal-light.toml"
+      ".config/starship.toml"
+    ]
+  )
+  ++ [
     {
       source = ".config/systemd/user/gnome-catppuccin-custom-accent.service";
       target = ".config/systemd/user/gnome-catppuccin-custom-accent.service";
@@ -758,7 +691,7 @@
       ];
     }
     {
-      source = ".local/lib/chatgpt/computer-use.sh";
+      source = ".local/lib/chatgpt/computer/use.sh";
       target = ".local/lib/chatgpt/computer-use.sh";
       executable = true;
       systems = [

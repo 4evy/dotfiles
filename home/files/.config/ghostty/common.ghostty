@@ -1,0 +1,14 @@
+theme = light:catppuccin-custom-light.conf,dark:catppuccin-custom-dark.conf
+background-image = @HOME@/.config/ghostty/backgrounds/catppuccin-custom-emoji-scatter.png
+background-image-opacity = 0.24
+background-image-position = center
+background-image-fit = cover
+custom-shader = @HOME@/.config/ghostty/shaders/catppuccin-custom-glow.glsl
+custom-shader-animation = false
+adjust-underline-position = 4
+confirm-close-surface = false
+# Closing a tab/split means terminate it; do not retain its PTY for macOS undo.
+undo-timeout = 0
+cursor-style = bar
+cursor-style-blink = false
+font-family = JetBrainsMono Nerd Font Mono

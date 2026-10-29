@@ -6,7 +6,7 @@
 let
   inherit (pkgs)
     lib
-    runCommandLocal
+    linkFarm
     stdenv
     writeText
     writeShellApplication
@@ -37,14 +37,10 @@ let
       [ "@HOME@" "@REPOSITORY@" "@OS@" "@HOMEBREW_PREFIX@" ]
       [ home repository os brewPrefix ];
   sourceText = entry: substitute (lib.readFile (../../files + "/${entry.source}"));
+  normalizeFile = import ./file/entry.nix { inherit lib; };
   fileEntry =
     entry:
-    {
-      inherit (entry) target;
-      executable = entry.executable or false;
-      type = if (entry.private or false) || (entry.mutable or false) then "copy" else "symlink";
-    }
-    // (
+    normalizeFile entry (
       if entry.symlink or false then
         {
           source =
@@ -61,16 +57,7 @@ let
         { source = ../../files + "/${entry.source}"; }
       else
         { text = sourceText entry; }
-    )
-    // lib.optionalAttrs ((entry.private or false) || (entry.mutable or false)) {
-      permissions =
-        if entry.private or false then
-          if entry.executable or false then "0700" else "0600"
-        else if entry.executable or false then
-          "0755"
-        else
-          "0644";
-    };
+    );
   static = lib.filter (
     entry:
     enabled entry
@@ -335,39 +322,14 @@ let
         jq -n --slurpfile preferences "$config" \
           --rawfile commit "$home/.config/super-engineering/commands/commit.md" \
           --rawfile rebase "$home/.config/super-engineering/commands/rebase.md" '
-          $preferences[0] * {
-            ai_tier: {
-              custom_commands: [
-                {
-                  id: "299605c4-2761-4df7-b898-f60369434ff1",
-                  name: "Commit by domain",
-                  command: ($commit | rtrimstr("\n")),
-                  auto_submit: true,
-                  dispatch_mode: "inject_current_chat",
-                  view_preference: "default"
-                },
-                {
-                  id: "f3ca99ff-ea59-41c5-97f6-ceabc6a08d47",
-                  name: "Rebase onto upstream",
-                  command: ($rebase | rtrimstr("\n")),
-                  auto_submit: true,
-                  dispatch_mode: "inject_current_chat",
-                  view_preference: "default"
-                },
-                # Keep Session default unchanged and wait for a user prompt
-                {
-                  id: "1f59deeb-37f9-43e0-be66-360e6e154a2a",
-                  name: "Quick chat",
-                  command: "Handle the next request in this fresh chat.",
-                  auto_submit: false,
-                  dispatch_mode: "new_tab",
-                  view_preference: "chat",
-                  provider_preset_key: "omp",
-                  model_id: "openai-codex/gpt-6-luna"
-                }
-              ]
-            }
-          }
+          {commit: $commit, rebase: $rebase} as $prompts |
+          $preferences[0] |
+          .ai_tier.custom_commands |= map(
+            if has("prompt") then
+              .command = ($prompts[.prompt] | rtrimstr("\n")) | del(.prompt)
+            else .
+            end
+          )
         ' >"$temporary/managed"
         # Stable IDs replace only these commands, preserving personal additions
         jq -s '
@@ -477,9 +439,8 @@ assert lib.assertMsg (
 ) "Hjem hooks have no command or shellHooks entry: ${lib.concatStringsSep ", " missingShellHooks}";
 assert lib.assertMsg (unusedShellHooks == [ ])
   "Hjem shellHooks entries have no matching commandless manifest hook: ${lib.concatStringsSep ", " unusedShellHooks}";
-runCommandLocal "hjem-home" { } ''
-  mkdir -p "$out"
-  cp ${manifest} "$out/manifest.json"
-  cp ${hookMetadata} "$out/hooks.json"
-  cp ${generatorMetadata} "$out/generators.json"
-''
+linkFarm "hjem-home" {
+  "manifest.json" = manifest;
+  "hooks.json" = hookMetadata;
+  "generators.json" = generatorMetadata;
+}

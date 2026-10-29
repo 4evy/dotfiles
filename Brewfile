@@ -1,3 +1,10 @@
+require "json"
+
+JSON.parse(File.read(File.join(__dir__, "data/homebrew/tools.json"))).each do |tool|
+  platform = OS.mac? ? "darwin" : "linux"
+  brew tool.fetch("formula") if tool.fetch("platforms").include?(platform)
+end
+
 cask_args appdir: "/Applications" if OS.mac?
 
 tap "4evy/hide-disply-audio", "https://github.com/4evy/hide-disply-audio", trusted: true
@@ -29,21 +36,12 @@ brew "zsh" if OS.mac?
 
 # CLI replacements
 brew "broot" if OS.mac?
-brew "coreutils" if OS.mac?
-brew "diffutils" if OS.mac?
 brew "diffstat" if OS.mac?
 brew "duf" if OS.mac?
 brew "dust" if OS.mac?
 brew "eza" if OS.mac?
 brew "fd" if OS.mac?
-brew "findutils" if OS.mac?
-brew "gawk" if OS.mac?
 brew "git-delta" if OS.mac?
-brew "gnu-getopt" if OS.mac?
-brew "gnu-sed" if OS.mac?
-brew "gnu-tar" if OS.mac?
-brew "gnu-which" if OS.mac?
-brew "grep" if OS.mac?
 brew "gum" if OS.mac?
 brew "ripgrep" if OS.mac?
 brew "sd" if OS.mac?
@@ -74,7 +72,6 @@ brew "lua"
 brew "lua-language-server"
 brew "luacheck"
 brew "luarocks"
-brew "make"
 brew "ninja"
 brew "pinact"
 brew "gpatch"
@@ -95,7 +92,6 @@ brew "zizmor"
 # Reverse engineering and binary analysis
 brew "afl++"
 brew "apktool"
-brew "binutils"
 brew "binwalk"
 brew "capstone"
 brew "dex2jar"
@@ -116,14 +112,11 @@ brew "yazi" if OS.mac?
 
 # File management and archives
 brew "chafa" if OS.mac?
-brew "file-formula" if OS.mac?
 brew "resvg" if OS.mac?
 brew "rsync" if OS.mac?
 brew "sevenzip" if OS.mac?
 brew "tree" if OS.mac?
-brew "unzip" if OS.mac?
 brew "xz" if OS.mac?
-brew "zip" if OS.mac?
 
 # Media and documents
 brew "ffmpeg"
@@ -138,7 +131,6 @@ brew "poppler"
 
 # Networking
 brew "age" if OS.mac?
-brew "curl" if OS.mac?
 brew "bind"
 brew "gnupg"
 brew "netcat"
@@ -177,7 +169,6 @@ if OS.mac?
   brew "hidapi"
   brew "zig"
 end
-brew "lsof"
 brew "ncdu" if OS.mac?
 brew "pass" if OS.mac?
 brew "ruff" if OS.mac?

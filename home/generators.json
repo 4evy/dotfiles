@@ -31,19 +31,34 @@
   },
   {
     "target": ".cache/fzf/init.zsh",
-    "command": ["bash", "@REPOSITORY@/home/deploy/shell/shell.sh", "fzf", "zsh"],
+    "command": [
+      "bash",
+      "@REPOSITORY@/home/files/.config/shell/init/generate.sh",
+      "fzf",
+      "zsh"
+    ],
     "requireCommand": "fzf",
     "required": true
   },
   {
     "target": ".cache/starship/init.bash",
-    "command": ["bash", "@REPOSITORY@/home/deploy/shell/shell.sh", "starship", "bash"],
+    "command": [
+      "bash",
+      "@REPOSITORY@/home/files/.config/shell/init/generate.sh",
+      "starship",
+      "bash"
+    ],
     "requireCommand": "starship",
     "required": true
   },
   {
     "target": ".cache/starship/init.zsh",
-    "command": ["bash", "@REPOSITORY@/home/deploy/shell/shell.sh", "starship", "zsh"],
+    "command": [
+      "bash",
+      "@REPOSITORY@/home/files/.config/shell/init/generate.sh",
+      "starship",
+      "zsh"
+    ],
     "requireCommand": "starship",
     "required": true
   },

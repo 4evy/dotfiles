@@ -13,7 +13,6 @@ let
     linkFarm
     unstable
     writeShellApplication
-    writeText
     ;
   inherit (pkgs.eupkgs) helium-browser;
 
@@ -52,10 +51,7 @@ let
       wrapper_flags = commandLineArgs;
     };
     extension_settings.files = map (
-      path:
-      writeText "helium-${baseNameOf path}" (
-        lib.readFile (../../../../home/applications/helium + "/${path}")
-      )
+      path: "${../../../../home/applications/helium + "/${path}"}"
     ) heliumConfigSource.extension_settings.files;
   };
 

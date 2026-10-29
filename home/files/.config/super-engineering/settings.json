@@ -1,4 +1,34 @@
 {
+  "ai_tier": {
+    "custom_commands": [
+      {
+        "id": "299605c4-2761-4df7-b898-f60369434ff1",
+        "name": "Commit by domain",
+        "prompt": "commit",
+        "auto_submit": true,
+        "dispatch_mode": "inject_current_chat",
+        "view_preference": "default"
+      },
+      {
+        "id": "f3ca99ff-ea59-41c5-97f6-ceabc6a08d47",
+        "name": "Rebase onto upstream",
+        "prompt": "rebase",
+        "auto_submit": true,
+        "dispatch_mode": "inject_current_chat",
+        "view_preference": "default"
+      },
+      {
+        "id": "1f59deeb-37f9-43e0-be66-360e6e154a2a",
+        "name": "Quick chat",
+        "command": "Handle the next request in this fresh chat.",
+        "auto_submit": false,
+        "dispatch_mode": "new_tab",
+        "view_preference": "chat",
+        "provider_preset_key": "omp",
+        "model_id": "openai-codex/gpt-6-luna"
+      }
+    ]
+  },
   "experimental": {
     "provider_launch_flags": {
       "omp": "--approval-mode yolo --config \"~/.config/super-engineering/omp.yml\""

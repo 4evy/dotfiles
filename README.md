@@ -142,8 +142,22 @@ I group source files by responsibility:
 | `just/`              | Public command entrypoints                                   |
 | `secrets/`           | Encrypted records and settings                               |
 
+I use lowercase directory groups for source names, such as
+[`data/homebrew/tools.json`](data/homebrew/tools.json) and
+[`nix/lib/gnome/defaults.nix`](nix/lib/gnome/defaults.nix), rather than joining
+responsibilities with camelCase or hyphens. Native application paths, upstream
+names, tool-required filenames, and numbered startup fragments keep their
+required spelling. Source-only moves preserve deployed targets in
+[`home/manifest.nix`](home/manifest.nix)
+
 The root `recipes` symlink points to `systems/spectrum/recipes` because the
 pinned BlueBuild CLI resolves recipe imports through that entrypoint
+
+I edit shared GNU tool policy in
+[`data/homebrew/tools.json`](data/homebrew/tools.json). It feeds Homebrew,
+bootstrap selection, and shell paths. Darwin keeps the
+[Brewfile's source closure](systems/modules/darwin/applications.nix) intact
+so its relative JSON imports also work from the Nix store
 
 TypeScript entry points compose Effect programs through
 [`lib/typescript/runtime.ts`](lib/typescript/runtime.ts). Pure transformations
