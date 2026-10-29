@@ -1,0 +1,13 @@
+{
+  "hueConcentration": 4,
+  "minimumTextContrast": 4.5,
+  "contrastSurfaces": ["base", "mantle", "crust", "surface0", "surface1", "surface2"],
+  "fillFlavor": "mocha",
+  "fillForeground": "crust",
+  "reference": {
+    "url": "https://unicode.org/L2/L2019/19080-transgender-flag.pdf",
+    "pink": "#f5a9b8",
+    "blue": "#5bcefa",
+    "white": "#ffffff"
+  }
+}

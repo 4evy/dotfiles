@@ -153,6 +153,13 @@ required spelling. Source-only moves preserve deployed targets in
 The root `recipes` symlink points to `systems/spectrum/recipes` because the
 pinned BlueBuild CLI resolves recipe imports through that entrypoint
 
+I keep palette role mappings and numeric parameters in
+[`home/theme/palette/`](home/theme/palette/). After editing those inputs, I run
+`bun home/theme/palette/generate.ts` to regenerate `palette.json`. Tiling
+shortcuts live in [`tools/tiling/bindings.json`](tools/tiling/bindings.json),
+and workstation defaults live beside their consumers under
+[`tools/workstation/`](tools/workstation/)
+
 I edit shared GNU tool policy in
 [`data/homebrew/tools.json`](data/homebrew/tools.json). It feeds Homebrew,
 bootstrap selection, and shell paths. Darwin keeps the

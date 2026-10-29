@@ -6,9 +6,10 @@
       "version": "1.8.0",
       "light": "Latte",
       "dark": "Mocha",
-      "customization": "Hue-guided OKLCH regression over all 14 upstream accents per flavor; native Catppuccin neutrals; Mocha-derived pastel fills in both modes; flavor-specific text adjusted only in lightness for contrast, with chroma reduction for sRGB gamut",
-      "accentReference": "https://unicode.org/L2/L2019/19080-transgender-flag.pdf",
+      "customization": "Hue-guided OKLCH regression over all upstream accents per flavor; native Catppuccin neutrals; Mocha-derived pastel fills in both modes; flavor-specific text adjusted only in lightness for contrast, with chroma reduction for sRGB gamut",
       "derivation": "home/theme/palette/generate.ts",
+      "roles": "home/theme/palette/roles.json",
+      "parameters": "home/theme/palette/parameters.json",
       "pinnedUpstream": "@catppuccin/palette@1.8.0",
       "colorSpace": "OKLCH",
       "weights": "exp(kappa * (cos(targetHue - accentHue) - 1))",
@@ -16,8 +17,9 @@
       "targetHueReferences": "pink #f5a9b8; blue #5bcefa",
       "minimumTextContrast": "4.5",
       "contrastSurfaces": "base, mantle, crust, surface0, surface1, surface2",
-      "white": "light: Latte base; dark: Mocha text",
-      "referenceWhite": "#ffffff"
+      "accentReference": "https://unicode.org/L2/L2019/19080-transgender-flag.pdf",
+      "referenceWhite": "#ffffff",
+      "white": "light: Latte token:base; dark: Mocha token:text"
     },
     "light": {
       "canvas": "#eff1f5",
@@ -29,8 +31,6 @@
       "toolbarControlForeground": "#4c4f69",
       "toolbarControlHover": "#bcc0cc",
       "surface": "#e6e9ef",
-      "surfaceRaised": "#eff1f5",
-      "surfaceOverlay": "#eff1f5",
       "text": "#4c4f69",
       "textMuted": "#6c6f85",
       "border": "#bcc0cc",
@@ -94,8 +94,6 @@
       "highlightLow": "#ccd0da",
       "highlightMed": "#bcc0cc",
       "highlightHigh": "#acb0be",
-      "ansiBlack": "#4c4f69",
-      "ansiWhite": "#acb0be",
       "rosewater": "#dc8a78",
       "flamingo": "#dd7878",
       "pink": "#8a003b",
@@ -122,8 +120,12 @@
       "crust": "#dce0e8",
       "accentPink": "#f5b3c0",
       "accentBlue": "#7ccef0",
-      "accentWhite": "#eff1f5",
-      "selectionForeground": "#11111b"
+      "selectionForeground": "#11111b",
+      "surfaceRaised": "#eff1f5",
+      "surfaceOverlay": "#eff1f5",
+      "ansiBlack": "#4c4f69",
+      "ansiWhite": "#acb0be",
+      "accentWhite": "#eff1f5"
     },
     "dark": {
       "canvas": "#1e1e2e",
@@ -135,8 +137,6 @@
       "toolbarControlForeground": "#cdd6f4",
       "toolbarControlHover": "#45475a",
       "surface": "#181825",
-      "surfaceRaised": "#313244",
-      "surfaceOverlay": "#313244",
       "text": "#cdd6f4",
       "textMuted": "#a6adc8",
       "border": "#45475a",
@@ -200,8 +200,6 @@
       "highlightLow": "#313244",
       "highlightMed": "#45475a",
       "highlightHigh": "#585b70",
-      "ansiBlack": "#45475a",
-      "ansiWhite": "#cdd6f4",
       "rosewater": "#f5e0dc",
       "flamingo": "#f2cdcd",
       "pink": "#ffc6d0",
@@ -228,8 +226,12 @@
       "crust": "#11111b",
       "accentPink": "#f5b3c0",
       "accentBlue": "#7ccef0",
-      "accentWhite": "#cdd6f4",
-      "selectionForeground": "#11111b"
+      "selectionForeground": "#11111b",
+      "surfaceRaised": "#313244",
+      "surfaceOverlay": "#313244",
+      "ansiBlack": "#45475a",
+      "ansiWhite": "#cdd6f4",
+      "accentWhite": "#cdd6f4"
     }
   }
 }
