@@ -2,17 +2,41 @@
 set -eu
 
 script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+repo_dir=$(CDPATH='' cd -- "$script_dir/../.." && pwd)
+
+# TypeScript setup uses the real Effect runtime, even on a fresh checkout
+# Probe imports and pinned versions without running any setup program
+run_setup() {
+	bun=$1
+	shift
+	if ! "$bun" --no-install --cwd "$repo_dir" - <<-'JS' >/dev/null 2>&1
+		import manifest from "./package.json";
+		import "effect";
+		import "@effect/platform-bun";
+		for (const name of Object.keys(manifest.dependencies))
+			require.resolve(name.startsWith("@dotfiles/") ? `${name}/package.json` : name);
+		for (const name of ["effect", "@effect/platform-bun"]) {
+			if (require(`${name}/package.json`).version !== manifest.dependencies[name])
+				process.exit(1);
+		}
+	JS
+	then
+		"$bun" install --cwd "$repo_dir" --frozen-lockfile
+	fi
+	"$bun" "$script_dir/setup.ts" "$@"
+}
 if command -v bun >/dev/null 2>&1; then
-	exec bun "$script_dir/setup.ts" "$@"
+	run_setup "$(command -v bun)" "$@"
+	exit "$?"
 fi
 
 case "$(uname -s)/$(uname -m)" in
 	Darwin/arm64)
-		archive=bun-darwin-aarch64
+		archive='bun-darwin-aarch64'
 		expected=c240d7f0ccb90c263a849fcdb09b7ee62630d921348ed6aafda86b9d577bc510
 		;;
 	Linux/x86_64)
-		archive=bun-linux-x64-baseline
+		archive='bun-linux-x64-baseline'
 		expected=e0446eb55995772eb9894bebae9a6be368d985a8b9271ee124486f9946eedd76
 		;;
 	*)
@@ -38,4 +62,4 @@ if [ "$actual" != "$expected" ]; then
 	exit 1
 fi
 unzip -q "$temporary/bun.zip" -d "$temporary"
-"$temporary/$archive/bun" "$script_dir/setup.ts" "$@"
+run_setup "$temporary/$archive/bun" "$@"

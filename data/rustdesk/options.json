@@ -1,0 +1,9 @@
+{
+  "common": {
+    "direct-server": "Y",
+    "direct-access-port": "21118"
+  },
+  "linux": {
+    "stop-service": ""
+  }
+}

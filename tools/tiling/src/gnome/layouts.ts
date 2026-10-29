@@ -1,15 +1,24 @@
 import type Meta from "gi://Meta";
 import Mtk from "gi://Mtk";
-import type { LayoutPreset } from "../shared/lib.js";
+import type { LayoutPreset } from "@dotfiles/tiling/shared";
 import {
   fitLayoutPresetRectToMinimumSize,
   resolveLayoutPresetRect,
-} from "../shared/lib.js";
+} from "@dotfiles/tiling/shared";
+import * as Effect from "effect/Effect";
+import { native } from "./native.js";
 
-export function resolveLayout(window: Meta.Window, preset: LayoutPreset) {
-  const workArea = window.get_work_area_current_monitor();
-  let rect = resolveLayoutPresetRect(workArea, window.get_frame_rect(), preset);
-  const [hasMinSize, minWidth, minHeight] = window.get_min_size();
+export const resolveLayout = Effect.fn(function* (
+  window: Meta.Window,
+  preset: LayoutPreset,
+) {
+  const { workArea, current, minimum } = yield* native("read window geometry", () => ({
+    workArea: window.get_work_area_current_monitor(),
+    current: window.get_frame_rect(),
+    minimum: window.get_min_size(),
+  }));
+  let rect = resolveLayoutPresetRect(workArea, current, preset);
+  const [hasMinSize, minWidth, minHeight] = minimum;
   if (hasMinSize) {
     rect = fitLayoutPresetRectToMinimumSize(workArea, rect, preset, {
       width: minWidth,
@@ -17,5 +26,7 @@ export function resolveLayout(window: Meta.Window, preset: LayoutPreset) {
     });
   }
 
-  return Mtk.Rectangle.new(rect.x, rect.y, rect.width, rect.height);
-}
+  return yield* native("create native window rectangle", () =>
+    Mtk.Rectangle.new(rect.x, rect.y, rect.width, rect.height),
+  );
+});

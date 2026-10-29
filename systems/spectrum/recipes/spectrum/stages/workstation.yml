@@ -9,18 +9,38 @@ modules:
     dest: /src/tools/workstation/package.json
 
   - type: copy@v1
-    src: tools/workstation/bun.lock
-    dest: /src/tools/workstation/bun.lock
+    src: package.json
+    dest: /src/package.json
+
+  - type: copy@v1
+    src: bun.lock
+    dest: /src/bun.lock
+
+  - type: copy@v1
+    src: home/package.json
+    dest: /src/home/package.json
+
+  - type: copy@v1
+    src: home/files/.local/lib/package.json
+    dest: /src/home/files/.local/lib/package.json
+
+  - type: copy@v1
+    src: lib/typescript/package.json
+    dest: /src/lib/typescript/package.json
+
+  - type: copy@v1
+    src: tools/tiling/package.json
+    dest: /src/tools/tiling/package.json
 
   - type: containerfile
     snippets:
       - |-
         RUN \
           --mount=type=cache,id=spectrum-workstation-bun-v1,sharing=locked,target=/root/.bun/install/cache \
-          cd /src/tools/workstation && \
-          bun install --frozen-lockfile --ignore-scripts
+          cd /src && \
+          bun install --frozen-lockfile --ignore-scripts --filter @dotfiles/workstation
 
-  # Preserve repository-relative imports into the shared TypeScript helpers
+  # Workspace packages retain their source-relative runtime dependency lookup
   - type: copy@v1
     src: lib/typescript
     dest: /src/lib/typescript
@@ -38,8 +58,24 @@ modules:
     dest: /src/home/theme/palette/palette.json
 
   - type: copy@v1
+    src: home/generators.json
+    dest: /src/home/generators.json
+
+  - type: copy@v1
+    src: home/deploy/schema.ts
+    dest: /src/home/deploy/schema.ts
+
+  - type: copy@v1
+    src: home/files/.local/lib/typescript/process.ts
+    dest: /src/home/files/.local/lib/typescript/process.ts
+
+  - type: copy@v1
     src: tools/workstation/install.ts
     dest: /src/tools/workstation/install.ts
+
+  - type: copy@v1
+    src: tools/workstation/install.sh
+    dest: /src/tools/workstation/install.sh
 
   - type: containerfile
     snippets:
@@ -48,7 +84,7 @@ modules:
           cd /src/tools/workstation && \
           bun run build && \
           install -Dm755 dist/workstation /out/usr/bin/workstation && \
-          bun -e 'import { commands } from "./src/cli.ts"; console.log(Object.keys(commands).join("\n"))' | \
+          bun -e 'import { commandNames } from "./src/registry.ts"; console.log(commandNames.join("\n"))' | \
           while IFS= read -r command; do \
             ln -s workstation "/out/usr/bin/$command"; \
           done; \

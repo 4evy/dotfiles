@@ -1,0 +1,74 @@
+{
+  "move-up": {
+    "action": "cycle",
+    "presets": ["top-half", "top-two-thirds", "top-third"],
+    "kde": {
+      "title": "Hyper Window Tiling: Move Up",
+      "accelerator": "Meta+Ctrl+Alt+Shift+W"
+    },
+    "gnome": {
+      "summary": "Cycle the focused window through top layouts",
+      "accelerator": "<Super><Control><Alt><Shift>w"
+    }
+  },
+  "move-left": {
+    "action": "cycle",
+    "presets": ["left-half", "left-two-thirds", "first-third"],
+    "kde": {
+      "title": "Hyper Window Tiling: Move Left",
+      "accelerator": "Meta+Ctrl+Alt+Shift+A"
+    },
+    "gnome": {
+      "summary": "Cycle the focused window through left layouts",
+      "accelerator": "<Super><Control><Alt><Shift>a"
+    }
+  },
+  "move-down": {
+    "action": "cycle",
+    "presets": ["bottom-half", "bottom-two-thirds", "bottom-third"],
+    "kde": {
+      "title": "Hyper Window Tiling: Move Down",
+      "accelerator": "Meta+Ctrl+Alt+Shift+S"
+    },
+    "gnome": {
+      "summary": "Cycle the focused window through bottom layouts",
+      "accelerator": "<Super><Control><Alt><Shift>s"
+    }
+  },
+  "move-right": {
+    "action": "cycle",
+    "presets": ["right-half", "right-two-thirds", "last-third"],
+    "kde": {
+      "title": "Hyper Window Tiling: Move Right",
+      "accelerator": "Meta+Ctrl+Alt+Shift+D"
+    },
+    "gnome": {
+      "summary": "Cycle the focused window through right layouts",
+      "accelerator": "<Super><Control><Alt><Shift>d"
+    }
+  },
+  "move-max-almost": {
+    "action": "cycle",
+    "presets": ["almost-maximize", "center"],
+    "kde": {
+      "title": "Hyper Window Tiling: Almost Maximize or Center",
+      "accelerator": "Meta+Ctrl+Alt+Shift+Return"
+    },
+    "gnome": {
+      "summary": "Cycle the focused window through almost-maximized and centered layouts",
+      "accelerator": "<Super><Control><Alt><Shift>Return"
+    }
+  },
+  "move-max": {
+    "action": "maximize",
+    "presets": [],
+    "kde": {
+      "title": "Hyper Window Tiling: Maximize",
+      "accelerator": "Meta+Ctrl+Alt+Shift+\\"
+    },
+    "gnome": {
+      "summary": "Maximize the focused window",
+      "accelerator": "<Super><Control><Alt><Shift>backslash"
+    }
+  }
+}

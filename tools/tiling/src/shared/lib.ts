@@ -1,6 +1,6 @@
-const CYCLE_RESET_AFTER_MS = 900;
+import bindings from "@dotfiles/tiling/bindings" with { type: "json" };
 
-export const MAXIMIZE_BINDING_NAME = "move-max";
+const CYCLE_RESET_AFTER_MS = 900;
 
 export type Rect = {
   x: number;
@@ -14,35 +14,22 @@ export type Size = {
   height: number;
 };
 
-export type CycleBindingName =
-  | "move-up"
-  | "move-left"
-  | "move-down"
-  | "move-right"
-  | "move-max-almost";
+export type BindingName = keyof typeof bindings;
 
-export type MaximizeBindingName = typeof MAXIMIZE_BINDING_NAME;
-export type BindingName = CycleBindingName | MaximizeBindingName;
+type Binding = {
+  kde: { title: string; accelerator: string };
+  gnome: { summary: string; accelerator: string };
+} & (
+  | { action: "cycle"; presets: [LayoutPreset, ...LayoutPreset[]] }
+  | { action: "maximize"; presets: [] }
+);
 
-export type LayoutPreset =
-  | "maximize"
-  | "almost-maximize"
-  | "center"
-  | "left-half"
-  | "right-half"
-  | "top-half"
-  | "bottom-half"
-  | "first-third"
-  | "last-third"
-  | "left-two-thirds"
-  | "right-two-thirds"
-  | "top-third"
-  | "bottom-third"
-  | "top-two-thirds"
-  | "bottom-two-thirds";
+// Both bundle builds validate this JSON contract with Effect Schema
+export const BINDINGS = bindings as Record<BindingName, Binding>;
+export const BINDING_NAMES = Object.keys(BINDINGS) as BindingName[];
 
 type CycleState = {
-  bindingName: CycleBindingName | null;
+  bindingName: BindingName | null;
   step: number;
   lastUsed: number;
 };
@@ -54,56 +41,75 @@ type LayoutPresetAnchor = {
   vertical: Anchor;
 };
 
-const LAYOUT_PRESET_RESOLVERS = {
-  maximize: (workArea) => gridRect(workArea, 0, 0, 1, 1),
-  "almost-maximize": (workArea) => basisPointRect(workArea, 500, 500, 9000, 9000),
-  center: centerCurrentWindow,
-  "left-half": (workArea) => gridRect(workArea, 0, 0, 2, 1),
-  "right-half": (workArea) => gridRect(workArea, 1, 0, 2, 1),
-  "top-half": (workArea) => gridRect(workArea, 0, 0, 1, 2),
-  "bottom-half": (workArea) => gridRect(workArea, 0, 1, 1, 2),
-  "first-third": (workArea) => gridRect(workArea, 0, 0, 3, 1),
-  "last-third": (workArea) => gridRect(workArea, 2, 0, 3, 1),
-  "left-two-thirds": (workArea) => spanRect(workArea, 0, 0, 2, 1, 3, 1),
-  "right-two-thirds": (workArea) => spanRect(workArea, 1, 0, 2, 1, 3, 1),
-  "top-third": (workArea) => gridRect(workArea, 0, 0, 1, 3),
-  "bottom-third": (workArea) => gridRect(workArea, 0, 2, 1, 3),
-  "top-two-thirds": (workArea) => spanRect(workArea, 0, 0, 1, 2, 1, 3),
-  "bottom-two-thirds": (workArea) => spanRect(workArea, 0, 1, 1, 2, 1, 3),
-} as const satisfies Record<LayoutPreset, LayoutPresetResolver>;
-
-const LAYOUT_PRESET_ANCHORS = {
-  maximize: { horizontal: "start", vertical: "start" },
-  "almost-maximize": { horizontal: "center", vertical: "center" },
-  center: { horizontal: "center", vertical: "center" },
-  "left-half": { horizontal: "start", vertical: "start" },
-  "right-half": { horizontal: "end", vertical: "start" },
-  "top-half": { horizontal: "start", vertical: "start" },
-  "bottom-half": { horizontal: "start", vertical: "end" },
-  "first-third": { horizontal: "start", vertical: "start" },
-  "last-third": { horizontal: "end", vertical: "start" },
-  "left-two-thirds": { horizontal: "start", vertical: "start" },
-  "right-two-thirds": { horizontal: "end", vertical: "start" },
-  "top-third": { horizontal: "start", vertical: "start" },
-  "bottom-third": { horizontal: "start", vertical: "end" },
-  "top-two-thirds": { horizontal: "start", vertical: "start" },
-  "bottom-two-thirds": { horizontal: "start", vertical: "end" },
-} as const satisfies Record<LayoutPreset, LayoutPresetAnchor>;
-
-export const CYCLE_LAYOUT_PRESETS = {
-  "move-up": ["top-half", "top-two-thirds", "top-third"],
-  "move-left": ["left-half", "left-two-thirds", "first-third"],
-  "move-down": ["bottom-half", "bottom-two-thirds", "bottom-third"],
-  "move-right": ["right-half", "right-two-thirds", "last-third"],
-  "move-max-almost": ["almost-maximize", "center"],
-} as const satisfies Record<
-  CycleBindingName,
-  readonly [LayoutPreset, ...LayoutPreset[]]
+const LAYOUT_PRESETS = {
+  maximize: {
+    resolve: (workArea) => gridRect(workArea, 0, 0, 1, 1),
+    anchor: { horizontal: "start", vertical: "start" },
+  },
+  "almost-maximize": {
+    resolve: (workArea) => basisPointRect(workArea, 500, 500, 9000, 9000),
+    anchor: { horizontal: "center", vertical: "center" },
+  },
+  center: {
+    resolve: centerCurrentWindow,
+    anchor: { horizontal: "center", vertical: "center" },
+  },
+  "left-half": {
+    resolve: (workArea) => gridRect(workArea, 0, 0, 2, 1),
+    anchor: { horizontal: "start", vertical: "start" },
+  },
+  "right-half": {
+    resolve: (workArea) => gridRect(workArea, 1, 0, 2, 1),
+    anchor: { horizontal: "end", vertical: "start" },
+  },
+  "top-half": {
+    resolve: (workArea) => gridRect(workArea, 0, 0, 1, 2),
+    anchor: { horizontal: "start", vertical: "start" },
+  },
+  "bottom-half": {
+    resolve: (workArea) => gridRect(workArea, 0, 1, 1, 2),
+    anchor: { horizontal: "start", vertical: "end" },
+  },
+  "first-third": {
+    resolve: (workArea) => gridRect(workArea, 0, 0, 3, 1),
+    anchor: { horizontal: "start", vertical: "start" },
+  },
+  "last-third": {
+    resolve: (workArea) => gridRect(workArea, 2, 0, 3, 1),
+    anchor: { horizontal: "end", vertical: "start" },
+  },
+  "left-two-thirds": {
+    resolve: (workArea) => spanRect(workArea, 0, 0, 2, 1, 3, 1),
+    anchor: { horizontal: "start", vertical: "start" },
+  },
+  "right-two-thirds": {
+    resolve: (workArea) => spanRect(workArea, 1, 0, 2, 1, 3, 1),
+    anchor: { horizontal: "end", vertical: "start" },
+  },
+  "top-third": {
+    resolve: (workArea) => gridRect(workArea, 0, 0, 1, 3),
+    anchor: { horizontal: "start", vertical: "start" },
+  },
+  "bottom-third": {
+    resolve: (workArea) => gridRect(workArea, 0, 2, 1, 3),
+    anchor: { horizontal: "start", vertical: "end" },
+  },
+  "top-two-thirds": {
+    resolve: (workArea) => spanRect(workArea, 0, 0, 1, 2, 1, 3),
+    anchor: { horizontal: "start", vertical: "start" },
+  },
+  "bottom-two-thirds": {
+    resolve: (workArea) => spanRect(workArea, 0, 1, 1, 2, 1, 3),
+    anchor: { horizontal: "start", vertical: "end" },
+  },
+} satisfies Record<
+  string,
+  { resolve: LayoutPresetResolver; anchor: LayoutPresetAnchor }
 >;
 
-export const CYCLE_BINDING_NAMES = Object.keys(
-  CYCLE_LAYOUT_PRESETS,
-) as CycleBindingName[];
+export type LayoutPreset = keyof typeof LAYOUT_PRESETS;
+
+export const LAYOUT_PRESET_NAMES = Object.keys(LAYOUT_PRESETS) as LayoutPreset[];
 
 export function createCycleState(): CycleState {
   return {
@@ -115,10 +121,10 @@ export function createCycleState(): CycleState {
 
 export function advanceCycle(
   cycle: CycleState,
-  bindingName: CycleBindingName,
+  bindingName: BindingName,
   length: number,
+  now: number,
 ) {
-  const now = Date.now();
   if (
     cycle.bindingName === bindingName &&
     now - cycle.lastUsed <= CYCLE_RESET_AFTER_MS
@@ -139,7 +145,7 @@ export function resolveLayoutPresetRect(
   current: Rect,
   preset: LayoutPreset,
 ): Rect {
-  return LAYOUT_PRESET_RESOLVERS[preset](workArea, current);
+  return LAYOUT_PRESETS[preset].resolve(workArea, current);
 }
 
 export function fitLayoutPresetRectToMinimumSize(
@@ -150,7 +156,7 @@ export function fitLayoutPresetRectToMinimumSize(
 ): Rect {
   const width = Math.min(Math.max(rect.width, minimum.width), workArea.width);
   const height = Math.min(Math.max(rect.height, minimum.height), workArea.height);
-  const anchor = LAYOUT_PRESET_ANCHORS[preset];
+  const { anchor } = LAYOUT_PRESETS[preset];
 
   return roundedWithin(workArea, {
     x: anchoredPosition(rect.x, rect.width, width, anchor.horizontal),

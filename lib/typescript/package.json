@@ -1,0 +1,20 @@
+{
+  "name": "@dotfiles/core",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json",
+    "./commands": "./commands.ts",
+    "./errors": "./errors.ts",
+    "./files": "./files.ts",
+    "./http": "./http.ts",
+    "./paths": "./paths.ts",
+    "./runtime": "./runtime.ts",
+    "./shell": "./shell/shell.ts"
+  },
+  "dependencies": {
+    "@dotfiles/runtime": "workspace:*",
+    "@effect/platform-bun": "4.0.6",
+    "effect": "4.0.6"
+  }
+}

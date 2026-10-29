@@ -1,107 +1,155 @@
-import { spawn } from "node:child_process";
-import { once } from "node:events";
-import { createInterface } from "node:readline";
-import type { Writable } from "node:stream";
+import { DotfilesError } from "@dotfiles/core/errors";
+import { runMain } from "@dotfiles/core/runtime";
+import { exitCode } from "@dotfiles/runtime/process";
+import { Effect, Schema, Stdio, Stream, Struct } from "effect";
+import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
-type Message = {
-  id?: string | number | null;
-  method?: string;
-  params?: { name?: string };
-  result?: {
-    instructions?: string;
-    tools?: { name: string; description?: string }[];
-    content?: { type: string; text?: string }[];
-    structuredContent?: unknown;
-  };
-};
+const ToolSchema = Schema.StructWithRest(
+  Schema.Struct({
+    name: Schema.String,
+    description: Schema.optionalKey(Schema.String),
+  }).mapFields(Struct.map(Schema.mutableKey)),
+  [Schema.Record(Schema.String, Schema.Unknown)],
+);
+const ContentSchema = Schema.StructWithRest(
+  Schema.Struct({ type: Schema.String, text: Schema.optionalKey(Schema.String) }),
+  [Schema.Record(Schema.String, Schema.Unknown)],
+);
+const MessageSchema = Schema.StructWithRest(
+  Schema.Struct({
+    id: Schema.optionalKey(Schema.Union([Schema.String, Schema.Number, Schema.Null])),
+    method: Schema.optionalKey(Schema.String),
+    params: Schema.optionalKey(
+      Schema.StructWithRest(
+        Schema.Struct({ name: Schema.optionalKey(Schema.String) }).mapFields(
+          Struct.map(Schema.mutableKey),
+        ),
+        [Schema.Record(Schema.String, Schema.Unknown)],
+      ),
+    ),
+    result: Schema.optionalKey(
+      Schema.StructWithRest(
+        Schema.Struct({
+          instructions: Schema.optionalKey(Schema.String),
+          tools: Schema.optionalKey(Schema.Array(ToolSchema)),
+          content: Schema.optionalKey(Schema.Unknown),
+          structuredContent: Schema.optionalKey(Schema.Unknown),
+        }).mapFields(Struct.map(Schema.mutableKey)),
+        [Schema.Record(Schema.String, Schema.Unknown)],
+      ),
+    ),
+  }),
+  [Schema.Record(Schema.String, Schema.Unknown)],
+);
 
-// Farstep uses dotted names, which Antigravity rejects even during discovery
-const names = new Map<string, string>();
-const requests = new Map<Message["id"], string>();
-const [executable, ...args] = process.argv.slice(2);
-if (!executable) throw new Error("Usage: mcp.ts COMMAND [ARG...]");
-const upstream = spawn(executable, args, {
-  stdio: ["pipe", "pipe", "inherit"],
+const decode = Effect.fn("decodeMcpMessage")(function* (line: string) {
+  const json = yield* Effect.try({
+    try: () => JSON.parse(line) as unknown,
+    catch: (error) => new DotfilesError(`Invalid MCP message: ${error}`),
+  });
+  // JSON-RPC envelopes and nested MCP payloads retain fields not consumed here
+  return yield* Schema.decodeUnknownEffect(MessageSchema)(json);
 });
-const input = createInterface({ input: process.stdin });
-const output = createInterface({ input: upstream.stdout });
-const send = async (stream: Writable, message: Message) => {
-  if (!stream.write(`${JSON.stringify(message)}\n`)) await once(stream, "drain");
-};
-const stop = () => upstream.kill("SIGTERM");
-process.on("SIGTERM", stop);
-process.on("SIGINT", stop);
-upstream.on("error", (error) => {
-  console.error(error);
-  process.exit(1);
-});
-upstream.stdin.on("error", (error: NodeJS.ErrnoException) => {
-  if (error.code !== "EPIPE") throw error;
-});
-const exited = once(upstream, "exit");
-void exited.then(() => {
-  input.close();
-  process.stdin.destroy();
-});
-try {
-  await Promise.all([
-    (async () => {
-      for await (const line of input) {
-        if (!line.trim()) continue;
-        const message: Message = JSON.parse(line);
-        if (message.id !== undefined && message.method)
-          requests.set(message.id, message.method);
-        if (message.method === "tools/call" && message.params?.name) {
-          const original = names.get(message.params.name);
-          if (original) message.params.name = original;
-        }
-        await send(upstream.stdin, message);
-      }
-      upstream.stdin.end();
-    })(),
-    (async () => {
-      for await (const line of output) {
-        if (!line.trim()) continue;
-        const message: Message = JSON.parse(line);
-        const method = message.method ? undefined : requests.get(message.id);
-        if (!message.method) requests.delete(message.id);
-        if (method === "initialize" && message.result?.instructions)
-          message.result.instructions = message.result.instructions.replace(
-            /\b(?:helper|desktop|system)(?:\.[a-z_]+)+\b/g,
-            (name) => name.replaceAll(".", "_"),
-          );
-        if (method === "tools/list" && message.result?.tools) {
-          for (const tool of message.result.tools) {
-            const name = tool.name.replaceAll(".", "_");
-            const previous = names.get(name);
-            if (previous && previous !== tool.name)
-              throw new Error(`MCP tool name collision: ${name}`);
-            names.set(name, tool.name);
-            tool.name = name;
-            if (tool.description)
-              tool.description = tool.description.replace(
-                /\b(?:helper|desktop|system)(?:\.[a-z_]+)+\b/g,
-                (name) => name.replaceAll(".", "_"),
-              );
+
+runMain(
+  Effect.gen(function* () {
+    const [executable, ...args] = process.argv.slice(2);
+    if (!executable)
+      return yield* Effect.fail(new DotfilesError("Usage: mcp.ts COMMAND [ARG...]"));
+    const stdio = yield* Stdio.Stdio;
+    const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+    const upstream = yield* spawner.spawn(
+      ChildProcess.make(executable, args, {
+        stdin: "pipe",
+        stdout: "pipe",
+        stderr: "inherit",
+      }),
+    );
+    // Farstep uses dotted names, which Antigravity rejects even during discovery
+    const names = new Map<string, string>();
+    const requests = new Map<(typeof MessageSchema.Type)["id"], string>();
+    const encoder = new TextEncoder();
+    const input = stdio.stdin.pipe(
+      Stream.decodeText(),
+      Stream.splitLines,
+      Stream.filter((line) => Boolean(line.trim())),
+      Stream.mapEffect((line) =>
+        Effect.gen(function* () {
+          const message = yield* decode(line);
+          if (message.id !== undefined && message.method)
+            requests.set(message.id, message.method);
+          if (message.method === "tools/call" && message.params?.name) {
+            const original = names.get(message.params.name);
+            if (original) message.params.name = original;
           }
-        }
-        // Antigravity only exposes content blocks, not structured-only results
+          return encoder.encode(`${JSON.stringify(message)}\n`);
+        }),
+      ),
+      Stream.run(upstream.stdin),
+      Effect.catch((error) => {
         if (
-          method === "tools/call" &&
-          message.result?.structuredContent !== undefined &&
-          !message.result.content?.length
+          error._tag === "PlatformError" &&
+          (error.reason.cause as NodeJS.ErrnoException | undefined)?.code === "EPIPE"
         )
-          message.result.content = [
-            { type: "text", text: JSON.stringify(message.result.structuredContent) },
-          ];
-        await send(process.stdout, message);
-      }
-    })(),
-  ]);
-  const [code, signal] = await exited;
-  process.exitCode = code ?? (signal ? 1 : 0);
-} finally {
-  stop();
-  input.close();
-  output.close();
-}
+          return Effect.void;
+        return Effect.fail(error);
+      }),
+      Effect.andThen(Effect.never),
+    );
+    const output = upstream.stdout.pipe(
+      Stream.decodeText(),
+      Stream.splitLines,
+      Stream.filter((line) => Boolean(line.trim())),
+      Stream.mapEffect((line) =>
+        Effect.gen(function* () {
+          const message = yield* decode(line);
+          const method = message.method ? undefined : requests.get(message.id);
+          if (!message.method) requests.delete(message.id);
+          if (method === "initialize" && message.result?.instructions)
+            message.result.instructions = message.result.instructions.replace(
+              /\b(?:helper|desktop|system)(?:\.[a-z_]+)+\b/g,
+              (name) => name.replaceAll(".", "_"),
+            );
+          if (method === "tools/list" && message.result?.tools) {
+            for (const tool of message.result.tools) {
+              const name = tool.name.replaceAll(".", "_");
+              const previous = names.get(name);
+              if (previous && previous !== tool.name)
+                return yield* Effect.fail(
+                  new DotfilesError(`MCP tool name collision: ${name}`),
+                );
+              names.set(name, tool.name);
+              tool.name = name;
+              if (tool.description)
+                tool.description = tool.description.replace(
+                  /\b(?:helper|desktop|system)(?:\.[a-z_]+)+\b/g,
+                  (name) => name.replaceAll(".", "_"),
+                );
+            }
+          }
+          // Antigravity only exposes content blocks, not structured-only results
+          if (
+            method === "tools/call" &&
+            message.result?.structuredContent !== undefined
+          ) {
+            const content = yield* Schema.decodeUnknownEffect(
+              Schema.optional(Schema.Array(ContentSchema)),
+            )(message.result.content);
+            if (!content?.length)
+              message.result.content = [
+                {
+                  type: "text",
+                  text: JSON.stringify(message.result.structuredContent),
+                },
+              ];
+          }
+          return `${JSON.stringify(message)}\n`;
+        }),
+      ),
+      Stream.run(stdio.stdout({ endOnDone: false })),
+      Effect.andThen(exitCode(upstream)),
+    );
+    // Output drains before exit, while a closed child cancels blocked client input
+    process.exitCode = yield* Effect.raceFirst(output, input);
+  }),
+);

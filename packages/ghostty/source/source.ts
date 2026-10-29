@@ -1,14 +1,14 @@
 #!/usr/bin/env bun
 import { createHash } from "node:crypto";
-import { createReadStream } from "node:fs";
-import { rm, stat } from "node:fs/promises";
+import { DotfilesError } from "@dotfiles/core/errors";
+import { download } from "@dotfiles/core/http";
+import { runMain } from "@dotfiles/core/runtime";
+import { Effect, FileSystem, Schema, Stream } from "effect";
 
-export interface FilePin {
-  url: string;
-  narHash: string;
-}
+export const FilePin = Schema.Struct({ url: Schema.String, narHash: Schema.String });
+export type FilePin = typeof FilePin.Type;
 
-function sizeToken(size: number): Buffer {
+function sizeToken(size: number | bigint): Buffer {
   const token = Buffer.alloc(8);
   token.writeBigUInt64LE(BigInt(size));
   return token;
@@ -24,49 +24,56 @@ function token(value: string): Buffer {
 }
 
 // NAR framing describes a non-executable regular file, not its raw SHA256
-export async function fileNarHash(path: string): Promise<string> {
+export const fileNarHash = Effect.fn(function* (path: string) {
+  const fs = yield* FileSystem.FileSystem;
   const digest = createHash("sha256");
-  for (const value of ["nix-archive-1", "(", "type", "regular", "contents"]) {
+  for (const value of ["nix-archive-1", "(", "type", "regular", "contents"])
     digest.update(token(value));
-  }
-  const { size } = await stat(path);
+  const { size } = yield* fs.stat(path);
   digest.update(sizeToken(size));
-  for await (const chunk of createReadStream(path)) digest.update(chunk);
-  digest.update(Buffer.alloc((8 - (size % 8)) % 8));
+  yield* Stream.runForEach(fs.stream(path), (chunk) =>
+    Effect.sync(() => {
+      digest.update(chunk);
+    }),
+  );
+  digest.update(Buffer.alloc(Number((8n - (size % 8n)) % 8n)));
   digest.update(token(")"));
   return `sha256-${digest.digest("base64")}`;
-}
+});
 
-export async function downloadFile(pin: FilePin, destination: string): Promise<void> {
-  if (new URL(pin.url).protocol !== "https:") {
-    throw new Error("Source downloads require HTTPS");
-  }
-  const response = await fetch(pin.url, { signal: AbortSignal.timeout(120_000) });
-  if (!response.ok || !response.body) {
-    throw new Error(`Source download failed: ${response.status} ${pin.url}`);
-  }
-  try {
-    // Callers own directory creation; Bun otherwise creates missing parents
-    await Bun.write(destination, response, { createPath: false });
-    const actual = await fileNarHash(destination);
-    if (actual !== pin.narHash) {
-      throw new Error(`NAR hash mismatch for ${pin.url}: ${actual}`);
-    }
-  } catch (error) {
-    await rm(destination, { force: true });
-    throw error;
-  }
-}
+export const downloadFile = Effect.fn(function* (pin: FilePin, destination: string) {
+  const url = yield* Schema.decodeUnknownEffect(Schema.URLFromString)(pin.url);
+  if (url.protocol !== "https:")
+    return yield* Effect.fail(new DotfilesError("Source downloads require HTTPS"));
+  const fs = yield* FileSystem.FileSystem;
+  yield* download(pin.url, (response) =>
+    Effect.gen(function* () {
+      // FileSystem's sink never creates missing parents, which callers own
+      yield* Stream.run(response.stream, fs.sink(destination));
+      const actual = yield* fileNarHash(destination);
+      if (actual !== pin.narHash)
+        return yield* Effect.fail(
+          new DotfilesError(`NAR hash mismatch for ${pin.url}: ${actual}`),
+        );
+    }).pipe(
+      Effect.onError(() => fs.remove(destination, { force: true }).pipe(Effect.orDie)),
+    ),
+  );
+});
 
-if (import.meta.main) {
-  const [path, expected, ...extra] = Bun.argv.slice(2);
-  if (!path || !expected || extra.length) {
-    console.error("Usage: bun source.ts PATH NAR_HASH");
-    process.exit(2);
-  }
-  const actual = await fileNarHash(path);
-  if (actual !== expected) {
-    console.error(`NAR hash mismatch for ${path}: ${actual}`);
-    process.exitCode = 1;
-  }
-}
+if (import.meta.main)
+  runMain(
+    Effect.gen(function* () {
+      const [path, expected, ...extra] = Bun.argv.slice(2);
+      if (!path || !expected || extra.length) {
+        console.error("Usage: bun source.ts PATH NAR_HASH");
+        process.exitCode = 2;
+        return;
+      }
+      const actual = yield* fileNarHash(path);
+      if (actual !== expected) {
+        console.error(`NAR hash mismatch for ${path}: ${actual}`);
+        process.exitCode = 1;
+      }
+    }),
+  );

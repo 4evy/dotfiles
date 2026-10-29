@@ -6,8 +6,10 @@ import {
   Text,
   type TUI,
 } from "@oh-my-pi/pi-tui";
+import { Effect, Fiber } from "effect";
 import {
   type Activity,
+  FLAG_NAMES,
   FLAG_PHASE_SPACING,
   FULL_TURN,
   MOTION,
@@ -23,7 +25,7 @@ const TICK_MS = 100;
 const RESPONSE_SECONDS = 0.25;
 
 export class PrideFlags extends Text {
-  readonly #timer: Timer;
+  readonly #animation: Fiber.Fiber<void>;
   readonly ctx: ExtensionContext;
   readonly tui: TUI;
   readonly activity: (now: number) => Activity;
@@ -42,7 +44,15 @@ export class PrideFlags extends Text {
     this.tui = tui;
     this.activity = activity;
     this.tick();
-    this.#timer = ctx.setInterval(() => this.tick(), TICK_MS);
+    // The SDK owns construction/disposal, so these are runtime boundaries
+    this.#animation = Effect.runFork(
+      Effect.gen({ self: this }, function* () {
+        while (true) {
+          yield* Effect.sleep(TICK_MS);
+          yield* Effect.sync(() => this.tick());
+        }
+      }),
+    );
   }
 
   tick(): void {
@@ -107,7 +117,7 @@ export class PrideFlags extends Text {
       const described = ansi(text, {
         cols: WIDGET_COLUMNS,
         role: "omp.pride.flags",
-        aria: `Trans, bisexual, and rainbow flags; ${this.#activity}`,
+        aria: `${FLAG_NAMES} flags; ${this.#activity}`,
       });
       this.#native = { text, activity: this.#activity, node: described };
     }
@@ -117,6 +127,6 @@ export class PrideFlags extends Text {
   dispose(): void {
     if (this.#disposed) return;
     this.#disposed = true;
-    this.ctx.clearTimer(this.#timer);
+    Effect.runFork(Fiber.interrupt(this.#animation));
   }
 }

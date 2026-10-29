@@ -1,4 +1,4 @@
-import { DotfilesError } from "../errors.ts";
+import { DotfilesError } from "@dotfiles/core/errors";
 
 class ShellLexer {
   readonly words: string[] = [];

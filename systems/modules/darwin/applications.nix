@@ -6,16 +6,17 @@
   ...
 }:
 let
-  inherit (pkgs) formats stdenv;
+  inherit (pkgs) dotfiles-typescript-tools formats stdenv;
+  homebrewHelper = lib.getExe' dotfiles-typescript-tools "dotfiles-homebrew";
+  codesignHelper = lib.getExe' dotfiles-typescript-tools "dotfiles-codesign";
+  # Keep relative Brewfile imports inside the same public source closure
   homebrewSource = lib.fileset.toSource {
     root = ../../..;
     fileset = lib.fileset.unions [
       ../../../Brewfile
-      ../../../lib/typescript
-      ../../../tools/setup/homebrew.ts
+      ../../../data/homebrew/tools.json
     ];
   };
-  homebrewHelper = "${homebrewSource}/tools/setup/homebrew.ts";
   homebrewPath = lib.concatStringsSep ":" [
     "/opt/homebrew/bin"
     "/opt/homebrew/sbin"
@@ -33,7 +34,9 @@ in
 
   homebrew = {
     enable = true;
-    extra.config = lib.readFile ../../../Brewfile;
+    extra.config = ''
+      instance_eval(File.read("${homebrewSource}/Brewfile"), "${homebrewSource}/Brewfile")
+    '';
     on.activation = {
       auto.update = false;
       upgrade = false;
@@ -47,9 +50,9 @@ in
       text = lib.mkForce ''
         (
           set -e
-          trap '/usr/bin/sudo -H -u ${config.system.primary.user} /opt/homebrew/bin/bun ${homebrewHelper} restore' EXIT
+          trap '/usr/bin/sudo -H -u ${config.system.primary.user} ${homebrewHelper} restore' EXIT
           /usr/bin/sudo -H -u ${config.system.primary.user} \
-            /opt/homebrew/bin/bun ${homebrewHelper} sandbox
+            ${homebrewHelper} sandbox
           /bin/launchctl asuser "$(/usr/bin/id -u ${config.system.primary.user})" \
             /usr/bin/sudo --preserve-env=PATH,SUDO_ASKPASS,DOTFILES_SUDO_PASSWORD -H -u ${config.system.primary.user} \
             /usr/bin/env -u SUDO_USER -u HOMEBREW_SUDO_USER -u SSH_TTY -u HOMEBREW_SSH_TTY \
@@ -66,11 +69,11 @@ in
       ];
       text = ''
         PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin \
-          /opt/homebrew/bin/bun ${./codesign.ts} \
+          ${codesignHelper} \
           '/Applications/Nix Apps/Ghostty.app'
         if [ -d '/Applications/Nix Apps/Ghidra.app' ]; then
           PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin \
-            /opt/homebrew/bin/bun ${./codesign.ts} \
+            ${codesignHelper} \
             '/Applications/Nix Apps/Ghidra.app' --entitlements ${ghidraEntitlements}
         fi
         for name in Ghostty Helium Raycast; do

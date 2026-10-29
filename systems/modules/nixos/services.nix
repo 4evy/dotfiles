@@ -6,20 +6,12 @@
 let
   inherit (lib.attrsets) attrValues;
   inherit (pkgs)
-    bun
+    dotfiles-typescript-tools
     kmscon
     nerd-fonts
     rustdesk-flutter
     ;
-  # Preserve the setup helper's relative imports in the store
-  applicationsSource = lib.fileset.toSource {
-    root = ../../..;
-    fileset = lib.fileset.unions [
-      ../../../tools/setup/applications.ts
-      ../../../lib/typescript/commands.ts
-      ../../../lib/typescript/errors.ts
-    ];
-  };
+  applicationsHelper = lib.getExe' dotfiles-typescript-tools "dotfiles-applications";
   # Import the rootfs once so shared policy files remain in one store tree
   rootfs = lib.sources.cleanSourceWith {
     src = ../../spectrum/files/system;
@@ -105,7 +97,7 @@ in
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
       preStart = ''
-        ${lib.getExe bun} ${applicationsSource}/tools/setup/applications.ts rustdesk
+        ${applicationsHelper} rustdesk
       '';
       environment.HOME = "/root";
       serviceConfig = {

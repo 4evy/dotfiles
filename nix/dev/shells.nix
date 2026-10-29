@@ -12,18 +12,6 @@
     let
       inherit (pkgs) mkShell stdenv unstable;
       inherit (stdenv.hostPlatform) isLinux;
-      inherit (unstable) python314;
-      # inputsFrom inherits dependencies and hooks, not environment variables
-      pythonEnvironment = {
-        UV_PYTHON = python314.interpreter;
-        UV_PYTHON_DOWNLOADS = "never";
-      };
-      pythonShell = mkShell {
-        packages = lib.attrValues {
-          inherit (unstable) python314 uv;
-        };
-        env = pythonEnvironment;
-      };
 
       javascriptShell = mkShell {
         packages = lib.attrValues {
@@ -33,8 +21,6 @@
       };
 
       operationsShell = mkShell {
-        inputsFrom = [ pythonShell ];
-        env = pythonEnvironment;
         packages =
           lib.attrValues {
             inherit (pkgs)
@@ -50,6 +36,7 @@
               yq-go
               zizmor
               ;
+            inherit (unstable) uv;
           }
           ++ lib.optionals isLinux (
             lib.attrValues {
@@ -62,17 +49,14 @@
     in
     {
       devShells = {
-        python = pythonShell;
         javascript = javascriptShell;
         operations = operationsShell;
         default = mkShell {
           inputsFrom = [
             config.pre-commit.devShell
-            pythonShell
             javascriptShell
             operationsShell
           ];
-          env = pythonEnvironment;
           packages = lib.attrValues {
             inherit (config.treefmt.build) wrapper;
             inherit (pkgs) git just;

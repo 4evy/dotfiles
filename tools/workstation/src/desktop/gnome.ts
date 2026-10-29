@@ -1,16 +1,17 @@
 import { join } from "node:path";
-import { createInterface } from "node:readline";
-import { Readable } from "node:stream";
 import { parseArgs } from "node:util";
-import { UsageError } from "../../../../lib/typescript/errors.ts";
-import { writeIfChanged } from "../../../../lib/typescript/files.ts";
-import { configHome } from "../../../../lib/typescript/paths.ts";
-import gtk4 from "../../assets/desktop/gtk/gtk.css.in" with { type: "text" };
-import gtk3 from "../../assets/desktop/gtk/legacy.css.in" with { type: "text" };
-import { color, palettes } from "../lib/theme.ts";
-import { desktopArguments, desktopOutput } from "../linux/desktop.ts";
+import { UsageError } from "@dotfiles/core/errors";
+import { writeIfChanged } from "@dotfiles/core/files";
+import { configHome } from "@dotfiles/core/paths";
+import { exitCode } from "@dotfiles/runtime/process";
+import gtk3 from "@dotfiles/workstation/assets/gtk3" with { type: "text" };
+import gtk4 from "@dotfiles/workstation/assets/gtk4" with { type: "text" };
+import { desktopArguments, desktopOutput } from "@dotfiles/workstation/desktop";
+import { color, palettes } from "@dotfiles/workstation/theme";
+import { Effect, Stream } from "effect";
+import { ChildProcess } from "effect/process";
 
-function apply(scheme: string): void {
+const apply = Effect.fn("gnomeAccent.apply")(function* (scheme: string) {
   const palette = scheme.includes("prefer-dark") ? palettes.dark : palettes.light;
   for (const [version, template] of [
     [3, gtk3],
@@ -19,41 +20,48 @@ function apply(scheme: string): void {
     const css = template
       .replaceAll(`\${legacy}`, gtk3)
       .replaceAll(/\$\{(\w+)\}/g, (_, role: string) => color(palette, role));
-    writeIfChanged(
-      join(configHome(), `gtk-${version}.0/catppuccin-custom-accent.css`),
+    yield* writeIfChanged(
+      join(yield* configHome(), `gtk-${version}.0/catppuccin-custom-accent.css`),
       css,
     );
   }
-}
+});
 
-export async function gnomeAccent(args: string[]): Promise<number> {
-  const { values } = parseArgs({
-    args,
-    options: { once: { type: "boolean" }, watch: { type: "boolean" } },
+export const gnomeAccent = Effect.fn("gnomeAccent")(function* (args: string[]) {
+  const { values } = yield* Effect.try({
+    try: () =>
+      parseArgs({
+        args,
+        options: { once: { type: "boolean" }, watch: { type: "boolean" } },
+      }),
+    catch: (error) =>
+      new UsageError(error instanceof Error ? error.message : String(error)),
   });
-  if (values.once && values.watch) throw new UsageError("Use either --once or --watch");
-  if (!Bun.which("gjs")) {
-    apply("default");
+  if (values.once && values.watch)
+    return yield* Effect.fail(new UsageError("Use either --once or --watch"));
+  if (!(yield* Effect.sync(() => Bun.which("gjs")))) {
+    yield* apply("default");
     return 0;
   }
   if (!values.watch) {
-    apply(desktopOutput("theme"));
+    yield* apply(yield* desktopOutput("theme"));
     return 0;
   }
-  const child = Bun.spawn(desktopArguments("watch-theme"), {
-    stdout: "pipe",
-    stderr: "inherit",
-  });
-  const stop = () => child.kill("SIGTERM");
-  process.on("exit", stop);
-  try {
-    for await (const line of createInterface({
-      input: Readable.fromWeb(child.stdout),
-    }))
-      apply(line);
-    return await child.exited;
-  } finally {
-    stop();
-    process.off("exit", stop);
-  }
-}
+  return yield* Effect.scoped(
+    Effect.gen(function* () {
+      const [command, ...arguments_] = desktopArguments("watch-theme");
+      const child = yield* ChildProcess.make(command, arguments_, {
+        stdin: "inherit",
+        detached: false,
+        stdout: "pipe",
+        stderr: "inherit",
+      });
+      yield* child.stdout.pipe(
+        Stream.decodeText(),
+        Stream.splitLines,
+        Stream.runForEach(apply),
+      );
+      return Number(yield* exitCode(child));
+    }),
+  );
+});

@@ -1,22 +1,10 @@
-import {
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  statSync,
-} from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
-import * as v from "valibot";
-import { run } from "../../../../lib/typescript/commands.ts";
-import { DotfilesError, UsageError } from "../../../../lib/typescript/errors.ts";
+import { run } from "@dotfiles/core/commands";
+import { DotfilesError, UsageError } from "@dotfiles/core/errors";
+import { Config, Effect, FileSystem, Option, Schema, Stdio, Stream } from "effect";
 
-const recordMetadata = v.pipe(
-  v.custom<Record<string, unknown>>(
-    (value) => typeof value === "object" && value !== null && !Array.isArray(value),
-  ),
-  v.object({ paths: v.pipe(v.array(v.string()), v.minLength(1)) }),
+const recordMetadata = Schema.fromJsonString(
+  Schema.Struct({ paths: Schema.NonEmptyArray(Schema.String) }),
 );
 const styles: Record<string, string> = {
   A: "\u001b[32m",
@@ -31,55 +19,87 @@ function safeRelativePath(value: string): boolean {
     value.split("/").every((part) => !["", ".", ".."].includes(part))
   );
 }
-function regularFile(path: string): boolean {
-  return lstatSync(path, { throwIfNoEntry: false })?.isFile() ?? false;
-}
-function directory(path: string): boolean {
-  return existsSync(path) && statSync(path).isDirectory();
-}
-function parseArguments(args: string[]): {
-  format: "patch" | "stat";
-  left: string;
-  right: string;
-  repository: string;
-  width: number;
-} {
+const regularFile = Effect.fn("jjDiff.regularFile")(function* (path: string) {
+  const fs = yield* FileSystem.FileSystem;
+  return yield* fs.lstat(path).pipe(
+    Effect.map((info) => info.type === "File"),
+    Effect.catchIf(
+      (error) => error.reason._tag === "NotFound",
+      () => Effect.succeed(false),
+    ),
+  );
+});
+const directory = Effect.fn("jjDiff.directory")(function* (path: string) {
+  const fs = yield* FileSystem.FileSystem;
+  return (yield* fs.exists(path)) && (yield* fs.stat(path)).type === "Directory";
+});
+const parseArguments = Effect.fn("jjDiff.parseArguments")(function* (args: string[]) {
   const [format, left, right, repository, width] = args;
   if (args.length !== 5 || !left || !right || !repository || !width)
-    throw new UsageError("Usage: jj-diff FORMAT LEFT RIGHT DOTFILES_REPOSITORY WIDTH");
+    return yield* Effect.fail(
+      new UsageError("Usage: jj-diff FORMAT LEFT RIGHT DOTFILES_REPOSITORY WIDTH"),
+    );
   if (format !== "patch" && format !== "stat")
-    throw new UsageError(`Invalid format: ${format}`);
+    return yield* Effect.fail(new UsageError(`Invalid format: ${format}`));
   if (!safeRelativePath(left) || !safeRelativePath(right))
-    throw new UsageError("Snapshot paths must be safe relative paths");
-  if (!directory(left) || !directory(right))
-    throw new UsageError("Snapshot paths must name directories");
-  if (!regularFile(join(repository, "Justfile")))
-    throw new UsageError("Dotfiles repository must contain a Justfile");
+    return yield* Effect.fail(
+      new UsageError("Snapshot paths must be safe relative paths"),
+    );
+  if (!(yield* directory(left)) || !(yield* directory(right)))
+    return yield* Effect.fail(new UsageError("Snapshot paths must name directories"));
+  if (!(yield* regularFile(join(repository, "Justfile"))))
+    return yield* Effect.fail(
+      new UsageError("Dotfiles repository must contain a Justfile"),
+    );
   if (!/^\d+$/.test(width) || Number(width) < 1 || !Number.isSafeInteger(Number(width)))
-    throw new UsageError(`Invalid output width: ${width}`);
+    return yield* Effect.fail(new UsageError(`Invalid output width: ${width}`));
   return { format, left, right, repository, width: Number(width) };
-}
-function recordTarget(path: string): string {
-  const parsed = v.safeParse(recordMetadata, JSON.parse(readFileSync(path, "utf8")));
-  const target = parsed.success ? parsed.output.paths[0] : undefined;
-  if (!target) throw new DotfilesError(`Record metadata has no target path: ${path}`);
+});
+const recordTarget = Effect.fn("jjDiff.recordTarget")(function* (path: string) {
+  const fs = yield* FileSystem.FileSystem;
+  const parsed = yield* Schema.decodeUnknownEffect(recordMetadata)(
+    yield* fs.readFileString(path),
+  ).pipe(
+    Effect.mapError(
+      () => new DotfilesError(`Record metadata has no target path: ${path}`),
+    ),
+  );
+  const target = parsed.paths[0];
+  if (!target)
+    return yield* Effect.fail(
+      new DotfilesError(`Record metadata has no target path: ${path}`),
+    );
   if (!safeRelativePath(target))
-    throw new DotfilesError(`Unsafe record target: ${target}`);
+    return yield* Effect.fail(new DotfilesError(`Unsafe record target: ${target}`));
   return target;
-}
-function materializeRecords(
+});
+const materializeRecords = Effect.fn("jjDiff.materializeRecords")(function* (
   snapshot: string,
   repository: string,
   workspaces: string[],
-): void {
+) {
+  const fs = yield* FileSystem.FileSystem;
   const vault = join(snapshot, "secrets/records.yaml");
-  if (!regularFile(vault)) return;
+  if (!(yield* regularFile(vault))) return;
   const encrypted = join(dirname(vault), ".records.yaml.encrypted");
-  if (lstatSync(encrypted, { throwIfNoEntry: false }))
-    throw new DotfilesError(`Temporary encrypted vault already exists: ${encrypted}`);
-  renameSync(vault, encrypted);
-  workspaces.push(vault);
-  run(
+  const encryptedExists = yield* fs.lstat(encrypted).pipe(
+    Effect.as(true),
+    Effect.catchIf(
+      (error) => error.reason._tag === "NotFound",
+      () => Effect.succeed(false),
+    ),
+  );
+  if (encryptedExists)
+    return yield* Effect.fail(
+      new DotfilesError(`Temporary encrypted vault already exists: ${encrypted}`),
+    );
+  yield* Effect.uninterruptible(
+    Effect.gen(function* () {
+      yield* fs.rename(vault, encrypted);
+      workspaces.push(vault);
+    }),
+  );
+  yield* run(
     [
       "just",
       "--justfile",
@@ -93,34 +113,33 @@ function materializeRecords(
       outputMode: "discard",
     },
   );
-  rmSync(encrypted);
-  for (const metadata of new Bun.Glob("*/*/metadata.json").scanSync({
-    cwd: vault,
-    absolute: true,
-  })) {
-    if (!regularFile(metadata)) continue;
+  yield* fs.remove(encrypted);
+  for (const metadata of yield* fs.glob(join(resolve(vault), "*/*/metadata.json"))) {
+    if (!(yield* regularFile(metadata))) continue;
     const record = dirname(metadata);
     const body = join(record, "body");
-    if (!existsSync(body) || !statSync(body).isFile()) continue;
-    const target = join(record, "target", recordTarget(metadata));
-    mkdirSync(dirname(target), { recursive: true });
-    renameSync(body, target);
+    if (!(yield* fs.exists(body)) || (yield* fs.stat(body)).type !== "File") continue;
+    const target = join(record, "target", yield* recordTarget(metadata));
+    yield* fs.makeDirectory(dirname(target), { recursive: true });
+    yield* fs.rename(body, target);
   }
-}
-function cleanup(workspaces: string[]): void {
+});
+const cleanup = Effect.fn("jjDiff.cleanup")(function* (workspaces: string[]) {
+  const fs = yield* FileSystem.FileSystem;
   const failures: string[] = [];
-  for (const path of workspaces) {
-    try {
-      rmSync(path, { recursive: true, force: true });
-    } catch {
-      failures.push(path);
-    }
-  }
-  if (failures.length)
-    throw new DotfilesError(
-      `Failed to remove plaintext workspace: ${failures.join(", ")}`,
+  for (const path of workspaces)
+    yield* fs.remove(path, { recursive: true, force: true }).pipe(
+      Effect.catch(() =>
+        Effect.sync(() => {
+          failures.push(path);
+        }),
+      ),
     );
-}
+  if (failures.length)
+    return yield* Effect.fail(
+      new DotfilesError(`Failed to remove plaintext workspace: ${failures.join(", ")}`),
+    );
+});
 function lines(text: string): string[] {
   return text.match(/[^\n]*\n|[^\n]+$/g) ?? [];
 }
@@ -136,8 +155,12 @@ function rewritePaths(patch: string, left: string, right: string): string {
     })
     .join("");
 }
-function gitDiff(left: string, right: string, color: boolean): string {
-  const result = run(
+const gitDiff = Effect.fn("jjDiff.gitDiff")(function* (
+  left: string,
+  right: string,
+  color: boolean,
+) {
+  const result = yield* run(
     [
       "git",
       "--no-pager",
@@ -158,11 +181,13 @@ function gitDiff(left: string, right: string, color: boolean): string {
     { capture: true, check: false },
   );
   if (![0, 1].includes(result.code))
-    throw new DotfilesError(
-      `Failed to generate diff${result.stderr.trim() ? `: ${result.stderr.trim()}` : ""}`,
+    return yield* Effect.fail(
+      new DotfilesError(
+        `Failed to generate diff${result.stderr.trim() ? `: ${result.stderr.trim()}` : ""}`,
+      ),
     );
   return rewritePaths(result.stdout, left, right);
-}
+});
 function annotateStatuses(patch: string): string {
   let status = "M";
   return lines(patch)
@@ -180,8 +205,12 @@ function annotateStatuses(patch: string): string {
     })
     .join("");
 }
-function diffstat(patch: string, width: number, color: boolean): string {
-  const result = run(
+const diffstat = Effect.fn("jjDiff.diffstat")(function* (
+  patch: string,
+  width: number,
+  color: boolean,
+) {
+  const result = yield* run(
     [
       "diffstat",
       "-E",
@@ -196,8 +225,10 @@ function diffstat(patch: string, width: number, color: boolean): string {
     { capture: true, check: false, input: annotateStatuses(patch) },
   );
   if (result.code !== 0)
-    throw new DotfilesError(
-      `Failed to generate diffstat${result.stderr.trim() ? `: ${result.stderr.trim()}` : ""}`,
+    return yield* Effect.fail(
+      new DotfilesError(
+        `Failed to generate diffstat${result.stderr.trim() ? `: ${result.stderr.trim()}` : ""}`,
+      ),
     );
   return lines(result.stdout)
     .map((line) => {
@@ -207,26 +238,38 @@ function diffstat(patch: string, width: number, color: boolean): string {
       return `${color ? styles[status ?? ""] : ""}${status} ${path}${color ? "\u001b[0m" : ""}${suffix}${ending}`;
     })
     .join("");
-}
-export function jjDiff(args: string[]): number {
-  const { format, left, right, repository, width } = parseArguments(args);
-  const workspaces: string[] = [];
-  try {
-    const leftVault = join(left, "secrets/records.yaml");
-    const rightVault = join(right, "secrets/records.yaml");
-    const same =
-      regularFile(leftVault) &&
-      regularFile(rightVault) &&
-      readFileSync(leftVault).equals(readFileSync(rightVault));
-    if (!same) {
-      materializeRecords(left, repository, workspaces);
-      materializeRecords(right, repository, workspaces);
-    }
-    const color = process.env.NO_COLOR === undefined;
-    const patch = gitDiff(left, right, color);
-    process.stdout.write(format === "patch" ? patch : diffstat(patch, width, color));
-  } finally {
-    cleanup(workspaces);
-  }
-  return 0;
-}
+});
+export const jjDiff = Effect.fn("jjDiff")(function* (args: string[]) {
+  const fs = yield* FileSystem.FileSystem;
+  const stdio = yield* Stdio.Stdio;
+  const { format, left, right, repository, width } = yield* parseArguments(args);
+  const result = yield* Effect.acquireUseRelease(
+    Effect.sync(() => [] as string[]),
+    (workspaces) =>
+      Effect.gen(function* () {
+        const leftVault = join(left, "secrets/records.yaml");
+        const rightVault = join(right, "secrets/records.yaml");
+        let same = false;
+        if ((yield* regularFile(leftVault)) && (yield* regularFile(rightVault))) {
+          const leftBytes = yield* fs.readFile(leftVault);
+          const rightBytes = yield* fs.readFile(rightVault);
+          same =
+            leftBytes.length === rightBytes.length &&
+            leftBytes.every((byte, index) => byte === rightBytes[index]);
+        }
+        if (!same) {
+          yield* materializeRecords(left, repository, workspaces);
+          yield* materializeRecords(right, repository, workspaces);
+        }
+        const color = Option.isNone(yield* Config.option(Config.String("NO_COLOR")));
+        const patch = yield* gitDiff(left, right, color);
+        yield* Stream.make(
+          format === "patch" ? patch : yield* diffstat(patch, width, color),
+        ).pipe(Stream.run(stdio.stdout({ endOnDone: false })));
+        return 0;
+      }).pipe(Effect.exit),
+    cleanup,
+  );
+  // Cleanup failures take precedence, as they did in the original finally block
+  return yield* result;
+});

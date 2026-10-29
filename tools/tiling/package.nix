@@ -16,28 +16,31 @@ let
   pluginId = kdeMetadata.KPlugin.Id;
 
   src = lib.fileset.toSource {
-    # Build scripts and metadata paths are relative to the package root
-    root = packageRoot;
+    root = ../..;
     fileset = lib.fileset.unions [
-      (packageRoot + /bun.lock)
+      ../../package.json
+      ../../bun.lock
+      ../../home/package.json
+      ../../home/files/.local/lib/package.json
+      ../../lib/typescript/package.json
+      ../workstation/package.json
+      (packageRoot + /bindings.json)
       (packageRoot + /gnome/metadata.json)
-      (packageRoot + /gnome/schemas)
       (packageRoot + /kde/metadata.json)
       (packageRoot + /package.json)
+      (packageRoot + /scripts)
       (packageRoot + /src)
       (packageRoot + /tsconfig.json)
       (packageRoot + /vendor)
     ];
   };
 
-  bunDeps = bun2nix.fetchBunDeps {
-    bunNix = ./bun.nix;
-  };
+  bunDeps = import ../../nix/lib/bun/dependencies.nix { inherit lib bun2nix; };
 
   buildPhaseFor = script: ''
     runHook preBuild
 
-    bun run ${script}
+    bun run --cwd tools/tiling ${script}
 
     runHook postBuild
   '';
@@ -48,6 +51,11 @@ let
     extendDrvArgs = _: args: {
       inherit version src bunDeps;
       strictDeps = true;
+      bunInstallFlags = [
+        "--frozen-lockfile"
+        "--offline"
+        "--filter=@dotfiles/tiling"
+      ];
 
       nativeBuildInputs =
         lib.attrValues {
@@ -77,12 +85,13 @@ in
 
     installPhase = ''
       runHook preInstall
+      cd tools/tiling
 
       extension_dir="$out/share/gnome-shell/extensions/${extensionUuid}"
       install -d "$extension_dir" "$extension_dir/schemas"
       install -m0644 gnome/metadata.json "$extension_dir/metadata.json"
       install -m0644 dist/gnome/extension.js "$extension_dir/extension.js"
-      install -m0644 gnome/schemas/*.xml "$extension_dir/schemas"
+      install -m0644 dist/gnome/schemas/*.xml "$extension_dir/schemas"
       glib-compile-schemas "$extension_dir/schemas"
 
       runHook postInstall
@@ -102,6 +111,7 @@ in
 
     installPhase = ''
       runHook preInstall
+      cd tools/tiling
 
       script_dir="$out/share/kwin/scripts/${pluginId}"
       install -d "$script_dir/contents/code"

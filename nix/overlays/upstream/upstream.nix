@@ -11,8 +11,6 @@ let
   inherit (unstable) libnotify python314Packages solaar;
 in
 {
-  inherit (unstable) go_1_27;
-
   # Keep the managed runtime on the stable release ahead of the nixpkgs pin
   bun = unstable.bun.overrideAttrs (
     finalAttrs: previous: {

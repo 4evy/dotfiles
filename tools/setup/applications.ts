@@ -1,84 +1,90 @@
 #!/usr/bin/env bun
-import {
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  readFileSync,
-  readlinkSync,
-  rmSync,
-  statSync,
-  symlinkSync,
-} from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { writeIfChanged } from "../../lib/typescript/files.ts";
+import { DotfilesError } from "@dotfiles/core/errors";
+import { writeIfChanged } from "@dotfiles/core/files";
+import { runMain } from "@dotfiles/core/runtime";
+import rustdeskOptions from "@dotfiles/repo/data/rustdesk/options";
+import { Effect, FileSystem, Schema } from "effect";
 
 const macOS = process.platform === "darwin";
-
-function object(value: unknown): Record<string, unknown> {
-  if (typeof value !== "object" || value === null || Array.isArray(value))
-    throw new Error("Expected an object in application configuration");
-  return value as Record<string, unknown>;
-}
+const object = Schema.Record(Schema.String, Schema.Unknown);
 
 // RustDesk options are strings, including numeric ports and empty flags
 // Bun normalizes changed TOML and drops comments, semantic no-ops keep bytes
-export function updateTomlOptions(path: string, values: Record<string, string>): void {
-  const original = existsSync(path) ? readFileSync(path, "utf8") : "";
-  const config = object(Bun.TOML.parse(original));
-  const options = config.options === undefined ? {} : object(config.options);
-  let changed = false;
-  for (const [key, value] of Object.entries(values)) {
-    if (options[key] === value) continue;
-    options[key] = value;
-    changed = true;
-  }
-  if (!changed) return;
-  config.options = options;
-  const mode = statSync(path, { throwIfNoEntry: false })?.mode;
-  writeIfChanged(
-    path,
-    Bun.TOML.stringify(config),
-    mode === undefined ? 0o600 : mode & 0o7777,
-  );
-}
+export const updateTomlOptions = Effect.fn(function* (
+  path: string,
+  values: Record<string, string>,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const exists = yield* fs.exists(path);
+  const original = exists ? yield* fs.readFileString(path) : "";
+  const parsed = yield* Effect.try({
+    try: () => Bun.TOML.parse(original),
+    catch: (error) => new DotfilesError(`Invalid application TOML: ${error}`),
+  });
+  const config = yield* Schema.decodeUnknownEffect(object)(parsed);
+  const options =
+    config.options === undefined
+      ? {}
+      : yield* Schema.decodeUnknownEffect(object)(config.options);
+  if (Object.entries(values).every(([key, value]) => options[key] === value)) return;
+  const mode = exists ? (yield* fs.stat(path)).mode & 0o7777 : 0o600;
+  const content = yield* Effect.try({
+    try: () =>
+      Bun.TOML.stringify({
+        ...config,
+        options: { ...options, ...values },
+      }),
+    catch: (error) => new DotfilesError(`Cannot serialize application TOML: ${error}`),
+  });
+  yield* writeIfChanged(path, content, mode);
+});
 
-function linkRustdesk(home: string): void {
+const linkRustdesk = Effect.fn(function* (home: string) {
+  const fs = yield* FileSystem.FileSystem;
   const link = join(home, ".local/bin/rustdesk");
   const target = "/Applications/RustDesk.app/Contents/MacOS/RustDesk";
-  if (!existsSync(target)) return;
-  const state = lstatSync(link, { throwIfNoEntry: false });
-  if (state?.isSymbolicLink() && readlinkSync(link) === target) return;
-  mkdirSync(dirname(link), { recursive: true });
-  rmSync(link, { force: true });
-  symlinkSync(target, link);
-}
+  if (!(yield* fs.exists(target))) return;
+  const state = yield* fs.lstat(link).pipe(
+    Effect.catchIf(
+      (error) => error.reason._tag === "NotFound",
+      () => Effect.succeed(undefined),
+    ),
+  );
+  if (state?.type === "SymbolicLink" && (yield* fs.readLink(link)) === target) return;
+  yield* fs.makeDirectory(dirname(link), { recursive: true });
+  yield* fs.remove(link, { force: true });
+  yield* fs.symlink(target, link);
+});
 
-export function rustdesk(): void {
+export const rustdesk = Effect.fn(function* () {
+  const fs = yield* FileSystem.FileSystem;
   const home = homedir();
   const directory = macOS
     ? join(home, "Library/Preferences/com.carriez.RustDesk")
     : join(process.env.XDG_CONFIG_HOME ?? join(home, ".config"), "rustdesk");
-  mkdirSync(directory, { recursive: true });
+  yield* fs.makeDirectory(directory, { recursive: true });
   const options: Record<string, string> = {
-    "direct-server": "Y",
-    "direct-access-port": "21118",
+    ...rustdeskOptions.common,
+    ...(!macOS ? rustdeskOptions.linux : {}),
   };
-  if (!macOS) options["stop-service"] = "";
-  updateTomlOptions(join(directory, "RustDesk2.toml"), options);
-  if (macOS) linkRustdesk(home);
-}
+  yield* updateTomlOptions(join(directory, "RustDesk2.toml"), options);
+  if (macOS) yield* linkRustdesk(home);
+});
 
 if (import.meta.main) {
-  const operations: Record<string, () => void> = { rustdesk };
-  const usage = "Usage: applications.ts rustdesk";
-  const args = process.argv.slice(2);
-  const command = args[0];
-  if (args.length !== 1 || command === undefined) throw new Error(usage);
-  const operation = Object.hasOwn(operations, command)
-    ? operations[command]
-    : undefined;
-  if (command === "-h" || command === "--help") console.log(usage);
-  else if (operation) operation();
-  else throw new Error(usage);
+  runMain(
+    Effect.gen(function* () {
+      const usage = "Usage: applications.ts rustdesk";
+      const args = process.argv.slice(2);
+      const command = args[0];
+      if (args.length !== 1 || command === undefined)
+        return yield* Effect.fail(new DotfilesError(usage));
+      if (command === "-h" || command === "--help")
+        yield* Effect.sync(() => console.log(usage));
+      else if (command === "rustdesk") yield* rustdesk();
+      else return yield* Effect.fail(new DotfilesError(usage));
+    }),
+  );
 }

@@ -7,9 +7,7 @@
     { pkgs, ... }:
     let
       inherit (pkgs)
-        go_1_27
         unstable
-        writeShellApplication
         zig
         ;
       templateFormatter = import ./template.nix {
@@ -35,13 +33,8 @@
             validate.enable = false;
           };
           clang-format.enable = true;
-          gofmt = {
-            enable = true;
-            package = go_1_27;
-          };
           just.enable = true;
           nixfmt.enable = true;
-          ruff-format.enable = true;
           rumdl-format.enable = true;
           rustfmt = {
             enable = true;
@@ -64,8 +57,6 @@
             "*.lock"
             "*.patch"
             "package-lock.json"
-            "go.sum"
-            "go.work.sum"
             ".gitattributes"
             ".gitignore"
             ".gitmodules"
@@ -75,35 +66,6 @@
           ];
 
           formatter = {
-            go-mod = {
-              command = writeShellApplication {
-                name = "go-mod-format";
-                runtimeInputs = lib.attrValues {
-                  inherit (pkgs) coreutils diffutils;
-                };
-                text = ''
-                  temporary_directory=$(mktemp -d)
-                  trap 'rm -rf "$temporary_directory"' EXIT
-                  for file in "$@"; do
-                    # Go rewrites even unchanged files; treefmt uses mtimes to
-                    # detect changes; -print leaves the source untouched
-                    case "$file" in
-                      *go.work) kind=work ;;
-                      *) kind=mod ;;
-                    esac
-                    ${lib.getExe go_1_27} "$kind" edit -fmt -print "$file" > "$temporary_directory/formatted"
-                    if ! cmp -s "$file" "$temporary_directory/formatted"; then
-                      cp "$temporary_directory/formatted" "$file"
-                    fi
-                  done
-                '';
-              };
-              includes = [
-                "go.mod"
-                "*/go.mod"
-                "go.work"
-              ];
-            };
 
             shfmt = {
               includes = lib.mkAfter [

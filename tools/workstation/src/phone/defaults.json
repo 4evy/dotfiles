@@ -1,0 +1,14 @@
+{
+  "name": "samsung-s25",
+  "ip": null,
+  "port": 5555,
+  "connectOnly": false,
+  "renderDriver": "software",
+  "sdlVideoDriver": "x11",
+  "scrcpyArguments": [
+    "--video-codec=h265",
+    "--video-bit-rate=2M",
+    "--max-size=1280",
+    "--max-fps=30"
+  ]
+}

@@ -25,6 +25,7 @@
         inherit (pkgs)
           bun2nix
           dotfiles-workstation
+          dotfiles-typescript-tools
           ghostty-patched
           helium-browser
           helix
@@ -105,15 +106,6 @@
           toshy-runtime
           uresourced
           ;
-      };
-      apps.update-theme-run = {
-        type = "app";
-        program = lib.getExe (
-          pkgs.writeShellApplication {
-            name = "update-theme-run";
-            text = ''exec ${lib.escapeShellArgs pkgs.theme-run.updateScript} "$@"'';
-          }
-        );
       };
     };
 }

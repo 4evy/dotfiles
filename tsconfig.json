@@ -42,6 +42,7 @@
     "zig-out/**",
     "target/**",
     "result/**",
+    "recipes/**",
     ".venv/**",
     ".cache/**",
     ".zig-cache/**"

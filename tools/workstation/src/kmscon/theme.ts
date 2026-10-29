@@ -1,81 +1,85 @@
-import { readFileSync } from "node:fs";
-import * as v from "valibot";
-import { UsageError } from "../../../../lib/typescript/errors.ts";
-import { writeIfChanged } from "../../../../lib/typescript/files.ts";
-import { solarDay } from "../lib/solar.ts";
-import type { Palette } from "../lib/theme.ts";
-import { color, paletteDocumentSchema, rgbComponents } from "../lib/theme.ts";
+import { DotfilesError, UsageError } from "@dotfiles/core/errors";
+import { writeIfChanged } from "@dotfiles/core/files";
+import settings from "@dotfiles/workstation/assets/kmscon" with { type: "text" };
+import { solarDay } from "@dotfiles/workstation/solar";
+import type { Palette } from "@dotfiles/workstation/theme";
+import {
+  color,
+  paletteDocumentSchema,
+  rgbComponents,
+} from "@dotfiles/workstation/theme";
+import { Clock, Config, Effect, FileSystem, Schema } from "effect";
 
-const roles: Record<string, string> = {
-  black: "surface1",
-  red: "red",
-  green: "green",
-  yellow: "yellow",
-  blue: "blue",
-  magenta: "pink",
-  cyan: "sky",
-  "light-grey": "subtext0",
-  "dark-grey": "surface2",
-  "light-red": "red",
-  "light-green": "green",
-  "light-yellow": "yellow",
-  "light-blue": "blue",
-  "light-magenta": "pink",
-  "light-cyan": "sky",
-  white: "subtext1",
-  foreground: "terminalForeground",
-  background: "terminalBackground",
-};
-const lightRoles = {
-  black: "subtext1",
-  white: "surface1",
-  "light-grey": "surface2",
-  "dark-grey": "subtext0",
-};
+import defaults from "./defaults.json";
 
-function coordinate(
+const coordinate = Effect.fn("kmscon.coordinate")(function* (
   name: string,
   minimum: number,
   maximum: number,
-): number | undefined {
-  const value = process.env[name];
+) {
+  const value = yield* Config.String(name).pipe(Config.withDefault(""));
   if (!value) return undefined;
-  const result = Number(value);
-  if (!value.trim() || !Number.isFinite(result) || result < minimum || result > maximum)
-    throw new Error(`${name} must be between ${minimum} and ${maximum}: ${value}`);
-  return result;
-}
+  const validCoordinate = Schema.String.check(
+    Schema.makeFilter<string>((input) => {
+      const number = Number(input);
+      return (
+        Boolean(input.trim()) &&
+        Number.isFinite(number) &&
+        number >= minimum &&
+        number <= maximum
+      );
+    }),
+  );
+  yield* Schema.decodeUnknownEffect(validCoordinate)(value).pipe(
+    Effect.mapError(
+      () =>
+        new DotfilesError(
+          `${name} must be between ${minimum} and ${maximum}: ${value}`,
+        ),
+    ),
+  );
+  return Number(value);
+});
 
-function theme(now: Date): { name: "light" | "dark"; source: string } {
-  const forced = process.env.DOTFILES_KMSCON_THEME;
+const theme = Effect.fn("kmscon.theme")(function* (now: Date) {
+  const forced = yield* Config.String("DOTFILES_KMSCON_THEME").pipe(
+    Config.withDefault(""),
+  );
   if (forced) {
-    if (forced !== "light" && forced !== "dark")
-      throw new Error(`Unsupported DOTFILES_KMSCON_THEME: ${forced}`);
-    return { name: forced, source: "DOTFILES_KMSCON_THEME" };
+    const name = yield* Schema.decodeUnknownEffect(Schema.Literals(["light", "dark"]))(
+      forced,
+    ).pipe(
+      Effect.mapError(
+        () => new DotfilesError(`Unsupported DOTFILES_KMSCON_THEME: ${forced}`),
+      ),
+    );
+    return { name, source: "DOTFILES_KMSCON_THEME" };
   }
-  let latitude = coordinate("DOTFILES_KMSCON_LATITUDE", -90, 90);
-  let longitude = coordinate("DOTFILES_KMSCON_LONGITUDE", -180, 180);
+  let latitude = yield* coordinate("DOTFILES_KMSCON_LATITUDE", -90, 90);
+  let longitude = yield* coordinate("DOTFILES_KMSCON_LONGITUDE", -180, 180);
   const location =
-    latitude === undefined && longitude === undefined ? "default-sofia" : "env";
-  if (location === "default-sofia") {
-    latitude = 42.6977;
-    longitude = 23.3219;
+    latitude === undefined && longitude === undefined ? defaults.location.name : "env";
+  if (location === defaults.location.name) {
+    latitude = defaults.location.latitude;
+    longitude = defaults.location.longitude;
   }
   if (latitude === undefined || longitude === undefined)
-    throw new Error(
-      "Set both DOTFILES_KMSCON_LATITUDE and DOTFILES_KMSCON_LONGITUDE for sun-based theme selection",
+    return yield* Effect.fail(
+      new DotfilesError(
+        "Set both DOTFILES_KMSCON_LATITUDE and DOTFILES_KMSCON_LONGITUDE for sun-based theme selection",
+      ),
     );
   const { sunrise, sunset, elevation } = solarDay(now, latitude, longitude);
   if (!sunrise || !sunset)
     return {
-      name: elevation >= 0 ? "light" : "dark",
+      name: elevation >= 0 ? ("light" as const) : ("dark" as const),
       source: `sun polar latitude=${coordinateText(latitude)} longitude=${coordinateText(longitude)} elevation=${elevation.toFixed(2)}`,
     };
   return {
-    name: sunrise <= now && now < sunset ? "light" : "dark",
+    name: sunrise <= now && now < sunset ? ("light" as const) : ("dark" as const),
     source: `sun ${location} latitude=${coordinateText(latitude)} longitude=${coordinateText(longitude)}`,
   };
-}
+});
 
 function coordinateText(value: number): string {
   if (Object.is(value, -0)) return "-0.0";
@@ -84,22 +88,17 @@ function coordinateText(value: number): string {
 
 function renderKmscon(
   palettes: { light: Palette; dark: Palette },
-  now = new Date(),
+  choice: { name: "light" | "dark"; source: string },
 ): string {
-  const choice = theme(now);
-  const mapping = choice.name === "light" ? { ...roles, ...lightRoles } : roles;
+  const mapping =
+    choice.name === "light"
+      ? { ...defaults.roles, ...defaults.lightRoles }
+      : defaults.roles;
   const lines = [
     "# Managed by dotfiles",
     `# Theme: catppuccin-custom-${choice.name}`,
     `# Theme source: ${choice.source}`,
-    "term=kmscon",
-    "font-engine=freetype",
-    "font-name=Noto Sans Mono",
-    "font-size=18",
-    "sb-size=10000",
-    "mouse",
-    "dpms-timeout=600",
-    "palette=custom",
+    settings.trimEnd(),
   ];
   for (const [option, role] of Object.entries(mapping))
     lines.push(
@@ -110,14 +109,22 @@ function renderKmscon(
   return `${lines.join("\n")}\n`;
 }
 
-export function kmsconTheme(args: string[]): number {
+export const kmsconTheme = Effect.fn("kmsconTheme")(function* (args: string[]) {
   const [input, output] = args;
   if (args.length !== 2 || !input || !output)
-    throw new UsageError("Usage: kmscon-theme-config PALETTE_JSON OUTPUT_CONFIG");
-  const palettes = v.parse(
-    paletteDocumentSchema,
-    JSON.parse(readFileSync(input, "utf8")),
-  ).catppuccin_custom;
-  writeIfChanged(output, renderKmscon(palettes));
+    return yield* Effect.fail(
+      new UsageError("Usage: kmscon-theme-config PALETTE_JSON OUTPUT_CONFIG"),
+    );
+  const fs = yield* FileSystem.FileSystem;
+  const document = yield* Schema.decodeUnknownEffect(
+    Schema.fromJsonString(paletteDocumentSchema),
+  )(yield* fs.readFileString(input));
+  const choice = yield* theme(new Date(yield* Clock.currentTimeMillis));
+  const contents = yield* Effect.try({
+    try: () => renderKmscon(document.catppuccin_custom, choice),
+    catch: (cause) =>
+      cause instanceof DotfilesError ? cause : new DotfilesError(String(cause)),
+  });
+  yield* writeIfChanged(output, contents);
   return 0;
-}
+});

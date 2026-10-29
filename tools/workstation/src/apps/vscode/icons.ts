@@ -1,64 +1,62 @@
 import { createHash } from "node:crypto";
-import {
-  existsSync,
-  mkdtempDisposableSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
 import { dirname, join, relative } from "node:path";
+import { output, run } from "@dotfiles/core/commands";
+import { DotfilesError } from "@dotfiles/core/errors";
+import { ensureDirectory, writeJson } from "@dotfiles/core/files";
+import type { Palette } from "@dotfiles/workstation/theme";
+import { color, palettes } from "@dotfiles/workstation/theme";
+import type { PlatformError } from "effect";
+import { Effect, FileSystem, Schema } from "effect";
+import Builder from "fast-xml-builder";
 import { zipSync } from "fflate";
-import * as v from "valibot";
-import { output, run } from "../../../../../lib/typescript/commands.ts";
-import { DotfilesError } from "../../../../../lib/typescript/errors.ts";
-import { ensureDirectory, writeJson } from "../../../../../lib/typescript/files.ts";
-import type { Palette } from "../../lib/theme.ts";
-import { color, palettes } from "../../lib/theme.ts";
 
 const upstreamId = "catppuccin.catppuccin-vsc-icons";
-const customName = "catppuccin-custom-catppuccin-icons";
-const publisher = "evy";
-const extensionId = `${publisher}.${customName}`;
+const extensionMetadata = {
+  name: "catppuccin-custom-catppuccin-icons",
+  displayName: "Catppuccin Custom — Catppuccin Icons",
+  description: "Catppuccin file icon shapes using the Catppuccin Custom palette.",
+  publisher: "evy",
+  engines: { vscode: "^1.83.0" },
+  categories: ["Themes"],
+};
+const extensionId = `${extensionMetadata.publisher}.${extensionMetadata.name}`;
 const lightPrefix = "__catppuccin_custom_light__";
-const objectInput = v.custom<Record<string, unknown>>(
-  (value) => typeof value === "object" && value !== null && !Array.isArray(value),
-);
-const associationSchema = v.union([
-  v.string(),
-  v.pipe(objectInput, v.record(v.string(), v.string())),
+const associationSchema = Schema.Union([
+  Schema.String,
+  Schema.Record(Schema.String, Schema.String),
 ]);
-const themeSchema = v.pipe(
-  objectInput,
-  v.looseObject({
-    iconDefinitions: v.pipe(
-      objectInput,
-      v.record(
-        v.string(),
-        v.pipe(objectInput, v.looseObject({ iconPath: v.string() })),
-      ),
+const themeSchema = Schema.StructWithRest(
+  Schema.Struct({
+    iconDefinitions: Schema.Record(
+      Schema.String,
+      Schema.StructWithRest(Schema.Struct({ iconPath: Schema.String }), [
+        Schema.Record(Schema.String, Schema.Unknown),
+      ]),
     ),
   }),
+  [Schema.Record(Schema.String, Schema.Unknown)],
 );
 
-function prefixReferences(value: unknown): string | Record<string, string> {
-  const association = v.parse(associationSchema, value);
+const prefixReferences = Effect.fn("prefixReferences")(function* (value: unknown) {
+  const association = yield* Schema.decodeUnknownEffect(associationSchema)(value);
   if (typeof association === "string") return `${lightPrefix}${association}`;
   return Object.fromEntries(
     Object.entries(association).map(([key, item]) => [key, `${lightPrefix}${item}`]),
   );
-}
+});
 
-function buildTheme(upstream: string): Record<string, unknown> {
-  const { iconDefinitions, ...theme } = v.parse(
-    themeSchema,
-    JSON.parse(readFileSync(join(upstream, "dist/mocha/theme.json"), "utf8")),
+const buildTheme = Effect.fn("buildTheme")(function* (upstream: string) {
+  const fs = yield* FileSystem.FileSystem;
+  const input = yield* fs.readFileString(join(upstream, "dist/mocha/theme.json"));
+  const { iconDefinitions, ...theme } = yield* Schema.decodeUnknownEffect(
+    Schema.fromJsonString(themeSchema),
+  )(input);
+  const associations = yield* Effect.forEach(
+    Object.entries(theme).filter(([key]) => key !== "hidesExplorerArrows"),
+    ([key, value]) =>
+      Effect.map(prefixReferences(value), (reference) => [key, reference]),
   );
-  const light = Object.fromEntries(
-    Object.entries(theme)
-      .filter(([key]) => key !== "hidesExplorerArrows")
-      .map(([key, value]) => [key, prefixReferences(value)]),
-  );
+  const light = Object.fromEntries(associations);
   const definitions: Record<string, unknown> = {};
   for (const [variant, prefix] of [
     ["dark", ""],
@@ -71,112 +69,186 @@ function buildTheme(upstream: string): Record<string, unknown> {
       };
   }
   return { ...theme, light, iconDefinitions: definitions };
-}
+});
 
-function copyIcons(source: string, destination: string, palette: Palette): void {
-  ensureDirectory(destination);
-  for (const entry of readdirSync(source, { withFileTypes: true })) {
-    const input = join(source, entry.name);
-    const output = join(destination, entry.name);
-    if (entry.isDirectory()) copyIcons(input, output, palette);
-    else {
-      const svg = readFileSync(input, "utf8").replace(
-        /var\(--vscode-ctp-([a-z0-9-]+)\)/g,
-        (_match, role: string) => color(palette, role),
-      );
-      writeFileSync(output, svg);
+function copyIcons(
+  source: string,
+  destination: string,
+  palette: Palette,
+): Effect.Effect<
+  void,
+  PlatformError.PlatformError | DotfilesError,
+  FileSystem.FileSystem
+> {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    yield* ensureDirectory(destination);
+    for (const entry of yield* fs.readDirectory(source)) {
+      const input = join(source, entry);
+      const output = join(destination, entry);
+      if ((yield* fs.lstat(input)).type === "Directory")
+        yield* copyIcons(input, output, palette);
+      else {
+        const content = yield* fs.readFileString(input);
+        const svg = yield* Effect.try({
+          try: () =>
+            content.replace(
+              /var\(--vscode-ctp-([a-z0-9-]+)\)/g,
+              (_match, role: string) => color(palette, role),
+            ),
+          catch: (error) =>
+            error instanceof DotfilesError ? error : new DotfilesError(String(error)),
+        });
+        yield* fs.writeFileString(output, svg);
+      }
     }
-  }
+  });
 }
 
-function files(directory: string): string[] {
-  const result: string[] = [];
-  // Sort by path components to match pathlib's content-version traversal
-  for (const entry of readdirSync(directory, { withFileTypes: true }).sort((a, b) =>
-    a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
-  )) {
-    const path = join(directory, entry.name);
-    if (entry.isDirectory()) result.push(...files(path));
-    else if (entry.isFile()) result.push(path);
-  }
-  return result;
+function files(
+  directory: string,
+): Effect.Effect<string[], PlatformError.PlatformError, FileSystem.FileSystem> {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const result: string[] = [];
+    // Sort by path components to match pathlib's content-version traversal
+    for (const entry of (yield* fs.readDirectory(directory)).sort()) {
+      const path = join(directory, entry);
+      const status = yield* fs.lstat(path);
+      if (status.type === "Directory") result.push(...(yield* files(path)));
+      else if (status.type === "File") result.push(path);
+    }
+    return result;
+  });
 }
 
-function contentVersion(extension: string): string {
+const contentVersion = Effect.fn("contentVersion")(function* (extension: string) {
+  const fs = yield* FileSystem.FileSystem;
   const digest = createHash("sha256");
-  for (const path of files(extension))
-    digest.update(relative(extension, path)).update(readFileSync(path));
+  for (const path of yield* files(extension))
+    digest.update(relative(extension, path)).update(yield* fs.readFile(path));
   return `1.0.${digest.digest().readUInt32BE(0)}`;
-}
+});
 
-function buildVSIX(extension: string, destination: string, version: string): void {
-  const contentTypes =
-    '<?xml version="1.0" encoding="utf-8"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">\n  <Default Extension="json" ContentType="application/json" />\n  <Default Extension="svg" ContentType="image/svg+xml" />\n  <Default Extension="vsixmanifest" ContentType="text/xml" />\n</Types>\n';
-  const manifest = `<?xml version="1.0" encoding="utf-8"?>
-<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
-  <Metadata>
-    <Identity Id="${customName}" Version="${version}" Publisher="${publisher}" Language="en-US" />
-    <DisplayName>Catppuccin Custom — Catppuccin Icons</DisplayName>
-    <Description xml:space="preserve">Catppuccin file icon shapes using the Catppuccin Custom palette.</Description>
-    <Categories>Themes</Categories>
-    <Properties>
-      <Property Id="Microsoft.VisualStudio.Code.Engine" Value="^1.83.0" />
-      <Property Id="Microsoft.VisualStudio.Services.Content.Pricing" Value="Free" />
-    </Properties>
-  </Metadata>
-  <Installation><InstallationTarget Id="Microsoft.VisualStudio.Code" /></Installation>
-  <Dependencies />
-  <Assets><Asset Type="Microsoft.VisualStudio.Code.Manifest" Path="extension/package.json" Addressable="true" /></Assets>
-</PackageManifest>
-`;
+const buildVSIX = Effect.fn("buildVSIX")(function* (
+  extension: string,
+  destination: string,
+  version: string,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const builder = new Builder({
+    ignoreAttributes: false,
+    format: true,
+    suppressEmptyNode: true,
+    suppressBooleanAttributes: false,
+  });
+  const declaration = { "@_version": "1.0", "@_encoding": "utf-8" };
+  const contentTypes = builder.build({
+    "?xml": declaration,
+    Types: {
+      "@_xmlns": "http://schemas.openxmlformats.org/package/2006/content-types",
+      Default: [
+        { "@_Extension": "json", "@_ContentType": "application/json" },
+        { "@_Extension": "svg", "@_ContentType": "image/svg+xml" },
+        { "@_Extension": "vsixmanifest", "@_ContentType": "text/xml" },
+      ],
+    },
+  });
+  const manifest = builder.build({
+    "?xml": declaration,
+    PackageManifest: {
+      "@_Version": "2.0.0",
+      "@_xmlns": "http://schemas.microsoft.com/developer/vsx-schema/2011",
+      Metadata: {
+        Identity: {
+          "@_Id": extensionMetadata.name,
+          "@_Version": version,
+          "@_Publisher": extensionMetadata.publisher,
+          "@_Language": "en-US",
+        },
+        DisplayName: extensionMetadata.displayName,
+        Description: {
+          "@_xml:space": "preserve",
+          "#text": extensionMetadata.description,
+        },
+        Categories: extensionMetadata.categories.join(","),
+        Properties: {
+          Property: [
+            {
+              "@_Id": "Microsoft.VisualStudio.Code.Engine",
+              "@_Value": extensionMetadata.engines.vscode,
+            },
+            {
+              "@_Id": "Microsoft.VisualStudio.Services.Content.Pricing",
+              "@_Value": "Free",
+            },
+          ],
+        },
+      },
+      Installation: { InstallationTarget: { "@_Id": "Microsoft.VisualStudio.Code" } },
+      Dependencies: "",
+      Assets: {
+        Asset: {
+          "@_Type": "Microsoft.VisualStudio.Code.Manifest",
+          "@_Path": "extension/package.json",
+          "@_Addressable": "true",
+        },
+      },
+    },
+  });
   const entries: Record<string, Uint8Array> = {
     "[Content_Types].xml": Buffer.from(contentTypes),
     "extension.vsixmanifest": Buffer.from(manifest),
   };
-  for (const path of files(extension))
-    entries[`extension/${relative(extension, path)}`] = readFileSync(path);
-  writeFileSync(destination, zipSync(entries));
-}
+  for (const path of yield* files(extension))
+    entries[`extension/${relative(extension, path)}`] = yield* fs.readFile(path);
+  yield* fs.writeFile(destination, zipSync(entries));
+});
 
-export function vscodeIcons(): void {
-  const code = Bun.which("code");
+export const vscodeIcons = Effect.fn("vscodeIcons")(function* () {
+  const code = yield* Effect.sync(() => Bun.which("code"));
   if (!code) return;
-  const upstream = output([code, "--locate-extension", upstreamId]).trim();
+  const fs = yield* FileSystem.FileSystem;
+  const upstream = (yield* output([code, "--locate-extension", upstreamId])).trim();
   if (!upstream) return;
-  if (!existsSync(upstream))
-    throw new DotfilesError("Code reported a missing Catppuccin extension");
+  if (!(yield* fs.exists(upstream)))
+    return yield* Effect.fail(
+      new DotfilesError("Code reported a missing Catppuccin extension"),
+    );
   // Invalidate the upstream activation sentinel when Hjem changes the palette
-  rmSync(join(upstream, "themes/.flag"), { force: true });
-  using workspace = mkdtempDisposableSync(join(dirname(upstream), `.${extensionId}-`));
-  const temporary = workspace.path;
-  const extension = ensureDirectory(join(temporary, "extension"));
-  writeJson(join(extension, "theme.json"), buildTheme(upstream));
+  yield* fs.remove(join(upstream, "themes/.flag"), { force: true });
+  const temporary = yield* fs.makeTempDirectoryScoped({
+    directory: dirname(upstream),
+    prefix: `.${extensionId}-`,
+  });
+  const extension = yield* ensureDirectory(join(temporary, "extension"));
+  yield* writeJson(join(extension, "theme.json"), yield* buildTheme(upstream));
   for (const variant of ["dark", "light"] as const)
-    copyIcons(
+    yield* copyIcons(
       join(upstream, "dist/unflavored"),
       join(extension, "icons", variant),
       palettes[variant],
     );
-  const version = contentVersion(extension);
-  writeJson(join(extension, "package.json"), {
-    name: customName,
-    displayName: "Catppuccin Custom — Catppuccin Icons",
-    description: "Catppuccin file icon shapes using the Catppuccin Custom palette.",
+  const version = yield* contentVersion(extension);
+  yield* writeJson(join(extension, "package.json"), {
+    name: extensionMetadata.name,
+    displayName: extensionMetadata.displayName,
+    description: extensionMetadata.description,
     version,
-    publisher,
-    engines: { vscode: "^1.83.0" },
-    categories: ["Themes"],
+    publisher: extensionMetadata.publisher,
+    engines: extensionMetadata.engines,
+    categories: extensionMetadata.categories,
     contributes: {
       iconThemes: [
         {
-          id: customName,
-          label: "Catppuccin Custom — Catppuccin Icons",
+          id: extensionMetadata.name,
+          label: extensionMetadata.displayName,
           path: "./theme.json",
         },
       ],
     },
   });
   const vsix = join(temporary, `${extensionId}-${version}.vsix`);
-  buildVSIX(extension, vsix, version);
-  run([code, "--install-extension", vsix, "--force"]);
-}
+  yield* buildVSIX(extension, vsix, version);
+  yield* run([code, "--install-extension", vsix, "--force"]);
+}, Effect.scoped);

@@ -7,7 +7,7 @@ mod native 'native.just'
 set working-directory := '../..'
 # Evaluate every flake output without building package derivations.
 [group('check')]
-check: (_doctor 'fmt')
+check: (_doctor 'fmt') ci::_eval-system
     nix flake check --all-systems --keep-going --no-build --no-eval-cache
 # Update selected inputs, or all inputs
 [arg('inputs', help='Input names to update; omit to update all')]
@@ -19,7 +19,7 @@ update *inputs: (_doctor 'nix')
 [default]
 [group('setup')]
 install: (_doctor 'nix') _ensure
-    if [[ $(uname) == Darwin ]]; then
+    if [[ {{ quote(host_os) }} == macos ]]; then
       printf '%s\n' 'Darwin owns these tools, use just darwin to rebuild them.'
       exit 0
     fi

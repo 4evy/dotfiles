@@ -72,7 +72,6 @@ systems/spectrum/files/system/etc/dconf/db/local.d/* linguist-language=INI lingu
 
 # Plain-text files below are executable repository configuration or managed
 # data rather than documentation, so include them without inventing a DSL.
-.python-version linguist-language=Text linguist-detectable
 .tool-versions linguist-language=Text linguist-detectable
 home/files/.config/fastfetch/*.txt linguist-language=Text linguist-detectable
 home/files/.config/bat/config linguist-language=Text linguist-detectable
@@ -105,7 +104,5 @@ pnpm-lock.yaml linguist-generated
 pnpm-lock.yml linguist-generated
 systems/hosts/**/hardware-configuration.nix linguist-generated
 tools/*/bun.nix linguist-generated
-go.sum linguist-generated
-go.work.sum linguist-generated
 home/theme/palette/palette.json linguist-generated
 secrets/*.yaml linguist-generated

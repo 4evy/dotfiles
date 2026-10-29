@@ -106,6 +106,24 @@
       "problemMatcher": "$tsc"
     },
     {
+      "label": "bun: typecheck",
+      "detail": "Type-check the root project and all Bun workspaces without running linters.",
+      "type": "process",
+      "command": "bun",
+      "args": ["run", "typecheck"],
+      "inAgents": true,
+      "group": "build",
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "bun: install",
+      "detail": "Install workspace dependencies without changing bun.lock.",
+      "type": "process",
+      "command": "just",
+      "args": ["bun", "install"],
+      "problemMatcher": []
+    },
+    {
       "label": "nix: flake check (no build)",
       "detail": "Evaluate all systems without building derivations, using the repository recipe.",
       "type": "process",
@@ -140,29 +158,37 @@
       "problemMatcher": []
     },
     {
-      "label": "python: check",
-      "detail": "Run Python lint, types, dependency, complexity, and packaging checks.",
+      "label": "python: lint current file",
+      "detail": "Lint the current file with Ruff and inline standalone-script settings.",
       "type": "process",
-      "command": "just",
-      "args": ["python", "check"],
+      "command": "ruff",
+      "args": [
+        "check",
+        "--isolated",
+        "--target-version",
+        "py315",
+        "--line-length",
+        "88",
+        "--preview",
+        "--select",
+        "E4,E7,E9,F,I,UP,B",
+        "${file}"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "group": "build",
       "problemMatcher": []
     },
     {
-      "label": "python: typecheck",
-      "detail": "Run ty with the repository Python configuration.",
+      "label": "python: typecheck current file",
+      "detail": "Type-check the current file with ty.",
       "type": "process",
-      "command": "just",
-      "args": ["python", "typecheck"],
-      "group": "build",
-      "problemMatcher": []
-    },
-    {
-      "label": "go: check",
-      "detail": "Check formatting, test, vet, lint, and build the Go workspace.",
-      "type": "process",
-      "command": "just",
-      "args": ["go", "check"],
+      "command": "ty",
+      "args": ["check", "--python-version", "3.15", "--error", "all", "${file}"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "group": "build",
       "problemMatcher": []
     },

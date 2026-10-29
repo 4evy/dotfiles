@@ -1,0 +1,29 @@
+{
+  "location": { "name": "default-sofia", "latitude": 42.6977, "longitude": 23.3219 },
+  "roles": {
+    "black": "surface1",
+    "red": "red",
+    "green": "green",
+    "yellow": "yellow",
+    "blue": "blue",
+    "magenta": "pink",
+    "cyan": "sky",
+    "light-grey": "subtext0",
+    "dark-grey": "surface2",
+    "light-red": "red",
+    "light-green": "green",
+    "light-yellow": "yellow",
+    "light-blue": "blue",
+    "light-magenta": "pink",
+    "light-cyan": "sky",
+    "white": "subtext1",
+    "foreground": "terminalForeground",
+    "background": "terminalBackground"
+  },
+  "lightRoles": {
+    "black": "subtext1",
+    "white": "surface1",
+    "light-grey": "surface2",
+    "dark-grey": "subtext0"
+  }
+}

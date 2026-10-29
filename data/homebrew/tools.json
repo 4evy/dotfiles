@@ -1,0 +1,82 @@
+[
+  {
+    "formula": "coreutils",
+    "platforms": ["darwin"],
+    "path": "libexec/gnubin",
+    "bootstrap": true,
+    "just": true
+  },
+  {
+    "formula": "findutils",
+    "platforms": ["darwin"],
+    "path": "libexec/gnubin",
+    "bootstrap": true,
+    "just": true
+  },
+  {
+    "formula": "gnu-sed",
+    "platforms": ["darwin"],
+    "path": "libexec/gnubin",
+    "bootstrap": true,
+    "just": true
+  },
+  {
+    "formula": "grep",
+    "platforms": ["darwin"],
+    "path": "libexec/gnubin",
+    "bootstrap": true,
+    "just": true
+  },
+  {
+    "formula": "gawk",
+    "platforms": ["darwin"],
+    "path": "libexec/gnubin",
+    "bootstrap": true,
+    "just": true
+  },
+  {
+    "formula": "gnu-tar",
+    "platforms": ["darwin"],
+    "path": "libexec/gnubin",
+    "bootstrap": true,
+    "just": true
+  },
+  {
+    "formula": "gnu-which",
+    "platforms": ["darwin"],
+    "path": "libexec/gnubin",
+    "bootstrap": true,
+    "just": true
+  },
+  {
+    "formula": "diffutils",
+    "platforms": ["darwin"],
+    "path": "libexec/gnubin",
+    "bootstrap": true,
+    "just": true
+  },
+  {
+    "formula": "make",
+    "platforms": ["darwin", "linux"],
+    "path": "libexec/gnubin",
+    "bootstrap": true,
+    "just": true
+  },
+  {
+    "formula": "gnu-getopt",
+    "platforms": ["darwin"],
+    "path": "bin",
+    "bootstrap": true
+  },
+  { "formula": "curl", "platforms": ["darwin"], "path": "bin" },
+  { "formula": "file-formula", "platforms": ["darwin"], "path": "bin" },
+  { "formula": "lsof", "platforms": ["darwin", "linux"], "path": "bin" },
+  { "formula": "unzip", "platforms": ["darwin"], "path": "bin" },
+  { "formula": "zip", "platforms": ["darwin"], "path": "bin" },
+  {
+    "formula": "binutils",
+    "platforms": ["darwin", "linux"],
+    "path": "bin",
+    "append": true
+  }
+]

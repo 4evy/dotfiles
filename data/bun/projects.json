@@ -1,0 +1,16 @@
+[
+  {
+    "directory": ".",
+    "ignoreScripts": false,
+    "cacheScope": "workspace",
+    "nix": true,
+    "manifests": [
+      "package.json",
+      "home/package.json",
+      "lib/typescript/package.json",
+      "home/files/.local/lib/package.json",
+      "tools/tiling/package.json",
+      "tools/workstation/package.json"
+    ]
+  }
+]

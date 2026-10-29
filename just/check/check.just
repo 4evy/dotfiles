@@ -1,10 +1,11 @@
 import '../common.just'
+import '../nix/system.just'
 
 set working-directory := '../..'
-# Run the same treefmt wrapper in CI mode without retaining rewrites.
+# Check formatting in Nix's sandbox without rewriting the worktree
 [group('check')]
 format: (_doctor 'fmt')
-    nix fmt -- --ci
+    nix build --no-link --print-build-logs {{ quote('.#checks.' + nix_system + '.treefmt') }}
 
 # Run the complete repository validation suite
 [default]

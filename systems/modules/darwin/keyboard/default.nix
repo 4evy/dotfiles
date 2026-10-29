@@ -6,15 +6,18 @@
 }:
 let
   inherit (pkgs)
+    dotfiles-typescript-tools
     formats
     kanata-with-cmd
     linkFarm
     rsync
     writeText
     ;
+  codesignHelper = lib.getExe' dotfiles-typescript-tools "dotfiles-codesign";
+  logitechHelper = lib.getExe' dotfiles-typescript-tools "dotfiles-logitech";
   app = "/Applications/Kanata.app";
   executable = "${app}/Contents/MacOS/kanata";
-  configFile = ../../../../home/files/.config/kanata/kanata-macos.kbd;
+  configFile = ../../../../home/files/.config/kanata/macos.kbd;
   driverRoot = "/Library/Application Support/org.pqrs/Karabiner-DriverKit-VirtualHIDDevice";
   driver = "Karabiner-VirtualHIDDevice-Daemon";
   manager = "/Applications/.Karabiner-VirtualHIDDevice-Manager.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Manager";
@@ -55,7 +58,7 @@ let
     /bin/wait4path ${lib.escapeShellArg executable}
     # Configure the keyboard before Kanata opens it exclusively
     PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin \
-      /opt/homebrew/bin/bun ${./logitech.ts} \
+      ${logitechHelper} \
       --product-id 0xB377 --product-name 'Pebble K380s' --platform 0 || true
     exec ${
       lib.escapeShellArgs [
@@ -132,7 +135,7 @@ in
             --copy-unsafe-links --chmod=u+w --itemize-changes \
             ${bundle}/ ${lib.escapeShellArg "${app}/"})
           PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin \
-            /opt/homebrew/bin/bun ${../codesign.ts} \
+            ${codesignHelper} \
             ${lib.escapeShellArg app} --administrator-trust --entitlements ${entitlements}
           if [ -n "$kanata_changes" ]; then
             /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \

@@ -1,73 +1,103 @@
-import type Gio from "gi://Gio";
 import Meta from "gi://Meta";
 import Shell from "gi://Shell";
 import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
 import { wm } from "resource:///org/gnome/shell/ui/main.js";
-import type { BindingName, CycleBindingName } from "../shared/lib.js";
+import type { BindingName, LayoutPreset } from "@dotfiles/tiling/shared";
 import {
   advanceCycle,
-  CYCLE_BINDING_NAMES,
-  CYCLE_LAYOUT_PRESETS,
+  BINDING_NAMES,
+  BINDINGS,
   createCycleState,
-  MAXIMIZE_BINDING_NAME,
-} from "../shared/lib.js";
+} from "@dotfiles/tiling/shared";
+import * as Clock from "effect/Clock";
+import * as Effect from "effect/Effect";
+import * as Exit from "effect/Exit";
+import * as Scheduler from "effect/Scheduler";
+import * as Scope from "effect/Scope";
 import { resolveLayout } from "./layouts.js";
-import { canMoveResizeWindow, focusedWindow, moveResizeWindow } from "./windows.js";
+import { native } from "./native.js";
+import {
+  canMoveResizeWindow,
+  createWindowOperations,
+  focusedWindow,
+} from "./windows.js";
 
 export default class HyperWindowTilingExtension extends Extension {
-  private settings: Gio.Settings | null = null;
-  private cycle = createCycleState();
+  private scope: Scope.Closeable | null = null;
 
   enable() {
-    this.settings = this.getSettings();
-    this.cycle = createCycleState();
+    const scope = Scope.makeUnsafe();
+    const extension = this;
+    // GJS owns the event loop. Disabling cooperative yields keeps runSync off
+    // Effect's Promise/timer dispatcher, including during scope finalization
+    Effect.runSync(
+      Effect.gen(function* () {
+        const settings = yield* native("load extension settings", () =>
+          extension.getSettings(),
+        );
+        const { moveResizeWindow } = yield* createWindowOperations;
+        const cycle = createCycleState();
 
-    CYCLE_BINDING_NAMES.forEach((bindingName) => {
-      this.addKeybinding(bindingName, () => this.applyCycle(bindingName));
-    });
+        const applyLayout = Effect.fn(function* (
+          preset: LayoutPreset | readonly LayoutPreset[],
+          bindingName: BindingName,
+        ) {
+          const window = yield* focusedWindow;
+          if (!window || !(yield* canMoveResizeWindow(window))) return;
 
-    this.addKeybinding(MAXIMIZE_BINDING_NAME, () => this.maximizeFocusedWindow());
+          const now = yield* Clock.currentTimeMillis;
+          const layout =
+            typeof preset === "string"
+              ? preset
+              : preset[advanceCycle(cycle, bindingName, preset.length, now)];
+          yield* moveResizeWindow(window, yield* resolveLayout(window, layout));
+        });
+
+        yield* Effect.forEach(BINDING_NAMES, (bindingName) => {
+          const binding = BINDINGS[bindingName];
+          const handler = () => {
+            // GNOME invokes this synchronous foreign-runtime callback
+            Effect.runSync(
+              applyLayout(
+                binding.action === "cycle" ? binding.presets : "maximize",
+                bindingName,
+              ).pipe(Effect.provideService(Scheduler.PreventSchedulerYield, true)),
+            );
+          };
+          return Effect.acquireRelease(
+            native("register window tiling binding", () =>
+              wm.addKeybinding(
+                bindingName,
+                settings,
+                Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
+                Shell.ActionMode.NORMAL,
+                handler,
+              ),
+            ),
+            () =>
+              native("remove window tiling binding", () =>
+                wm.removeKeybinding(bindingName),
+              ).pipe(Effect.orDie),
+          );
+        });
+      }).pipe(
+        Scope.provide(scope),
+        Effect.onError((cause) => Scope.close(scope, Exit.failCause(cause))),
+        Effect.provideService(Scheduler.PreventSchedulerYield, true),
+      ),
+    );
+    this.scope = scope;
   }
 
   disable() {
-    [...CYCLE_BINDING_NAMES, MAXIMIZE_BINDING_NAME].forEach((bindingName) => {
-      wm.removeKeybinding(bindingName);
-    });
+    const scope = this.scope;
+    this.scope = null;
+    if (!scope) return;
 
-    this.settings = null;
-    this.cycle = createCycleState();
-  }
-
-  private addKeybinding(bindingName: BindingName, handler: Meta.KeyHandlerFunc) {
-    if (!this.settings) return;
-
-    wm.addKeybinding(
-      bindingName,
-      this.settings,
-      Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
-      Shell.ActionMode.NORMAL,
-      handler,
+    Effect.runSync(
+      Scope.close(scope, Exit.void).pipe(
+        Effect.provideService(Scheduler.PreventSchedulerYield, true),
+      ),
     );
-  }
-
-  private applyCycle(bindingName: CycleBindingName) {
-    const window = focusedWindow();
-    if (!window || !canMoveResizeWindow(window)) return;
-
-    const layouts = CYCLE_LAYOUT_PRESETS[bindingName];
-    const rect = resolveLayout(
-      window,
-      layouts[advanceCycle(this.cycle, bindingName, layouts.length)],
-    );
-
-    moveResizeWindow(window, rect);
-  }
-
-  private maximizeFocusedWindow() {
-    const window = focusedWindow();
-    if (!window || !canMoveResizeWindow(window)) return;
-
-    const rect = resolveLayout(window, "maximize");
-    moveResizeWindow(window, rect);
   }
 }

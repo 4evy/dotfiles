@@ -1,30 +1,37 @@
-import * as v from "valibot";
-import { run } from "../../../../lib/typescript/commands.ts";
-import { DotfilesError } from "../../../../lib/typescript/errors.ts";
-import source from "../../assets/linux/desktop.gjs" with { type: "text" };
+import { run } from "@dotfiles/core/commands";
+import { DotfilesError } from "@dotfiles/core/errors";
+import source from "@dotfiles/workstation/assets/desktop" with { type: "text" };
+import { Effect, Schema } from "effect";
 
-export function desktopArguments(...args: string[]): string[] {
+export function desktopArguments(...args: string[]): [string, ...string[]] {
   return ["gjs", "-c", source, ...args];
 }
 
-export function desktopOutput(...args: string[]): string {
-  const result = run(desktopArguments(...args), { capture: true, check: false });
+export const desktopOutput = Effect.fn("desktopOutput")(function* (...args: string[]) {
+  const result = yield* run(desktopArguments(...args), { capture: true, check: false });
   if (result.code !== 0)
-    throw new DotfilesError(`Desktop ${args[0]} failed: ${result.stderr.trim()}`);
+    return yield* Effect.fail(
+      new DotfilesError(`Desktop ${args[0]} failed: ${result.stderr.trim()}`),
+    );
   return result.stdout.replace(/\n+$/, "");
-}
+});
 
-export function flatpakRefs(kind: "apps" | "runtimes") {
-  return v.parse(
-    v.array(
-      v.object({
-        id: v.string(),
-        branch: v.string(),
-        arch: v.string(),
-        origin: v.nullable(v.string()),
-        installation: v.string(),
-      }),
-    ),
-    JSON.parse(desktopOutput(`flatpak-${kind}`)),
+const flatpakReferences = Schema.fromJsonString(
+  Schema.Array(
+    Schema.Struct({
+      id: Schema.String,
+      branch: Schema.String,
+      arch: Schema.String,
+      origin: Schema.NullOr(Schema.String),
+      installation: Schema.String,
+    }),
+  ),
+);
+
+export const flatpakRefs = Effect.fn("flatpakRefs")(function* (
+  kind: "apps" | "runtimes",
+) {
+  return yield* Schema.decodeUnknownEffect(flatpakReferences)(
+    yield* desktopOutput(`flatpak-${kind}`),
   );
-}
+});

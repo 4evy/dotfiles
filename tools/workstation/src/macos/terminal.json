@@ -1,0 +1,43 @@
+{
+  "font": { "name": "JetBrainsMonoNFM-Regular", "size": 15 },
+  "profileNames": {
+    "light": "Catppuccin Custom Light",
+    "dark": "Catppuccin Custom Dark"
+  },
+  "defaultProfilesVersion": 2,
+  "profile": {
+    "ProfileCurrentVersion": 2.09,
+    "columnCount": 120,
+    "rowCount": 30,
+    "FontAntialias": true,
+    "FontHeightSpacing": 1,
+    "FontWidthSpacing": 1,
+    "BackgroundBlur": 0,
+    "BackgroundBlurInactive": 0,
+    "BackgroundSettingsForInactiveWindows": false,
+    "DynamicANSIForegroundColors": false
+  },
+  "colorRoles": {
+    "TextColor": "terminalForeground",
+    "TextBoldColor": "terminalCursor",
+    "BackgroundColor": "terminalBackground",
+    "CursorColor": "terminalCursor",
+    "SelectionColor": "surface1",
+    "ANSIBlackColor": "ansiBlack",
+    "ANSIRedColor": "red",
+    "ANSIGreenColor": "green",
+    "ANSIYellowColor": "yellow",
+    "ANSIBlueColor": "blue",
+    "ANSIMagentaColor": "pink",
+    "ANSICyanColor": "sky",
+    "ANSIWhiteColor": "ansiWhite",
+    "ANSIBrightBlackColor": "mutedForeground",
+    "ANSIBrightRedColor": "red",
+    "ANSIBrightGreenColor": "green",
+    "ANSIBrightYellowColor": "yellow",
+    "ANSIBrightBlueColor": "blue",
+    "ANSIBrightMagentaColor": "pink",
+    "ANSIBrightCyanColor": "sky",
+    "ANSIBrightWhiteColor": "ansiWhite"
+  }
+}

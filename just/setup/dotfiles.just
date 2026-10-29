@@ -6,9 +6,7 @@ apply: (_doctor 'apply')
 # Apply Helium extensions, settings, and the Catppuccin Custom themes
 [group('setup')]
 helium: (_doctor 'reconcile')
-    #!/usr/bin/env bash
-    set -euo pipefail
-    if [ "$(uname)" = Darwin ]; then
+    if [[ {{ quote(host_os) }} == macos ]]; then
       if pgrep -f '^/Applications/Helium[.]app/Contents/MacOS/Helium([[:space:]]|$)' >/dev/null; then
         osascript -e 'tell application "Helium" to quit'
       fi
@@ -46,9 +44,10 @@ setup *args:
     tools/setup/setup.sh setup "$@"
 
 # Refresh userland, dotfiles, and host stages on an already-bootstrapped machine
+[env('DOTFILES_HOMEBREW_UPGRADE', '1')]
 [group('setup')]
 update:
-    DOTFILES_HOMEBREW_UPGRADE=1 tools/setup/setup.sh setup
+    tools/setup/setup.sh setup
 
 # Build and activate the macOS system configuration
 [group('setup')]

@@ -1,0 +1,27 @@
+[
+  {
+    "url": "https://devenv.cachix.org",
+    "key": "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
+  },
+  {
+    "url": "https://euvlok.cachix.org",
+    "key": "euvlok.cachix.org-1:cmFWCSs7rxPiyE1qfaJn8TY7QaRoGOrzKuNvtGw2gcU="
+  },
+  {
+    "url": "https://eupkgs.cachix.org",
+    "key": "eupkgs.cachix.org-1:V9Y0HdASNNSU9U6EkXhR1j85bZGRtNgW7wSyTiQrwGU="
+  },
+  {
+    "url": "https://nix-community.cachix.org",
+    "key": "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+  },
+  {
+    "url": "https://cache.flox.dev",
+    "key": "flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs="
+  },
+  {
+    "url": "https://vicinae.cachix.org",
+    "key": "vicinae.cachix.org-1:1kDrfienkGHPYbkpNj1mWTr7Fm1+zcenzgTizIcI3oc=",
+    "platforms": ["nixos"]
+  }
+]

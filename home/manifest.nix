@@ -381,7 +381,7 @@
       nixGenerated = true;
     }
     {
-      source = ".config/kanata/kanata-macos.kbd";
+      source = ".config/kanata/macos.kbd";
       target = ".config/kanata/kanata-macos.kbd";
       systems = [
         "linux"
@@ -712,6 +712,8 @@
       source = ".local/lib/ghostty/ghostty.ts";
       target = ".local/lib/ghostty/ghostty.ts";
       executable = true;
+      # Relative imports must resolve from the deployed module tree
+      mutable = true;
     }
     {
       source = ".local/lib/ghostty/scrollback.zsh";
@@ -779,8 +781,8 @@
       executable = true;
     }
     {
-      source = ".local/lib/typescript/bun.lock";
-      target = ".local/lib/typescript/bun.lock";
+      source = ".local/lib/bun.lock";
+      target = ".local/lib/bun.lock";
     }
     {
       source = ".local/lib/typescript/lsp/lsp.ts";
@@ -788,8 +790,8 @@
       mutable = true;
     }
     {
-      source = ".local/lib/typescript/package.json";
-      target = ".local/lib/typescript/package.json";
+      source = ".local/lib/package.json";
+      target = ".local/lib/package.json";
     }
     {
       source = ".local/lib/typescript/compiler.mts";
@@ -829,6 +831,16 @@
       source = ".local/lib/typescript/tsrs.sh";
       target = ".local/lib/typescript/tsdk/tsgo";
       executable = true;
+    }
+    {
+      source = ".local/lib/typescript/runtime.ts";
+      target = ".local/lib/typescript/runtime.ts";
+      mutable = true;
+    }
+    {
+      source = ".local/lib/typescript/process.ts";
+      target = ".local/lib/typescript/process.ts";
+      mutable = true;
     }
     {
       source = ".local/lib/typescript/validation.ts";
@@ -933,10 +945,6 @@
       ];
     }
     {
-      source = ".omp/agent/extensions/pride";
-      target = ".omp/agent/extensions/pride";
-    }
-    {
       source = ".omp/agent/package.json";
       target = ".omp/agent/package.json";
       nixGenerated = true;
@@ -1011,7 +1019,26 @@
         "linux"
       ];
     }
-  ];
+  ]
+  ++
+    builtins.map
+      (
+        name:
+        let
+          path = ".omp/agent/extensions/pride/${name}.ts";
+        in
+        {
+          source = path;
+          target = path;
+          # Bare dependencies resolve from the deployed agent package
+          mutable = true;
+        }
+      )
+      [
+        "flags"
+        "index"
+        "widget"
+      ];
   hooks = [
     {
       command = [
@@ -1107,8 +1134,8 @@
     }
     {
       command = [
-        "bun"
-        "@REPOSITORY@/tools/workstation/install.ts"
+        "sh"
+        "@REPOSITORY@/tools/workstation/install.sh"
       ];
       systems = [
         "darwin"
@@ -1119,9 +1146,16 @@
         "tools/workstation/src"
         "tools/workstation/assets"
         "tools/workstation/package.json"
-        "tools/workstation/bun.lock"
+        "package.json"
+        "bun.lock"
+        "home/package.json"
+        "home/files/.local/lib/package.json"
         "lib/typescript"
         "home/theme/palette/palette.json"
+        "home/generators.json"
+        "home/deploy/schema.ts"
+        "home/files/.local/lib/typescript/process.ts"
+        "tools/workstation/install.sh"
         "tools/workstation/install.ts"
       ];
       name = "80_repository_workstation_tool.sh";
@@ -1159,7 +1193,7 @@
       ];
       onChange = true;
       inputs = [
-        "home/files/.config/kanata/kanata-macos.kbd"
+        "home/files/.config/kanata/macos.kbd"
         "systems/modules/darwin/codesign.ts"
         "systems/modules/darwin/keyboard/logitech.ts"
         "systems/modules/darwin/keyboard/default.nix"
@@ -1174,10 +1208,10 @@
       ];
       onChange = true;
       inputs = [
-        "home/files/.local/lib/typescript/package.json"
-        "home/files/.local/lib/typescript/bun.lock"
+        "home/files/.local/lib/package.json"
+        "home/files/.local/lib/bun.lock"
       ];
-      name = "lsp_dependencies.sh";
+      name = "00_typescript_dependencies.sh";
     }
     {
       systems = [
@@ -1216,22 +1250,21 @@
       inputs = [
         "tools/workstation/src/macos/terminal.ts"
         "tools/workstation/src/macos/native.ts"
+        "tools/workstation/src/macos/terminal.json"
       ];
       name = "terminal_app_catppuccin_custom.sh";
     }
     {
       command = [
-        "python3.14"
-        "@REPOSITORY@/tools/setup/toshy.py"
+        "bun"
+        "@REPOSITORY@/tools/setup/toshy.ts"
       ];
       systems = [
         "linux"
       ];
       onChange = true;
       inputs = [
-        "tools/setup/toshy.py"
-        "packages/toshy/user/setup/setup.py"
-        "packages/toshy/user/setup/slices.py"
+        "tools/setup/toshy.ts"
         "packages/toshy/user/slices"
         "home/files/.config/systemd/user/toshy-config.service.d"
         "systems/spectrum/files/system/usr/lib/systemd/user/toshy-kanata-device.path"

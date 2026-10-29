@@ -19,7 +19,6 @@
         files = "(Dockerfile|Containerfile)$";
       };
       luacheck.enable = true;
-      ruff.enable = true;
       rumdl.enable = true;
       shellcheck = {
         enable = true;

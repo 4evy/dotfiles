@@ -42,7 +42,6 @@
   "C_Cpp.formatting": "clangFormat",
   "search.exclude": {
     "**/.cache": true,
-    "**/.complexipy_cache": true,
     "**/.decrypted~*": true,
     "**/.direnv": true,
     "**/.gradle": true,
@@ -53,7 +52,6 @@
     "**/.ruff_cache": true,
     "**/.rumdl_cache": true,
     "**/.swiftpm": true,
-    "**/.venv": true,
     "**/__pycache__": true,
     "**/build": true,
     "**/build-*/**": true,
@@ -65,7 +63,6 @@
   },
   "files.watcherExclude": {
     "**/.cache/**": true,
-    "**/.complexipy_cache/**": true,
     "**/.decrypted~*": true,
     "**/.direnv/**": true,
     "**/.gradle/**": true,
@@ -76,7 +73,6 @@
     "**/.ruff_cache/**": true,
     "**/.rumdl_cache/**": true,
     "**/.swiftpm/**": true,
-    "**/.venv/**": true,
     "**/__pycache__/**": true,
     "**/build/**": true,
     "**/build-*/**": true,
@@ -121,14 +117,33 @@
   "js/ts.preferences.preferTypeOnlyAutoImports": true,
   "js/ts.updateImportsOnFileMove.enabled": "always",
   "python.languageServer": "None",
-  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
-  "python.useEnvironmentsExtension": true,
-  "python-envs.workspaceSearchPaths": [".venv"],
-  "ty.diagnosticMode": "workspace",
+  "python.defaultInterpreterPath": "python3.15",
+  "python.useEnvironmentsExtension": false,
+  "ty.diagnosticMode": "openFilesOnly",
   "ty.importStrategy": "fromEnvironment",
   "ty.path": ["ty"],
+  "ty.configuration": {
+    "environment": {
+      "python-version": "3.15"
+    },
+    "rules": {
+      "all": "error"
+    }
+  },
   "ruff.importStrategy": "fromEnvironment",
   "ruff.path": ["ruff"],
+  "ruff.configurationPreference": "editorOnly",
+  "ruff.configuration": {
+    "target-version": "py315",
+    "line-length": 88,
+    "preview": true,
+    "lint": {
+      "select": ["E4", "E7", "E9", "F", "I", "UP", "B"]
+    },
+    "format": {
+      "docstring-code-format": true
+    }
+  },
   "nix.enableLanguageServer": true,
   "nix.serverPath": "nixd",
   "nix.formatterPath": "nixfmt",
@@ -142,13 +157,6 @@
   "stylua.disableVersionCheck": true,
   "stylua.searchBinaryInPATH": true,
   "systemd.version": "latest",
-  "[go]": {
-    "editor.defaultFormatter": "golang.go",
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit"
-    }
-  },
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.formatOnSave": true,

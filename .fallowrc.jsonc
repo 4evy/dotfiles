@@ -19,7 +19,7 @@
     "target/**",
     "zig-pkg/**",
     "zig-out/**",
-    // This independently locked package runs Fallow through its own check script
+    // Workstation runs Fallow through its own package check script
     "tools/workstation/src/**",
     "tools/workstation/assets/**",
     "tools/tiling/vendor/**"

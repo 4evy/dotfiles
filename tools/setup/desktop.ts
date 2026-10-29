@@ -1,111 +1,138 @@
 #!/usr/bin/env bun
-import {
-  copyFileSync,
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  statSync,
-} from "node:fs";
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
-import { run as runCommand } from "../../lib/typescript/commands.ts";
-import { desktopOutput, flatpakRefs } from "../workstation/src/linux/desktop.ts";
+import { run } from "@dotfiles/core/commands";
+import { DotfilesError } from "@dotfiles/core/errors";
+import { isExecutable } from "@dotfiles/core/files";
+import { runMain } from "@dotfiles/core/runtime";
+import { desktopOutput, flatpakRefs } from "@dotfiles/workstation/desktop";
+import { Effect, FileSystem } from "effect";
 
-function run(args: string[], check = true): { code: number; stdout: string } {
-  const result = runCommand(args, { capture: true, check });
-  return { code: result.code, stdout: result.stdout.trim() };
-}
+const which = Effect.fn(function* (name: string) {
+  for (const directory of (process.env.PATH ?? "").split(":")) {
+    const path = join(directory, name);
+    if (yield* isExecutable(path)) return path;
+  }
+  return undefined;
+});
 
-function gnome(): void {
-  if (!Bun.which("gnome-extensions")) return;
-  const installed = run(["gnome-extensions", "list", "--system"], false);
+const gnome = Effect.gen(function* () {
+  const fs = yield* FileSystem.FileSystem;
+  if (!(yield* which("gnome-extensions"))) return;
+  const installed = yield* run(["gnome-extensions", "list", "--system"], {
+    capture: true,
+    check: false,
+  });
   if (installed.code !== 0) return;
   const wanted = [
     "focused-window-dbus@flexagoon.com",
     "hyper-window-tiling@4evy.local",
   ];
-  if (!existsSync("/etc/NIXOS"))
+  if (!(yield* fs.exists("/etc/NIXOS")))
     wanted.push("window-calls-extended@hseliger.eu", "xremap@k0kubun.com");
   for (const extension of wanted) {
-    if (!installed.stdout.split("\n").includes(extension))
-      throw new Error(
-        `Required system extension ${extension} is missing; rebuild the platform configuration`,
+    if (!installed.stdout.trim().split("\n").includes(extension))
+      return yield* Effect.fail(
+        new DotfilesError(
+          `Required system extension ${extension} is missing; rebuild the platform configuration`,
+        ),
       );
   }
-  desktopOutput("configure-gnome", ...wanted);
-}
+  yield* desktopOutput("configure-gnome", ...wanted);
+});
 
-function kde(): void {
+const kde = Effect.gen(function* () {
   if (!process.env.XDG_CURRENT_DESKTOP?.includes("KDE")) return;
-  const writer = Bun.which("kwriteconfig6");
+  const writer = yield* which("kwriteconfig6");
   if (writer)
-    run([
-      writer,
-      "--file",
-      "kwinrc",
-      "--group",
-      "Plugins",
-      "--key",
-      "hyper-window-tilingEnabled",
-      "--type",
-      "bool",
-      "true",
-    ]);
-  const dbus = Bun.which("qdbus6");
+    yield* run(
+      [
+        writer,
+        "--file",
+        "kwinrc",
+        "--group",
+        "Plugins",
+        "--key",
+        "hyper-window-tilingEnabled",
+        "--type",
+        "bool",
+        "true",
+      ],
+      { capture: true },
+    );
+  const dbus = yield* which("qdbus6");
   if (dbus)
-    run([dbus, "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting.start"], false);
-}
+    yield* run([dbus, "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting.start"], {
+      capture: true,
+      check: false,
+    });
+});
 
-function children(directory: string): string[] {
-  if (!existsSync(directory)) return [];
-  return readdirSync(directory).map((name) => join(directory, name));
-}
+const children = Effect.fn(function* (directory: string) {
+  const fs = yield* FileSystem.FileSystem;
+  if (!(yield* fs.exists(directory))) return [];
+  return (yield* fs.readDirectory(directory)).map((name) => join(directory, name));
+});
 
-function copyFontFragments(target: string, fragments: string[]): boolean {
-  mkdirSync(target, { recursive: true });
+const copyFontFragments = Effect.fn(function* (target: string, fragments: string[]) {
+  const fs = yield* FileSystem.FileSystem;
+  yield* fs.makeDirectory(target, { recursive: true });
   let changed = false;
   for (const source of fragments) {
     const destination = join(target, basename(source));
+    const original = (yield* fs.exists(destination))
+      ? yield* fs.readFile(destination)
+      : undefined;
+    const content = yield* fs.readFile(source);
     if (
-      !existsSync(destination) ||
-      !readFileSync(destination).equals(readFileSync(source))
+      original === undefined ||
+      original.length !== content.length ||
+      original.some((byte, index) => byte !== content[index])
     ) {
-      copyFileSync(source, destination);
+      yield* fs.copyFile(source, destination);
       changed = true;
     }
   }
   return changed;
-}
+});
 
-function flatpakFonts(): void {
+const flatpakFonts = Effect.gen(function* () {
+  const fs = yield* FileSystem.FileSystem;
   const home = homedir();
   const config = process.env.XDG_CONFIG_HOME ?? join(home, ".config");
-  const fragments = children(join(config, "fontconfig/conf.d")).filter((path) =>
-    path.endsWith(".conf"),
+  const fragments = (yield* children(join(config, "fontconfig/conf.d"))).filter(
+    (path) => path.endsWith(".conf"),
   );
   if (!fragments.length) return;
-  const apps = flatpakRefs("apps");
+  const apps = yield* flatpakRefs("apps");
   for (const id of new Set(apps.map((app) => app.id))) {
     const app = join(home, ".var/app", id);
-    if (!existsSync(app)) continue;
-    if (!statSync(app).isDirectory()) continue;
-    if (!copyFontFragments(join(app, "config/fontconfig/conf.d"), fragments)) continue;
-    for (const cache of children(join(app, "cache/fontconfig"))) {
-      const entry = lstatSync(cache, { throwIfNoEntry: false });
+    if (!(yield* fs.exists(app))) continue;
+    if ((yield* fs.stat(app)).type !== "Directory") continue;
+    if (!(yield* copyFontFragments(join(app, "config/fontconfig/conf.d"), fragments)))
+      continue;
+    for (const cache of yield* children(join(app, "cache/fontconfig"))) {
+      const entry = yield* fs.lstat(cache).pipe(
+        Effect.catchIf(
+          (error) => error.reason._tag === "NotFound",
+          () => Effect.succeed(undefined),
+        ),
+      );
       if (
         basename(cache).includes("cache-") &&
-        (entry?.isFile() || entry?.isSymbolicLink())
+        (entry?.type === "File" || entry?.type === "SymbolicLink")
       )
-        rmSync(cache, { force: true });
+        yield* fs.remove(cache, { force: true });
     }
   }
-}
+});
 
 if (import.meta.main && process.platform === "linux") {
-  gnome();
-  kde();
-  flatpakFonts();
+  runMain(
+    Effect.gen(function* () {
+      yield* gnome;
+      yield* kde;
+      yield* flatpakFonts;
+    }),
+  );
 }

@@ -1,28 +1,58 @@
-import { existsSync } from "node:fs";
-import { chmod, copyFile, mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
-import ompConfig from "../../../home/data/omp/config.json";
-import keybindings from "../../../home/data/omp/keybindings.json";
-import opencodeConfig from "../../../home/data/opencode/config.json";
-import quotaToast from "../../../home/data/opencode/quota-toast.json";
+import { DotfilesError } from "@dotfiles/core/errors";
+import ompConfig from "@dotfiles/home/data/omp/config";
+import keybindings from "@dotfiles/home/data/omp/keybindings";
+import opencodeConfig from "@dotfiles/home/data/opencode/config";
+import quotaToast from "@dotfiles/home/data/opencode/quota/toast";
+import {
+  type PreparedAiManifest,
+  PreparedAiManifestSchema,
+} from "@dotfiles/home/schema";
+import { Effect, FileSystem, Schema } from "effect";
 
 type Configuration = Record<string, unknown>;
 
+const ConfigurationSchema = Schema.Record(Schema.String, Schema.Unknown);
+const ExportManifestSchema = Schema.Struct({
+  files: Schema.Array(
+    Schema.Struct({
+      path: Schema.String,
+      private: Schema.optionalKey(Schema.Boolean),
+    }),
+  ),
+});
+
 const formats = {
   toml: {
-    read: async (path: string) => Bun.TOML.parse(await readFile(path, "utf8")),
+    parse: Bun.TOML.parse,
     stringify: (value: Configuration) => Bun.TOML.stringify(value),
   },
   yaml: {
-    read: async (path: string) => Bun.YAML.parse(await readFile(path, "utf8")),
+    parse: Bun.YAML.parse,
     stringify: (value: Configuration) => Bun.YAML.stringify(value),
   },
   json: {
-    read: (path: string) => Bun.file(path).json(),
+    parse: JSON.parse,
     stringify: (value: Configuration) => `${JSON.stringify(value, null, 2)}\n`,
   },
 };
+
+function merge(left: Configuration, right: Configuration): Configuration {
+  for (const [key, value] of Object.entries(right)) {
+    const previous = left[key];
+    left[key] =
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      previous &&
+      typeof previous === "object" &&
+      !Array.isArray(previous)
+        ? merge(previous as Configuration, value as Configuration)
+        : value;
+  }
+  return left;
+}
 
 type ConfigRule = {
   format: keyof typeof formats;
@@ -74,61 +104,71 @@ const configRules: Record<string, ConfigRule> = {
   },
 };
 
-export async function prepareAiHome(
+export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
   source: string,
   exported: string,
   destination: string,
   nativeCli: string,
   omp: string,
   farstep = join(source, "farstep/farstep"),
-): Promise<void> {
+) {
+  const fs = yield* FileSystem.FileSystem;
   const home = homedir();
-  const manifest = await Bun.file(join(exported, "manifest.json")).json();
-  const files: { path: string; private: boolean; type?: "symlink" }[] = [];
-  const write = async (path: string, contents: string) => {
+  const manifestText = yield* fs.readFileString(join(exported, "manifest.json"));
+  const manifestJson = yield* Effect.try({
+    try: () => JSON.parse(manifestText) as unknown,
+    catch: (error) => new DotfilesError(`Invalid AI export manifest: ${error}`),
+  });
+  const manifest =
+    yield* Schema.decodeUnknownEffect(ExportManifestSchema)(manifestJson);
+  const files: PreparedAiManifest["files"] = [];
+  const write = Effect.fn("writePreparedAiFile")(function* (
+    path: string,
+    contents: string,
+  ) {
     const target = join(destination, path);
-    await mkdir(dirname(target), { recursive: true, mode: 0o700 });
-    await writeFile(target, contents, { mode: 0o600 });
+    yield* fs.makeDirectory(dirname(target), { recursive: true, mode: 0o700 });
+    yield* fs.writeFileString(target, contents, { mode: 0o600 });
     files.push({ path, private: true });
-  };
-  const merge = (
-    left: Record<string, unknown>,
-    right: Record<string, unknown>,
-  ): Record<string, unknown> => {
-    for (const [key, value] of Object.entries(right)) {
-      const previous = left[key];
-      left[key] =
-        value &&
-        typeof value === "object" &&
-        !Array.isArray(value) &&
-        previous &&
-        typeof previous === "object" &&
-        !Array.isArray(previous)
-          ? merge(previous as Record<string, unknown>, value as Record<string, unknown>)
-          : value;
-    }
-    return left;
-  };
+  });
+  const readConfiguration = Effect.fn("readAiConfiguration")(function* (
+    path: string,
+    format: keyof typeof formats,
+    emptyIfNull = false,
+  ) {
+    const text = yield* fs.readFileString(path);
+    const value = yield* Effect.try({
+      try: () => formats[format].parse(text) as unknown,
+      catch: (error) => new DotfilesError(`Invalid AI configuration ${path}: ${error}`),
+    });
+    return yield* Schema.decodeUnknownEffect(ConfigurationSchema)(
+      emptyIfNull && value == null ? {} : value,
+    );
+  });
   for (const file of manifest.files) {
     if (
-      typeof file.path !== "string" ||
       isAbsolute(file.path) ||
-      file.path.split("/").some((part: string) => ["", ".", ".."].includes(part))
+      file.path.split("/").some((part) => ["", ".", ".."].includes(part))
     )
-      throw new Error("The AI config export contains an invalid destination");
+      return yield* Effect.fail(
+        new DotfilesError("The AI config export contains an invalid destination"),
+      );
     const target = join(destination, file.path);
-    await mkdir(dirname(target), { recursive: true, mode: 0o700 });
+    yield* fs.makeDirectory(dirname(target), { recursive: true, mode: 0o700 });
     const rule = Object.hasOwn(configRules, file.path)
       ? configRules[file.path]
       : undefined;
     const currentPath = join(home, file.path);
-    if (rule && (!rule.onlyIfCurrentExists || existsSync(currentPath))) {
-      const format = formats[rule.format];
+    const currentExists =
+      rule && (rule.onlyIfCurrentExists || rule.preserveCurrent)
+        ? yield* fs.exists(currentPath)
+        : false;
+    if (rule && (!rule.onlyIfCurrentExists || currentExists)) {
       const current =
-        rule.preserveCurrent && existsSync(currentPath)
-          ? (((await format.read(currentPath)) ?? {}) as Configuration)
+        rule.preserveCurrent && currentExists
+          ? yield* readConfiguration(currentPath, rule.format, true)
           : {};
-      const managed = (await format.read(join(exported, file.path))) as Configuration;
+      const managed = yield* readConfiguration(join(exported, file.path), rule.format);
       const config = rule.preserveCurrent
         ? merge(
             current,
@@ -137,13 +177,15 @@ export async function prepareAiHome(
         : managed;
       const overrides =
         typeof rule.overrides === "function" ? rule.overrides(managed) : rule.overrides;
-      await writeFile(
-        target,
-        format.stringify(overrides ? merge(config, overrides) : config),
-        { mode: 0o600 },
-      );
-    } else await copyFile(join(exported, file.path), target);
-    await chmod(target, file.private ? 0o600 : 0o644);
+      const contents = yield* Effect.try({
+        try: () =>
+          formats[rule.format].stringify(overrides ? merge(config, overrides) : config),
+        catch: (error) =>
+          new DotfilesError(`Could not render AI configuration ${file.path}: ${error}`),
+      });
+      yield* fs.writeFileString(target, contents, { mode: 0o600 });
+    } else yield* fs.copyFile(join(exported, file.path), target);
+    yield* fs.chmod(target, file.private ? 0o600 : 0o644);
     files.push({ path: file.path, private: Boolean(file.private) });
   }
   const links = {
@@ -162,23 +204,28 @@ export async function prepareAiHome(
   };
   for (const [path, relative] of Object.entries(links)) {
     const target = join(destination, path);
-    await mkdir(dirname(target), { recursive: true, mode: 0o700 });
-    await symlink(isAbsolute(relative) ? relative : join(source, relative), target);
+    yield* fs.makeDirectory(dirname(target), { recursive: true, mode: 0o700 });
+    yield* fs.symlink(isAbsolute(relative) ? relative : join(source, relative), target);
     files.push({ path, private: false, type: "symlink" });
   }
   if (process.platform === "linux") {
-    await write(
+    yield* write(
       ".config/environment.d/60-codex-cli.conf",
       `CODEX_CLI_PATH=${JSON.stringify(nativeCli)}\n`,
     );
-    await write(
+    yield* write(
       ".config/systemd/user/ghidra-mcp.service",
       `[Unit]\nDescription=Ghidra MCP headless backend\n\n[Service]\nExecStart=${JSON.stringify(join(home, ".local/bin/ai"))} ghidra mcp httpd\nUMask=0077\nRestart=on-failure\nRestartSec=5\n\n[Install]\nWantedBy=default.target\n`,
     );
   }
-  await writeFile(
+  const prepared = yield* Schema.decodeUnknownEffect(PreparedAiManifestSchema)({
+    version: 1,
+    platform: process.platform,
+    files,
+  });
+  yield* fs.writeFileString(
     join(destination, "manifest.json"),
-    `${JSON.stringify({ version: 1, platform: process.platform, files })}\n`,
+    `${JSON.stringify(prepared)}\n`,
     { mode: 0o600 },
   );
-}
+});

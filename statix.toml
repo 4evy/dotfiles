@@ -1,5 +1,2 @@
 disabled = []
-ignore = [
-  "systems/hosts/linux/hardware-configuration.nix",
-  "tools/tiling/bun.nix",
-]
+ignore = ["systems/hosts/linux/hardware-configuration.nix"]

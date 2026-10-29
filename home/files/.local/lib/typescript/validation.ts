@@ -1,3 +1,3 @@
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
+import { Schema } from "effect";
+
+export const isRecord = Schema.is(Schema.Record(Schema.String, Schema.Unknown));

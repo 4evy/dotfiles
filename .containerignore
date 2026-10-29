@@ -3,6 +3,13 @@
 
 !.yamllint
 !LICENSE
+!package.json
+!bun.lock
+!tsconfig.json
+
+!data/
+!data/rustdesk/
+!data/rustdesk/options.json
 
 !systems/
 !systems/spectrum/
@@ -28,8 +35,8 @@ home/records/**
 !tools/workstation/
 tools/workstation/*
 !tools/workstation/package.json
-!tools/workstation/bun.lock
 !tools/workstation/install.ts
+!tools/workstation/install.sh
 !tools/workstation/assets/
 !tools/workstation/assets/**
 !tools/workstation/src/
@@ -37,7 +44,9 @@ tools/workstation/*
 !tools/tiling/
 tools/tiling/*
 !tools/tiling/package.json
-!tools/tiling/bun.lock
+!tools/tiling/bindings.json
+!tools/tiling/scripts/
+!tools/tiling/scripts/**
 !tools/tiling/vendor/
 !tools/tiling/vendor/**
 !tools/tiling/tsconfig.json

@@ -1,58 +1,62 @@
-import { existsSync, lstatSync, readFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
-import * as v from "valibot";
-import { run } from "../../../../lib/typescript/commands.ts";
-import { DotfilesError } from "../../../../lib/typescript/errors.ts";
-import { ensureDirectory, writeIfChanged } from "../../../../lib/typescript/files.ts";
+import { dirname, join } from "node:path";
+import { run } from "@dotfiles/core/commands";
+import { DotfilesError } from "@dotfiles/core/errors";
+import { ensureDirectory, writeIfChanged } from "@dotfiles/core/files";
+import generatorData from "@dotfiles/home/generators";
+import { GeneratorsSchema } from "@dotfiles/home/schema";
+import { Console, Effect, FileSystem, Schema } from "effect";
 
-const commandsSchema = v.pipe(
-  v.custom<Record<string, unknown>>(
-    (value) => typeof value === "object" && value !== null && !Array.isArray(value),
-  ),
-  v.record(
-    v.pipe(v.string(), v.regex(/^[A-Za-z0-9._+-]+$/)),
-    v.pipe(v.array(v.string()), v.minLength(1)),
-  ),
-);
+function completionTarget(
+  target: string,
+  cache: string,
+  data: string,
+): string | undefined {
+  if (target.startsWith(".cache/zsh/completions/"))
+    return join(cache, target.slice(".cache/".length));
+  if (target.startsWith(".local/share/bash-completion/completions/"))
+    return join(data, target.slice(".local/share/".length));
+  return undefined;
+}
 
-function capture(command: string[], target: string, shell: string): void {
-  const executable = Bun.which(command[0] ?? "");
-  if (!executable) {
-    const existing = lstatSync(target, { throwIfNoEntry: false });
-    if (existing?.isFile() || existing?.isSymbolicLink()) rmSync(target);
+const generateCompletion = Effect.fn("generateCompletion")(function* (
+  generator: (typeof GeneratorsSchema.Type)[number],
+  target: string,
+  home: string,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const command = generator.requireCommand ?? generator.command[0] ?? "";
+  if (!(yield* Effect.sync(() => Bun.which(command)))) {
+    const existing = yield* fs.lstat(target).pipe(
+      Effect.catchIf(
+        (error) => error.reason._tag === "NotFound",
+        () => Effect.succeed(undefined),
+      ),
+    );
+    if (existing?.type === "File" || existing?.type === "SymbolicLink")
+      yield* fs.remove(target);
     return;
   }
-  const result = run([executable, ...command.slice(1)], {
-    check: false,
-    capture: true,
-    env: { SHELL: `/bin/${shell}` },
-  });
+  yield* ensureDirectory(dirname(target));
+  const result = yield* run(
+    generator.command.map((part) => part.replaceAll("@HOME@", home)),
+    { check: false, capture: true },
+  );
   if (result.code !== 0)
-    console.log(`Failed to generate shell integration for ${command[0]}`);
-  else writeIfChanged(target, result.stdout);
-}
+    yield* Console.log(
+      `Failed to generate shell integration for ${generator.requireCommand ?? generator.command[0]}`,
+    );
+  else yield* writeIfChanged(target, result.stdout);
+});
 
-export function shellCompletions(): void {
+export const shellCompletions = Effect.fn("shellCompletions")(function* () {
   const home = process.env.HJEM_HOME_DIR;
-  if (!home) throw new DotfilesError("HJEM_HOME_DIR is required");
+  if (!home) return yield* Effect.fail(new DotfilesError("HJEM_HOME_DIR is required"));
   const cache = process.env.XDG_CACHE_HOME ?? join(home, ".cache");
   const data = process.env.XDG_DATA_HOME ?? join(home, ".local/share");
-  const path = join(home, ".config/shell/completion-commands.json");
-  const commands = v.parse(
-    commandsSchema,
-    existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : {},
-  );
-  for (const shell of ["zsh", "bash"]) {
-    const directory = ensureDirectory(
-      shell === "zsh"
-        ? join(cache, "zsh/completions")
-        : join(data, "bash-completion/completions"),
-    );
-    for (const [name, command] of Object.entries(commands))
-      capture(
-        command.map((part) => part.replaceAll("{shell}", shell)),
-        join(directory, `${shell === "zsh" ? "_" : ""}${name}`),
-        shell,
-      );
+  const generators = yield* Schema.decodeUnknownEffect(GeneratorsSchema)(generatorData);
+  for (const generator of generators) {
+    if (generator.systems && !generator.systems.includes(process.platform)) continue;
+    const target = completionTarget(generator.target, cache, data);
+    if (target) yield* generateCompletion(generator, target, home);
   }
-}
+});

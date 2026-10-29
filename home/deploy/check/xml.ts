@@ -1,5 +1,7 @@
 #!/usr/bin/env bun
-import { readFileSync } from "node:fs";
+import { DotfilesError } from "@dotfiles/core/errors";
+import { runMain } from "@dotfiles/core/runtime";
+import { Effect, FileSystem } from "effect";
 import { SyntaxValidator } from "fast-xml-validator";
 
 export function validateXML(contents: string): void {
@@ -10,15 +12,25 @@ export function validateXML(contents: string): void {
   });
 }
 
-if (import.meta.main) {
-  for (const path of process.argv.slice(2)) {
-    try {
-      validateXML(readFileSync(path, "utf8"));
-    } catch (error) {
-      console.error(
-        `${path}: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      process.exitCode = 1;
-    }
-  }
-}
+if (import.meta.main)
+  runMain(
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      for (const path of process.argv.slice(2)) {
+        yield* Effect.gen(function* () {
+          const contents = yield* fs.readFileString(path);
+          yield* Effect.try({
+            try: () => validateXML(contents),
+            catch: (error) => new DotfilesError(String(error)),
+          });
+        }).pipe(
+          Effect.catch((error) =>
+            Effect.sync(() => {
+              console.error(`${path}: ${error.message}`);
+              process.exitCode = 1;
+            }),
+          ),
+        );
+      }
+    }),
+  );

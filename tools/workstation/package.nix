@@ -3,7 +3,7 @@
   stdenvNoCC,
   bun,
   bun2nix,
-  makeWrapper,
+  makeBinaryWrapper,
   gjs,
   glib,
   flatpak,
@@ -32,25 +32,32 @@ let
 in
 # Bun embeds its own runtime, so bundling does not need a C/C++ toolchain
 stdenvNoCC.mkDerivation {
-  pname = metadata.name;
+  pname = "workstation";
   inherit (metadata) version;
   src = lib.fileset.toSource {
     root = ../..;
     fileset = lib.fileset.unions [
+      ../../package.json
+      ../../bun.lock
+      ../../tools/tiling/package.json
       ./package.json
-      ./bun.lock
       ./src
       ./assets
       ../../lib/typescript
+      ../../home/package.json
       ../../home/theme/palette/palette.json
+      ../../home/generators.json
+      ../../home/deploy/schema.ts
+      ../../home/files/.local/lib/package.json
+      ../../home/files/.local/lib/typescript/process.ts
+      ../../home/files/.local/lib/typescript/runtime.ts
+      ../../home/files/.local/lib/typescript/validation.ts
+      ../../home/files/.local/lib/typescript/lsp
     ];
   };
-  postUnpack = ''
-    sourceRoot="$sourceRoot/tools/workstation"
-  '';
-  bunDeps = bun2nix.fetchBunDeps { bunNix = ./bun.nix; };
+  bunDeps = import ../../nix/lib/bun/dependencies.nix { inherit lib bun2nix; };
   nativeBuildInputs = lib.attrValues {
-    inherit bun hook makeWrapper;
+    inherit bun hook makeBinaryWrapper;
   };
   strictDeps = true;
   dontRunLifecycleScripts = true;
@@ -64,18 +71,19 @@ stdenvNoCC.mkDerivation {
     "--offline"
     "--linker=hoisted"
     "--backend=copyfile"
+    "--filter=@dotfiles/workstation"
   ];
 
   buildPhase = ''
     runHook preBuild
-    bun run build
-    bun -e 'import { commands } from "./src/cli.ts"; console.log(Object.keys(commands).join("\n"))' > commands
+    bun run --cwd tools/workstation build
+    bun -e 'import { commandNames } from "./tools/workstation/src/registry.ts"; console.log(commandNames.join("\n"))' > commands
     runHook postBuild
   '';
 
   installPhase = ''
     runHook preInstall
-    install -Dm755 dist/workstation "$out/libexec/workstation"
+    install -Dm755 tools/workstation/dist/workstation "$out/libexec/workstation"
     makeWrapper "$out/libexec/workstation" "$out/bin/workstation" --inherit-argv0 ${lib.escapeShellArgs wrapperArgs}
     while IFS= read -r command; do
       ln -s workstation "$out/bin/$command"

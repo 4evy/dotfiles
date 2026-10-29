@@ -1,4 +1,5 @@
-import type { Palette } from "../lib/theme.ts";
+import type { Palette } from "@dotfiles/workstation/theme";
+import type terminalPolicy from "./terminal.json";
 
 interface NativeObject {
   readonly nativeObject: unique symbol;
@@ -42,6 +43,7 @@ declare const ObjC: { import(name: string): void; unwrap(value: unknown): unknow
 // Objective-C bridge after Bun erases the TypeScript declarations
 export function nativeTerminal(
   palettes: { light: Palette; dark: Palette },
+  policy: typeof terminalPolicy,
   write = true,
 ): string {
   ObjC.import("AppKit");
@@ -54,32 +56,10 @@ export function nativeTerminal(
   const settings = ObjC.unwrap(previousSettings)
     ? previousSettings.mutableCopy
     : $.NSMutableDictionary.dictionary;
-  let font = $.NSFont.fontWithNameSize("JetBrainsMonoNFM-Regular", 15);
-  if (!ObjC.unwrap(font)) font = $.NSFont.monospacedSystemFontOfSizeWeight(15, 0);
+  let font = $.NSFont.fontWithNameSize(policy.font.name, policy.font.size);
+  if (!ObjC.unwrap(font))
+    font = $.NSFont.monospacedSystemFontOfSizeWeight(policy.font.size, 0);
   const archivedFont = $.NSKeyedArchiver.archivedDataWithRootObject(font);
-  const colorRoles = {
-    TextColor: "terminalForeground",
-    TextBoldColor: "terminalCursor",
-    BackgroundColor: "terminalBackground",
-    CursorColor: "terminalCursor",
-    SelectionColor: "surface1",
-    ANSIBlackColor: "ansiBlack",
-    ANSIRedColor: "red",
-    ANSIGreenColor: "green",
-    ANSIYellowColor: "yellow",
-    ANSIBlueColor: "blue",
-    ANSIMagentaColor: "pink",
-    ANSICyanColor: "sky",
-    ANSIWhiteColor: "ansiWhite",
-    ANSIBrightBlackColor: "mutedForeground",
-    ANSIBrightRedColor: "red",
-    ANSIBrightGreenColor: "green",
-    ANSIBrightYellowColor: "yellow",
-    ANSIBrightBlueColor: "blue",
-    ANSIBrightMagentaColor: "pink",
-    ANSIBrightCyanColor: "sky",
-    ANSIBrightWhiteColor: "ansiWhite",
-  };
   function archiveColor(palette: Palette, role: string): NativeObject {
     const hex = palette[role];
     if (!hex) throw new Error(`Missing Terminal palette color: ${role}`);
@@ -94,24 +74,15 @@ export function nativeTerminal(
   }
   for (const variant of ["light", "dark"] as const) {
     const palette = palettes[variant];
-    const name = `Catppuccin Custom ${variant === "light" ? "Light" : "Dark"}`;
+    const name = policy.profileNames[variant];
     const values: Record<string, unknown> = {
+      ...policy.profile,
       name,
       type: "Window Settings",
-      ProfileCurrentVersion: 2.09,
-      columnCount: 120,
-      rowCount: 30,
       Font: archivedFont,
-      FontAntialias: true,
-      FontHeightSpacing: 1,
-      FontWidthSpacing: 1,
-      BackgroundBlur: 0,
-      BackgroundBlurInactive: 0,
-      BackgroundSettingsForInactiveWindows: false,
-      DynamicANSIForegroundColors: false,
     };
     const colors = new Map<string, NativeObject>();
-    for (const [key, role] of Object.entries(colorRoles)) {
+    for (const [key, role] of Object.entries(policy.colorRoles)) {
       let archived = colors.get(role);
       if (!archived) {
         archived = archiveColor(palette, role);
@@ -126,19 +97,22 @@ export function nativeTerminal(
   }
   const currentVariant =
     ObjC.unwrap(defaults.stringForKey("AppleInterfaceStyle")) === "Dark"
-      ? "Dark"
-      : "Light";
+      ? "dark"
+      : "light";
   domain.setObjectForKey(settings, "Window Settings");
   domain.setObjectForKey(
-    $(`Catppuccin Custom ${currentVariant}`),
+    $(policy.profileNames[currentVariant]),
     "Default Window Settings",
   );
   domain.setObjectForKey(
-    $(`Catppuccin Custom ${currentVariant}`),
+    $(policy.profileNames[currentVariant]),
     "Startup Window Settings",
   );
-  domain.setObjectForKey($(2), "DefaultProfilesVersion");
-  domain.setObjectForKey($(2.09), "ProfileCurrentVersion");
+  domain.setObjectForKey($(policy.defaultProfilesVersion), "DefaultProfilesVersion");
+  domain.setObjectForKey(
+    $(policy.profile.ProfileCurrentVersion),
+    "ProfileCurrentVersion",
+  );
   if (write) defaults.setPersistentDomainForName(domain, "com.apple.Terminal");
   return "Native Terminal light and dark profiles contain archived colors and font";
 }

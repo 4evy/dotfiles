@@ -3,6 +3,7 @@ import type {
   ExtensionContext,
   MessageUpdateEvent,
 } from "@oh-my-pi/pi-coding-agent";
+import { Effect } from "effect";
 import type { Activity } from "./flags";
 import { PrideFlags } from "./widget";
 
@@ -57,12 +58,17 @@ export default function pride(pi: ExtensionAPI) {
   };
   pi.registerCommand("pride", {
     description: "Toggle animated pride flags",
-    handler: async (_args, ctx) => {
-      if (!ctx.hasUI) return;
-      enabled = !enabled;
-      updateWidget(ctx);
-    },
+    // The command API requires a Promise at this native SDK callback boundary
+    handler: (_args, ctx) =>
+      Effect.runPromise(
+        Effect.sync(() => {
+          if (!ctx.hasUI) return;
+          enabled = !enabled;
+          updateWidget(ctx);
+        }),
+      ),
   });
+  // SDK events mutate UI-owned state synchronously, animation runs in a fiber
   pi.on("session_start", attach);
   pi.on("session_switch", attach);
   pi.on("agent_start", () => setRunning(true));

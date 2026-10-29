@@ -1,8 +1,9 @@
-import { run } from "../../../../lib/typescript/commands.ts";
-import { color, palettes, rgbComponents } from "../lib/theme.ts";
+import { run } from "@dotfiles/core/commands";
+import { color, palettes, rgbComponents } from "@dotfiles/workstation/theme";
+import { Effect } from "effect";
 import { applyIconTint } from "./tint.ts";
 
-export function applyAppearance(): void {
+export const applyAppearance = Effect.fn("applyAppearance")(function* () {
   if (process.platform !== "darwin") return;
   const accent = color(palettes.light, "accent");
   const highlight = rgbComponents(accent)
@@ -13,6 +14,6 @@ export function applyAppearance(): void {
     ["-g", "AppleHighlightColor", "-string", `${highlight} Other`],
     ["com.apple.systempreferences", "AppleOtherHighlightColor", "-string", highlight],
   ])
-    run(["defaults", "write", ...args]);
-  applyIconTint(accent);
-}
+    yield* run(["defaults", "write", ...args]);
+  yield* applyIconTint(accent);
+});

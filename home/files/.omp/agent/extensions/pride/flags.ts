@@ -80,18 +80,22 @@ type Decoration = readonly [color: ThemeColor, glyph: string];
 // Decorations specify the top and bottom row; middle rows keep the same spacing
 const FLAGS = [
   {
+    name: "Trans",
     stripes: ["#5bcefa", "#f5a9b8", "#ffffff", "#f5a9b8", "#5bcefa"],
     decorations: [["statusLinePath", "✧"], undefined, undefined, ["accent", "·"]],
   },
   {
+    name: "bisexual",
     stripes: ["#d60270", "#d60270", "#9b4f96", "#0038a8", "#0038a8"],
     decorations: [["accent", "✦"], undefined, undefined, ["syntaxKeyword", "⋆"]],
   },
   {
+    name: "rainbow",
     stripes: ["#e40303", "#ff8c00", "#ffed00", "#008026", "#004dff", "#750787"],
     decorations: [["warning", "⋆"], undefined, undefined, ["statusLinePath", "✧"]],
   },
 ] as const satisfies readonly {
+  name: string;
   stripes: readonly `#${string}`[];
   decorations: Rows<Decoration | undefined>;
 }[];
@@ -99,6 +103,10 @@ export const RENDERED_FLAGS = FLAGS.map(({ stripes, decorations }) => ({
   pixels: flagPixels(stripes),
   decorations,
 }));
+export const FLAG_NAMES = new Intl.ListFormat("en", {
+  style: "long",
+  type: "conjunction",
+}).format(FLAGS.map(({ name }) => name));
 // Four-column prefixes, one-column gaps, and the final three-column decoration
 export const WIDGET_COLUMNS = FLAGS.length * (FLAG_COLUMNS + 4) + FLAGS.length - 1 + 3;
 

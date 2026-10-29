@@ -1,9 +1,4 @@
-declare module "*.in" {
-  const content: string;
-  export default content;
-}
-
-declare module "*.gjs" {
+declare module "@dotfiles/workstation/assets/*" {
   const content: string;
   export default content;
 }

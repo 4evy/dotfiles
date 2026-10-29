@@ -11,18 +11,14 @@ _secrets:
 _hjem-platform platform:
     bun home/deploy/check/home.ts {{ quote(platform) }}
 # Build or activate the Hjem home environment
-[arg('action', help='switch to activate, or build to prepare without activating')]
+[arg('action', pattern=['switch', 'build'], help='switch to activate, or build to prepare without activating')]
 [group('setup')]
 _activate action:
-    case {{ quote(action) }} in
-      switch|build) ;;
-      *) printf '%s\n' 'Expected switch or build' >&2; exit 2 ;;
-    esac
-    if [[ $(uname) == Linux && ! -e /etc/NIXOS ]]; then
+    if [[ {{ quote(host_os) }} == linux && ! -e /etc/NIXOS ]]; then
       bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} {{ quote('packages-' + action) }}
     fi
     bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} {{ quote(if action == 'switch' { 'apply' } else { 'build' }) }}
-    if [[ {{ quote(action) }} == switch && $(uname) == Linux && ! -e /etc/NIXOS ]]; then
+    if [[ {{ quote(action) }} == switch && {{ quote(host_os) }} == linux && ! -e /etc/NIXOS ]]; then
       profile="${XDG_STATE_HOME:-$HOME/.local/state}/hjem/standalone/current-profile"
       if command -v systemctl >/dev/null 2>&1 && systemctl --user show-environment >/dev/null 2>&1; then
         systemctl --user daemon-reload

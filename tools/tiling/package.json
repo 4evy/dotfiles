@@ -1,19 +1,26 @@
 {
-  "name": "hyper-window-tiling",
+  "name": "@dotfiles/tiling",
   "version": "1.0.0",
   "private": true,
   "packageManager": "bun@1.4.4",
   "type": "module",
+  "exports": {
+    "./shared": "./src/shared/lib.js",
+    "./bindings": "./bindings.json",
+    "./gnome/metadata": "./gnome/metadata.json"
+  },
   "scripts": {
     "build": "bun run typecheck && bun run build:gnome && bun run build:kde",
-    "build:gnome": "bun build src/gnome/extension.ts --format=esm --target=browser --minify --external='gi://*' --external='resource:///*' --outfile=dist/gnome/extension.js",
-    "build:kde": "bun build src/kde/main.ts --format=iife --target=browser --minify --outfile=dist/kde/contents/code/main.js",
+    "build:gnome": "bun run scripts/gnome/schema/generate.ts && bun build src/gnome/extension.ts --format=esm --target=browser --minify --external='gi://*' --external='resource:///*' --outfile=dist/gnome/extension.js",
+    "build:kde": "bun run scripts/gnome/schema/generate.ts --check && bun build src/kde/main.ts --format=iife --target=browser --minify --outfile=dist/kde/contents/code/main.js",
     "check": "bun run check:fallow && bun run build && bun run check:dist",
     "check:dist": "bun build dist/gnome/extension.js --target=browser --external='gi://*' --external='resource:///*' --outfile=/tmp/hyper-window-tiling-gnome-check.js && bun build dist/kde/contents/code/main.js --target=browser --outfile=/tmp/hyper-window-tiling-kde-check.js",
     "check:fallow": "bun run fallow audit --format compact --quiet --gate all",
-    "typecheck": "bun run tsrs --noEmit -p tsconfig.json"
+    "typecheck": "bun run tsrs --noEmit -p tsconfig.json && bun run tsrs --noEmit -p scripts/tsconfig.json"
   },
   "dependencies": {
+    "@effect/platform-bun": "4.0.6",
+    "effect": "4.0.6",
     "kwin-api": "6.8.1"
   },
   "devDependencies": {

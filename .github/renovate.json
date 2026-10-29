@@ -244,14 +244,6 @@
     },
     {
       "customType": "regex",
-      "description": "Track the Go workspace toolchain alongside both modules",
-      "managerFilePatterns": ["/^go\\.work$/"],
-      "matchStrings": ["(?:^|\\n)go (?<currentValue>[^\\s]+)"],
-      "depNameTemplate": "go",
-      "datasourceTemplate": "golang-version"
-    },
-    {
-      "customType": "regex",
       "description": "Track the checksum-verified Bun bootstrap",
       "managerFilePatterns": ["/^tools/setup/setup\\.sh$/"],
       "matchStrings": [
@@ -347,10 +339,6 @@
       "home/applications/helium/config.toml",
       "home/files/.config/yazi/package.toml",
       "home/files/.local/share/nix/chatgpt/*",
-      "go.work",
-      "go.work.sum",
-      "tools/**/go.mod",
-      "tools/**/go.sum",
       "tools/setup/setup.sh",
       "biome.jsonc"
     ],

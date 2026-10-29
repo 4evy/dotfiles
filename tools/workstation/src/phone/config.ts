@@ -1,7 +1,8 @@
 import { isIP } from "node:net";
 import { parseArgs } from "node:util";
-import * as v from "valibot";
-import { UsageError } from "../../../../lib/typescript/errors.ts";
+import { UsageError } from "@dotfiles/core/errors";
+import { Effect, Schema, SchemaTransformation } from "effect";
+import defaults from "./defaults.json";
 
 export function normalizeIP(value: string): string {
   const [address = "", scope] = value.split("%");
@@ -15,74 +16,163 @@ export function normalizeIP(value: string): string {
   const canonical = new URL(`http://[${address}]`).hostname.slice(1, -1);
   return `${canonical}${scope === undefined ? "" : `%${scope}`}`;
 }
-const objectInput = v.custom<Record<string, unknown>>(
-  (value) => typeof value === "object" && value !== null && !Array.isArray(value),
-);
-const ip = v.pipe(
-  v.string(),
-  v.rawTransform(({ dataset, addIssue, NEVER }) => {
+const ip = Schema.String.check(
+  Schema.makeFilter((value: string) => {
     try {
-      return normalizeIP(dataset.value);
+      normalizeIP(value);
+      return true;
     } catch {
-      addIssue({ message: "Invalid IP address" });
-      return NEVER;
+      return "Invalid IP address";
     }
   }),
+).pipe(
+  Schema.decode(
+    SchemaTransformation.transform({
+      decode: normalizeIP,
+      encode: (value: string) => value,
+    }),
+  ),
 );
-const optionalDriver = v.pipe(
-  v.nullable(v.string()),
-  v.transform((value) => value || null),
+const optionalDriver = Schema.NullOr(Schema.String).pipe(
+  Schema.decode(
+    SchemaTransformation.transform({
+      decode: (value: string | null) => value || null,
+      encode: (value: string | null) => value,
+    }),
+  ),
 );
-const boolean = v.pipe(
-  v.unknown(),
-  v.parseBoolean({
-    truthy: [true, "1", "on", "true", "yes", "t", "y"],
-    falsy: [false, "0", "off", "false", "no", "f", "n"],
-  }),
-);
-const configSchema = v.pipe(
-  objectInput,
-  v.object({
-    name: v.optional(v.pipe(v.string(), v.minLength(1)), "samsung-s25"),
-    ip: v.optional(v.nullable(ip), null),
-    port: v.optional(
-      v.pipe(
-        v.unknown(),
-        v.toNumber(),
-        v.safeInteger(),
-        v.minValue(1),
-        v.maxValue(65535),
-      ),
-      5555,
+const truthy: Record<string, true> = {
+  "1": true,
+  on: true,
+  true: true,
+  yes: true,
+  t: true,
+  y: true,
+};
+const falsy: Record<string, true> = {
+  "0": true,
+  off: true,
+  false: true,
+  no: true,
+  f: true,
+  n: true,
+};
+const boolean = Schema.Union([Schema.Boolean, Schema.String])
+  .check(
+    Schema.makeFilter(
+      (value) =>
+        typeof value === "boolean" ||
+        Object.hasOwn(truthy, value.toLowerCase()) ||
+        Object.hasOwn(falsy, value.toLowerCase()),
+      { message: "Invalid boolean" },
     ),
-    connectOnly: v.optional(boolean, false),
-    renderDriver: v.optional(optionalDriver, "software"),
-    sdlVideoDriver: v.optional(optionalDriver, "x11"),
-    scrcpyArgs: v.optional(v.array(v.string()), () => []),
+  )
+  .pipe(
+    Schema.decodeTo(
+      Schema.Boolean,
+      SchemaTransformation.transform({
+        decode: (value: boolean | string) =>
+          typeof value === "boolean"
+            ? value
+            : Object.hasOwn(truthy, value.toLowerCase()),
+        encode: (value: boolean): boolean | string => value,
+      }),
+    ),
+  );
+export const portNumberSchema = Schema.Union([
+  Schema.Number,
+  Schema.NumberFromString,
+]).check(Schema.isInt(), Schema.isBetween({ minimum: 1, maximum: 65535 }));
+const phoneOptions = {
+  name: {
+    field: "name",
+    type: "string",
+    argument: "HOST",
+    environment: "PHONE_MIRROR_NAME",
+    schema: Schema.NonEmptyString.pipe(
+      Schema.withDecodingDefault(Effect.succeed(defaults.name)),
+    ),
+  },
+  ip: {
+    field: "ip",
+    type: "string",
+    argument: "ADDRESS",
+    environment: "PHONE_MIRROR_IP",
+    schema: Schema.NullOr(ip).pipe(
+      Schema.withDecodingDefault(Effect.succeed(defaults.ip)),
+    ),
+  },
+  port: {
+    field: "port",
+    type: "string",
+    argument: "PORT",
+    environment: "PHONE_MIRROR_PORT",
+    schema: portNumberSchema.pipe(
+      Schema.withDecodingDefault(Effect.succeed(defaults.port)),
+    ),
+  },
+  "connect-only": {
+    field: "connectOnly",
+    type: "boolean",
+    argument: "",
+    environment: "PHONE_MIRROR_CONNECT_ONLY",
+    schema: boolean.pipe(
+      Schema.withDecodingDefault(Effect.succeed(defaults.connectOnly)),
+    ),
+  },
+  "render-driver": {
+    field: "renderDriver",
+    type: "string",
+    argument: "DRIVER",
+    environment: "PHONE_MIRROR_RENDER_DRIVER",
+    schema: optionalDriver.pipe(
+      Schema.withDecodingDefault(Effect.succeed(defaults.renderDriver)),
+    ),
+  },
+  "sdl-video-driver": {
+    field: "sdlVideoDriver",
+    type: "string",
+    argument: "DRIVER",
+    environment: "PHONE_MIRROR_SDL_VIDEODRIVER",
+    schema: optionalDriver.pipe(
+      Schema.withDecodingDefault(Effect.succeed(defaults.sdlVideoDriver)),
+    ),
+  },
+} as const;
+const options = Object.entries(phoneOptions);
+export const phoneUsage = `${options
+  .map(([name, option]) => `[--${name}${option.argument ? ` ${option.argument}` : ""}]`)
+  .join(" ")} [-- SCRCPY_ARGUMENTS...]`;
+export const phoneEnvironment = options.map(([, option]) => option.environment);
+const configSchema = Schema.Struct({
+  ...(Object.fromEntries(
+    options.map(([, option]) => [option.field, option.schema]),
+  ) as {
+    [K in keyof typeof phoneOptions as (typeof phoneOptions)[K]["field"]]: (typeof phoneOptions)[K]["schema"];
   }),
-  v.transform((value) => Object.freeze(value)),
-);
-export type PhoneConfig = v.InferOutput<typeof configSchema>;
-export const targetCacheSchema = v.pipe(
-  objectInput,
-  v.object({ name: v.string(), ip }),
-);
-
-export function phoneConfig(args: string[]): PhoneConfig {
-  const known = {
-    name: { type: "string" },
-    ip: { type: "string" },
-    port: { type: "string" },
-    "connect-only": { type: "boolean" },
-    "render-driver": { type: "string" },
-    "sdl-video-driver": { type: "string" },
-  } as const;
-  const { values, tokens } = parseArgs({
-    args,
-    options: known,
-    strict: false,
-    allowPositionals: true,
-    tokens: true,
+  scrcpyArgs: Schema.Array(Schema.String).pipe(
+    Schema.withDecodingDefault(Effect.succeed([])),
+  ),
+});
+export type PhoneConfig = Readonly<typeof configSchema.Type>;
+export const targetCacheSchema = Schema.Struct({ name: Schema.String, ip });
+export const phoneConfig = Effect.fn("phoneConfig")(function* (args: string[]) {
+  const known = Object.fromEntries(
+    options.map(([name, option]) => [name, { type: option.type }]),
+  );
+  const { values, tokens } = yield* Effect.try({
+    try: () =>
+      parseArgs({
+        args,
+        options: known,
+        strict: false,
+        allowPositionals: true,
+        tokens: true,
+      }),
+    catch: (error) =>
+      new UsageError(
+        `Invalid phone-mirror configuration: ${error instanceof Error ? error.message : String(error)}`,
+      ),
   });
   const indexes = new Set<number>();
   for (const token of tokens)
@@ -91,21 +181,21 @@ export function phoneConfig(args: string[]): PhoneConfig {
       (token.kind === "option" && !(token.name in known))
     )
       indexes.add(token.index);
-  const parsed = v.safeParse(configSchema, {
-    name: values.name ?? process.env.PHONE_MIRROR_NAME,
-    ip: values.ip ?? process.env.PHONE_MIRROR_IP,
-    port: values.port ?? process.env.PHONE_MIRROR_PORT,
-    connectOnly: values["connect-only"] ?? process.env.PHONE_MIRROR_CONNECT_ONLY,
-    renderDriver: values["render-driver"] ?? process.env.PHONE_MIRROR_RENDER_DRIVER,
-    sdlVideoDriver:
-      values["sdl-video-driver"] ?? process.env.PHONE_MIRROR_SDL_VIDEODRIVER,
+  const input = yield* Effect.sync(() => ({
+    ...Object.fromEntries(
+      options.map(([name, option]) => [
+        option.field,
+        values[name] ?? process.env[option.environment],
+      ]),
+    ),
     scrcpyArgs: [...indexes]
       .map((index) => args[index])
       .filter((value): value is string => value !== undefined && value !== "--"),
-  });
-  if (!parsed.success)
-    throw new UsageError(
-      `Invalid phone-mirror configuration: ${parsed.issues.map((issue) => `${v.getDotPath(issue) ?? ""}: ${issue.message}`).join("; ")}`,
-    );
-  return parsed.output;
-}
+  }));
+  const config = yield* Schema.decodeUnknownEffect(configSchema)(input).pipe(
+    Effect.mapError(
+      (error) => new UsageError(`Invalid phone-mirror configuration: ${error.message}`),
+    ),
+  );
+  return Object.freeze(config);
+});

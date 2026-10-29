@@ -54,7 +54,7 @@ jobs:
         run: |-
           nix profile install --inputs-from . \
             nixpkgs#nixfmt nixpkgs#deadnix nixpkgs#yazi \
-            nixpkgs#go_1_27 nixpkgs-unstable#cargo
+            nixpkgs-unstable#cargo
           echo "$HOME/.nix-profile/bin" >> "$GITHUB_PATH"
 
       - name: Run Renovate

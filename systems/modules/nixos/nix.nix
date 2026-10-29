@@ -28,38 +28,27 @@ in
       # Keep login-shell NIX_PATH and nix.conf on the same input mappings
       nixPath = nixPathEntries;
 
-      settings = {
-        trusted-users = [
-          config.local.user.name
-        ];
-        experimental-features = [
-          "flakes"
-          "nix-command"
-          "parallel-eval"
-        ];
-        builders-use-substitutes = true;
-        # Append public caches without replacing Determinate's and Nix's
-        # defaults. Keeping build-time-only outputs would also prevent
-        # Determinate Nixd's managed garbage collector from reclaiming them.
-        extra-substituters = [
-          "https://devenv.cachix.org"
-          "https://euvlok.cachix.org"
-          "https://eupkgs.cachix.org"
-          "https://nix-community.cachix.org"
-          "https://cache.flox.dev"
-          "https://vicinae.cachix.org"
-        ];
-        extra-trusted-public-keys = [
-          "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
-          "euvlok.cachix.org-1:cmFWCSs7rxPiyE1qfaJn8TY7QaRoGOrzKuNvtGw2gcU="
-          "eupkgs.cachix.org-1:V9Y0HdASNNSU9U6EkXhR1j85bZGRtNgW7wSyTiQrwGU="
-          "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-          "flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs="
-          "vicinae.cachix.org-1:1kDrfienkGHPYbkpNj1mWTr7Fm1+zcenzgTizIcI3oc="
-        ];
-        nix-path = config.nix.nixPath;
-        flake-registry = lib.modules.mkIf config.nixpkgs.hostPlatform.isLinux "";
-      };
+      settings =
+        (import ../../../nix/lib/cache/settings.nix {
+          inherit lib;
+          platform = "nixos";
+        })
+        // {
+          trusted-users = [
+            config.local.user.name
+          ];
+          experimental-features = [
+            "flakes"
+            "nix-command"
+            "parallel-eval"
+          ];
+          builders-use-substitutes = true;
+          # Append public caches without replacing Determinate's and Nix's
+          # defaults. Keeping build-time-only outputs would also prevent
+          # Determinate Nixd's managed garbage collector from reclaiming them.
+          nix-path = config.nix.nixPath;
+          flake-registry = lib.modules.mkIf config.nixpkgs.hostPlatform.isLinux "";
+        };
 
       channel.enable = false;
       # Opinionated: make flake registry and nix path match flake inputs

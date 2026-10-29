@@ -40,6 +40,7 @@ let
     bluebuild-v2 = ../../../packages/bluebuild/package.nix;
     # Use the managed Bun runtime rather than bypassing its upstream override
     dotfiles-workstation = ../../../tools/workstation/package.nix;
+    dotfiles-typescript-tools = ../../../package.nix;
     hyper-window-tiling = ../../../tools/tiling/package.nix;
     theme-run = ../../../tools/theme/run/package.nix;
     toshy-runtime = ../../../packages/toshy/runtime/package.nix;

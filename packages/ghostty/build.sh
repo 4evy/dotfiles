@@ -20,7 +20,7 @@ patches_repository=$(jq -er '.repository' "$PATCHES_LOCK")
 patches_revision=$(jq -er '.revision' "$PATCHES_LOCK")
 
 mkdir -p /build/source /build/zig "$PREFIX"
-bun /src/download.ts "$SOURCE_LOCK" "$ZIG_PIN" /build/zig.tar.xz
+bun /src/packages/ghostty/source/download.ts "$SOURCE_LOCK" "$ZIG_PIN" /build/zig.tar.xz
 tar -xJf /build/zig.tar.xz --strip-components=1 -C /build/zig
 
 git init -q /build/source

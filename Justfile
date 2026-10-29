@@ -13,12 +13,10 @@ mod check 'just/check/check.just'
 mod determinate 'just/determinate/determinate.just'
 mod dotfiles 'just/dotfiles/dotfiles.just'
 mod github 'just/github/github.just'
-mod go 'just/go/go.just'
 mod hjem 'just/hjem/hjem.just'
 mod homebrew 'just/homebrew/homebrew.just'
 mod just 'just/just/just.just'
 mod nix 'just/nix/nix.just'
-mod python 'just/python/python.just'
 mod records 'just/records/records.just'
 mod renovate 'just/renovate/renovate.just'
 mod sops 'just/sops/sops.just'
@@ -38,7 +36,6 @@ alias nx := nix
 [linux]
 alias r := reboot
 alias s := setup
-alias typecheck := python::typecheck
 alias up := update
 [linux]
 alias validate := spectrum::validate

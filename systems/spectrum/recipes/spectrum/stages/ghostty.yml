@@ -41,6 +41,47 @@ modules:
     src: /usr/local/bin/bun
     dest: /usr/local/bin/bun
 
+  # Resolve the same runtime dependencies as repository entrypoints
+  - type: copy@v1
+    src: package.json
+    dest: /src/package.json
+
+  - type: copy@v1
+    src: bun.lock
+    dest: /src/bun.lock
+
+  - type: copy@v1
+    src: home/package.json
+    dest: /src/home/package.json
+
+  - type: copy@v1
+    src: lib/typescript/package.json
+    dest: /src/lib/typescript/package.json
+
+  - type: copy@v1
+    src: home/files/.local/lib/package.json
+    dest: /src/home/files/.local/lib/package.json
+
+  - type: copy@v1
+    src: tools/workstation/package.json
+    dest: /src/tools/workstation/package.json
+
+  - type: copy@v1
+    src: tools/tiling/package.json
+    dest: /src/tools/tiling/package.json
+
+  - type: containerfile
+    snippets:
+      - RUN cd /src && bun install --frozen-lockfile --production --ignore-scripts
+
+  - type: copy@v1
+    src: lib/typescript
+    dest: /src/lib/typescript
+
+  - type: copy@v1
+    src: home/files/.local/lib/typescript/process.ts
+    dest: /src/home/files/.local/lib/typescript/process.ts
+
   # Keep Ghostty's source inputs independent from unrelated flake updates
   - type: copy@v1
     src: systems/spectrum/recipes/spectrum/sources/ghostty.json
@@ -56,11 +97,11 @@ modules:
 
   - type: copy@v1
     src: packages/ghostty/source/source.ts
-    dest: /src/source.ts
+    dest: /src/packages/ghostty/source/source.ts
 
   - type: copy@v1
     src: packages/ghostty/source/download.ts
-    dest: /src/download.ts
+    dest: /src/packages/ghostty/source/download.ts
 
   # BlueBuild's package-manager mounts cache the toolchain install above. The
   # built-in Containerfile module adds compiler-specific caches as well, so a

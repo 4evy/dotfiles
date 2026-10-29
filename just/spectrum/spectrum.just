@@ -58,7 +58,7 @@ generate output:
     grep -Fq -- '--mount=type=cache,sharing=locked,dst=/var/cache/libdnf5,id=dnf-cache-spectrum-' "$generated"
     grep -Fq 'systems/spectrum/recipes/spectrum/sources/ghostty.json /src/sources.json' "$generated"
     grep -Fq 'systems/spectrum/recipes/spectrum/sources/kanata.json /src/sources.json' "$generated"
-    grep -Fq 'tools/tiling/package.json /src/package.json' "$generated"
+    grep -Fq 'tools/tiling/package.json /src/tools/tiling/package.json' "$generated"
     grep -Fq 'systems/spectrum/files/dnf /tmp/spectrum-config/dnf' "$generated"
     grep -Fq 'CONFIG_DIRECTORY="/tmp/spectrum-config"' "$generated"
     grep -Fq -- '--mount=type=cache,id=spectrum-ghostty-zig-global-v1,sharing=locked,target=/build/zig-cache' "$generated"

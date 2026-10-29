@@ -1,51 +1,35 @@
 #!/usr/bin/env bun
-import { mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import * as v from "valibot";
+import { output, requireCommands } from "@dotfiles/core/commands";
+import { DotfilesError } from "@dotfiles/core/errors";
+import { runMain } from "@dotfiles/core/runtime";
+import { Effect, FileSystem, Schema } from "effect";
 
 const ROOT = resolve(import.meta.dir, "../../../../..");
-const objectInput = v.custom<Record<string, unknown>>(
-  (value) => typeof value === "object" && value !== null && !Array.isArray(value),
-);
-const Lock = v.pipe(
-  objectInput,
-  v.object({
-    root: v.string(),
-    nodes: v.pipe(
-      objectInput,
-      v.record(
-        v.string(),
-        v.pipe(
-          objectInput,
-          v.object({
-            inputs: v.optional(
-              v.pipe(
-                objectInput,
-                v.record(v.string(), v.union([v.string(), v.array(v.string())])),
-              ),
-            ),
-            locked: v.optional(v.pipe(objectInput, v.record(v.string(), v.unknown()))),
-            original: v.optional(
-              v.pipe(objectInput, v.object({ ref: v.optional(v.string()) })),
-            ),
-          }),
+const Lock = Schema.Struct({
+  root: Schema.String,
+  nodes: Schema.Record(
+    Schema.String,
+    Schema.Struct({
+      inputs: Schema.optionalKey(
+        Schema.Record(
+          Schema.String,
+          Schema.Union([Schema.String, Schema.Array(Schema.String)]),
         ),
       ),
-    ),
-  }),
-);
-const StackSources = v.pipe(
-  objectInput,
-  v.record(
-    v.string(),
-    v.pipe(objectInput, v.object({ canonical: v.string(), revision: v.string() })),
+      locked: Schema.optionalKey(Schema.Record(Schema.String, Schema.Unknown)),
+      original: Schema.optionalKey(
+        Schema.Struct({ ref: Schema.optionalKey(Schema.String) }),
+      ),
+    }),
   ),
+});
+const StackSources = Schema.Record(
+  Schema.String,
+  Schema.Struct({ canonical: Schema.String, revision: Schema.String }),
 );
 
-function inputPin(
-  lock: v.InferOutput<typeof Lock>,
-  name: string,
-): Record<string, unknown> {
+function inputPin(lock: typeof Lock.Type, name: string): Record<string, unknown> {
   const rootInputs = lock.nodes[lock.root]?.inputs;
   const dependencies = rootInputs?.dependencies;
   const inputs =
@@ -59,8 +43,8 @@ function inputPin(
 
 function sourcePin(
   name: string,
-  lock: v.InferOutput<typeof Lock>,
-  stackSources: v.InferOutput<typeof StackSources>,
+  lock: typeof Lock.Type,
+  stackSources: typeof StackSources.Type,
 ): Record<string, unknown> {
   const source = stackSources[name === "kanata-homebrew" ? "kanata" : name];
   if (!source) return inputPin(lock, `source-${name}`);
@@ -90,37 +74,58 @@ function stableJson(value: unknown): string {
   )}\n`;
 }
 
-async function main(): Promise<void> {
-  const nix = Bun.which("nix");
-  if (!nix) throw new Error("nix is required to prepare Spectrum sources");
-  const lock = v.parse(Lock, await Bun.file(join(ROOT, "flake.lock")).json());
-  const evaluation = Bun.spawnSync(
-    [nix, "eval", ".#patchStackSources", "--json", "--no-write-lock-file"],
-    { cwd: ROOT, stdout: "pipe", stderr: "inherit" },
+// Pure lock projection rejects unresolved inputs before writing their inventories
+const project = <A>(f: () => A) =>
+  Effect.try({ try: f, catch: (cause) => new DotfilesError(String(cause)) });
+
+const main = Effect.gen(function* () {
+  const fs = yield* FileSystem.FileSystem;
+  yield* requireCommands("nix");
+  const lock = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(Lock))(
+    yield* fs.readFileString(join(ROOT, "flake.lock")),
   );
-  if (evaluation.exitCode !== 0)
-    throw new Error(`nix eval exited with status ${evaluation.exitCode}`);
-  const stackSources = v.parse(StackSources, JSON.parse(evaluation.stdout.toString()));
+  const evaluation = yield* output(
+    ["nix", "eval", ".#lib.spectrumBuildData", "--json", "--no-write-lock-file"],
+    { cwd: ROOT, stderr: "inherit" },
+  );
+  const buildData = yield* Schema.decodeUnknownEffect(
+    Schema.fromJsonString(
+      Schema.Struct({
+        stackSources: StackSources,
+        config: Schema.Struct({ nixCustomConf: Schema.String, dconf: Schema.String }),
+      }),
+    ),
+  )(evaluation);
+  const { stackSources } = buildData;
   const directory = join(ROOT, "systems/spectrum/recipes/spectrum/sources");
-  await mkdir(directory, { recursive: true });
+  yield* fs.makeDirectory(directory, { recursive: true });
+  const rootfs = join(directory, "system");
+  yield* fs.makeDirectory(join(rootfs, "etc/nix"), { recursive: true });
+  yield* fs.makeDirectory(join(rootfs, "etc/dconf/db/local.d"), { recursive: true });
+  yield* fs.writeFileString(
+    join(rootfs, "etc/nix/nix.custom.conf"),
+    buildData.config.nixCustomConf,
+  );
+  yield* fs.writeFileString(
+    join(rootfs, "etc/dconf/db/local.d/60-spectrum-workstation"),
+    buildData.config.dconf,
+  );
   const groups = {
     ghostty: ["ghostty", "ghostty-zig-x86-64-linux"],
     kanata: ["kanata-homebrew"],
   };
   for (const [group, names] of Object.entries(groups)) {
-    const pins = Object.fromEntries(
-      names.map((name) => [name, sourcePin(name, lock, stackSources)]),
+    const pins = yield* project(() =>
+      Object.fromEntries(
+        names.map((name) => [name, sourcePin(name, lock, stackSources)]),
+      ),
     );
-    await Bun.write(join(directory, `${group}.json`), stableJson({ pins }));
+    yield* fs.writeFileString(join(directory, `${group}.json`), stableJson({ pins }));
   }
-  const patches = v.parse(
-    v.pipe(
-      objectInput,
-      v.object({ owner: v.string(), repo: v.string(), rev: v.string() }),
-    ),
-    inputPin(lock, "patches"),
-  );
-  await Bun.write(
+  const patches = yield* Schema.decodeUnknownEffect(
+    Schema.Struct({ owner: Schema.String, repo: Schema.String, rev: Schema.String }),
+  )(yield* project(() => inputPin(lock, "patches")));
+  yield* fs.writeFileString(
     join(directory, "patches.json"),
     `${JSON.stringify(
       {
@@ -131,6 +136,6 @@ async function main(): Promise<void> {
       2,
     )}\n`,
   );
-}
+});
 
-if (import.meta.main) await main();
+if (import.meta.main) runMain(main);

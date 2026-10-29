@@ -36,6 +36,10 @@ in
         equicordQuickCss = equicord.quickCss;
         equicordSettingsJson = equicord.settings.jsonConfig;
         patchStackSources = inputs.patches.stackSources;
+        spectrumBuildData = {
+          stackSources = inputs.patches.stackSources;
+          config = import ../lib/spectrum/config.nix { inherit lib; };
+        };
         supportedSystems = config.systems;
       };
     };

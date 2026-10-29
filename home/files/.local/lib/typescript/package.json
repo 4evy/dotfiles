@@ -1,9 +1,0 @@
-{
-  "name": "dotfiles-lsp-runtime",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "tsrs": "0.18.0-ts7.1.0-dev.20260929",
-    "vscode-jsonrpc": "10.0.0"
-  }
-}

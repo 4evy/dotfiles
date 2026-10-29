@@ -32,4 +32,4 @@ layout: (_records ['layout'])
 deploy *args: (_records ['deploy', args])
 [env('SOPS_AGE_KEY_CACHE', 'records')]
 _records +args: (_doctor 'records')
-    go run ./tools/records/cmd {{ quote(args) }}
+    bun tools/records/main.ts {{ quote(args) }}

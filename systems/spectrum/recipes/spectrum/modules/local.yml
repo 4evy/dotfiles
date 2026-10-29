@@ -19,27 +19,27 @@ modules:
 
   - type: copy@v1
     from: hyper-window-tiling
-    src: /src/gnome/metadata.json
+    src: /src/tools/tiling/gnome/metadata.json
     dest: /usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/metadata.json
 
   - type: copy@v1
     from: hyper-window-tiling
-    src: /src/dist/gnome/extension.js
+    src: /src/tools/tiling/dist/gnome/extension.js
     dest: /usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/extension.js
 
   - type: copy@v1
     from: hyper-window-tiling
-    src: /src/gnome/schemas/org.gnome.shell.extensions.hyper-window-tiling.gschema.xml
+    src: /src/tools/tiling/dist/gnome/schemas/org.gnome.shell.extensions.hyper-window-tiling.gschema.xml
     dest: /usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/schemas/org.gnome.shell.extensions.hyper-window-tiling.gschema.xml
 
   - type: copy@v1
     from: hyper-window-tiling
-    src: /src/kde/metadata.json
+    src: /src/tools/tiling/kde/metadata.json
     dest: /usr/share/kwin/scripts/hyper-window-tiling/metadata.json
 
   - type: copy@v1
     from: hyper-window-tiling
-    src: /src/dist/kde/contents/code/main.js
+    src: /src/tools/tiling/dist/kde/contents/code/main.js
     dest: /usr/share/kwin/scripts/hyper-window-tiling/contents/code/main.js
 
   - type: copy@v1
@@ -49,6 +49,10 @@ modules:
 
   - type: copy@v1
     src: systems/spectrum/files/system
+    dest: /
+
+  - type: copy@v1
+    src: systems/spectrum/recipes/spectrum/sources/system
     dest: /
 
   - type: copy@v1
@@ -72,3 +76,7 @@ modules:
   - type: copy@v1
     src: home/theme/palette/palette.json
     dest: /usr/share/dotfiles/catppuccin_custom_palette.json
+
+  - type: copy@v1
+    src: data/rustdesk/options.json
+    dest: /usr/share/dotfiles/rustdesk-options.json

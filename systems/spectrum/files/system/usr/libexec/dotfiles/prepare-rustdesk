@@ -9,12 +9,14 @@ fi
 ln -sfn "$(dirname "$source")/lib" /var/lib/rustdesk/dotfiles/lib
 
 /usr/bin/python3 - <<'PY'
+import json
 from pathlib import Path
 
 path = Path('/root/.config/rustdesk/RustDesk2.toml')
 text = path.read_text() if path.exists() else ''
 lines = text.splitlines()
-values = {'direct-server': '"Y"', 'direct-access-port': '"21118"', 'stop-service': '""'}
+policy = json.loads(Path('/usr/share/dotfiles/rustdesk-options.json').read_text())
+values = {key: json.dumps(value) for key, value in (policy['common'] | policy['linux']).items()}
 result = []
 inside = False
 for line in lines:

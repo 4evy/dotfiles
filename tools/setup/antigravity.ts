@@ -1,84 +1,113 @@
 #!/usr/bin/env bun
 import { createHash } from "node:crypto";
-import {
-  accessSync,
-  chmodSync,
-  constants,
-  existsSync,
-  linkSync,
-  lstatSync,
-  mkdirSync,
-  mkdtempDisposableSync,
-  readFileSync,
-} from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { run } from "../../lib/typescript/commands.ts";
+import { run } from "@dotfiles/core/commands";
+import { DotfilesError } from "@dotfiles/core/errors";
+import { isExecutable } from "@dotfiles/core/files";
+import { download } from "@dotfiles/core/http";
+import { runMain } from "@dotfiles/core/runtime";
+import { Effect, FileSystem, Schema } from "effect";
 
 const releases =
   "https://antigravity-cli-auto-updater-974169037036.us-central1.run.app";
+const manifestSchema = Schema.Struct({
+  url: Schema.String.check(Schema.isPattern(/^https:\/\//)),
+  sha512: Schema.String.check(Schema.isPattern(/^[0-9a-f]{128}$/)),
+});
 
-export function installAntigravity(): void {
+export const installAntigravity = Effect.fn(function* () {
+  const fs = yield* FileSystem.FileSystem;
   if (process.platform !== "darwin" && process.platform !== "linux")
-    throw new Error(`Unsupported Antigravity platform: ${process.platform}`);
+    return yield* Effect.fail(
+      new DotfilesError(`Unsupported Antigravity platform: ${process.platform}`),
+    );
   const arch = process.arch === "x64" ? "amd64" : process.arch;
   if (arch !== "amd64" && arch !== "arm64")
-    throw new Error(`Unsupported Antigravity architecture: ${process.arch}`);
+    return yield* Effect.fail(
+      new DotfilesError(`Unsupported Antigravity architecture: ${process.arch}`),
+    );
 
   // Keep existing, self-updating Apps, including versions newer than the cask
-  if (process.platform === "darwin" && !existsSync("/Applications/Antigravity.app"))
-    run(["brew", "install", "--cask", "antigravity"]);
+  if (
+    process.platform === "darwin" &&
+    !(yield* fs.exists("/Applications/Antigravity.app"))
+  )
+    yield* run(["brew", "install", "--cask", "antigravity"]);
 
   const bin = join(homedir(), ".local/bin");
   const target = join(bin, "agy");
-  const installed = lstatSync(target, { throwIfNoEntry: false });
+  const installed = yield* fs.lstat(target).pipe(
+    Effect.catchIf(
+      (error) => error.reason._tag === "NotFound",
+      () => Effect.succeed(undefined),
+    ),
+  );
   if (installed) {
-    if (!installed.isFile())
-      throw new Error(`Refusing to replace an existing non-file at ${target}`);
-    accessSync(target, constants.X_OK);
-    console.log(`Antigravity CLI already installed at ${target}, using self-updates`);
+    if (installed.type !== "File")
+      return yield* Effect.fail(
+        new DotfilesError(`Refusing to replace an existing non-file at ${target}`),
+      );
+    if (!(yield* isExecutable(target)))
+      return yield* Effect.fail(
+        new DotfilesError(`Antigravity CLI is not executable: ${target}`),
+      );
+    yield* Effect.sync(() =>
+      console.log(`Antigravity CLI already installed at ${target}, using self-updates`),
+    );
     return;
   }
 
-  mkdirSync(bin, { recursive: true });
-  using workspace = mkdtempDisposableSync(join(bin, ".antigravity-"));
-  const platform = `${process.platform}_${arch}`;
-  const manifestPath = join(workspace.path, "manifest.json");
-  run(["curl", "-fsSL", "-o", manifestPath, `${releases}/manifests/${platform}.json`]);
-  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-  if (
-    typeof manifest.url !== "string" ||
-    !manifest.url.startsWith("https://") ||
-    typeof manifest.sha512 !== "string" ||
-    !/^[0-9a-f]{128}$/.test(manifest.sha512)
-  )
-    throw new Error("Invalid Antigravity CLI release manifest");
+  yield* fs.makeDirectory(bin, { recursive: true });
+  yield* Effect.scoped(
+    Effect.gen(function* () {
+      const workspace = yield* fs.makeTempDirectoryScoped({
+        directory: bin,
+        prefix: ".antigravity-",
+      });
+      const platform = `${process.platform}_${arch}`;
+      const manifest = yield* download(
+        `${releases}/manifests/${platform}.json`,
+        (response) =>
+          Effect.flatMap(response.json, Schema.decodeUnknownEffect(manifestSchema)),
+      );
+      const payload = join(workspace, "payload");
+      const bytes = new Uint8Array(
+        yield* download(manifest.url, (response) => response.arrayBuffer),
+      );
+      if (createHash("sha512").update(bytes).digest("hex") !== manifest.sha512)
+        return yield* Effect.fail(
+          new DotfilesError("Antigravity CLI checksum mismatch"),
+        );
+      yield* fs.writeFile(payload, bytes);
 
-  const payload = join(workspace.path, "payload");
-  run(["curl", "-fsSL", "-o", payload, manifest.url]);
-  if (
-    createHash("sha512").update(readFileSync(payload)).digest("hex") !== manifest.sha512
-  )
-    throw new Error("Antigravity CLI checksum mismatch");
+      const archive = new URL(manifest.url).pathname.endsWith(".tar.gz");
+      const binary = archive ? join(workspace, "antigravity") : payload;
+      if (archive) yield* run(["tar", "-xzf", payload, "-C", workspace, "antigravity"]);
+      if ((yield* fs.lstat(binary)).type !== "File")
+        return yield* Effect.fail(
+          new DotfilesError("Antigravity CLI payload is not a regular file"),
+        );
+      yield* fs.chmod(binary, 0o755);
 
-  const archive = new URL(manifest.url).pathname.endsWith(".tar.gz");
-  const binary = archive ? join(workspace.path, "antigravity") : payload;
-  if (archive) run(["tar", "-xzf", payload, "-C", workspace.path, "antigravity"]);
-  if (!lstatSync(binary).isFile())
-    throw new Error("Antigravity CLI payload is not a regular file");
-  chmodSync(binary, 0o755);
-
-  // The official bootstrapper runs `agy install`, which edits shell profiles
-  // Install its verified payload directly, leaving PATH and aliases to dotfiles
-  // A hard link publishes atomically without replacing a concurrent installation
-  linkSync(binary, target);
-  console.log(`Installed Antigravity CLI at ${target}`);
-}
+      // The official bootstrapper runs `agy install`, which edits shell profiles
+      // Install its verified payload directly, leaving PATH and aliases to dotfiles
+      // A hard link publishes atomically without replacing a concurrent installation
+      yield* fs.link(binary, target);
+      yield* Effect.sync(() => console.log(`Installed Antigravity CLI at ${target}`));
+    }),
+  );
+});
 
 if (import.meta.main) {
-  const args = Bun.argv.slice(2);
-  if (args.length === 1 && (args[0] === "--help" || args[0] === "-h"))
-    console.log("Usage: antigravity.ts");
-  else if (args.length) throw new Error("Usage: antigravity.ts");
-  else installAntigravity();
+  runMain(
+    Effect.gen(function* () {
+      const args = Bun.argv.slice(2);
+      if (args.length === 1 && (args[0] === "--help" || args[0] === "-h"))
+        yield* Effect.sync(() => console.log("Usage: antigravity.ts"));
+      else if (args.length)
+        return yield* Effect.fail(new DotfilesError("Usage: antigravity.ts"));
+      else yield* installAntigravity();
+    }),
+  );
 }
