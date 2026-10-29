@@ -7,13 +7,13 @@ import type { Activity } from "./flags";
 import { PrideFlags } from "./widget";
 
 const STREAM_QUIET_MS = 500;
-const STREAM_DELTAS: Readonly<
-  Partial<Record<MessageUpdateEvent["assistantMessageEvent"]["type"], true>>
-> = {
+const STREAM_DELTAS = {
   text_delta: true,
   thinking_delta: true,
   toolcall_delta: true,
-};
+} as const satisfies Partial<
+  Record<MessageUpdateEvent["assistantMessageEvent"]["type"], true>
+>;
 
 export default function pride(pi: ExtensionAPI) {
   let enabled = true;
@@ -30,17 +30,20 @@ export default function pride(pi: ExtensionAPI) {
   const setRunning = (value: boolean) => {
     running = value;
     lastDelta = Number.NEGATIVE_INFINITY;
-    if (!running) tools.clear();
+    tools.clear();
     widget?.tick();
   };
   const detach = (ctx: ExtensionContext) => {
-    widget?.dispose();
     widget = undefined;
     if (ctx.hasUI) ctx.ui.setWidget("pride", undefined);
   };
   const updateWidget = (ctx: ExtensionContext) => {
-    detach(ctx);
-    if (!enabled || !ctx.hasUI) return;
+    if (!enabled || !ctx.hasUI) {
+      detach(ctx);
+      return;
+    }
+    // The UI registry disposes the previous widget before creating its replacement
+    widget = undefined;
     ctx.ui.setWidget("pride", (tui) => {
       widget = new PrideFlags(ctx, tui, activity);
       return widget;
@@ -65,7 +68,7 @@ export default function pride(pi: ExtensionAPI) {
   pi.on("agent_start", () => setRunning(true));
   pi.on("message_update", (event) => {
     const type = event.assistantMessageEvent.type;
-    if (STREAM_DELTAS[type]) {
+    if (Object.hasOwn(STREAM_DELTAS, type)) {
       lastDelta = performance.now();
     }
   });
@@ -82,6 +85,7 @@ export default function pride(pi: ExtensionAPI) {
     tools.delete(event.toolCallId);
     widget?.tick();
   });
-  pi.on("agent_end", () => setRunning(false));
+  // Nonterminal settles still expect output from a continuation or background work
+  pi.on("agent_end", (event) => setRunning(event.willContinue === true));
   pi.on("session_shutdown", (_event, ctx) => detach(ctx));
 }

@@ -65,7 +65,9 @@ export class PrideFlags extends Text {
     this.#strength += (motion.strength - this.#strength) * blend;
     this.#speed += (targetSpeed - this.#speed) * blend;
     this.#activity = this.activity(now);
-    if (this.#paint() || previous !== this.#activity) this.tui.requestRender();
+    // Frozen pixels refresh through invalidation, not the activity timer
+    const painted = !this.#reduceMotion && this.#paint();
+    if (painted || previous !== this.#activity) this.tui.requestRender();
   }
 
   #paint(): boolean {
@@ -87,6 +89,11 @@ export class PrideFlags extends Text {
     }
     rows[3] += `  ${theme.fg("accent", "·")}`;
     return this.setText(rows.join("\n"));
+  }
+
+  override invalidate(): void {
+    super.invalidate();
+    this.#paint();
   }
 
   override describe(cx: DescribeContext): NativeNode {
