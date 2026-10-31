@@ -53,9 +53,9 @@
     "@dotfiles/home": "workspace:*",
     "@dotfiles/runtime": "workspace:*",
     "@dotfiles/workstation": "workspace:*",
-    "@effect/platform-bun": "4.0.6",
+    "@effect/platform-bun": "4.0.7",
     "commander": "15.0.0",
-    "effect": "4.0.6",
+    "effect": "4.0.7",
     "fast-xml-validator": "1.4.2",
     "jsonc-parser": "3.3.1",
     "shellwords-ts": "3.0.1",
@@ -64,6 +64,6 @@
     "write-file-atomic": "8.0.0"
   },
   "overrides": {
-    "@effect/platform-node-shared": "4.0.6"
+    "@effect/platform-node-shared": "4.0.7"
   }
 }

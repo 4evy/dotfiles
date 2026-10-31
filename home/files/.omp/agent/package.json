@@ -3,6 +3,6 @@
   "type": "module",
   "dependencies": {
     "@oh-my-pi/pi-tui": "@OMP_PI_TUI_VERSION@",
-    "effect": "4.0.6"
+    "effect": "4.0.7"
   }
 }

@@ -1,9 +1,9 @@
 {
   "devDependencies": {
-    "renovate": "44.182.2"
+    "renovate": "44.190.1"
   },
   "patchedDependencies": {
-    "renovate@44.182.2": "patches/renovate@44.182.2.patch"
+    "renovate@44.190.1": "patches/renovate@44.190.1.patch"
   },
   "name": "dotfiles-renovate",
   "private": true,

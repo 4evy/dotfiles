@@ -10,12 +10,12 @@
     "./lsp": "./typescript/lsp/lsp.ts"
   },
   "dependencies": {
-    "@effect/platform-bun": "4.0.6",
-    "effect": "4.0.6",
+    "@effect/platform-bun": "4.0.7",
+    "effect": "4.0.7",
     "tsrs": "0.18.0-ts7.1.0-dev.20260929",
     "vscode-jsonrpc": "10.0.0"
   },
   "overrides": {
-    "@effect/platform-node-shared": "4.0.6"
+    "@effect/platform-node-shared": "4.0.7"
   }
 }

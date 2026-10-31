@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@dotfiles/runtime": "workspace:*",
-    "@effect/platform-bun": "4.0.6",
-    "effect": "4.0.6"
+    "@effect/platform-bun": "4.0.7",
+    "effect": "4.0.7"
   }
 }
