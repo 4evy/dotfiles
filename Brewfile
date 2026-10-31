@@ -158,7 +158,8 @@ brew "yq" if OS.mac?
 brew "btop" if OS.mac?
 brew "fastfetch" if OS.mac?
 brew "fzf" if OS.mac?
-brew "ghidra"
+# macOS uses the Nix-managed Ghidra with extensions
+brew "ghidra" if OS.linux?
 brew "ipsw" if OS.mac?
 
 # Linux's image owns Kanata's executable, configuration, and host integration.
