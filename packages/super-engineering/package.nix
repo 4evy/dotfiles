@@ -6,18 +6,23 @@
   _7zz,
   autoPatchelfHook,
   makeBinaryWrapper,
+  makeShellWrapper,
   stdenv,
   libxcb,
+  libglvnd,
   libxkbcommon,
   openssl,
   fontconfig,
   freetype,
   vulkan-loader,
+  mesa,
+  nix-gl-host,
   wayland,
   xdg-utils,
   zenity,
   nix-update-script,
   writeShellApplication,
+  coreutils,
   curl,
   jq,
   gnused,
@@ -54,6 +59,49 @@ let
     mainProgram = "super-engineering";
   };
 
+  # Isolate strict manifest generation from the FHS launcher's shell options
+  nvidiaIcd = writeShellApplication {
+    name = "super-engineering-nvidia-icd";
+    runtimeInputs = [
+      coreutils
+      jq
+    ];
+    text = ''
+      for icd in /etc/vulkan/icd.d/nvidia*.json \
+        /usr/local/share/vulkan/icd.d/nvidia*.json /usr/share/vulkan/icd.d/nvidia*.json; do
+        [ -r "$icd" ] || continue
+
+        driver_cache="''${XDG_CACHE_HOME:-$HOME/.cache}/super-engineering"
+        mkdir -p "$driver_cache"
+        icd_tmp=$(mktemp "$driver_cache/nvidia-icd.XXXXXX")
+        trap 'rm -f "$icd_tmp"' EXIT
+
+        # Keep the host API version and resolve the library through nix-gl-host
+        jq '.ICD.library_path |= split("/")[-1]' "$icd" > "$icd_tmp"
+        mv -f "$icd_tmp" "$driver_cache/nvidia-icd.json"
+        printf '%s\n' "$driver_cache/nvidia-icd.json"
+        exit 0
+      done
+    '';
+  };
+
+  # Vulkan accepts ICD directories, but host NVIDIA paths need rewriting
+  # NixOS keeps its system drivers from /run/opengl-driver
+  graphicsEnvironment = ''
+    if [ ! -e /etc/NIXOS ]; then
+      driver_files="''${VK_ADD_DRIVER_FILES:+$VK_ADD_DRIVER_FILES:}${mesa}/share/vulkan/icd.d"
+      if [ -d /sys/module/nvidia ]; then
+        host_driver_path=$(${lib.getExe nix-gl-host} --print-ld-library-path) || exit "$?"
+        export LD_LIBRARY_PATH="$host_driver_path''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        nvidia_icd=$(${lib.getExe nvidiaIcd}) || exit "$?"
+        driver_files="$driver_files''${nvidia_icd:+:$nvidia_icd}"
+      fi
+      if [ -z "''${VK_DRIVER_FILES:-}" ] && [ -z "''${VK_ICD_FILENAMES:-}" ]; then
+        export VK_DRIVER_FILES="$driver_files"
+      fi
+    fi
+  '';
+
   unwrapped =
     finalAttrs:
     stdenvNoCC.mkDerivation {
@@ -87,6 +135,7 @@ let
       nativeBuildInputs = [
         autoPatchelfHook
         makeBinaryWrapper
+        makeShellWrapper
       ];
       buildInputs = [
         (lib.attrsets.getLib stdenv.cc.cc)
@@ -107,12 +156,15 @@ let
         # Remote helpers must remain usable outside the Nix store
         autoPatchelf "$out/lib/super-engineering/bin/super-engineering" \
           "$out/lib/super-engineering/bin/sc"
-        makeWrapper "$out/lib/super-engineering/bin/super-engineering" \
+        makeShellWrapper "$out/lib/super-engineering/bin/super-engineering" \
           "$out/bin/super-engineering" \
           --prefix LD_LIBRARY_PATH : "${
             lib.strings.makeLibraryPath [
               fontconfig
               freetype
+              # NVIDIA's Vulkan ICD dlopens EGL and XCB extension libraries
+              libglvnd
+              libxcb
               vulkan-loader
               wayland
             ]
@@ -122,8 +174,9 @@ let
               xdg-utils
               zenity
             ]
-          }"
-        makeWrapper "$out/lib/super-engineering/bin/sc" "$out/bin/sc"
+          }" \
+          --run ${lib.escapeShellArg graphicsEnvironment}
+        makeBinaryWrapper "$out/lib/super-engineering/bin/sc" "$out/bin/sc"
       '';
       passthru = {
         inherit (finalAttrs.passthru) rev unwrapped updateScript;
@@ -251,6 +304,7 @@ let
         lib.attrsets.attrVals [
           "fontconfig"
           "freetype"
+          "libglvnd"
           "libxcb"
           "libxkbcommon"
           "openssl"
@@ -260,6 +314,8 @@ let
           "zenity"
           "zsh"
         ] pkgs;
+
+      extraPreBwrapCmds = graphicsEnvironment;
 
       runScript = lib.meta.getExe finalAttrs.passthru.unwrapped;
 
