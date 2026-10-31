@@ -26,6 +26,7 @@ runs:
       if: inputs.publish == 'true'
       env:
         BLUEBUILD: ${{ inputs.bluebuild }}
+        CONTAINERS_CONF_OVERRIDE: ${{ github.action_path }}/containers.conf
         GH_TOKEN: ${{ github.token }}
         BB_BUILD_PUSH: ${{ inputs.publish }}
         BB_PASSWORD: ${{ github.token }}
@@ -55,11 +56,12 @@ runs:
       env:
         IMAGE_REF: ghcr.io/${{ github.repository_owner }}/spectrum
         IMAGE_TAG: ci-${{ github.run_id }}
+        CONTAINERS_CONF_OVERRIDE: ${{ github.action_path }}/containers.conf
       shell: bash
       run: |
         set -euo pipefail
         image_ref=${IMAGE_REF,,}
-        sudo podman build \
+        sudo --preserve-env=CONTAINERS_CONF_OVERRIDE podman build \
           --file /tmp/Containerfile \
           --platform linux/amd64 \
           --pull=always \
