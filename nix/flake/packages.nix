@@ -31,6 +31,7 @@
           helix
           jj-patched
           kanata-with-cmd
+          super-engineering
           theme-run
           tweezle
           yt-dlp-script
@@ -104,6 +105,7 @@
           hyper-window-tiling-gnome
           hyper-window-tiling-kde
           kmscon
+          super-engineering-native
           toshy-runtime
           uresourced
           ;

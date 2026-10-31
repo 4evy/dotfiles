@@ -43,6 +43,7 @@ let
     dotfiles-workstation = ../../../tools/workstation/package.nix;
     dotfiles-typescript-tools = ../../../package.nix;
     hyper-window-tiling = ../../../tools/tiling/package.nix;
+    super-engineering = ../../../packages/super-engineering/package.nix;
     theme-run = ../../../tools/theme/run/package.nix;
     toshy-runtime = ../../../packages/toshy/runtime/package.nix;
     uresourced = ../../../packages/uresourced/package.nix;
@@ -109,4 +110,5 @@ packages
   inherit (unstable) gh;
   hyper-window-tiling-gnome = gnome;
   hyper-window-tiling-kde = kde;
+  super-engineering-native = final.super-engineering.native;
 }
