@@ -27,7 +27,8 @@ module.exports = {
     configWarningReuseIssue: false,
     configMigration: false,
     vulnerabilityAlerts: { enabled: false },
-    semanticCommits: "enabled",
-    semanticCommitType: "deps",
+    // Match human scope: summary subjects without semantic type(scope) prefixes
+    semanticCommits: "disabled",
+    commitMessagePrefix: "deps:",
   },
 };

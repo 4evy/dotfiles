@@ -20,6 +20,7 @@
   "lockFileMaintenance": {
     "enabled": true,
     "automerge": true,
+    "commitMessageAction": "refresh lock files",
     "schedule": ["at any time"]
   },
   "customManagers": [
@@ -313,8 +314,9 @@
   "baseBranchPatterns": ["master"],
   "platformCommit": "disabled",
   "platformAutomerge": false,
-  "semanticCommits": "enabled",
-  "semanticCommitType": "deps",
+  "semanticCommits": "disabled",
+  "commitMessagePrefix": "deps:",
+  "commitMessageAction": "update",
   "dependencyDashboardApproval": false,
   "configMigration": false,
   "ignorePaths": ["secrets/**"],
