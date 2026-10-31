@@ -11,7 +11,7 @@
 }:
 let
   metadata = lib.importJSON ./package.json;
-  inherit (aiTools) farstep-native;
+  inherit (aiTools) farstep-desktop;
   inherit (bun2nix) hook;
   wrapperArgs = lib.optionals stdenvNoCC.hostPlatform.isLinux [
     "--prefix"
@@ -19,7 +19,7 @@ let
     ":"
     (lib.makeBinPath [
       gjs
-      farstep-native
+      farstep-desktop
     ])
     "--prefix"
     "GI_TYPELIB_PATH"

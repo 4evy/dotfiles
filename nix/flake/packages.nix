@@ -60,7 +60,8 @@
           ai-tools
           ai-configs
           farstep
-          farstep-native
+          farstep-desktop
+          farstep-service
           ghidra-mcp
           ;
         default = dotfiles-workstation;

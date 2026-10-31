@@ -13,18 +13,19 @@ let
   inherit (aiPackages)
     ai-tools
     farstep
-    farstep-native
+    farstep-desktop
+    farstep-service
     ghidra-mcp
     ;
   inherit (hyper-window-tiling) gnome kde;
-  # Farstep requires Rust 1.99 while the upstream input still provides 1.98
+  # Both Farstep executables require Rust 1.99, ahead of the pinned Nixpkgs
   rustToolchain = (inputs.rust-overlay.lib.mkRustBin { } final).stable."1.99.1".minimal;
-  farstepNative = farstep-native.override {
-    rustPlatform = makeRustPlatform {
-      cargo = rustToolchain;
-      rustc = rustToolchain;
-    };
+  farstepRustPlatform = makeRustPlatform {
+    cargo = rustToolchain;
+    rustc = rustToolchain;
   };
+  farstepDesktop = farstep-desktop.override { rustPlatform = farstepRustPlatform; };
+  farstepService = farstep-service.override { rustPlatform = farstepRustPlatform; };
   # The pinned Ghidra MCP revision has an incorrect upstream source hash
   ghidraMcp = ghidra-mcp.override {
     fetchFromGitHub =
@@ -89,8 +90,12 @@ packages
   aiTools = aiPackages // {
     ghidra-mcp = ghidraMcp;
     ai-tools = ai-tools.override { ghidra-mcp = ghidraMcp; };
-    farstep-native = farstepNative;
-    farstep = farstep.override { farstep-native = farstepNative; };
+    farstep-desktop = farstepDesktop;
+    farstep-service = farstepService;
+    farstep = farstep.override {
+      farstep-desktop = farstepDesktop;
+      farstep-service = farstepService;
+    };
   };
   bun2nix = inputs.bun2nix.packages.${stdenv.hostPlatform.system}.default;
   # Upstream schema downloads have no deadline, including recursive $ref fetches
