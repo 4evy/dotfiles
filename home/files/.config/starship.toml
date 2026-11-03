@@ -1,7 +1,7 @@
 add_newline = true
 command_timeout = 5000
 continuation_prompt = "[∙](subtle) "
-format = "$directory$line_break$sudo$character$command_timeout"
+format = "$directory${custom.jj_bookmark}$line_break$sudo$character$command_timeout"
 palette = "catppuccin_custom_variant"
 right_format = "$cmd_duration$time"
 
@@ -15,12 +15,27 @@ format = "[took $duration]($style) "
 min_time = 2000
 style = "subtle"
 
+[custom.jj_bookmark]
+# Read the nearest bookmarked ancestor without snapshotting the working copy
+command = """
+jj --ignore-working-copy --color=never log --no-graph \
+    -r 'heads(::@ & bookmarks())' \
+    -T 'local_bookmarks.map(|b| b.name()).join(", ") ++ "\\n"' 2>/dev/null
+"""
+format = "([$output]($style) )"
+shell = ["sh"]
+style = "lavender"
+when = true
+
 [directory]
+before_repo_root_style = "subtle"
 fish_style_pwd_dir_length = 1
 format = "[🌈 $path]($style)[$read_only]($read_only_style) "
 read_only = " 󰌾"
 read_only_style = "bold love"
-style = "bold pink"
+repo_root_format = "[🌈 ](bold pink)[$before_root_path]($before_repo_root_style)[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) "
+repo_root_style = "bold pink"
+style = "pink"
 truncate_to_repo = false
 truncation_symbol = "../"
 
@@ -64,6 +79,6 @@ symbol = "🔓 root"
 
 [time]
 disabled = false
-format = "[✨ $time]($style)"
+format = "[$time]($style)"
 style = "subtle"
-time_format = "%H:%M:%S"
+time_format = "%H:%M"
