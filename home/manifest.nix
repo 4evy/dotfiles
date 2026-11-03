@@ -288,13 +288,9 @@
       nixGenerated = true;
     }
     {
-      source = ".config/ghostty/shaders/catppuccin-custom-glow.glsl.linux";
+      source = ".config/ghostty/shaders/catppuccin-custom-glow.glsl";
       target = ".config/ghostty/shaders/catppuccin-custom-glow.glsl";
       nixGenerated = true;
-      sourceByOS = {
-        linux = ".config/ghostty/shaders/catppuccin-custom-glow.glsl.linux";
-        darwin = ".config/ghostty/shaders/catppuccin-custom-glow.glsl.darwin";
-      };
     }
     {
       source = ".config/ghostty/themes/catppuccin-custom-dark.conf";

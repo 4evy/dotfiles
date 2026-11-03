@@ -7,8 +7,8 @@ quit-after-last-window-closed = true
 scrollback-limit-bytes = 100000000
 # Load the shared shell environment so desktop launches can find Helix.
 scrollback-editor = direct:@HOME@/.local/lib/ghostty/scrollback.zsh
-window-padding-x = 8
-window-padding-y = 4
+window-padding-x = 12
+window-padding-y = 8
 window-padding-balance = true
 window-padding-color = extend
 shell-integration-features = no-cursor

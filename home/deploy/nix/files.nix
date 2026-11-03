@@ -83,6 +83,10 @@ let
   firstCommand = names: fallback: lib.findFirst (path: path != null) fallback (map commandPath names);
   markers = colorMarkers ++ [
     {
+      name = "@GHOSTTY_Y_FLIP@";
+      value = if os == "linux" then "screen_uv.y = 1.0 - screen_uv.y;" else "";
+    }
+    {
       # Inherit the deployed extension dependency from the locked AI runtime
       name = "@OMP_PI_TUI_VERSION@";
       value = ompDependencies."@oh-my-pi/pi-tui";
