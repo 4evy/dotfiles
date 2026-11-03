@@ -41,12 +41,12 @@ while IFS= read -r patch_name || [[ -n $patch_name ]]; do
 done <"$patches/series"
 
 version="$VERSION_PREFIX.${revision:0:7}"
-mkdir -p /build/zig-cache/0.16/tmp
+mkdir -p /build/zig-cache/0.17/tmp
 (
 	cd /build/source
 	build_status=0
 	for attempt in 1 2 3; do
-		if PATH="/build/zig:$PATH" ZIG_GLOBAL_CACHE_DIR=/build/zig-cache/0.16 \
+		if PATH="/build/zig:$PATH" ZIG_GLOBAL_CACHE_DIR=/build/zig-cache/0.17 \
 			/build/zig/zig build \
 			-p "$PREFIX" \
 			"${build_arguments[@]}" \

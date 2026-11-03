@@ -446,11 +446,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792059900,
-        "narHash": "sha256-uoN0P9SjOl4kL5KmWgdiElQSDK4bWTUceNj4wcOy5zA=",
+        "lastModified": 1793658166,
+        "narHash": "sha256-+d3Io57PTCGwcWq6czcS0BKr+u5UCxNgVbysq/UDBbI=",
         "owner": "4evy",
         "repo": "patches",
-        "rev": "2ed65abc7185f8e3748d278b6225ee461f8cbbcf",
+        "rev": "1892ae3c6c21f7f1c8fc3332440469a5a9a00860",
         "type": "github"
       },
       "original": {
@@ -631,25 +631,25 @@
     "source-ghostty-zig-aarch64-linux": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-HTTSajvb/og2qNpKcM2Qn0GVXph286stHnZGlFpkrb0=",
+        "narHash": "sha256-KskUkf4U9wD28VOjhpNiPnoQGePa5/xxGwNz6MFmXkE=",
         "type": "file",
-        "url": "https://ziglang.org/download/0.16.0/zig-aarch64-linux-0.16.0.tar.xz"
+        "url": "https://ziglang.org/download/0.17.0/zig-aarch64-linux-0.17.0.tar.xz"
       },
       "original": {
         "type": "file",
-        "url": "https://ziglang.org/download/0.16.0/zig-aarch64-linux-0.16.0.tar.xz"
+        "url": "https://ziglang.org/download/0.17.0/zig-aarch64-linux-0.17.0.tar.xz"
       }
     },
     "source-ghostty-zig-x86-64-linux": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-YxmTP/wfyCoATpHqdWhQfRyA2xXzLUGWovPpfD2w9AQ=",
+        "narHash": "sha256-lGZYFKeBobrGAg8lPGwXlfvSYh/TwPaMcVeov7RPViU=",
         "type": "file",
-        "url": "https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz"
+        "url": "https://ziglang.org/download/0.17.0/zig-x86_64-linux-0.17.0.tar.xz"
       },
       "original": {
         "type": "file",
-        "url": "https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz"
+        "url": "https://ziglang.org/download/0.17.0/zig-x86_64-linux-0.17.0.tar.xz"
       }
     },
     "source-helix": {

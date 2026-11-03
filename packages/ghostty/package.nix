@@ -2,11 +2,12 @@
   lib,
   stdenvNoCC,
   fetchFromGitHub,
-  runCommand,
+  callPackage,
   git,
   gettext,
   makeWrapper,
-  zig_0_16,
+  pandoc,
+  zig_0_17,
   patchesSource,
 }:
 let
@@ -16,7 +17,7 @@ let
     owner = "ghostty-org";
     repo = "ghostty";
     rev = revision;
-    hash = "sha256-fXghoRnPzYZ2OZvydGnRSESM9tkLZ8J1912wRip78qY=";
+    hash = "sha256-ywmIjwix0P5TC8kD/zTmt82CNrLXMFETaWZj0NirpoM=";
   };
   patchRoot = patchesSource + "/stacks/ghostty/patches";
   patches = lib.map (name: patchRoot + "/${name}") (
@@ -24,28 +25,13 @@ let
       lib.splitString "\n" (lib.readFile (patchRoot + "/series"))
     )
   );
-  dependencies =
-    runCommand "ghostty-zig16-packages"
-      {
-        nativeBuildInputs = lib.attrValues { inherit zig_0_16; };
-        outputHashAlgo = "sha256";
-        outputHashMode = "recursive";
-        outputHash = "sha256-qyDc44cyx9oyP6KIltMACJDtuXliD9GFUZmauPkLjr8=";
-      }
-      ''
-        export ZIG_GLOBAL_CACHE_DIR="$TMPDIR/zig-cache"
-        mkdir -p "$ZIG_GLOBAL_CACHE_DIR/tmp"
-        cp -R ${source} source
-        chmod -R u+w source
-        cd source
-        ${lib.getExe zig_0_16} build --fetch=all
-        # Zig keeps extracted packages beside build.zig, separate from archives
-        mv zig-pkg "$out"
-      '';
+  dependencies = callPackage (source + "/build.zig.zon.nix") {
+    name = "ghostty-zig17-packages";
+  };
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "ghostty-patched";
-  version = "1.3.2-dev.${lib.substring 0 7 revision}";
+  version = "1.4.0+patched.${lib.substring 0 7 revision}";
   src = source;
   inherit patches;
 
@@ -54,7 +40,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       git
       gettext
       makeWrapper
-      zig_0_16
+      pandoc
+      zig_0_17
       ;
   };
   # The macOS frontend is built with Apple's installed Xcode toolchain
@@ -66,8 +53,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     export HOME="$TMPDIR/home"
     export ZIG_GLOBAL_CACHE_DIR="$TMPDIR/zig-cache"
     mkdir -p "$HOME" "$ZIG_GLOBAL_CACHE_DIR/tmp"
-    cp -R ${dependencies} zig-pkg
-    chmod -R u+w zig-pkg
     # Xcode's component shim cannot discover Metal for Nix's build users
     substituteInPlace src/build/MetallibStep.zig \
       --replace-fail 'const sdk = switch' '_ = switch' \
@@ -95,7 +80,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     export PATH="$TMPDIR/xcode-bin:$PATH"
     export PATH="$PATH:/usr/bin:/bin:/usr/sbin:/sbin"
     if ! zig build -j"$NIX_BUILD_CORES" \
-      -Doptimize=ReleaseFast -Demit-test-exe=false \
+      --system ${dependencies} \
+      -Doptimize=fast -Demit-test-exe=false \
       -Dxcframework-target=native \
       -Dxcodebuild-disable-package-manifest-sandbox=true \
       -Dversion-string=${lib.escapeShellArg finalAttrs.version}; then

@@ -153,12 +153,12 @@
 
     source-ghostty-zig-aarch64-linux = {
       flake = false;
-      url = "file+https://ziglang.org/download/0.16.0/zig-aarch64-linux-0.16.0.tar.xz";
+      url = "file+https://ziglang.org/download/0.17.0/zig-aarch64-linux-0.17.0.tar.xz";
     };
 
     source-ghostty-zig-x86-64-linux = {
       flake = false;
-      url = "file+https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz";
+      url = "file+https://ziglang.org/download/0.17.0/zig-x86_64-linux-0.17.0.tar.xz";
     };
 
     source-helix = {
