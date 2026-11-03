@@ -119,7 +119,7 @@
 
     source-oh-my-zsh = {
       flake = false;
-      url = "github:ohmyzsh/ohmyzsh/17a2b4c3a5855524ad4772a17ada0dc474e2fdf3";
+      url = "github:ohmyzsh/ohmyzsh/b509b1c6ed0c1ba37de12cbd37f30b2b2f61193a";
     };
     source-zsh-autosuggestions = {
       flake = false;
@@ -148,7 +148,7 @@
 
     source-bluebuild-cli = {
       flake = false;
-      url = "github:blue-build/cli/3142bd836f4f5a9c8e15b757243edbe0e818c3de";
+      url = "github:blue-build/cli/ed31079e73723536a6ce8c32e7e762c48a7b2b24";
     };
 
     source-ghostty-zig-aarch64-linux = {
