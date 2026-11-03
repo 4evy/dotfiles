@@ -64,9 +64,16 @@ let
               (
                 _pyFinal: pyPrev:
                 let
-                  inherit (pyPrev) i3ipc;
+                  inherit (pyPrev) i3ipc tkinter;
                 in
                 {
+                  # Python 3.15's Tk tests need libregrtest to initialize resources
+                  tkinter = tkinter.overridePythonAttrs (
+                    old:
+                    lib.optionalAttrs (pyPrev.python.pythonVersion == "3.15") {
+                      checkPhase = lib.replaceStrings [ "-m unittest" ] [ "-m test -u all,wantobjects=1" ] old.checkPhase;
+                    }
+                  );
                   # Concurrent X11 sync calls can consume each other's replies
                   # Serialize request/reply pairs while keeping checks enabled
                   i3ipc = i3ipc.overridePythonAttrs (old: {
