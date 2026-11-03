@@ -2,7 +2,8 @@ import { delimiter, isAbsolute, join } from "node:path";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { isExecutable } from "@dotfiles/core/files";
 import { exitCode } from "@dotfiles/runtime/process";
-import { Crypto, Effect, FileSystem, Option } from "effect";
+import { Effect, FileSystem, Option } from "effect";
+import { SecureRandom } from "effect/crypto";
 import { ChildProcess } from "effect/process";
 import {
   errorCode,
@@ -183,7 +184,7 @@ export function patchAssignment(
 function makeTemporary(integration: Integration, contents: string, env: Variables) {
   return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    const crypto = yield* Crypto.Crypto;
+    const random = yield* SecureRandom.SecureRandom;
     const directory =
       integration.temporary_location === "system"
         ? env.TMPDIR || "/tmp"
@@ -196,7 +197,7 @@ function makeTemporary(integration: Integration, contents: string, env: Variable
     for (;;) {
       const path = join(
         directory,
-        stem + Buffer.from(yield* crypto.randomBytes(8)).toString("hex"),
+        stem + Buffer.from(yield* random.randomBytes(8)).toString("hex"),
       );
       const temporary = yield* Effect.acquireRelease(
         fs

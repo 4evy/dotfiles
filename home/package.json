@@ -23,7 +23,7 @@
   "dependencies": {
     "@dotfiles/core": "workspace:*",
     "@dotfiles/runtime": "workspace:*",
-    "@effect/platform-bun": "4.0.7",
-    "effect": "4.0.7"
+    "@effect/platform-bun": "4.1.0",
+    "effect": "4.1.0"
   }
 }

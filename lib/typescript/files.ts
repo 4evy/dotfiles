@@ -1,7 +1,8 @@
 import { constants } from "node:fs";
 import { access, open } from "node:fs/promises";
 import { basename, dirname, normalize } from "node:path";
-import { Crypto, Effect, FileSystem } from "effect";
+import { Effect, FileSystem } from "effect";
+import { SecureRandom } from "effect/crypto";
 import { DotfilesError } from "./errors.ts";
 
 // Write JSON atomically and report whether content or permissions changed
@@ -81,8 +82,8 @@ export function writeIfChanged(
         return true;
       }
       yield* ensureDirectory(dirname(destination));
-      const crypto = yield* Crypto.Crypto;
-      const temporary = `${destination}.${yield* crypto.randomUUIDv4()}`;
+      const random = yield* SecureRandom.SecureRandom;
+      const temporary = `${destination}.${yield* random.uuidV4()}`;
       yield* Effect.addFinalizer(() =>
         fs.remove(temporary, { force: true }).pipe(Effect.orDie),
       );
