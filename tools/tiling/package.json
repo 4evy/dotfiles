@@ -19,8 +19,8 @@
     "typecheck": "bun run tsrs --noEmit -p tsconfig.json && bun run tsrs --noEmit -p scripts/tsconfig.json"
   },
   "dependencies": {
-    "@effect/platform-bun": "4.1.0",
-    "effect": "4.1.0",
+    "@effect/platform-bun": "4.1.2",
+    "effect": "4.1.2",
     "kwin-api": "6.8.1"
   },
   "devDependencies": {
