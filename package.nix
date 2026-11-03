@@ -27,6 +27,8 @@ stdenvNoCC.mkDerivation {
         ./Brewfile
         ./data/homebrew/tools.json
         ./data/rustdesk/options.json
+        ./data/macos/permissions.json
+        ./systems/modules/darwin/permissions
       ]
       ++ map (path: root + "/${path}") (lib.attrValues entrypoints)
     );

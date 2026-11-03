@@ -1,0 +1,174 @@
+{
+  "services": {
+    "system": [
+      "Accessibility",
+      "ListenEvent",
+      "PostEvent",
+      "ScreenCapture",
+      "SystemPolicyAllFiles",
+      "DeveloperTool",
+      "RemoteDesktop",
+      "EndpointSecurityClient"
+    ],
+    "user": [
+      "AddressBook",
+      "Calendar",
+      "Reminders",
+      "Photos",
+      "PhotosAdd",
+      "Camera",
+      "Microphone",
+      "AudioCapture",
+      "SpeechRecognition",
+      "MediaLibrary",
+      "BluetoothAlways",
+      "SystemPolicyAppBundles",
+      "SystemPolicyAppData",
+      "SystemPolicyDesktopFolder",
+      "SystemPolicyDocumentsFolder",
+      "SystemPolicyDownloadsFolder",
+      "SystemPolicyNetworkVolumes",
+      "SystemPolicyRemovableVolumes",
+      "Siri",
+      "SiriAccess",
+      "Motion",
+      "UserTracking",
+      "GameCenterFriends",
+      "VoiceBanking",
+      "EnergyKitGuidance",
+      "WebBrowserPublicKeyCredential",
+      "FocusStatus",
+      "FileProviderPresence",
+      "VirtualMachineNetworking",
+      "Willow",
+      "ExternalAIVisibleToSystem",
+      "ExternalAIProviderBlocked",
+      "Pasteboard",
+      "ExternalCameraMedia",
+      "Liverpool",
+      "Ubiquity",
+      "WebKitIntelligentTrackingPrevention"
+    ],
+    "applicationTargets": [
+      { "service": "AppleEvents", "signedOnly": false },
+      { "service": "SystemPolicyAppDataDetailed", "signedOnly": true }
+    ],
+    "existingTargets": ["FileProviderDomain"],
+    "ephemeral": [{ "service": "SystemPolicySysAdminFiles", "expirySeconds": 60 }],
+    "retiredUnscoped": ["SystemPolicyDeveloperFiles", "SystemPolicyAppDataDetailed"],
+    "excluded": {
+      "All": "Reset pseudo-service, not a wildcard grant",
+      "Location": "Separate locationd authorization, not a TCC service",
+      "SystemPolicyDeveloperFiles": "Deprecated in the native macOS service metadata"
+    }
+  },
+  "authorization": {
+    "value": 2,
+    "reason": 4,
+    "version": 1,
+    "flags": 0,
+    "serviceOverrides": {
+      "Calendar": { "value": 4, "version": 2 },
+      "Photos": { "value": 2, "version": 2 },
+      "Pasteboard": { "value": 2, "version": 2 },
+      "ExternalCameraMedia": { "value": 4, "version": 2 },
+      "ExternalAIProviderBlocked": { "value": 0, "version": 1 }
+    }
+  },
+  "applications": {
+    "homebrew": {
+      "executable": "/opt/homebrew/bin/brew",
+      "brewfiles": ["{repo}/Brewfile"],
+      "appDirectory": "/Applications"
+    },
+    "bundles": [
+      "/Applications/Nix Apps/Discord.app",
+      "/Applications/Nix Apps/Farstep.app",
+      "/Applications/Nix Apps/Ghidra.app",
+      "/Applications/Nix Apps/Ghostty.app",
+      "/Applications/Nix Apps/Helium.app",
+      "/Applications/Nix Apps/Raycast.app",
+      "/Applications/Kanata.app",
+      "/Applications/.Karabiner-VirtualHIDDevice-Manager.app",
+      "/Applications/Rex Beta.app",
+      "/Applications/super.engineering.app",
+      "/Applications/Xcode.app",
+      "/System/Applications/Utilities/Terminal.app",
+      "/Library/Application Support/org.pqrs/Karabiner-DriverKit-VirtualHIDDevice/Applications/Karabiner-VirtualHIDDevice-Daemon.app"
+    ],
+    "targets": [
+      "/System/Library/CoreServices/Finder.app",
+      "/System/Library/CoreServices/System Events.app",
+      "/System/Applications/System Settings.app",
+      "/System/Applications/Music.app",
+      "/System/Applications/Mail.app",
+      "/System/Applications/Calendar.app",
+      "/System/Applications/Contacts.app",
+      "/System/Applications/Reminders.app",
+      "/System/Applications/Shortcuts.app",
+      "/System/Applications/Photos.app",
+      "/Applications/Safari.app"
+    ]
+  },
+  "executables": [
+    "/usr/libexec/sshd-keygen-wrapper",
+    "/usr/sbin/sshd",
+    "/usr/libexec/sshd-session",
+    "/usr/libexec/sshd-auth",
+    "/opt/homebrew/opt/openssh/sbin/sshd",
+    "/opt/homebrew/opt/openssh/libexec/sshd-session",
+    "/opt/homebrew/opt/openssh/libexec/sshd-auth",
+    "/opt/homebrew/opt/tailscale/bin/tailscaled",
+    "/Library/PrivilegedHelperTools/org.farstep.service-{uid}/farstep-service"
+  ],
+  "farstep": {
+    "packages": ["{home}/.local/share/farstep/current"],
+    "launchAgents": [
+      "{home}/Library/LaunchAgents/org.nixos.farstep-desktop.plist",
+      "{home}/Library/LaunchAgents/org.farstep.desktop.plist"
+    ],
+    "app": "share/Farstep.app",
+    "sky": "share/farstep/sky",
+    "receipt": "complete.json"
+  },
+  "sky": {
+    "resources": ["/Applications/ChatGPT.app/Contents/Resources"],
+    "apps": [
+      "codex-cli/CodexCLI.app",
+      "cua_node/lib/node_modules/@oai/sky/Codex Computer Use.app"
+    ],
+    "executables": ["cua_node/bin/node", "cua_node/bin/node_repl"]
+  },
+  "databases": {
+    "system": "/Library/Application Support/com.apple.TCC/TCC.db",
+    "user": "{home}/Library/Application Support/com.apple.TCC/TCC.db",
+    "suffix": "/com.apple.TCC/TCC.db"
+  },
+  "backups": "/var/backups/dotfiles-tcc",
+  "notifications": {
+    "majorVersion": 27,
+    "suite": "group.com.apple.usernoted",
+    "container": "{home}/Library/Group Containers/group.com.apple.usernoted",
+    "service": "com.apple.usernoted",
+    "processName": "usernoted",
+    "agent": "/System/Library/LaunchAgents/com.apple.usernoted.plist",
+    "backups": "/var/backups/dotfiles-notifications",
+    "grants": {
+      "authorization": {
+        "requiresAuth": "0",
+        "setFlags": "33554432",
+        "clearFlags": "2147483648"
+      },
+      "criticalAlerts": {
+        "requiresAuth": "16",
+        "setFlags": "67108864",
+        "clearFlags": "0"
+      },
+      "timeSensitive": {
+        "requiresAuth": "256",
+        "setFlags": "536870912",
+        "clearFlags": "0"
+      }
+    }
+  }
+}

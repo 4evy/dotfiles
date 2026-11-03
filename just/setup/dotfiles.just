@@ -3,6 +3,21 @@
 apply: (_doctor 'apply')
     bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} apply
 
+# Grant broad macOS privacy permissions, or inspect with --check or --dry-run
+[group('setup')]
+[macos]
+[positional-arguments]
+permissions *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    temporary="$(mktemp -d)"
+    trap 'rm -rf "$temporary"' EXIT
+    # Keep the tools rooted while sudo is waiting for credentials
+    nix build --no-write-lock-file --out-link "$temporary/tools" \
+      {{ quote(repo_dir + '#dotfiles-typescript-tools') }}
+    sudo /usr/bin/env DOTFILES_REPO={{ quote(repo_dir) }} \
+      "$temporary/tools/bin/dotfiles-permissions" --user "$(id -un)" "$@"
+
 # Apply Helium extensions, settings, and the Catppuccin Custom themes
 [group('setup')]
 helium: (_doctor 'reconcile')

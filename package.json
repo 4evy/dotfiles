@@ -10,7 +10,9 @@
     "dotfiles-applications": "tools/setup/applications.ts",
     "dotfiles-codesign": "systems/modules/darwin/codesign.ts",
     "dotfiles-homebrew": "tools/setup/homebrew.ts",
-    "dotfiles-logitech": "systems/modules/darwin/keyboard/logitech.ts"
+    "dotfiles-logitech": "systems/modules/darwin/keyboard/logitech.ts",
+    "dotfiles-notifications": "systems/modules/darwin/permissions/notifications/preferences.ts",
+    "dotfiles-permissions": "systems/modules/darwin/permissions/permissions.ts"
   },
   "workspaces": {
     "packages": [
@@ -55,6 +57,7 @@
     "@dotfiles/workstation": "workspace:*",
     "@effect/platform-bun": "4.1.2",
     "commander": "15.0.0",
+    "drizzle-orm": "0.45.4",
     "effect": "4.1.2",
     "fast-xml-validator": "1.4.2",
     "jsonc-parser": "3.3.1",

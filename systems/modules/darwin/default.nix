@@ -18,6 +18,7 @@ in
     ./defaults.nix
     ./keyboard
     ./applications.nix
+    ./permissions
   ];
 
   determinateNix = {
