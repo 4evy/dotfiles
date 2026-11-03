@@ -1004,6 +1004,23 @@
       ];
   hooks = [
     {
+      # Copy is a native menu command in the installed Rex client
+      command = [
+        "/usr/bin/defaults"
+        "write"
+        "com.superlogical.rex"
+        "NSUserKeyEquivalents"
+        "-dict-add"
+        "Copy"
+        "@$c"
+      ];
+      systems = [
+        "darwin"
+      ];
+      onChange = true;
+      name = "rex_shortcuts.sh";
+    }
+    {
       command = [
         "@HOME@/.local/lib/external/external.sh"
       ];

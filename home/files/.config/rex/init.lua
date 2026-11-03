@@ -26,7 +26,6 @@ local tab_navigation = {
 local bindings = {
 	{ "cmd+k", "com.superlogical.terminal.clear" },
 	{ "shift+cmd+k", "session.switch" },
-	{ "shift+cmd+c", "pane.copy" },
 	{ { "ctrl+shift+delete", "ctrl+shift+w" }, "client.tab.close" },
 	{ "ctrl+shift+p", "client.palette.toggle" },
 	{ "ctrl+pageup", "client.tab.previous" },
