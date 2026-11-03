@@ -411,6 +411,20 @@
       ];
       nixGenerated = true;
     }
+    {
+      source = ".config/rex/init.lua";
+      target = ".config/rex/init.lua";
+      systems = [
+        "darwin"
+      ];
+    }
+    {
+      source = ".config/rex/scrollback.lua";
+      target = ".config/rex/scrollback.lua";
+      systems = [
+        "darwin"
+      ];
+    }
   ]
   ++ (builtins.map
     (source: {
@@ -650,6 +664,22 @@
       executable = true;
     }
     {
+      source = ".local/lib/rex/scrollback.zsh";
+      target = ".local/lib/rex/scrollback.zsh";
+      systems = [
+        "darwin"
+      ];
+    }
+    {
+      source = ".local/lib/omp/launch.sh";
+      target = ".local/bin/omp";
+      executable = true;
+      nixGenerated = true;
+      systems = [
+        "darwin"
+      ];
+    }
+    {
       source = ".local/lib/helix/helix.ts";
       target = ".local/lib/helix/helix.ts";
       executable = true;
@@ -877,6 +907,10 @@
       source = ".omp/agent/package.json";
       target = ".omp/agent/package.json";
       nixGenerated = true;
+    }
+    {
+      source = ".omp/agent/extensions/rex.ts";
+      target = ".omp/agent/extensions/rex.ts";
     }
     {
       source = ".omp/agent/themes/catppuccin-custom-dark.json";

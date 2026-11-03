@@ -26,6 +26,9 @@ let
   };
   farstepDesktop = farstep-desktop.override { rustPlatform = farstepRustPlatform; };
   farstepService = farstep-service.override { rustPlatform = farstepRustPlatform; };
+  aiJavaScript = callPackage ../../../packages/ai/javascript.nix {
+    inherit (aiPackages) ai-app-modules ai-javascript;
+  };
   # The pinned Ghidra MCP revision has an incorrect upstream source hash
   ghidraMcp = ghidra-mcp.override {
     fetchFromGitHub =
@@ -97,7 +100,10 @@ packages
 // {
   aiTools = aiPackages // {
     ghidra-mcp = ghidraMcp;
-    ai-tools = ai-tools.override { ghidra-mcp = ghidraMcp; };
+    ai-tools = ai-tools.override {
+      ghidra-mcp = ghidraMcp;
+      ai-javascript = aiJavaScript;
+    };
     farstep-desktop = farstepDesktop;
     farstep-service = farstepService;
     farstep = farstep.override {

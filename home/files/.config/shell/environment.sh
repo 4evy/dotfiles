@@ -127,6 +127,9 @@ _dotfiles_path_append_once() {
 	done
 }
 
+# Agent hooks must use the CLI belonging to their Rex server
+_dotfiles_path_append_once "${REX_BIN_DIR:-}"
+
 if [[ "$_dotfiles_os" == Linux ]]; then
 	if [[ -d /run/wrappers/bin ]]; then
 		_dotfiles_path_append_once /run/wrappers/bin

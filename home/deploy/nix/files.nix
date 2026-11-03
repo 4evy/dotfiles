@@ -121,6 +121,10 @@ let
       value = repository;
     }
     {
+      name = "@OMP_CLI@";
+      value = lib.getExe' pkgs.aiTools.ai-tools "omp";
+    }
+    {
       name = "@CODEX_NATIVE_CLI@";
       value =
         let

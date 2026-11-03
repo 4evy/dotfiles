@@ -1,0 +1,13 @@
+diff --git a/tools/scripts/omp/runtime/launch.ts b/tools/scripts/omp/runtime/launch.ts
+--- a/tools/scripts/omp/runtime/launch.ts
++++ b/tools/scripts/omp/runtime/launch.ts
+@@ -36,4 +36,9 @@ try {
+   cli = await lastWorking();
+   console.error("omp: rebuild failed; starting the last working patched version");
+ }
++// Keep OMP identifiable when terminal clients inspect the Bun process
++if (process.platform !== "win32" && process.execve) {
++  process.execve(process.execPath, ["omp", cli, ...args], process.env);
++}
++
+ process.exitCode = await launchProcess(process.execPath, [cli, ...args]);
