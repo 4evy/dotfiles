@@ -647,25 +647,25 @@
     "source-ghostty-zig-aarch64-linux": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-KskUkf4U9wD28VOjhpNiPnoQGePa5/xxGwNz6MFmXkE=",
+        "narHash": "sha256-hokUq9A8p99l08CqwtUvpGQP7VR1Qxgu0LRvvIG5vyw=",
         "type": "file",
-        "url": "https://ziglang.org/download/0.17.0/zig-aarch64-linux-0.17.0.tar.xz"
+        "url": "https://ziglang.org/download/0.17.1/zig-aarch64-linux-0.17.1.tar.xz"
       },
       "original": {
         "type": "file",
-        "url": "https://ziglang.org/download/0.17.0/zig-aarch64-linux-0.17.0.tar.xz"
+        "url": "https://ziglang.org/download/0.17.1/zig-aarch64-linux-0.17.1.tar.xz"
       }
     },
     "source-ghostty-zig-x86-64-linux": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-lGZYFKeBobrGAg8lPGwXlfvSYh/TwPaMcVeov7RPViU=",
+        "narHash": "sha256-ai4jRN7Bck+QNLz7Msu3K3L4okccNk8AhYUXMZRzKio=",
         "type": "file",
-        "url": "https://ziglang.org/download/0.17.0/zig-x86_64-linux-0.17.0.tar.xz"
+        "url": "https://ziglang.org/download/0.17.1/zig-x86_64-linux-0.17.1.tar.xz"
       },
       "original": {
         "type": "file",
-        "url": "https://ziglang.org/download/0.17.0/zig-x86_64-linux-0.17.0.tar.xz"
+        "url": "https://ziglang.org/download/0.17.1/zig-x86_64-linux-0.17.1.tar.xz"
       }
     },
     "source-helix": {
