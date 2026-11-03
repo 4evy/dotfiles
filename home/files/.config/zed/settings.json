@@ -151,7 +151,7 @@
       }
     },
     "JavaScript": {
-      "language_servers": ["biome", "..."],
+      "language_servers": ["biome", "typescript-language-server", "!vtsls", "..."],
       "format_on_save": "on",
       "formatter": {
         "language_server": {
@@ -167,7 +167,7 @@
       }
     },
     "TypeScript": {
-      "language_servers": ["biome", "..."],
+      "language_servers": ["biome", "typescript-language-server", "!vtsls", "..."],
       "format_on_save": "on",
       "formatter": {
         "language_server": {
@@ -183,7 +183,7 @@
       }
     },
     "TSX": {
-      "language_servers": ["biome", "..."],
+      "language_servers": ["biome", "typescript-language-server", "!vtsls", "..."],
       "format_on_save": "on",
       "formatter": {
         "language_server": {
@@ -292,7 +292,11 @@
         "arguments": ["server"]
       }
     },
-    "vtsls": {
+    "typescript-language-server": {
+      "binary": {
+        "path": "~/.local/bin/tsrs",
+        "arguments": ["--lsp", "--stdio"]
+      },
       "settings": {
         "typescript": {
           "preferences": {
