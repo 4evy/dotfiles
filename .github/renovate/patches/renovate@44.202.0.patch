@@ -135,10 +135,10 @@ index d5014d1..0eed4e4 100644
  	await git.raw([
  		"update-ref",
 diff --git a/dist/workers/repository/update/pr/index.js b/dist/workers/repository/update/pr/index.js
-index fd15030..970587f 100644
+index 17cde80..a91b90b 100644
 --- a/dist/workers/repository/update/pr/index.js
 +++ b/dist/workers/repository/update/pr/index.js
-@@ -68,6 +68,16 @@ function addPullRequestNoteIfAttestationHasBeenLost(upgrade, currentReleaseHasAt
+@@ -69,6 +69,16 @@ function addPullRequestNoteIfAttestationHasBeenLost(upgrade, currentReleaseHasAt
  	}
  }
  async function ensurePr(prConfig) {
@@ -156,7 +156,7 @@ index fd15030..970587f 100644
  	const filteredPrConfig = generatePrBodyFingerprintConfig(config);
  	const prBodyFingerprint = fingerprint(filteredPrConfig);
 diff --git a/package.json b/package.json
-index c338a5a..f9c7610 100644
+index b482f35..678bd69 100644
 --- a/package.json
 +++ b/package.json
 @@ -83,7 +83,7 @@
