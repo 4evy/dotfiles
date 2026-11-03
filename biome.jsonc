@@ -31,6 +31,23 @@
   },
   "overrides": [
     {
+      "includes": ["tools/workstation/assets/macos/accent.js"],
+      "javascript": {
+        "globals": [
+          "Process",
+          "NativeFunction",
+          "NativeCallback",
+          "Module",
+          "Memory",
+          "ptr",
+          "Script",
+          "Instruction",
+          "Interceptor",
+          "rpc"
+        ]
+      }
+    },
+    {
       "includes": ["home/applications/discord/equicord/css/css.css"],
       "linter": {
         "rules": {

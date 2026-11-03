@@ -1,6 +1,7 @@
 import { run } from "@dotfiles/core/commands";
 import { color, palettes, rgbComponents } from "@dotfiles/workstation/theme";
 import { Effect } from "effect";
+import { installAccent } from "./accent.ts";
 import { applyIconTint } from "./tint.ts";
 
 export const applyAppearance = Effect.fn("applyAppearance")(function* () {
@@ -16,4 +17,5 @@ export const applyAppearance = Effect.fn("applyAppearance")(function* () {
   ])
     yield* run(["defaults", "write", ...args]);
   yield* applyIconTint(accent);
+  yield* installAccent();
 });

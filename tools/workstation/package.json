@@ -11,6 +11,7 @@
     "./assets/gtk4": "./assets/desktop/gtk/gtk.css.in",
     "./assets/gtk3": "./assets/desktop/gtk/legacy.css.in",
     "./assets/kmscon": "./assets/kmscon/defaults.conf",
+    "./assets/macos-accent": "./assets/macos/accent.js",
     "./assets/desktop": "./assets/linux/desktop.gjs"
   },
   "scripts": {
@@ -28,10 +29,12 @@
     "fast-xml-parser": "5.11.2",
     "fast-xml-validator": "1.4.2",
     "fflate": "0.8.3",
+    "frida": "17.25.2",
     "suncalc": "2.1.1"
   },
   "devDependencies": {
     "@types/bun": "1.4.4",
+    "@types/frida-gum": "19.12.0",
     "tsrs": "0.18.0-ts7.1.0-dev.20260929"
   }
 }

@@ -167,6 +167,98 @@ const build = Effect.fn("workstation.build")(function* (destination: string) {
     return yield* Effect.fail(new DotfilesError(result.logs.map(String).join("\n")));
 });
 
+const fridaFiles = ["frida.js", "frida_binding.node"] as const;
+
+const buildFrida = Effect.fn("workstation.buildFrida")(function* (destination: string) {
+  const fs = yield* FileSystem.FileSystem;
+  const paths = yield* Effect.try({
+    try: () => {
+      const entrypoint = Bun.resolveSync("frida", packageRoot);
+      const directory = resolve(dirname(entrypoint), "../..");
+      return { entrypoint, directory };
+    },
+    catch: (cause) =>
+      new DotfilesError("Could not resolve the workstation Frida dependency", {
+        cause,
+      }),
+  });
+  let binding = join(paths.directory, "build/frida_binding.node");
+  if (!(yield* fs.exists(binding))) {
+    // Download only the prebuilt addon, without trusting package lifecycle
+    // scripts or trying a source build in a possibly read-only dependency tree
+    const download = join(destination, "frida-prebuild");
+    yield* fs.makeDirectory(download);
+    yield* fs.copyFile(
+      join(paths.directory, "package.json"),
+      join(download, "package.json"),
+    );
+    const installer = yield* Effect.try({
+      try: () => Bun.resolveSync("prebuild-install/bin.js", paths.directory),
+      catch: (cause) =>
+        new DotfilesError("Could not resolve Frida's prebuilt addon installer", {
+          cause,
+        }),
+    });
+    yield* runCommand(
+      [
+        process.execPath,
+        installer,
+        "--runtime=napi",
+        "--target=8",
+        "--platform=darwin",
+        `--arch=${process.arch}`,
+      ],
+      { cwd: download, stderr: "inherit" },
+    );
+    binding = join(download, "build/frida_binding.node");
+    if (!(yield* fs.exists(binding)))
+      return yield* Effect.fail(
+        new DotfilesError(
+          "Frida's prebuilt installer did not produce build/frida_binding.node",
+        ),
+      );
+  }
+  const result = yield* Effect.tryPromise({
+    try: () =>
+      Bun.build({
+        entrypoints: [paths.entrypoint],
+        outdir: destination,
+        target: "bun",
+        format: "esm",
+        plugins: [
+          {
+            name: "frida-adjacent-binding",
+            setup(builder) {
+              builder.onResolve({ filter: /^bindings$/ }, (args) =>
+                args.importer === paths.entrypoint
+                  ? { path: "bindings", namespace: "frida-adjacent-binding" }
+                  : undefined,
+              );
+              builder.onLoad(
+                { filter: /.*/, namespace: "frida-adjacent-binding" },
+                () => ({
+                  loader: "js",
+                  contents: [
+                    'import { createRequire } from "node:module";',
+                    'import { join } from "node:path";',
+                    "const require = createRequire(import.meta.url);",
+                    'const binding = join(import.meta.dir, "frida_binding.node");',
+                    "export default () => require(binding);",
+                  ].join("\n"),
+                }),
+              );
+            },
+          },
+        ],
+      }),
+    catch: (cause) =>
+      new DotfilesError("Could not bundle the workstation Frida sidecar", { cause }),
+  });
+  if (!result.success)
+    return yield* Effect.fail(new DotfilesError(result.logs.map(String).join("\n")));
+  yield* fs.copyFile(binding, join(destination, "frida_binding.node"));
+});
+
 const install = Effect.fn("workstation.install")(function* () {
   const fs = yield* FileSystem.FileSystem;
   if (yield* fs.exists("/etc/NIXOS")) return;
@@ -184,9 +276,25 @@ const install = Effect.fn("workstation.install")(function* () {
   const fingerprint = yield* sourceHash();
   if (yield* useImage(fingerprint, bin, executable, stamp)) return;
   yield* fs.makeDirectory(data, { recursive: true });
+  const sidecars = process.platform === "darwin" ? fridaFiles : [];
+  const managed =
+    (yield* entry(executable))?.type === "File" &&
+    (yield* entry(stamp))?.type === "File" &&
+    /^[a-f0-9]{64}$/.test((yield* fs.readFileString(stamp)).trim());
+  let missingSidecar = false;
+  for (const name of sidecars) {
+    const path = join(data, name);
+    const info = yield* entry(path);
+    if (!info) missingSidecar = true;
+    else if (!managed || info.type !== "File")
+      return yield* Effect.fail(
+        new DotfilesError(`Refusing to replace unmanaged workstation sidecar: ${path}`),
+      );
+  }
   if (
     !(yield* fs.exists(executable)) ||
     !(yield* fs.exists(stamp)) ||
+    missingSidecar ||
     (yield* fs.readFileString(stamp)).trim() !== fingerprint
   ) {
     yield* Effect.scoped(
@@ -198,6 +306,9 @@ const install = Effect.fn("workstation.install")(function* () {
         const output = join(temporary, "workstation");
         yield* build(output);
         yield* run([output, "--help"], true);
+        if (process.platform === "darwin") yield* buildFrida(temporary);
+        for (const name of sidecars)
+          yield* fs.rename(join(temporary, name), join(data, name));
         yield* fs.rename(output, executable);
         yield* fs.writeFileString(stamp, `${fingerprint}\n`);
       }),

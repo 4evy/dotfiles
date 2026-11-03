@@ -10,6 +10,7 @@ import { gnomeAccent } from "./desktop/gnome.ts";
 import { jjDiff } from "./jj/diff.ts";
 import { kmsconRefresh } from "./kmscon/refresh.ts";
 import { kmsconTheme } from "./kmscon/theme.ts";
+import { macosAccent } from "./macos/accent.ts";
 import { applyAppearance } from "./macos/appearance.ts";
 import { terminalProfile } from "./macos/terminal.ts";
 import { phoneEnvironment, phoneUsage } from "./phone/config.ts";
@@ -76,10 +77,15 @@ export const commands = {
     usage: "patch|stat LEFT RIGHT DOTFILES_REPOSITORY WIDTH",
     environment: [],
   },
+  "macos-catppuccin-custom-accent": {
+    run: macosAccent,
+    usage: "--install|--uninstall|--status|--watch",
+    environment: ["XDG_DATA_HOME", "XDG_STATE_HOME"],
+  },
   "macos-catppuccin-custom-appearance": {
     run: noArguments(applyAppearance),
     usage: "",
-    environment: [],
+    environment: ["XDG_DATA_HOME", "XDG_STATE_HOME"],
   },
   "phone-mirror": {
     run: phoneMirror,
