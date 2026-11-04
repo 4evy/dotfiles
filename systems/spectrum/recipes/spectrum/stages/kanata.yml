@@ -4,7 +4,7 @@ name: kanata
 # Use the final image's Fedora release and runtime libraries.
 from: ${BASE_IMAGE}
 modules:
-  # Install build dependencies before copying changing source inputs
+  # Keep the Fedora toolchain layer independent of changing source inputs
   - type: dnf@v1
     source: ghcr.io/blue-build/modules/dnf:v1@sha256:e6cffa08197dc55f2cdc9f596e5bae6af4dc82e8a33884ff5a4edccc251b0218
     install:
@@ -19,22 +19,14 @@ modules:
         - rust
         - systemd-devel
 
-  - type: copy@v1
-    src: systems/spectrum/recipes/spectrum/sources/kanata.json
-    dest: /src/sources.json
-
-  - type: copy@v1
-    src: systems/spectrum/recipes/spectrum/sources/patches.json
-    dest: /src/patches.json
-
-  - type: copy@v1
-    src: packages/kanata/build.sh
-    dest: /src/build-kanata.sh
-
+  # Bind only these inputs so unrelated context edits preserve the compile cache
   - type: containerfile
     snippets:
       - |-
         RUN \
+          --mount=type=bind,src=systems/spectrum/recipes/spectrum/sources/kanata.json,target=/src/sources.json,Z \
+          --mount=type=bind,src=systems/spectrum/recipes/spectrum/sources/patches.json,target=/src/patches.json,Z \
+          --mount=type=bind,src=packages/kanata/build.sh,target=/src/build-kanata.sh,Z \
           --mount=type=cache,id=spectrum-kanata-cargo-registry-v1,sharing=locked,target=/root/.cargo/registry \
           --mount=type=cache,id=spectrum-kanata-cargo-git-v1,sharing=locked,target=/root/.cargo/git \
           --mount=type=cache,id=spectrum-kanata-target-v1,sharing=locked,target=/build/kanata-source/target \

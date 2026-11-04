@@ -1,82 +1,14 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/module-list-v1.json
 modules:
-  # Builder outputs and repository-local configuration deliberately follow
-  # remote-heavy modules. Changes here invalidate only this assembly tail.
-  - type: containerfile
-    snippets:
-      - COPY --from=ghcr.io/blue-build/cli:main-installer@sha256:82cc067df83d8ce51b045aaa8dfce33c99603b51be18355e3523ef09c8820068 /out/bluebuild /usr/bin/bluebuild
-
+  # Local edits invalidate one assembly layer after the remote-heavy modules
   - type: copy@v1
-    from: workstation
-    src: /out/usr
-    dest: /usr
-
-  - type: copy@v1
-    from: ghostty
-    src: /out/usr
-    dest: /usr
-
-  - type: copy@v1
-    from: hyper-window-tiling
-    src: /src/tools/tiling/gnome/metadata.json
-    dest: /usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/metadata.json
-
-  - type: copy@v1
-    from: hyper-window-tiling
-    src: /src/tools/tiling/dist/gnome/extension.js
-    dest: /usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/extension.js
-
-  - type: copy@v1
-    from: hyper-window-tiling
-    src: /src/tools/tiling/dist/gnome/schemas/org.gnome.shell.extensions.hyper-window-tiling.gschema.xml
-    dest: /usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/schemas/org.gnome.shell.extensions.hyper-window-tiling.gschema.xml
-
-  - type: copy@v1
-    from: hyper-window-tiling
-    src: /src/tools/tiling/kde/metadata.json
-    dest: /usr/share/kwin/scripts/hyper-window-tiling/metadata.json
-
-  - type: copy@v1
-    from: hyper-window-tiling
-    src: /src/tools/tiling/dist/kde/contents/code/main.js
-    dest: /usr/share/kwin/scripts/hyper-window-tiling/contents/code/main.js
-
-  - type: copy@v1
-    from: kanata
-    src: /out/usr
-    dest: /usr
-
-  - type: copy@v1
-    src: systems/spectrum/files/system
+    from: spectrum-files
+    src: /out
     dest: /
-
-  - type: copy@v1
-    src: systems/spectrum/recipes/spectrum/sources/system
-    dest: /
-
-  - type: copy@v1
-    src: systems/spectrum/files/selinux
-    dest: /tmp/spectrum-policy-sources
-
-  - type: copy@v1
-    src: packages/solaar/tray.patch
-    dest: /tmp/solaar-no-tray.patch
 
   - type: script@v2
     source: ghcr.io/blue-build/modules/script:v2@sha256:d6076360da9195e2a6d781043a1b049bede3d2389757912a828a957bc78929b8
     snippets:
       - patch --batch --forward -p2 -d "$(/usr/bin/python3 -c 'import importlib.util; from pathlib import Path; print(Path(importlib.util.find_spec("solaar").origin).parent.parent)')" < /tmp/solaar-no-tray.patch
       - rm /tmp/solaar-no-tray.patch
-
-  - type: copy@v1
-    src: packages/kanata/kanata.kbd
-    dest: /usr/libexec/dotfiles/kanata/kanata.kbd
-
-  - type: copy@v1
-    src: home/theme/palette/palette.json
-    dest: /usr/share/dotfiles/catppuccin_custom_palette.json
-
-  - type: copy@v1
-    src: data/rustdesk/options.json
-    dest: /usr/share/dotfiles/rustdesk-options.json

@@ -7,7 +7,7 @@ let
   sourcePin = dotfilesSourcePins.bluebuild-cli;
   src = sourcePin.outPath;
   manifest = lib.importTOML (src + "/Cargo.toml");
-  version = "${manifest.workspace.package.version}-unstable-${lib.substring 0 8 sourcePin.revision}";
+  version = manifest.workspace.package.version;
 in
 rustPlatform.buildRustPackage {
   pname = "bluebuild";
@@ -24,6 +24,8 @@ rustPlatform.buildRustPackage {
   '';
 
   cargoLock.lockFile = "${src}/Cargo.lock";
+  # Release sources include these features, but release installers omit them
+  # The recipe therefore installs the all-features main-installer image
   buildFeatures = [
     "bootc"
     "recipe-v2"

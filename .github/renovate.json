@@ -26,9 +26,9 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Track the published BlueBuild main installer digest",
+      "description": "Track the all-features BlueBuild main installer digest, since release installers omit recipe v2 and bootc",
       "managerFilePatterns": [
-        "/^systems\\/spectrum\\/recipes\\/spectrum\\/modules\\/local\\.yml$/"
+        "/^systems\\/spectrum\\/recipes\\/spectrum\\/stages\\/files\\.yml$/"
       ],
       "matchStrings": [
         "COPY --from=(?<depName>ghcr\\.io/blue-build/cli):(?<currentValue>main-installer)@(?<currentDigest>sha256:[a-f0-9]+)"
@@ -38,16 +38,13 @@
     },
     {
       "customType": "regex",
-      "description": "Follow BlueBuild CLI main commits for the feature-gated recipe v2 build",
+      "description": "Track BlueBuild CLI releases for the explicitly feature-enabled Nix build",
       "managerFilePatterns": ["/^flake\\.nix$/"],
       "matchStrings": [
-        "url = \"github:blue-build/cli/(?<currentDigest>[a-f0-9]{40})\";"
+        "url = \"github:blue-build/cli/(?<currentValue>v[^\"/]+)\";"
       ],
       "depNameTemplate": "blue-build/cli",
-      "packageNameTemplate": "https://github.com/blue-build/cli",
-      "datasourceTemplate": "git-refs",
-      "currentValueTemplate": "main",
-      "versioningTemplate": "exact"
+      "datasourceTemplate": "github-releases"
     },
     {
       "customType": "regex",

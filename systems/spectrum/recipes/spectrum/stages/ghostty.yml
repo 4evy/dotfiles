@@ -4,7 +4,7 @@ name: ghostty
 # Use the final image's Fedora release and runtime libraries.
 from: ${BASE_IMAGE}
 modules:
-  # Install build dependencies before copying changing source inputs
+  # Keep the Fedora toolchain layer independent of changing source inputs
   - type: dnf@v1
     source: ghcr.io/blue-build/modules/dnf:v1@sha256:e6cffa08197dc55f2cdc9f596e5bae6af4dc82e8a33884ff5a4edccc251b0218
     install:
@@ -36,80 +36,14 @@ modules:
         - tar
         - xz
 
-  - type: copy@v1
-    from: docker.io/oven/bun:1.4.4@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d
-    src: /usr/local/bin/bun
-    dest: /usr/local/bin/bun
-
-  # Resolve the same runtime dependencies as repository entrypoints
-  - type: copy@v1
-    src: package.json
-    dest: /src/package.json
-
-  - type: copy@v1
-    src: bun.lock
-    dest: /src/bun.lock
-
-  - type: copy@v1
-    src: home/package.json
-    dest: /src/home/package.json
-
-  - type: copy@v1
-    src: lib/typescript/package.json
-    dest: /src/lib/typescript/package.json
-
-  - type: copy@v1
-    src: home/files/.local/lib/package.json
-    dest: /src/home/files/.local/lib/package.json
-
-  - type: copy@v1
-    src: tools/workstation/package.json
-    dest: /src/tools/workstation/package.json
-
-  - type: copy@v1
-    src: tools/tiling/package.json
-    dest: /src/tools/tiling/package.json
-
-  - type: containerfile
-    snippets:
-      - RUN cd /src && bun install --frozen-lockfile --production --ignore-scripts
-
-  - type: copy@v1
-    src: lib/typescript
-    dest: /src/lib/typescript
-
-  - type: copy@v1
-    src: home/files/.local/lib/typescript/process.ts
-    dest: /src/home/files/.local/lib/typescript/process.ts
-
-  # Keep Ghostty's source inputs independent from unrelated flake updates
-  - type: copy@v1
-    src: systems/spectrum/recipes/spectrum/sources/ghostty.json
-    dest: /src/sources.json
-
-  - type: copy@v1
-    src: systems/spectrum/recipes/spectrum/sources/patches.json
-    dest: /src/patches.json
-
-  - type: copy@v1
-    src: packages/ghostty/build.sh
-    dest: /src/build-ghostty.sh
-
-  - type: copy@v1
-    src: packages/ghostty/source/source.ts
-    dest: /src/packages/ghostty/source/source.ts
-
-  - type: copy@v1
-    src: packages/ghostty/source/download.ts
-    dest: /src/packages/ghostty/source/download.ts
-
-  # BlueBuild's package-manager mounts cache the toolchain install above. The
-  # built-in Containerfile module adds compiler-specific caches as well, so a
-  # source or patch update can reuse unchanged Zig compilation artifacts.
+  # Mount the lightweight input stage instead of committing a Fedora layer for
+  # every helper, manifest, and lock. Only the compiled output enters this layer
   - type: containerfile
     snippets:
       - |-
         RUN \
+          --mount=type=bind,from=ghostty-source,src=/src,target=/src \
+          --mount=type=bind,from=ghostty-source,src=/usr/local/bin/bun,target=/usr/local/bin/bun \
           --mount=type=cache,id=spectrum-ghostty-zig-global-v1,sharing=locked,target=/build/zig-cache \
           --mount=type=cache,id=spectrum-ghostty-zig-local-v1,sharing=locked,target=/build/source/.zig-cache \
           SOURCE_LOCK=/src/sources.json \

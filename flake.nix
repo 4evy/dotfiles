@@ -148,7 +148,7 @@
 
     source-bluebuild-cli = {
       flake = false;
-      url = "github:blue-build/cli/c7430ddfcf449830372b829a3f80ef215622d0c8";
+      url = "github:blue-build/cli/v0.9.41";
     };
 
     source-ghostty-zig-aarch64-linux = {

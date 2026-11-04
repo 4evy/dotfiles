@@ -17,6 +17,9 @@ runs:
 
     - name: Maximize Build Space
       uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
+      with:
+        # Apt removals are slow and fail when runner images drop a package
+        remove-large-packages: "false"
 
     - name: Install uv
       uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
@@ -58,8 +61,37 @@ runs:
           --certificate-identity-regexp='^https://github.com/projectbluefin/(bluefin|actions)/\.github/workflows/.*' \
           "$locked_ref"
 
+    # Archive the small runtime closures together instead of making hundreds
+    # of per-path requests to the rate-limited GitHub Nix cache
+    - name: Restore Feature-Gated Tooling Cache
+      id: tooling-cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/spectrum-tooling-cache
+        key: >-
+          spectrum-tooling-v1-${{ runner.os }}-${{ runner.arch }}-${{
+          hashFiles('flake.nix', 'flake.lock', 'packages/bluebuild/**',
+          'nix/**/*.nix', 'lib/**/*.nix') }}
+        restore-keys: |
+          spectrum-tooling-v1-${{ runner.os }}-${{ runner.arch }}-
+
+    - name: Restore Tooling Closure
+      env:
+        TOOLING_CACHE: ${{ runner.temp }}/spectrum-tooling-cache
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [[ -f "$TOOLING_CACHE/roots" ]]; then
+          mapfile -t roots <"$TOOLING_CACHE/roots"
+          # Only import closures produced by this repository's cache
+          nix copy --from "file://$TOOLING_CACHE" --no-check-sigs "${roots[@]}"
+        fi
+
     - name: Build Feature-Gated Tooling
       id: tools
+      env:
+        TOOLING_CACHE: ${{ runner.temp }}/spectrum-tooling-cache
+        TOOLING_CACHE_HIT: ${{ steps.tooling-cache.outputs.cache-hit }}
       shell: bash
       run: |
         set -euo pipefail
@@ -70,6 +102,21 @@ runs:
         "$bluebuild" --version
         echo "bluebuild=$bluebuild" >>"$GITHUB_OUTPUT"
         echo "validator=$validator" >>"$GITHUB_OUTPUT"
+        if [[ "$TOOLING_CACHE_HIT" != true ]]; then
+          # Replace old closures restored by the fallback key
+          rm -rf "$TOOLING_CACHE"
+          nix copy --to "file://$TOOLING_CACHE?compression=zstd" \
+            "$bluebuild_store" "$validator_store"
+          printf '%s\n' "$bluebuild_store" "$validator_store" >"$TOOLING_CACHE/roots"
+        fi
+
+    # Save before image generation/build so their failures do not lose tooling
+    - name: Save Feature-Gated Tooling Cache
+      if: steps.tooling-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/spectrum-tooling-cache
+        key: ${{ steps.tooling-cache.outputs.cache-primary-key }}
 
     - name: Generate and Validate Containerfile
       env:

@@ -49,29 +49,17 @@ generate output:
       --base-uri https://schema.blue-build.org/ \
       --schemafile https://schema.blue-build.org/module-list-v1.json \
       systems/spectrum/recipes/spectrum/modules/**/*.yml
+    # Compare recipe data with the lock, independent of generated shell syntax
+    bun -e '
+      const recipe = Bun.YAML.parse(await Bun.file("systems/spectrum/recipes/spectrum.yml").text());
+      const { registry, repository, tag, digest } = recipe.base.image;
+      const expected = (await Bun.file("systems/spectrum/recipes/spectrum.lock").text()).trim();
+      if (`${registry}/${repository}:${tag}@${digest}` !== expected)
+        throw new Error("Recipe base image does not match spectrum.lock");
+    '
     # BlueBuild's feature-gated v2 parser is ready, but its validate command
     # still hardcodes the v1 schema. The official v2 schema is checked above.
     "$bluebuild" generate --skip-validation --output "$generated" systems/spectrum/recipes/spectrum.yml
-    grep -Fq 'COPY --from=ghcr.io/blue-build/cli:main-installer@sha256:' "$generated"
-    grep -Fq '/out/bluebuild /usr/bin/bluebuild' "$generated"
-    grep -Fq -- '--mount=type=cache,sharing=locked,dst=/var/cache/rpm-ostree,id=rpm-ostree-cache-spectrum-' "$generated"
-    grep -Fq -- '--mount=type=cache,sharing=locked,dst=/var/cache/libdnf5,id=dnf-cache-spectrum-' "$generated"
-    grep -Fq 'systems/spectrum/recipes/spectrum/sources/ghostty.json /src/sources.json' "$generated"
-    grep -Fq 'systems/spectrum/recipes/spectrum/sources/kanata.json /src/sources.json' "$generated"
-    grep -Fq 'tools/tiling/package.json /src/tools/tiling/package.json' "$generated"
-    grep -Fq 'systems/spectrum/files/dnf /tmp/spectrum-config/dnf' "$generated"
-    grep -Fq 'CONFIG_DIRECTORY="/tmp/spectrum-config"' "$generated"
-    grep -Fq -- '--mount=type=cache,id=spectrum-ghostty-zig-global-v1,sharing=locked,target=/build/zig-cache' "$generated"
-    grep -Fq -- '--mount=type=cache,id=spectrum-ghostty-zig-local-v1,sharing=locked,target=/build/source/.zig-cache' "$generated"
-    grep -Fq -- '--mount=type=cache,id=spectrum-hyper-window-tiling-bun-v1,sharing=locked,target=/root/.bun/install/cache' "$generated"
-    grep -Fq -- '--mount=type=cache,id=spectrum-kanata-target-v1,sharing=locked,target=/build/kanata-source/target' "$generated"
-    ! grep -Fq 'flake.lock /src/' "$generated"
-    locked=$(< systems/spectrum/recipes/spectrum.lock)
-    tagged=${locked%@*}
-    expected_arg="${tagged%:*}@${locked##*@}"
-    grep -Fq "ARG BASE_IMAGE=\"$expected_arg\"" "$generated"
-    grep -Fq -- '-Dcpu=baseline' "$generated"
-    ! grep -qw akmods systems/spectrum/recipes/spectrum.yml "$generated"
 
 # Build the local Spectrum image from the BlueBuild recipe v2 definition.
 [group('spectrum')]

@@ -10,6 +10,22 @@ retain their native `etc/` and `usr/` structure under `files/system/`.
 Repository definitions live in `files/dnf/` and are staged under the DNF
 module's `CONFIG_DIRECTORY` before native repository installation and cleanup.
 
+Ghostty's helper files and Bun dependencies live in the lightweight
+[`ghostty-source` stage](recipes/spectrum/stages/ghostty-source.yml). Its Fedora
+compiler stage mounts that tree read-only. Kanata similarly mounts only its
+source locks and build script. Keep changing inputs out of heavyweight
+filesystem layers.
+
+The [`spectrum-files` stage](recipes/spectrum/stages/files.yml) assembles builder
+outputs and local configuration under `/out`. The final image copies that tree
+once, after remote software installation. Add local image resources there
+rather than adding another final-image `COPY`.
+
+CI caches the pinned CLI and validator as one Nix binary-cache archive. It saves
+that archive before generating or building the image, so a later failure does
+not discard the tooling. The first run after a tooling change still builds
+uncached outputs.
+
 - Use bootc for image updates so `/usr/lib/bootc/kargs.d` arguments apply.
 - Keep Bluefin's bundled Homebrew setup. The BlueBuild `brew` module replaces
   its payload and services. Brew updates here are manual: `just update`.
@@ -17,6 +33,9 @@ module's `CONFIG_DIRECTORY` before native repository installation and cleanup.
   silently run a different implementation than the recipe names.
 - Use `script@v2` for multiline snippets. Version 1 splits them into separate
   commands, breaking heredocs and shell control flow.
+- The Nix package tracks released CLI sources with `bootc` and `recipe-v2`
+  enabled. Upstream release installers omit those features, so the image
+  deliberately retains a digest-pinned `main-installer` instead.
 - Validate with `just spectrum validate`: the CLI validator selects the v1
   schema, but these recipes use v2.
   The packaged CLI forwards `switch --skip-validation` to its internal generator

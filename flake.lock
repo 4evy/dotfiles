@@ -605,8 +605,8 @@
       },
       "original": {
         "owner": "blue-build",
+        "ref": "v0.9.41",
         "repo": "cli",
-        "rev": "c7430ddfcf449830372b829a3f80ef215622d0c8",
         "type": "github"
       }
     },
