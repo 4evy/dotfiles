@@ -65,9 +65,18 @@ let
               (
                 _pyFinal: pyPrev:
                 let
-                  inherit (pyPrev) i3ipc tkinter;
+                  inherit (pyPrev) exceptiongroup i3ipc tkinter;
                 in
                 {
+                  # CPython 3.15 changed hint wording, not exception behavior
+                  exceptiongroup = exceptiongroup.overridePythonAttrs (
+                    old:
+                    lib.optionalAttrs (pyPrev.python.pythonVersion == "3.15") {
+                      patches = (old.patches or [ ]) ++ [
+                        ../../../packages/toshy/runtime/exceptiongroup/remove-nameerror-wording-test.patch
+                      ];
+                    }
+                  );
                   # Python 3.15's Tk tests need libregrtest to initialize resources
                   tkinter = tkinter.overridePythonAttrs (
                     old:

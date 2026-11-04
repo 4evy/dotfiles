@@ -1,0 +1,27 @@
+diff --git a/tests/test_formatting.py b/tests/test_formatting.py
+--- a/tests/test_formatting.py
++++ b/tests/test_formatting.py
+@@ -525,23 +525,0 @@
+-@pytest.mark.skipif(
+-    not hasattr(AttributeError, "name") or sys.version_info[:2] == (3, 11),
+-    reason="only works if AttributeError exposes the missing name",
+-)
+-def test_nameerror_suggestions_in_group(
+-    patched: bool, monkeypatch: MonkeyPatch, capsys: CaptureFixture
+-) -> None:
+-    if not patched:
+-        # Block monkey patching, then force the module to be re-imported
+-        del sys.modules["traceback"]
+-        del sys.modules["exceptiongroup"]
+-        del sys.modules["exceptiongroup._formatting"]
+-        monkeypatch.setattr(sys, "excepthook", lambda *args: sys.__excepthook__(*args))
+-
+-    from exceptiongroup import print_exception
+-
+-    try:
+-        [].attend
+-    except AttributeError as e:
+-        eg = ExceptionGroup("a", [e])
+-        print_exception(eg)
+-        output = capsys.readouterr().err
+-        assert "Did you mean" in output and "'append'?" in output
