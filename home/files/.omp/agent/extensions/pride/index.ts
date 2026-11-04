@@ -57,7 +57,7 @@ export default function pride(pi: ExtensionAPI) {
     updateWidget(ctx);
   };
   pi.registerCommand("pride", {
-    description: "Toggle animated pride flags",
+    description: "Toggle waving pride flags and twinkling stardust",
     // The command API requires a Promise at this native SDK callback boundary
     handler: (_args, ctx) =>
       Effect.runPromise(

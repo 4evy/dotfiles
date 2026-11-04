@@ -1,24 +1,11 @@
-import type { ThemeColor } from "@oh-my-pi/pi-tui/theme";
+import { getTerminalBackgroundColor } from "@oh-my-pi/pi-tui/terminal-capabilities";
+import type { Theme, ThemeColor } from "@oh-my-pi/pi-tui/theme";
 import { bgAnsi, fgAnsi } from "@oh-my-pi/pi-tui/theme/color";
 
-export type Rows<T = string> = readonly [T, T, T, T];
+type Rows = readonly [string, string, string, string];
 type Pixels = readonly [Rows, Rows, Rows];
-export const ROW_INDICES = [0, 1, 2, 3] as const;
-
 export const FULL_TURN = 2 * Math.PI;
-const FLAG_COLUMNS = 6;
-const HALF_CELLS_PER_ROW = 2;
-const CENTER_OFFSET = 1;
-
-// First two positive roots of cosh(beta) * cos(beta) = -1 for a clamped-free beam
-const FIRST_MODE_ROOT = 1.875104068711961;
-const SECOND_MODE_ROOT = 4.694091132974175;
-
-// Visual tuning: relative ripple amplitude and inter-flag phase spacing in radians
-const RIPPLE_WEIGHT = 0.6;
 export const FLAG_PHASE_SPACING = 1.2;
-
-// Strength is measured in half-cells; period is measured in seconds
 export const MOTION = {
   idle: { strength: 0.65, periodSeconds: 7 },
   waiting: { strength: 0.95, periodSeconds: 3.5 },
@@ -26,8 +13,17 @@ export const MOTION = {
   working: { strength: 1.45, periodSeconds: 1 },
 } as const;
 export type Activity = keyof typeof MOTION;
+export const TWINKLE_SECONDS = 4.5;
+export const WIDGET_COLUMNS = 26;
+const FLAG_COLUMNS = 6;
+const WIDGET_ROWS = 5;
+const STAR_FADE_COLUMNS = 3;
 
-// Precompute cantilever mode shapes once, not on animation ticks
+const FIRST_MODE_ROOT = 1.875104068711961;
+const SECOND_MODE_ROOT = 4.694091132974175;
+const RIPPLE_WEIGHT = 0.6;
+
+// Original clamped-free beam modes, precomputed outside animation ticks
 // Tosi & Colonius, eqs 27–28: https://arxiv.org/abs/1903.03298
 // Modal flag reconstruction: https://arxiv.org/abs/2602.06237 (section 3.2)
 const WAVE_COLUMNS = (() => {
@@ -59,8 +55,8 @@ function flagPixels(stripes: readonly string[]): Pixels {
     background: bgAnsi(color, "truecolor"),
   }));
   const pixel = (offset: number, row: number) => {
-    const top = colors[row * HALF_CELLS_PER_ROW - offset];
-    const bottom = colors[row * HALF_CELLS_PER_ROW + 1 - offset];
+    const top = colors[row * 2 - offset];
+    const bottom = colors[row * 2 + 1 - offset];
     if (top && bottom) return `${top.foreground}${bottom.background}▀\x1b[0m`;
     if (top) return `${top.foreground}▀\x1b[0m`;
     if (bottom) return `${bottom.foreground}▄\x1b[0m`;
@@ -72,48 +68,15 @@ function flagPixels(stripes: readonly string[]): Pixels {
     pixel(offset, 2),
     pixel(offset, 3),
   ];
-  return [rows(0), rows(CENTER_OFFSET), rows(2 * CENTER_OFFSET)];
+  return [rows(0), rows(1), rows(2)];
 }
 
-type Decoration = readonly [color: ThemeColor, glyph: string];
-
-// Decorations specify the top and bottom row; middle rows keep the same spacing
-const FLAGS = [
-  {
-    name: "Trans",
-    stripes: ["#5bcefa", "#f5a9b8", "#ffffff", "#f5a9b8", "#5bcefa"],
-    decorations: [["statusLinePath", "✧"], undefined, undefined, ["accent", "·"]],
-  },
-  {
-    name: "bisexual",
-    stripes: ["#d60270", "#d60270", "#9b4f96", "#0038a8", "#0038a8"],
-    decorations: [["accent", "✦"], undefined, undefined, ["syntaxKeyword", "⋆"]],
-  },
-  {
-    name: "rainbow",
-    stripes: ["#e40303", "#ff8c00", "#ffed00", "#008026", "#004dff", "#750787"],
-    decorations: [["warning", "⋆"], undefined, undefined, ["statusLinePath", "✧"]],
-  },
-] as const satisfies readonly {
-  name: string;
-  stripes: readonly `#${string}`[];
-  decorations: Rows<Decoration | undefined>;
-}[];
-export const RENDERED_FLAGS = FLAGS.map(({ stripes, decorations }) => ({
-  pixels: flagPixels(stripes),
-  decorations,
-}));
-export const FLAG_NAMES = new Intl.ListFormat("en", {
-  style: "long",
-  type: "conjunction",
-}).format(FLAGS.map(({ name }) => name));
-// Four-column prefixes, one-column gaps, and the final three-column decoration
-export const WIDGET_COLUMNS = FLAGS.length * (FLAG_COLUMNS + 4) + FLAGS.length - 1 + 3;
-
-// The clamped edge stays still; phase-shifted bending modes ripple toward the tip The
-// sampled envelope is at most one, keeping all stripes in four fixed rows
-export function wave(pixels: Pixels, phase: number, strength: number): Rows {
-  const rows: [...Rows] = ["", "", "", ""];
+function wave(
+  pixels: Pixels,
+  phase: number,
+  strength: number,
+): readonly [string[], string[], string[], string[]] {
+  const rows: [string[], string[], string[], string[]] = [[], [], [], []];
   const bend = Math.sin(phase) * strength;
   const ripple = Math.cos(phase) * strength;
   for (const shape of WAVE_COLUMNS) {
@@ -121,10 +84,165 @@ export function wave(pixels: Pixels, phase: number, strength: number): Rows {
     const displacement = Math.round(bend * shape.bend + ripple * shape.ripple);
     const [top, upper, lower, bottom] =
       pixels[displacement < 0 ? 0 : displacement > 0 ? 2 : 1];
-    rows[0] += top;
-    rows[1] += upper;
-    rows[2] += lower;
-    rows[3] += bottom;
+    rows[0].push(top);
+    rows[1].push(upper);
+    rows[2].push(lower);
+    rows[3].push(bottom);
   }
   return rows;
+}
+
+const FLAGS = [
+  {
+    name: "Trans",
+    stripes: ["#5bcefa", "#f5a9b8", "#ffffff", "#f5a9b8", "#5bcefa"],
+  },
+  {
+    name: "bisexual",
+    stripes: ["#d60270", "#d60270", "#9b4f96", "#0038a8", "#0038a8"],
+  },
+] as const;
+
+export const FLAG_NAMES = new Intl.ListFormat("en", {
+  style: "long",
+  type: "conjunction",
+}).format(FLAGS.map(({ name }) => name));
+
+const PATCHES = FLAGS.map(({ stripes }, index) => ({
+  column: 3 + index * 10,
+  pixels: flagPixels(stripes),
+}));
+
+// Stars blend into the reported terminal background across the final columns
+// Brighter stars grow from a dot into a sparkle, with staggered phases
+const STARS = [
+  [1, 0, "✧", "statusLinePath", 0.2],
+  [5, 0, "⠂", "dim", 0],
+  [9, 0, "·", "dim", 0],
+  [11, 0, "✦", "accent", 3.8],
+  [14, 0, "·", "dim", 0],
+  [16, 0, "✦", "accent", 2.2],
+  [20, 0, "·", "dim", 0],
+  [23, 0, "⠂", "dim", 0],
+  [0, 1, "⠂", "dim", 0],
+  [10, 1, "✧", "statusLinePath", 1.6],
+  [21, 1, "✧", "statusLinePath", 1],
+  [1, 2, "✦", "syntaxKeyword", 4.6],
+  [11, 2, "⠄", "dim", 0],
+  [24, 2, "⠁", "dim", 0],
+  [0, 3, "·", "dim", 0],
+  [10, 3, "⠈", "dim", 0],
+  [22, 3, "✦", "syntaxKeyword", 3.5],
+  [1, 4, "✦", "accent", 2.5],
+  [9, 4, "⠂", "dim", 0],
+  [11, 4, "✦", "syntaxKeyword", 0.7],
+  [13, 4, "✦", "syntaxKeyword", 2.7],
+  [17, 4, "·", "dim", 0],
+  [20, 4, "⠄", "dim", 0],
+] as const satisfies readonly [
+  column: number,
+  row: number,
+  glyph: string,
+  color: ThemeColor,
+  phase: number,
+][];
+
+const LAYOUT = Array.from({ length: WIDGET_ROWS }, (_, row) => ({
+  row,
+  stars: STARS.filter((star) => star[1] === row),
+}));
+
+type StarRow = {
+  row: number;
+  stars: {
+    column: number;
+    glyph: string;
+    offset: number;
+    dim: boolean;
+    colors: readonly [string, string, string];
+  }[];
+};
+
+function fadeAnsi(
+  theme: Theme,
+  color: ThemeColor,
+  background: number,
+  opacity: number,
+): string {
+  const hex = theme.getColorHex(color).slice(1);
+  const foreground = Number.parseInt(
+    hex.length === 3 ? [...hex].map((digit) => digit + digit).join("") : hex,
+    16,
+  );
+  const channels = [16, 8, 0].map((shift) => {
+    const base = (background >>> shift) & 255;
+    return Math.round(base + (((foreground >>> shift) & 255) - base) * opacity);
+  });
+  return `\x1b[38;2;${channels.join(";")}m`;
+}
+
+function prepareStarfield(theme: Theme, background: number): StarRow[] {
+  return LAYOUT.map(({ row, stars }) => ({
+    row,
+    stars: stars.map(([column, , glyph, color, offset]) => {
+      const fadeStart = WIDGET_COLUMNS - 1 - STAR_FADE_COLUMNS;
+      const progress = Math.max(
+        0,
+        Math.min(1, (column - fadeStart) / STAR_FADE_COLUMNS),
+      );
+      const opacity = 1 - progress * progress * (3 - 2 * progress);
+      return {
+        column,
+        glyph,
+        offset,
+        dim: color === "dim",
+        colors: [
+          fadeAnsi(theme, "dim", background, opacity),
+          fadeAnsi(theme, "muted", background, opacity),
+          fadeAnsi(theme, color, background, opacity),
+        ],
+      };
+    }),
+  }));
+}
+
+const STAR_FIELDS = new WeakMap<Theme, { background: number; rows: StarRow[] }>();
+
+export function renderBanner(
+  theme: Theme,
+  starPhase: number,
+  flagPhase: number,
+  strength: number,
+): string {
+  const background = getTerminalBackgroundColor();
+  let field = STAR_FIELDS.get(theme);
+  if (!field || field.background !== background) {
+    field = { background, rows: prepareStarfield(theme, background) };
+    STAR_FIELDS.set(theme, field);
+  }
+  const flagRows = PATCHES.map((patch, index) =>
+    wave(patch.pixels, flagPhase + index * FLAG_PHASE_SPACING, strength),
+  );
+  return field.rows
+    .map(({ row, stars }) => {
+      const cells = Array<string>(WIDGET_COLUMNS).fill(" ");
+      for (const { column, glyph, offset, dim, colors } of stars) {
+        const brightness = dim ? 0 : (1 + Math.sin(starPhase + offset)) / 2;
+        const level = brightness > 0.8 ? 2 : brightness > 0.4 ? 1 : 0;
+        const shape = dim || level === 2 ? glyph : level === 1 ? "⋆" : "·";
+        cells[column] = `${colors[level]}${shape}\x1b[39m`;
+      }
+      if (row > 0) {
+        for (const [index, patch] of PATCHES.entries()) {
+          const pixels = flagRows[index]?.[row - 1];
+          if (!pixels) continue;
+          // Transparent cells reveal stardust below or beside a lifted flag
+          for (const [column, pixel] of pixels.entries()) {
+            if (pixel !== " ") cells[patch.column + column] = pixel;
+          }
+        }
+      }
+      return cells.join("");
+    })
+    .join("\n");
 }

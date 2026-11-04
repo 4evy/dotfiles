@@ -6,18 +6,15 @@ import {
   Text,
   type TUI,
 } from "@oh-my-pi/pi-tui";
-import { Effect, Fiber } from "effect";
+import { Effect, Fiber, Schedule } from "effect";
 import {
   type Activity,
   FLAG_NAMES,
-  FLAG_PHASE_SPACING,
   FULL_TURN,
   MOTION,
-  RENDERED_FLAGS,
-  ROW_INDICES,
-  type Rows,
+  renderBanner,
+  TWINKLE_SECONDS,
   WIDGET_COLUMNS,
-  wave,
 } from "./flags";
 
 const MS_PER_SECOND = 1000;
@@ -31,6 +28,7 @@ export class PrideFlags extends Text {
   readonly activity: (now: number) => Activity;
   #lastTick = performance.now();
   #phase = 0;
+  #starPhase = 0;
   #strength: number = MOTION.idle.strength;
   #speed = FULL_TURN / MOTION.idle.periodSeconds;
   #activity: Activity = "idle";
@@ -46,12 +44,10 @@ export class PrideFlags extends Text {
     this.tick();
     // The SDK owns construction/disposal, so these are runtime boundaries
     this.#animation = Effect.runFork(
-      Effect.gen({ self: this }, function* () {
-        while (true) {
-          yield* Effect.sleep(TICK_MS);
-          yield* Effect.sync(() => this.tick());
-        }
-      }),
+      Effect.sync(() => this.tick()).pipe(
+        Effect.schedule(Schedule.spaced(TICK_MS)),
+        Effect.asVoid,
+      ),
     );
   }
 
@@ -61,9 +57,7 @@ export class PrideFlags extends Text {
     const elapsed = (now - this.#lastTick) / MS_PER_SECOND;
     this.#lastTick = now;
     const previous = this.#activity;
-    // Use the closed-form relaxation and its speed integral so phase does not depend
-    // on tick cadence. Advance using the previous target, which governed the elapsed
-    // interval
+    // Integrate the original wave relaxation independently of timer cadence
     const motion = MOTION[previous];
     const targetSpeed = FULL_TURN / motion.periodSeconds;
     const blend = -Math.expm1(-elapsed / RESPONSE_SECONDS);
@@ -71,6 +65,9 @@ export class PrideFlags extends Text {
       const advance =
         targetSpeed * elapsed + (this.#speed - targetSpeed) * RESPONSE_SECONDS * blend;
       this.#phase = (this.#phase + advance) % FULL_TURN;
+      // Star twinkle keeps its own gentle cadence through activity changes
+      this.#starPhase =
+        (this.#starPhase + (elapsed * FULL_TURN) / TWINKLE_SECONDS) % FULL_TURN;
     }
     this.#strength += (motion.strength - this.#strength) * blend;
     this.#speed += (targetSpeed - this.#speed) * blend;
@@ -81,24 +78,14 @@ export class PrideFlags extends Text {
   }
 
   #paint(): boolean {
-    const phase = this.#reduceMotion ? 0 : this.#phase;
-    const strength = this.#reduceMotion ? 0 : this.#strength;
-    const theme = this.ctx.ui.theme;
-    const rows: [...Rows] = ["", "", "", ""];
-    let index = 0;
-    for (const flag of RENDERED_FLAGS) {
-      const pixels = wave(flag.pixels, phase + index * FLAG_PHASE_SPACING, strength);
-      for (const row of ROW_INDICES) {
-        const decoration = flag.decorations[row];
-        const prefix = decoration
-          ? ` ${theme.fg(decoration[0], decoration[1])}  `
-          : "    ";
-        rows[row] += `${index ? " " : ""}${prefix}${pixels[row]}`;
-      }
-      index++;
-    }
-    rows[3] += `  ${theme.fg("accent", "·")}`;
-    return this.setText(rows.join("\n"));
+    return this.setText(
+      renderBanner(
+        this.ctx.ui.theme,
+        this.#reduceMotion ? 0 : this.#starPhase,
+        this.#reduceMotion ? 0 : this.#phase,
+        this.#reduceMotion ? 0 : this.#strength,
+      ),
+    );
   }
 
   override invalidate(): void {
