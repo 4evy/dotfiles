@@ -23,7 +23,8 @@ jobs:
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) ||
       (github.event.pull_request.user.type == 'Bot' &&
       contains(fromJSON('[29139614, 41898282, 49699333]'), github.event.pull_request.user.id))
-    runs-on: macos-latest
+    # This only parses the Brewfile, so avoid the capacity-constrained ARM pool
+    runs-on: macos-26-intel
     timeout-minutes: 15
     steps:
       - name: Checkout Repository
