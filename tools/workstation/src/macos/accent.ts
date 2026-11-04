@@ -248,6 +248,84 @@ function watcher(frida: Frida, location: Paths, accent: string) {
     return attachment.cleanup;
   }
 
+  async function loadAgent(process: Process, name: string, attachment: Attachment) {
+    const script = await native((cancellable) =>
+      attachment.session.createScript(
+        agent,
+        { name: "dotfiles-macos-accent" },
+        cancellable,
+      ),
+    );
+    attachment.script = script;
+    script.message.connect((event) => {
+      if (
+        event.type !== frida.MessageType.Error ||
+        attachment.failure ||
+        controller.signal.aborted
+      )
+        return;
+      attachment.failure = message(event.description);
+      report({
+        pid: process.pid,
+        name,
+        status: "error",
+        error: attachment.failure,
+      });
+      attachment.operation?.cancel();
+      // Retained by the attachment so shutdown also awaits runtime failures
+      void clean(process.pid, attachment);
+    });
+    // Do not forward application console output or arbitrary script payloads
+    script.logHandler = () => {};
+    await native((cancellable) => {
+      attachment.operation = cancellable;
+      return script.load(cancellable);
+    });
+    return script;
+  }
+
+  function waitingForAppKit(reason: string | undefined, deadline: number) {
+    return (
+      (reason === "AppKit not loaded" || reason === "AppKit not ready") &&
+      Date.now() < deadline
+    );
+  }
+
+  async function installAgent(attachment: Attachment, script: Script) {
+    const deadline = Date.now() + 10_000;
+    while (!controller.signal.aborted) {
+      if (attachment.failure) throw new Error(attachment.failure);
+      const result = await native((cancellable) => {
+        attachment.operation = cancellable;
+        return (script.exports as AccentAgent).install(accent, cancellable);
+      }, 15_000);
+      if (attachment.failure) throw new Error(attachment.failure);
+      if (result.supported) {
+        if (attachment.session.isDetached())
+          throw new Error("Process detached during accent installation");
+        return result;
+      }
+      // A new GUI process may not have finished initializing AppKit yet
+      if (!waitingForAppKit(result.reason, deadline)) return result;
+      await sleep(500, undefined, { signal: controller.signal });
+    }
+  }
+
+  function reportAttachFailure(
+    process: Process,
+    name: string,
+    attachment: Attachment | undefined,
+    error: unknown,
+  ) {
+    if (!controller.signal.aborted)
+      report({
+        pid: process.pid,
+        name,
+        status: attachment?.failure ? "error" : "unsupported",
+        error: attachment?.failure ?? message(error),
+      });
+  }
+
   async function attach(device: Device, process: Process, name: string) {
     let attachment: Attachment | undefined;
     let installed = false;
@@ -264,75 +342,19 @@ function watcher(frida: Frida, location: Paths, accent: string) {
         )
           report({ pid: process.pid, name, status: "detached", error: reason });
       });
-      const script = await native((cancellable) =>
-        session.createScript(agent, { name: "dotfiles-macos-accent" }, cancellable),
-      );
-      attachment.script = script;
-      const current = attachment;
-      script.message.connect((event) => {
-        if (
-          event.type !== frida.MessageType.Error ||
-          current.failure ||
-          controller.signal.aborted
-        )
-          return;
-        current.failure = message(event.description);
-        report({
-          pid: process.pid,
-          name,
-          status: "error",
-          error: current.failure,
-        });
-        current.operation?.cancel();
-        // Retained by the attachment so shutdown also awaits runtime failures
-        void clean(process.pid, current);
-      });
-      // Do not forward application console output or arbitrary script payloads
-      script.logHandler = () => {};
-      await native((cancellable) => {
-        current.operation = cancellable;
-        return script.load(cancellable);
-      });
-      const deadline = Date.now() + 10_000;
-      while (!controller.signal.aborted) {
-        if (current.failure) throw new Error(current.failure);
-        const result = await native((cancellable) => {
-          current.operation = cancellable;
-          return (script.exports as AccentAgent).install(accent, cancellable);
-        }, 15_000);
-        if (current.failure) throw new Error(current.failure);
-        if (result.supported) {
-          if (session.isDetached())
-            throw new Error("Process detached during accent installation");
-          installed = true;
-          report({ pid: process.pid, name, status: "attached" });
-          break;
-        }
-        // A new GUI process may not have finished initializing AppKit yet
-        if (
-          (result.reason === "AppKit not loaded" ||
-            result.reason === "AppKit not ready") &&
-          Date.now() < deadline
-        ) {
-          await sleep(500, undefined, { signal: controller.signal });
-          continue;
-        }
+      const script = await loadAgent(process, name, attachment);
+      const result = await installAgent(attachment, script);
+      installed = result?.supported ?? false;
+      if (installed) report({ pid: process.pid, name, status: "attached" });
+      else if (result)
         report({
           pid: process.pid,
           name,
           status: "unsupported",
           error: message(result.reason ?? "No supported AppKit hooks"),
         });
-        break;
-      }
     } catch (error) {
-      if (!controller.signal.aborted)
-        report({
-          pid: process.pid,
-          name,
-          status: attachment?.failure ? "error" : "unsupported",
-          error: attachment?.failure ?? message(error),
-        });
+      reportAttachFailure(process, name, attachment, error);
     } finally {
       if (attachment && !installed) await clean(process.pid, attachment);
     }
@@ -340,104 +362,123 @@ function watcher(frida: Frida, location: Paths, accent: string) {
       throw new Error(`Could not detach the failed accent session (${process.pid})`);
   }
 
+  async function claim() {
+    await privateDirectory(location.directory);
+    const previous = await readStatus(location.status);
+    if (previous?.running && alive(previous.supervisorPid))
+      throw new Error(`Accent watcher is already running (${previous.supervisorPid})`);
+    claimed = true;
+    await save(true);
+  }
+
+  async function forgetMissing(processes: Process[]) {
+    const present = new Set(processes.map((process) => process.pid));
+    for (const [pid] of lifetimes) {
+      if (present.has(pid)) continue;
+      const attachment = attachments.get(pid);
+      if (attachment) await clean(pid, attachment);
+      lifetimes.delete(pid);
+      entries.delete(pid);
+    }
+  }
+
+  async function updateApplication(
+    device: Device,
+    process: Process,
+    names: Map<number, string>,
+    username: string,
+  ) {
+    const name = names.get(process.pid);
+    if (process.pid === globalThis.process.pid || !name || !mainApplication(process))
+      return;
+    const owner = process.parameters.user;
+    if (typeof owner === "string" && owner !== username) return;
+    const identity = `${String(process.parameters.started ?? "")}:${String(process.parameters.path)}`;
+    if (lifetimes.get(process.pid) === identity) return;
+    const previousAttachment = attachments.get(process.pid);
+    if (previousAttachment) await clean(process.pid, previousAttachment);
+    lifetimes.set(process.pid, identity);
+    if (owner !== username || typeof process.parameters.started !== "string") {
+      report({
+        pid: process.pid,
+        name,
+        status: "unsupported",
+        error: "Cannot establish same-user process lifetime from Frida metadata",
+      });
+      return;
+    }
+    await attach(device, process, name);
+  }
+
+  async function scanApplications(device: Device, username: string) {
+    const applications = await native((cancellable) =>
+      device.enumerateApplications({ scope: frida.Scope.Metadata }, cancellable),
+    );
+    const processes = await native((cancellable) =>
+      device.enumerateProcesses({ scope: frida.Scope.Full }, cancellable),
+    );
+    const names = new Map(
+      applications.filter((app) => app.pid !== 0).map((app) => [app.pid, app.name]),
+    );
+    await forgetMissing(processes);
+    for (const process of processes) {
+      if (controller.signal.aborted) break;
+      await updateApplication(device, process, names, username);
+    }
+  }
+
+  async function releaseAttachment(pid: number, attachment: Attachment) {
+    const errors = await clean(pid, attachment);
+    const entry = entries.get(pid);
+    if (entry?.status === "attached")
+      entries.set(pid, {
+        ...entry,
+        status: errors.length ? "error" : "detached",
+        ...(errors.length ? { error: errors.join(" — ") } : {}),
+      });
+  }
+
+  async function closeDevice() {
+    if (!deviceOpened) return;
+    try {
+      await native(
+        (cancellable) => frida.getDeviceManager().close(cancellable),
+        2_000,
+        true,
+      );
+    } catch (error) {
+      console.error(`Accent device cleanup: ${message(error)}`);
+    }
+  }
+
+  async function supervise() {
+    try {
+      await claim();
+      deviceOpened = true;
+      const device = await native((cancellable) => frida.getLocalDevice(cancellable));
+      const username = userInfo().username;
+      while (!controller.signal.aborted) {
+        await scanApplications(device, username);
+        await save(true);
+        await sleep(5_000, undefined, { signal: controller.signal });
+      }
+    } catch (error) {
+      if (!controller.signal.aborted) throw error;
+    } finally {
+      // The release effect waits for this path even when its use is interrupted
+      await Promise.all(
+        [...attachments].map(([pid, attachment]) => releaseAttachment(pid, attachment)),
+      );
+      await closeDevice();
+      if (claimed) await save(false);
+    }
+  }
+
   async function watch(signal: AbortSignal) {
     const onAbort = () => stop();
     signal.addEventListener("abort", onAbort, { once: true });
     if (signal.aborted) stop();
-    running = (async () => {
-      try {
-        await privateDirectory(location.directory);
-        const previous = await readStatus(location.status);
-        if (previous?.running && alive(previous.supervisorPid))
-          throw new Error(
-            `Accent watcher is already running (${previous.supervisorPid})`,
-          );
-        claimed = true;
-        await save(true);
-        deviceOpened = true;
-        const device = await native((cancellable) => frida.getLocalDevice(cancellable));
-        const username = userInfo().username;
-        while (!controller.signal.aborted) {
-          const applications = await native((cancellable) =>
-            device.enumerateApplications({ scope: frida.Scope.Metadata }, cancellable),
-          );
-          const processes = await native((cancellable) =>
-            device.enumerateProcesses({ scope: frida.Scope.Full }, cancellable),
-          );
-          const names = new Map(
-            applications
-              .filter((app) => app.pid !== 0)
-              .map((app) => [app.pid, app.name]),
-          );
-          const present = new Set(processes.map((process) => process.pid));
-          for (const [pid] of lifetimes) {
-            if (present.has(pid)) continue;
-            const attachment = attachments.get(pid);
-            if (attachment) await clean(pid, attachment);
-            lifetimes.delete(pid);
-            entries.delete(pid);
-          }
-          for (const process of processes) {
-            if (controller.signal.aborted) break;
-            const name = names.get(process.pid);
-            if (
-              process.pid === globalThis.process.pid ||
-              !name ||
-              !mainApplication(process)
-            )
-              continue;
-            const owner = process.parameters.user;
-            if (typeof owner === "string" && owner !== username) continue;
-            const identity = `${String(process.parameters.started ?? "")}:${String(process.parameters.path)}`;
-            if (lifetimes.get(process.pid) === identity) continue;
-            const previousAttachment = attachments.get(process.pid);
-            if (previousAttachment) await clean(process.pid, previousAttachment);
-            lifetimes.set(process.pid, identity);
-            if (owner !== username || typeof process.parameters.started !== "string") {
-              report({
-                pid: process.pid,
-                name,
-                status: "unsupported",
-                error:
-                  "Cannot establish same-user process lifetime from Frida metadata",
-              });
-              continue;
-            }
-            await attach(device, process, name);
-          }
-          await save(true);
-          await sleep(5_000, undefined, { signal: controller.signal });
-        }
-      } catch (error) {
-        if (!controller.signal.aborted) throw error;
-      } finally {
-        // The release effect waits for this path even when its use is interrupted
-        await Promise.all(
-          [...attachments].map(async ([pid, attachment]) => {
-            const errors = await clean(pid, attachment);
-            const entry = entries.get(pid);
-            if (entry?.status === "attached")
-              entries.set(pid, {
-                ...entry,
-                status: errors.length ? "error" : "detached",
-                ...(errors.length ? { error: errors.join(" — ") } : {}),
-              });
-          }),
-        );
-        if (deviceOpened) {
-          try {
-            await native(
-              (cancellable) => frida.getDeviceManager().close(cancellable),
-              2_000,
-              true,
-            );
-          } catch (error) {
-            console.error(`Accent device cleanup: ${message(error)}`);
-          }
-        }
-        if (claimed) await save(false);
-      }
-    })();
+    running = supervise();
     try {
       await running;
     } finally {
