@@ -4,7 +4,9 @@
 // branches local; retain those guards when upgrading Renovate
 // The no-PR result must retain Renovate's typed outcome, including blocked updates
 module.exports = {
-  gitAuthor: "4evy <git@evy.pink>",
+  // Attribute commits to the Actions bot independently of the push token owner
+  gitAuthor:
+    "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>",
   allowedCommands: ["^bun tools/renovate/artifacts\\.ts$"],
   onboarding: false,
   requireConfig: "required",
