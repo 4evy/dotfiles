@@ -82,21 +82,27 @@ in
     '';
   helix = callPackage (inputs.source-helix + "/default.nix") {
     gitRev = inputs.source-helix.rev;
-    # Match Nixpkgs' fixes for these grammar revisions on glibc 2.44 and GCC 16
-    grammarOverlays = lib.optionals stdenv.hostPlatform.isLinux [
+    grammarOverlays = [
+      (_grammarFinal: grammarPrev: {
+        # Preserve the exact Cylc revision after its original repository vanished
+        cylc = grammarPrev.cylc.overrideAttrs (old: {
+          src = builtins.fetchTree {
+            type = "github";
+            owner = "seanwallawalla";
+            repo = "ElliotFontaine_Tree-Sitter-Cylc";
+            rev = old.version;
+          };
+        });
+      })
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isLinux [
+      # Match Nixpkgs' strict-aliasing workaround for the Haskell grammar on GCC 16
       (
         _grammarFinal: grammarPrev:
         let
-          inherit (grammarPrev) haskell perl;
+          inherit (grammarPrev) haskell;
         in
         {
-          perl = perl.overrideAttrs {
-            postPatch = ''
-              rm src/bsearch.c
-              substituteInPlace src/tsp_unicode.h \
-                --replace-fail '#include "bsearch.c"' ""
-            '';
-          };
           haskell = haskell.overrideAttrs (old: {
             env = (old.env or { }) // {
               NIX_CFLAGS_COMPILE = (old.env.NIX_CFLAGS_COMPILE or "") + " -fno-strict-aliasing";
