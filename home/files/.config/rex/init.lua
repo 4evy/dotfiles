@@ -22,6 +22,7 @@ local secondary_actions = {
 	{ "backspace", "pane.close" },
 	{ "t", "client.tab.new" },
 	{ "n", "client.window.new" },
+	{ "v", "pane.paste" },
 }
 local tab_navigation = {
 	{ "left", "client.tab.previous" },
@@ -45,9 +46,10 @@ local bindings = {
 	{ { "shift+cmd+-", "ctrl+-", "ctrl+shift+-" }, "client.font.decrease" },
 }
 
--- Queue in OMP/Codex and preserve Ghostty's terminal navigation
+-- Forward terminal shortcuts, queue in OMP/Codex, and preserve navigation
 local forwarded_keys = {
 	{ "cmd+c", "ctrl+c" },
+	{ "cmd+v", "ctrl+v" },
 	{ { "cmd+enter", "ctrl+shift+enter" }, "ctrl+shift+enter" },
 	{ { "cmd+left", "ctrl+left" }, "home" },
 	{ { "cmd+right", "ctrl+right" }, "end" },
