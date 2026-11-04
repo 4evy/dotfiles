@@ -7,6 +7,12 @@ rex.action({
 	run = scrollback.open,
 })
 
+rex.action({
+	name = "ignore_key",
+	title = "Ignore Key",
+	run = function() end,
+})
+
 local profiles = {
 	{ primary = "cmd", secondary = "shift+cmd", tabs = "alt+cmd" },
 	{ primary = "ctrl", secondary = "ctrl+shift", tabs = "ctrl+alt" },
@@ -20,6 +26,10 @@ local secondary_actions = {
 local tab_navigation = {
 	{ "left", "client.tab.previous" },
 	{ "right", "client.tab.next" },
+}
+local prefix_actions = {
+	{ "t", "client.tab.new" },
+	{ "s>e", "edit_scrollback" },
 }
 
 -- Exceptions and aliases that differ between the Cmd and Ctrl profiles
@@ -68,6 +78,7 @@ for _, profile in ipairs(profiles) do
 	end
 	bind(profile.primary .. "+0", "client.font.reset")
 	bind(profile.primary .. "+,", "client.config.reload")
+	bind(profile.primary .. "+t", "ignore_key")
 
 	for _, binding in ipairs(secondary_actions) do
 		bind(profile.secondary .. "+" .. binding[1], binding[2])
@@ -82,5 +93,7 @@ for _, profile in ipairs(profiles) do
 
 	pass_through(profile.secondary .. "+s")
 	pass_through(profile.primary .. "+g")
-	bind(profile.primary .. "+g>s>e", "edit_scrollback")
+	for _, binding in ipairs(prefix_actions) do
+		bind(profile.primary .. "+g>" .. binding[1], binding[2])
+	end
 end
