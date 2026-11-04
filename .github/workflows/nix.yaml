@@ -58,7 +58,8 @@ jobs:
   native-checks: # zizmor: ignore[anonymous-definition] GitHub adds matrix values to the job ID.
     needs: checks
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Toshy's Python 3.15 GUI dependencies need longer on a cold cache
+    timeout-minutes: ${{ matrix.check == 'toshy-runtime' && 60 || 15 }}
     strategy:
       fail-fast: false
       matrix:
