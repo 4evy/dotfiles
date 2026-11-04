@@ -10,10 +10,8 @@ retain their native `etc/` and `usr/` structure under `files/system/`.
 Repository definitions live in `files/dnf/` and are staged under the DNF
 module's `CONFIG_DIRECTORY` before native repository installation and cleanup.
 
-Ghostty's helper files and Bun dependencies live in the lightweight
-[`ghostty-source` stage](recipes/spectrum/stages/ghostty-source.yml). Its Fedora
-compiler stage mounts that tree read-only. Kanata similarly mounts only its
-source locks and build script. Keep changing inputs out of heavyweight
+The [`kanata` stage](recipes/spectrum/stages/kanata.yml) mounts only its source
+locks, patch metadata, and build script. Keep changing inputs out of heavyweight
 filesystem layers.
 
 The [`spectrum-files` stage](recipes/spectrum/stages/files.yml) assembles builder

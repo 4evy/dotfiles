@@ -83,10 +83,6 @@ let
   firstCommand = names: fallback: lib.findFirst (path: path != null) fallback (map commandPath names);
   markers = colorMarkers ++ [
     {
-      name = "@GHOSTTY_Y_FLIP@";
-      value = if os == "linux" then "screen_uv.y = 1.0 - screen_uv.y;" else "";
-    }
-    {
       # Inherit the deployed extension dependency from the locked AI runtime
       name = "@OMP_PI_TUI_VERSION@";
       value = ompDependencies."@oh-my-pi/pi-tui";
@@ -151,13 +147,7 @@ let
     entry:
     let
       source = (entry.sourceByOS or { }).${os} or entry.source;
-      templateText = lib.replaceStrings [ "@GHOSTTY_COMMON@" "@GHOSTTY_KEY_TABLES@" ] (map
-        (path: lib.removeSuffix "\n" (lib.readFile path))
-        [
-          ../../files/.config/ghostty/common.ghostty
-          ../../files/.config/ghostty/key/tables.ghostty
-        ]
-      ) (lib.readFile (../../files + "/${source}"));
+      templateText = lib.readFile (../../files + "/${source}");
       variant = entry.variant or "dark";
       variantText =
         lib.replaceStrings
@@ -191,4 +181,9 @@ map file (lib.filter enabled manifest.files)
 ++ lib.optionals (os == "darwin") [
   (homebrewPath false)
   (homebrewPath true)
+  (normalizeFile { target = ".config/rex/palette.json"; } {
+    text = lib.toJSON {
+      inherit (palette) light dark;
+    };
+  })
 ]

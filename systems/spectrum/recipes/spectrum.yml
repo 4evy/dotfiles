@@ -21,8 +21,6 @@ spec:
 
 stages:
   - from-file: spectrum/stages/workstation.yml
-  - from-file: spectrum/stages/ghostty-source.yml
-  - from-file: spectrum/stages/ghostty.yml
   - from-file: spectrum/stages/tiling/tiling.yml
   - from-file: spectrum/stages/kanata.yml
   - from-file: spectrum/stages/files.yml

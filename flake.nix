@@ -151,16 +151,6 @@
       url = "github:blue-build/cli/v0.9.41";
     };
 
-    source-ghostty-zig-aarch64-linux = {
-      flake = false;
-      url = "file+https://ziglang.org/download/0.17.1/zig-aarch64-linux-0.17.1.tar.xz";
-    };
-
-    source-ghostty-zig-x86-64-linux = {
-      flake = false;
-      url = "file+https://ziglang.org/download/0.17.1/zig-x86_64-linux-0.17.1.tar.xz";
-    };
-
     source-helix = {
       flake = false;
       url = "github:gj1118/helix";

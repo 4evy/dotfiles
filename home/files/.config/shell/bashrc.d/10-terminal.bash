@@ -18,27 +18,6 @@
 #                       ⠘⠓⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠒⠛
 
 # 01 / terminal integration
-# SSH does not forward Ghostty's client resource paths, so use host-local files
-_dotfiles_ghostty_resources="${GHOSTTY_RESOURCES_DIR:-}"
-if [[ -z "$_dotfiles_ghostty_resources" && -n "${SSH_CONNECTION:-}" &&
-	"${TERM:-}" == xterm-ghostty && -t 0 && -t 1 ]]; then
-	case "$OSTYPE" in
-		darwin*) _dotfiles_ghostty_resources=/Applications/Ghostty.app/Contents/Resources/ghostty ;;
-		linux*) _dotfiles_ghostty_resources=/usr/share/ghostty ;;
-	esac
-	# Retain no-cursor behavior and do not install wrappers in remote shells
-	GHOSTTY_SHELL_FEATURES="${GHOSTTY_SHELL_FEATURES-title}"
-fi
-if [[ -n "$_dotfiles_ghostty_resources" &&
-	-r "$_dotfiles_ghostty_resources/shell-integration/bash/ghostty.bash" ]]; then
-	builtin source "$_dotfiles_ghostty_resources/shell-integration/bash/ghostty.bash"
-fi
-unset _dotfiles_ghostty_resources
-
-if [[ "${TERM:-}" == "xterm-ghostty" ]] && ! infocmp xterm-ghostty &>/dev/null; then
-	export TERM=xterm-256color
-fi
-
 # Detect once without writing a query into the shell's input stream. Theme-aware
 # wrappers inherit this value; standalone launcher calls can still use Kitty or
 # OSC detection when no theme environment is available.

@@ -111,7 +111,6 @@ const main = Effect.gen(function* () {
     buildData.config.dconf,
   );
   const groups = {
-    ghostty: ["ghostty", "ghostty-zig-x86-64-linux"],
     kanata: ["kanata-homebrew"],
   };
   for (const [group, names] of Object.entries(groups)) {

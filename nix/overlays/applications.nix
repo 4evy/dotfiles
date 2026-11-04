@@ -15,7 +15,7 @@ let
   upstreamHelium = helium-browser;
   system = stdenv.hostPlatform.system;
   patched = inputs.patches.packages.${system};
-  inherit (patched) ghostty jj kanata;
+  inherit (patched) jj kanata;
   inherit (inputs.nixcord.packages.${system}) discord equicord;
   heliumDarwin = helium-browser.overrideAttrs (
     finalAttrs: old: {
@@ -130,13 +130,6 @@ in
     cargoBuildFeatures = [ "cmd" ];
     cargoCheckFeatures = [ "cmd" ];
   };
-  ghostty-patched =
-    if stdenv.hostPlatform.isDarwin then
-      callPackage ../../packages/ghostty/package.nix {
-        patchesSource = inputs.patches;
-      }
-    else
-      ghostty;
   tweezle = callPackage (inputs.tweezle + "/nix/package.nix") { };
   inherit yt-dlp-script;
 }

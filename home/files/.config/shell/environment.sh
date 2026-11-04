@@ -197,7 +197,7 @@ unset _dotfiles_new_path _dotfiles_path_entry _dotfiles_path_remainder
 unset -f _dotfiles_path_append_once
 
 if [[ "$_dotfiles_os" == Linux && ! -e /etc/NIXOS ]]; then
-	# Nix ncurses omits host terminfo paths, including Ghostty's entry on Fedora
+	# Nix ncurses omits host terminfo paths on non-NixOS systems
 	# Keep caller overrides and the empty entry for compiled-in defaults
 	for _dotfiles_terminfo in /usr/local/share/terminfo /usr/share/terminfo; do
 		case ":${TERMINFO_DIRS:-}:" in
@@ -281,11 +281,6 @@ fi
 unset _dotfiles_compiler_preload
 
 # 05 / terminal capabilities
-
-# Zed can inherit Ghostty's marker, but not its graphics support
-if [[ "${TERM_PROGRAM:-}" == zed ]]; then
-	unset GHOSTTY_RESOURCES_DIR
-fi
 
 # Tailscale SSH accepts LC_* variables but drops COLORTERM, so carry the
 # client's color capability through LC_COLORTERM and restore it on arrival

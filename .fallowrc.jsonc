@@ -4,11 +4,10 @@
     "tools/{setup,renovate}/**/*.ts",
     "tools/workstation/install.ts",
     "systems/modules/darwin/**/*.ts",
-    "packages/ghostty/source/*.ts",
     "systems/spectrum/recipes/spectrum/sources/sources.ts",
     "home/{deploy,applications,theme}/**/*.ts",
     "home/files/.omp/agent/extensions/**/*.ts",
-    "home/files/.local/lib/{ghostty,helium,helix,solaar,vscode}/*.ts"
+    "home/files/.local/lib/{helium,helix,solaar,vscode}/*.ts"
   ],
   "ignorePatterns": [
     "!home/files/.local/**",

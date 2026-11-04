@@ -21,7 +21,7 @@
   },
   "commandAliases": [
     {
-      "id": "c:r:applications::*::application::=::/Applications/Ghostty.app",
+      "id": "c:r:applications::*::application::=::/Applications/Rex Beta.app",
       "extension_id": "e:r:applications",
       "alias": "terminal"
     },

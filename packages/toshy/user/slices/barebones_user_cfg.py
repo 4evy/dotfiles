@@ -32,7 +32,6 @@ _nd_filemanager_classes = {
 }
 _nd_terminal_classes = {
     "alacritty",
-    "com.mitchellh.ghostty",
     "com.raggesilver.blackbox",
     "contour",
     "deepin-terminal",

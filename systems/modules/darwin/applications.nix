@@ -29,7 +29,6 @@ in
 {
   environment.system.packages = lib.attrValues {
     inherit (inputs.self.packages.${stdenv.hostPlatform.system}) dotfiles-apps;
-    inherit (pkgs) ghostty-patched;
   };
 
   homebrew = {
@@ -68,15 +67,12 @@ in
         "homebrew"
       ];
       text = ''
-        PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin \
-          ${codesignHelper} \
-          '/Applications/Nix Apps/Ghostty.app'
         if [ -d '/Applications/Nix Apps/Ghidra.app' ]; then
           PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin \
             ${codesignHelper} \
             '/Applications/Nix Apps/Ghidra.app' --entitlements ${ghidraEntitlements}
         fi
-        for name in Ghostty Helium Raycast; do
+        for name in Helium Raycast; do
           source="/Applications/Nix Apps/$name.app"
           target="/Applications/$name.app"
           if [ -e "$target" ] && [ ! -L "$target" ]; then

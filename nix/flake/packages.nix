@@ -26,7 +26,6 @@
           bun2nix
           dotfiles-workstation
           dotfiles-typescript-tools
-          ghostty-patched
           helium-browser
           helix
           jj-patched

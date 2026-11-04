@@ -15,7 +15,7 @@ theme_aliases = { dark = [
   "adwaita",
 ] }
 theme_terminal_program_environment = "TERM_PROGRAM"
-theme_terminal_queries = { ghostty = "color-scheme", xterm-ghostty = "color-scheme", kitty = "color-scheme", xterm-kitty = "color-scheme", "*" = "background" }
+theme_terminal_queries = { kitty = "color-scheme", xterm-kitty = "color-scheme", "*" = "background" }
 theme_probe_timeout_ms = 100
 helper_timeout_ms = 4000
 helper_output_limit_bytes = 65536

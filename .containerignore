@@ -71,10 +71,6 @@ tools/theme/run/*
 packages/*
 !packages/solaar/
 !packages/solaar/tray.patch
-!packages/ghostty/
-!packages/ghostty/build.sh
-!packages/ghostty/source/
-!packages/ghostty/source/**
 !packages/kanata/
 !packages/kanata/kanata.kbd
 !packages/kanata/build.sh

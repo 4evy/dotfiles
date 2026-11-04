@@ -11,14 +11,6 @@
       nixGenerated = true;
     }
     {
-      source = "Library/Application Support/com.mitchellh.ghostty/config.ghostty";
-      target = "Library/Application Support/com.mitchellh.ghostty/config.ghostty";
-      systems = [
-        "darwin"
-      ];
-      nixGenerated = true;
-    }
-    {
       source = "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/catppuccin-custom-dark.scss";
       target = "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/catppuccin-custom-dark.scss";
       systems = [
@@ -278,29 +270,6 @@
     {
       source = ".config/gh/config.yml";
       target = ".config/gh/config.yml";
-    }
-    {
-      source = ".config/ghostty/config.ghostty";
-      target = ".config/ghostty/config.ghostty";
-      systems = [
-        "linux"
-      ];
-      nixGenerated = true;
-    }
-    {
-      source = ".config/ghostty/shaders/catppuccin-custom-glow.glsl";
-      target = ".config/ghostty/shaders/catppuccin-custom-glow.glsl";
-      nixGenerated = true;
-    }
-    {
-      source = ".config/ghostty/themes/catppuccin-custom-dark.conf";
-      target = ".config/ghostty/themes/catppuccin-custom-dark.conf";
-      nixGenerated = true;
-    }
-    {
-      source = ".config/ghostty/themes/catppuccin-custom-light.conf";
-      target = ".config/ghostty/themes/catppuccin-custom-light.conf";
-      nixGenerated = true;
     }
     {
       source = ".config/git/catppuccin-custom-delta.gitconfig";
@@ -659,18 +628,6 @@
       target = ".gitignore_global";
     }
     {
-      source = ".local/lib/ghostty/ghostty.ts";
-      target = ".local/lib/ghostty/ghostty.ts";
-      executable = true;
-      # Relative imports must resolve from the deployed module tree
-      mutable = true;
-    }
-    {
-      source = ".local/lib/ghostty/scrollback.zsh";
-      target = ".local/lib/ghostty/scrollback.zsh";
-      executable = true;
-    }
-    {
       source = ".local/lib/rex/scrollback.zsh";
       target = ".local/lib/rex/scrollback.zsh";
       systems = [
@@ -730,11 +687,6 @@
       systems = [
         "linux"
       ];
-    }
-    {
-      source = ".local/bin/ghostty-dreamy-swirl";
-      target = ".local/bin/ghostty-dreamy-swirl";
-      symlink = true;
     }
     {
       source = ".local/bin/helium-user-agent";
@@ -818,13 +770,6 @@
       target = ".local/lib/external/external.sh";
       private = true;
       executable = true;
-    }
-    {
-      source = ".local/share/applications/com.mitchellh.ghostty.desktop";
-      target = ".local/share/applications/com.mitchellh.ghostty.desktop";
-      systems = [
-        "linux"
-      ];
     }
     {
       source = ".local/share/applications/discord.desktop";
@@ -972,11 +917,6 @@
       requireCommand = "brew";
     }
     {
-      source = ".local/bin/ghostty-scrollback-editor";
-      target = ".local/bin/ghostty-scrollback-editor";
-      symlink = true;
-    }
-    {
       source = ".local/bin/sops-age-key-1password";
       target = ".local/bin/sops-age-key-1password";
       symlink = true;
@@ -1028,7 +968,7 @@
       name = "rex_shortcuts.sh";
     }
     {
-      # Read Hjem's generated Ghostty palettes, not a frozen Rex export
+      # Read Hjem's generated shared palette, not a frozen Rex export
       command = [
         "bun"
         "@HOME@/.config/rex/themes.ts"
@@ -1072,10 +1012,6 @@
       ];
       onChange = false;
       name = "discord_equicord.sh";
-    }
-    {
-      onChange = false;
-      name = "ghostty_dreamy_swirl.sh";
     }
     {
       command = [

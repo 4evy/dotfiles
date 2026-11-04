@@ -173,19 +173,6 @@ let
       fi
     '';
     "discord_equicord.sh".text = optionalHomeCommand { name = "sync-equicord-settings"; };
-    "ghostty_dreamy_swirl.sh" = {
-      bashOptions = [
-        "errexit"
-        "nounset"
-        "pipefail"
-      ];
-      text = ''
-        generator="''${HJEM_HOME_DIR}/.local/lib/ghostty/ghostty.ts"
-        if [[ -x "$generator" ]]; then
-          "$generator"
-        fi
-      '';
-    };
     "gnome_catppuccin_custom_accent.sh".text = lib.concatLines [
       (optionalHomeCommand { name = "gnome-catppuccin-custom-accent"; })
       ''
@@ -394,7 +381,6 @@ let
                   name = "hjem-hook-${name}";
                   # Optional apps and host/session tools still come from PATH
                   inheritPath = true;
-                  # Most hooks use -eu, only Ghostty opts into pipefail
                   bashOptions = [
                     "errexit"
                     "nounset"

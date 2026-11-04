@@ -44,14 +44,6 @@ interface RexTheme {
   [key: string]: unknown;
 }
 
-interface RexColor {
-  red: number;
-  green: number;
-  blue: number;
-  alpha: number;
-  colorSpace: string;
-}
-
 // Keep runtime dependencies inside this function for JXA's separate process
 // Bun erases the types before toString passes its JavaScript to osascript
 function syncThemes() {
@@ -86,34 +78,37 @@ function syncThemes() {
     };
   }
 
+  const path = `${home}/.config/rex/palette.json`;
+  const contents = $.NSString.stringWithContentsOfFileEncodingError(
+    path,
+    $.NSUTF8StringEncoding,
+    null,
+  );
+  if (!ObjC.unwrap(contents)) throw new Error(`Cannot read ${path}`);
+  const palettes: Record<string, Record<string, string>> = JSON.parse(
+    ObjC.unwrap(contents),
+  );
   const managed = (["light", "dark"] as const).map((appearance) => {
-    const path = `${home}/.config/ghostty/themes/catppuccin-custom-${appearance}.conf`;
-    const contents = $.NSString.stringWithContentsOfFileEncodingError(
-      path,
-      $.NSUTF8StringEncoding,
-      null,
-    );
-    if (!ObjC.unwrap(contents)) throw new Error(`Cannot read ${path}`);
-    const values: Record<string, string> = {};
-    const ansi: RexColor[] = [];
-    for (const line of ObjC.unwrap(contents).split("\n")) {
-      const match = line.match(/^([a-z-]+)\s*=\s*(.+)$/);
-      const name = match?.[1];
-      const value = match?.[2];
-      if (!name || !value) continue;
-      if (name === "palette") {
-        const entry = value.match(/^(\d+)=(#[0-9a-f]{6})$/i);
-        if (!entry?.[1] || !entry[2]) {
-          throw new Error(`Invalid Rex ANSI color: ${line}`);
-        }
-        ansi[Number(entry[1])] = color(entry[2]);
-      } else {
-        values[name] = value;
-      }
-    }
-    for (let index = 0; index < 16; index++) {
-      if (!ansi[index]) throw new Error(`Missing Rex ANSI color ${index}`);
-    }
+    const values = palettes[appearance];
+    if (!values) throw new Error(`Missing Rex palette: ${appearance}`);
+    const ansi = [
+      "ansiBlack",
+      "red",
+      "green",
+      "yellow",
+      "blue",
+      "pink",
+      "sky",
+      "ansiWhite",
+      "mutedForeground",
+      "red",
+      "green",
+      "yellow",
+      "blue",
+      "pink",
+      "sky",
+      "ansiWhite",
+    ].map((name) => color(values[name]));
     return {
       id: ids[appearance],
       name: `Catppuccin Custom ${appearance === "light" ? "Light" : "Dark"}`,
@@ -122,16 +117,16 @@ function syncThemes() {
       createdAt: 0,
       source: { manual: {} },
       palette: {
-        background: color(values.background),
-        foreground: color(values.foreground),
-        cursor: color(values["cursor-color"]),
-        cursorText: color(values["cursor-text"]),
-        selectionBackground: color(values["selection-background"]),
-        selectionForeground: color(values["selection-foreground"]),
+        background: color(values.terminalBackground),
+        foreground: color(values.terminalForeground),
+        cursor: color(values.terminalCursor),
+        cursorText: color(values.selectionForeground),
+        selectionBackground: color(values.terminalSelection),
+        selectionForeground: color(values.selectionForeground),
         ansi,
         paletteBase: {},
         paletteOverrides: {},
-        paletteGenerate: values["palette-generate"] === "true",
+        paletteGenerate: true,
         paletteHarmonious: true,
       },
     };

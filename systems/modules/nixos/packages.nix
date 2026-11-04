@@ -41,7 +41,6 @@ in
 
     environment.systemPackages = attrValues {
       hjem = inputs.hjem.packages.${stdenv.hostPlatform.system}.hjem;
-      ghostty = inputs.patches.packages.${stdenv.hostPlatform.system}.ghostty;
       inherit (pkgs)
         helix
         jj-patched

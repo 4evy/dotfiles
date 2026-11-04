@@ -515,8 +515,6 @@
         "source-bluebuild-cli": "source-bluebuild-cli",
         "source-fzf-tab": "source-fzf-tab",
         "source-fzf-tab-completion": "source-fzf-tab-completion",
-        "source-ghostty-zig-aarch64-linux": "source-ghostty-zig-aarch64-linux",
-        "source-ghostty-zig-x86-64-linux": "source-ghostty-zig-x86-64-linux",
         "source-helix": "source-helix",
         "source-karabiner-vhid-package": "source-karabiner-vhid-package",
         "source-kmscon": "source-kmscon",
@@ -642,30 +640,6 @@
         "repo": "fzf-tab-completion",
         "rev": "7014e0a7cd68fe3530e2f58c45740d17e98f05b8",
         "type": "github"
-      }
-    },
-    "source-ghostty-zig-aarch64-linux": {
-      "flake": false,
-      "locked": {
-        "narHash": "sha256-hokUq9A8p99l08CqwtUvpGQP7VR1Qxgu0LRvvIG5vyw=",
-        "type": "file",
-        "url": "https://ziglang.org/download/0.17.1/zig-aarch64-linux-0.17.1.tar.xz"
-      },
-      "original": {
-        "type": "file",
-        "url": "https://ziglang.org/download/0.17.1/zig-aarch64-linux-0.17.1.tar.xz"
-      }
-    },
-    "source-ghostty-zig-x86-64-linux": {
-      "flake": false,
-      "locked": {
-        "narHash": "sha256-ai4jRN7Bck+QNLz7Msu3K3L4okccNk8AhYUXMZRzKio=",
-        "type": "file",
-        "url": "https://ziglang.org/download/0.17.1/zig-x86_64-linux-0.17.1.tar.xz"
-      },
-      "original": {
-        "type": "file",
-        "url": "https://ziglang.org/download/0.17.1/zig-x86_64-linux-0.17.1.tar.xz"
       }
     },
     "source-helix": {

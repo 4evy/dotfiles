@@ -47,7 +47,6 @@ systems/spectrum/files/system/etc/default/* linguist-language=Shell
 *.conf linguist-language=INI linguist-detectable
 *.fc linguist-language=sepolicy linguist-detectable
 *.if linguist-language=sepolicy linguist-detectable
-*.ghostty linguist-language=INI linguist-detectable
 *.path linguist-language=INI linguist-detectable
 *.repo linguist-language=INI linguist-detectable
 *.socket linguist-detectable

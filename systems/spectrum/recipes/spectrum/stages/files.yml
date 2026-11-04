@@ -15,11 +15,6 @@ modules:
     dest: /out/usr
 
   - type: copy@v1
-    from: ghostty
-    src: /out/usr
-    dest: /out/usr
-
-  - type: copy@v1
     from: hyper-window-tiling
     src: /src/tools/tiling/gnome/metadata.json
     dest: /out/usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/metadata.json

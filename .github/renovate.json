@@ -40,9 +40,7 @@
       "customType": "regex",
       "description": "Track BlueBuild CLI releases for the explicitly feature-enabled Nix build",
       "managerFilePatterns": ["/^flake\\.nix$/"],
-      "matchStrings": [
-        "url = \"github:blue-build/cli/(?<currentValue>v[^\"/]+)\";"
-      ],
+      "matchStrings": ["url = \"github:blue-build/cli/(?<currentValue>v[^\"/]+)\";"],
       "depNameTemplate": "blue-build/cli",
       "datasourceTemplate": "github-releases"
     },
@@ -156,17 +154,6 @@
       ],
       "depNameTemplate": "DeterminateSystems/determinate",
       "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
-      "description": "Track both Ghostty Zig binary architectures together",
-      "managerFilePatterns": ["/^flake\\.nix$/"],
-      "matchStrings": [
-        "file\\+https://ziglang\\.org/download/(?<currentValue>[^/]+)/zig-[^\"\\s]+"
-      ],
-      "depNameTemplate": "zig",
-      "datasourceTemplate": "custom.zig",
-      "versioningTemplate": "semver"
     },
     {
       "customType": "regex",
@@ -285,11 +272,6 @@
       "allowedVersions": "2.5.15"
     },
     {
-      "description": "Ghostty's pinned source requires the Zig 0.17 compiler API series",
-      "matchPackageNames": ["zig"],
-      "allowedVersions": ">=0.17.0 <0.18.0"
-    },
-    {
       "description": "Module images must retain the recipe module API major",
       "matchPackageNames": ["ghcr.io/blue-build/modules/**"],
       "matchUpdateTypes": ["major"],
@@ -317,14 +299,6 @@
   "dependencyDashboardApproval": false,
   "configMigration": false,
   "ignorePaths": ["secrets/**"],
-  "customDatasources": {
-    "zig": {
-      "defaultRegistryUrlTemplate": "https://ziglang.org/download/index.json",
-      "transformTemplates": [
-        "{\"releases\": $each($, function($release, $version) { {\"version\": $version} })}"
-      ]
-    }
-  },
   "postUpgradeTasks": {
     "commands": ["bun tools/renovate/artifacts.ts"],
     "fileFilters": [

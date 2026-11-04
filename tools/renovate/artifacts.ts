@@ -6,7 +6,6 @@ import { runMain } from "@dotfiles/core/runtime";
 import bunProjects from "@dotfiles/repo/data/bun/projects";
 import { Effect, FileSystem, Schema } from "effect";
 import { updateBrowser, updateBunBootstrap, updateMise } from "./checksums.ts";
-import { validateGhostty } from "./ghostty.ts";
 import { updateOmpDependencies } from "./omp.ts";
 import { updateRenovatePatch } from "./patch.ts";
 import { root } from "./paths.ts";
@@ -77,7 +76,6 @@ runMain(
     if (changed.has("flake.nix") || changed.has("flake.lock")) {
       yield* run(["nix", "flake", "lock"], { cwd: root, capture: true });
       yield* updateOmpDependencies();
-      yield* validateGhostty();
     }
 
     const chatgpt = "home/files/.local/share/nix/chatgpt";
