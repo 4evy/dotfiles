@@ -66,7 +66,7 @@ local function pass_through(prefix)
 end
 
 for _, binding in ipairs(bindings) do
-	bind(unpack(binding))
+	bind(binding[1], binding[2], binding[3])
 end
 for _, binding in ipairs(forwarded_keys) do
 	bind(binding[1], "pane.send_key", { key = binding[2] })
