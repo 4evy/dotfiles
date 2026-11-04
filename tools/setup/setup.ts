@@ -2,13 +2,17 @@
 import { createHash } from "node:crypto";
 import { homedir, userInfo } from "node:os";
 import { delimiter, join, resolve } from "node:path";
-import { parseArgs } from "node:util";
 import { type RunOptions, run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { isExecutable } from "@dotfiles/core/files";
 import { download } from "@dotfiles/core/http";
 import { type RuntimeServices, runMain } from "@dotfiles/core/runtime";
 import homebrewTools from "@dotfiles/repo/data/homebrew/tools";
+import { object, or, seq } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
+import { map, multiple, withDefault } from "@optique/core/modifiers";
+import { argument, command, flag, option } from "@optique/core/primitives";
+import { choice } from "@optique/core/valueparser";
 import {
   Effect,
   FileSystem,
@@ -446,76 +450,51 @@ const setupSteps: Step[] = [
   },
 ];
 
-const commands: Record<string, Step[]> = {
-  bootstrap: bootstrapSteps,
-  setup: setupSteps,
-};
-const usage = "Usage: setup.ts bootstrap|setup [--only STEP...] [--from STEP] [--plan]";
-
-function options(args: string[]): { steps: Step[]; plan: boolean } {
-  const [command, ...flags] = args;
-  const all =
-    command !== undefined && Object.hasOwn(commands, command)
-      ? commands[command]
-      : undefined;
-  if (!all) throw new Error(usage);
-  const { values, tokens } = parseArgs({
-    args: flags,
-    allowPositionals: true,
-    tokens: true,
-    options: {
-      plan: { type: "boolean", default: false },
-      from: { type: "string" },
-      only: { type: "string", multiple: true },
-    },
+function stepOptions(all: Step[]) {
+  const step = choice(all.map((entry) => entry.name));
+  return object({
+    plan: withDefault(flag("--plan"), false),
+    steps: withDefault(
+      or(
+        map(option("--from", step), (from) =>
+          all.slice(all.findIndex((entry) => entry.name === from)),
+        ),
+        map(
+          multiple(
+            seq(multiple(option("--only", step), { min: 1 }), multiple(argument(step))),
+            { min: 1 },
+          ),
+          (groups) => {
+            const only = groups.flatMap(([first, rest]) => [...first, ...rest]);
+            // Keep setup order even when --only lists steps in a different order
+            return all.filter((entry) => only.includes(entry.name));
+          },
+        ),
+      ),
+      all,
+    ),
   });
-  // Only --only consumes following positional step names, until the next option
-  const only: string[] = [];
-  let acceptingSteps = false;
-  for (const token of tokens) {
-    if (token.kind === "option") {
-      acceptingSteps = token.name === "only";
-      if (acceptingSteps && token.value !== undefined) only.push(token.value);
-    } else if (token.kind === "positional") {
-      if (!acceptingSteps) throw new Error(`Unexpected argument: ${token.value}`);
-      only.push(token.value);
-    } else acceptingSteps = false;
-  }
-  const { from, plan } = values;
-  if (from !== undefined && only.length) throw new Error("Use either --only or --from");
-  for (const name of from === undefined ? only : [from])
-    if (!all.some((step) => step.name === name))
-      throw new Error(`Unknown ${command} step: ${name}`);
-  return {
-    steps:
-      from !== undefined
-        ? all.slice(all.findIndex((step) => step.name === from))
-        : only.length
-          ? all.filter((step) => only.includes(step.name))
-          : all,
-    plan,
-  };
 }
 
 if (import.meta.main) {
+  const selected = runParser(
+    or(
+      command("bootstrap", stepOptions(bootstrapSteps)),
+      command("setup", stepOptions(setupSteps)),
+    ),
+    "setup.ts",
+    Bun.argv.slice(2),
+    {
+      help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
+      onError: process.exit,
+    },
+  );
   runMain(
     Effect.gen(function* () {
-      if (Bun.argv.includes("--help") || Bun.argv.includes("-h")) {
-        yield* Effect.sync(() => {
-          console.log(usage);
-          console.log(`Setup steps: ${setupSteps.map((step) => step.name).join(", ")}`);
-        });
-        return;
-      }
       if (process.geteuid?.() === 0)
         return yield* Effect.fail(
           new DotfilesError("Do not run as root; privileged tasks use sudo"),
         );
-      const selected = yield* Effect.try({
-        try: () => options(Bun.argv.slice(2)),
-        catch: (error) =>
-          new DotfilesError(error instanceof Error ? error.message : String(error)),
-      });
       const host = yield* workstation;
       yield* Effect.forEach(
         selected.steps,

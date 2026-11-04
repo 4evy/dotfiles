@@ -5,11 +5,13 @@ import { DotfilesError } from "@dotfiles/core/errors";
 import { type RuntimeServices, runMain } from "@dotfiles/core/runtime";
 import { buildHjemOutput } from "@dotfiles/home/nix";
 import { HooksSchema, ManifestSchema } from "@dotfiles/home/schema";
+import { runParser } from "@optique/core/facade";
+import { argument } from "@optique/core/primitives";
+import { choice } from "@optique/core/valueparser";
 import { Effect, FileSystem, Schema } from "effect";
 import { validateXML } from "./xml.ts";
 
 const repository = resolve(import.meta.dir, "../../..");
-const platforms = ["darwin", "fedora", "nixos"];
 type Validator = (
   contents: string,
   path: string,
@@ -60,13 +62,15 @@ const shells: Record<string, Validator> = { bash, sh: bash, zsh };
 runMain(
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    const platform = Bun.argv[2];
-    if (!platform || !platforms.includes(platform) || Bun.argv.length !== 3)
-      return yield* Effect.fail(
-        new DotfilesError(
-          `Usage: bun home/deploy/check/home.ts ${platforms.join("|")}`,
-        ),
-      );
+    const platform = runParser(
+      argument(choice(["darwin", "fedora", "nixos"])),
+      "home/deploy/check/home.ts",
+      Bun.argv.slice(2),
+      {
+        help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
+        onError: process.exit,
+      },
+    );
     const output = yield* buildHjemOutput(repository, "hjemHome", {
       ...process.env,
       HJEM_WORKING_TREE: repository,

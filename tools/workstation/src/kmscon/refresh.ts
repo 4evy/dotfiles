@@ -1,8 +1,13 @@
 import { createHash } from "node:crypto";
-import { parseArgs } from "node:util";
 import { output, run } from "@dotfiles/core/commands";
 import { UsageError } from "@dotfiles/core/errors";
 import { writeJson } from "@dotfiles/core/files";
+import { object } from "@optique/core/constructs";
+import { formatMessage } from "@optique/core/message";
+import { map, multiple } from "@optique/core/modifiers";
+import { parseSync } from "@optique/core/parser";
+import { argument, option } from "@optique/core/primitives";
+import { string } from "@optique/core/valueparser";
 import { Effect, FileSystem, Schema } from "effect";
 
 const ttys = new Set(Array.from({ length: 6 }, (_, index) => `tty${index + 1}`));
@@ -46,27 +51,23 @@ const pendingTtys = Effect.fn("kmsconRefresh.pendingTtys")(function* (
 
 export const kmsconRefresh = Effect.fn("kmsconRefresh")(function* (args: string[]) {
   const fs = yield* FileSystem.FileSystem;
-  const { values, positionals } = yield* Effect.try({
-    try: () =>
-      parseArgs({
-        args,
-        allowPositionals: true,
-        options: {
-          state: { type: "string", default: "/run/kmscon-theme-refresh.json" },
-        },
-      }),
-    catch: (error) =>
-      new UsageError(error instanceof Error ? error.message : String(error)),
-  });
-  const [config] = positionals;
-  if (positionals.length !== 1 || !config)
-    return yield* Effect.fail(
-      new UsageError("Usage: kmscon-refresh CONFIG [--state PATH]"),
-    );
+  const parsed = parseSync(
+    object({
+      config: argument(string({ metavar: "CONFIG", pattern: /./s })),
+      state: map(
+        multiple(option("--state", string({ metavar: "PATH" }))),
+        (values) => values.at(-1) ?? "/run/kmscon-theme-refresh.json",
+      ),
+    }),
+    args,
+  );
+  if (!parsed.success)
+    return yield* Effect.fail(new UsageError(formatMessage(parsed.error)));
+  const { config, state } = parsed.value;
   const digest = createHash("sha256")
     .update(yield* fs.readFile(config))
     .digest("hex");
-  const pending = yield* pendingTtys(values.state, digest);
+  const pending = yield* pendingTtys(state, digest);
   if (!pending.size) return 0;
   const occupied = yield* occupiedTtys();
   const remaining = new Set<string>();
@@ -86,7 +87,7 @@ export const kmsconRefresh = Effect.fn("kmsconRefresh")(function* (args: string[
       failed = true;
     }
   }
-  yield* writeJson(values.state, {
+  yield* writeJson(state, {
     config_sha256: digest,
     pending_ttys: [...remaining].sort(),
   });

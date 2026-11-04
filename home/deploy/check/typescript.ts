@@ -56,14 +56,9 @@ runMain(
       yield* fs.copyFile(original, join(staging, target));
     }
     const text = yield* fs.readFileString(join(source, "tsconfig.json"));
-    const parsed = yield* Effect.try({
-      try: () => JSON.parse(text) as unknown,
-      catch: (error) =>
-        new DotfilesError(`Invalid home TypeScript configuration: ${error}`),
-    });
     const config = yield* Schema.decodeUnknownEffect(
-      Schema.Record(Schema.String, Schema.Unknown),
-    )(parsed);
+      Schema.fromJsonString(Schema.Record(Schema.String, Schema.Unknown)),
+    )(text);
     yield* fs.writeFileString(
       join(staging, "tsconfig.json"),
       JSON.stringify({

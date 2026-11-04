@@ -1,6 +1,11 @@
 import { isIP } from "node:net";
-import { parseArgs } from "node:util";
 import { UsageError } from "@dotfiles/core/errors";
+import { object, or } from "@optique/core/constructs";
+import { formatMessage } from "@optique/core/message";
+import { map, multiple } from "@optique/core/modifiers";
+import { parseSync } from "@optique/core/parser";
+import { argument, flag, option, passThrough } from "@optique/core/primitives";
+import { string } from "@optique/core/valueparser";
 import { Effect, Schema, SchemaTransformation } from "effect";
 import defaults from "./defaults.json";
 
@@ -156,41 +161,57 @@ const configSchema = Schema.Struct({
 });
 export type PhoneConfig = Readonly<typeof configSchema.Type>;
 export const targetCacheSchema = Schema.Struct({ name: Schema.String, ip });
-export const phoneConfig = Effect.fn("phoneConfig")(function* (args: string[]) {
-  const known = Object.fromEntries(
-    options.map(([name, option]) => [name, { type: option.type }]),
-  );
-  const { values, tokens } = yield* Effect.try({
-    try: () =>
-      parseArgs({
-        args,
-        options: known,
-        strict: false,
-        allowPositionals: true,
-        tokens: true,
-      }),
-    catch: (error) =>
-      new UsageError(
-        `Invalid phone-mirror configuration: ${error instanceof Error ? error.message : String(error)}`,
+// Keep option parsers beside their schema metadata so dynamic flags stay in sync
+const phoneParser = object({
+  options: object(
+    Object.fromEntries(
+      options.map(([name, definition]) => [
+        name,
+        definition.type === "boolean"
+          ? map(
+              multiple(
+                // Bare flags win before the inline-value alternative
+                or(
+                  flag(`--${name}`),
+                  option(`--${name}`, string({ metavar: "BOOLEAN" })),
+                ),
+              ),
+              (values) => values.at(-1),
+            )
+          : map(
+              multiple(option(`--${name}`, string({ metavar: definition.argument }))),
+              (values) => values.at(-1),
+            ),
+      ]),
+    ),
+  ),
+  scrcpyArgs: map(
+    multiple(
+      or(
+        map(argument(string()), (value) => [value]),
+        passThrough({ format: "nextToken" }),
       ),
-  });
-  const indexes = new Set<number>();
-  for (const token of tokens)
-    if (
-      token.kind === "positional" ||
-      (token.kind === "option" && !(token.name in known))
-    )
-      indexes.add(token.index);
+    ),
+    (values) => values.flat(),
+  ),
+});
+export const phoneConfig = Effect.fn("phoneConfig")(function* (args: string[]) {
+  const parsed = parseSync(phoneParser, args);
+  if (!parsed.success)
+    return yield* Effect.fail(
+      new UsageError(
+        `Invalid phone-mirror configuration: ${formatMessage(parsed.error)}`,
+      ),
+    );
+  const values = parsed.value;
   const input = yield* Effect.sync(() => ({
     ...Object.fromEntries(
       options.map(([name, option]) => [
         option.field,
-        values[name] ?? process.env[option.environment],
+        values.options[name] ?? process.env[option.environment],
       ]),
     ),
-    scrcpyArgs: [...indexes]
-      .map((index) => args[index])
-      .filter((value): value is string => value !== undefined && value !== "--"),
+    scrcpyArgs: values.scrcpyArgs,
   }));
   const config = yield* Schema.decodeUnknownEffect(configSchema)(input).pipe(
     Effect.mapError(

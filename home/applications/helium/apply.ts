@@ -5,6 +5,8 @@ import { run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { download } from "@dotfiles/core/http";
 import { runMain } from "@dotfiles/core/runtime";
+import { runParser } from "@optique/core/facade";
+import { constant } from "@optique/core/primitives";
 import { Effect, FileSystem, Schema } from "effect";
 
 const macOS = process.platform === "darwin";
@@ -74,12 +76,9 @@ const privatePayload = Effect.fn("heliumPrivatePayload")(function* (root: string
     ["sops", "decrypt", "--output-type", "json", join(root, "secrets/secrets.yaml")],
     { env, capture: true, stderr: "inherit" },
   );
-  const json = yield* Effect.try({
-    try: () => JSON.parse(decrypted.stdout) as unknown,
-    catch: (error) =>
-      new DotfilesError(`Invalid private Helium configuration: ${error}`),
-  });
-  const privateConfig = yield* Schema.decodeUnknownEffect(PrivateConfigSchema)(json);
+  const privateConfig = yield* Schema.decodeUnknownEffect(
+    Schema.fromJsonString(PrivateConfigSchema),
+  )(decrypted.stdout);
   const payload: Record<string, unknown> = {};
   const allowlist = privateConfig["chromium-cookie-allowed-for-urls"] ?? [];
   if (allowlist.length) payload.cookie_allowlist = allowlist;
@@ -172,11 +171,15 @@ export const helium = Effect.fn("helium")(function* () {
 if (import.meta.main)
   runMain(
     Effect.gen(function* () {
-      const args = Bun.argv.slice(2);
-      const usage = "Usage: bun home/applications/helium/apply.ts";
-      if (args.length === 1 && (args[0] === "-h" || args[0] === "--help"))
-        console.log(usage);
-      else if (args.length) return yield* Effect.fail(new DotfilesError(usage));
-      else yield* helium();
+      runParser(
+        constant(undefined),
+        "home/applications/helium/apply.ts",
+        Bun.argv.slice(2),
+        {
+          help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
+          onError: process.exit,
+        },
+      );
+      yield* helium();
     }),
   );

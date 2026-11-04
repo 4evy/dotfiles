@@ -1,6 +1,12 @@
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { run } from "@dotfiles/core/commands";
 import { DotfilesError, UsageError } from "@dotfiles/core/errors";
+import { object } from "@optique/core/constructs";
+import { formatMessage } from "@optique/core/message";
+import { map } from "@optique/core/modifiers";
+import { parseSync } from "@optique/core/parser";
+import { argument } from "@optique/core/primitives";
+import { choice, string } from "@optique/core/valueparser";
 import { Config, Effect, FileSystem, Option, Schema, Stdio, Stream } from "effect";
 
 const recordMetadata = Schema.fromJsonString(
@@ -34,13 +40,19 @@ const directory = Effect.fn("jjDiff.directory")(function* (path: string) {
   return (yield* fs.exists(path)) && (yield* fs.stat(path)).type === "Directory";
 });
 const parseArguments = Effect.fn("jjDiff.parseArguments")(function* (args: string[]) {
-  const [format, left, right, repository, width] = args;
-  if (args.length !== 5 || !left || !right || !repository || !width)
-    return yield* Effect.fail(
-      new UsageError("Usage: jj-diff FORMAT LEFT RIGHT DOTFILES_REPOSITORY WIDTH"),
-    );
-  if (format !== "patch" && format !== "stat")
-    return yield* Effect.fail(new UsageError(`Invalid format: ${format}`));
+  const parsed = parseSync(
+    object({
+      format: argument(choice(["patch", "stat"])),
+      left: argument(string({ metavar: "LEFT", pattern: /./s })),
+      right: argument(string({ metavar: "RIGHT", pattern: /./s })),
+      repository: argument(string({ metavar: "DOTFILES_REPOSITORY", pattern: /./s })),
+      width: map(argument(string({ metavar: "WIDTH", pattern: /^\d+$/ })), Number),
+    }),
+    ["--", ...args],
+  );
+  if (!parsed.success)
+    return yield* Effect.fail(new UsageError(formatMessage(parsed.error)));
+  const { format, left, right, repository, width } = parsed.value;
   if (!safeRelativePath(left) || !safeRelativePath(right))
     return yield* Effect.fail(
       new UsageError("Snapshot paths must be safe relative paths"),
@@ -51,9 +63,9 @@ const parseArguments = Effect.fn("jjDiff.parseArguments")(function* (args: strin
     return yield* Effect.fail(
       new UsageError("Dotfiles repository must contain a Justfile"),
     );
-  if (!/^\d+$/.test(width) || Number(width) < 1 || !Number.isSafeInteger(Number(width)))
+  if (width < 1 || !Number.isSafeInteger(width))
     return yield* Effect.fail(new UsageError(`Invalid output width: ${width}`));
-  return { format, left, right, repository, width: Number(width) };
+  return { format, left, right, repository, width };
 });
 const recordTarget = Effect.fn("jjDiff.recordTarget")(function* (path: string) {
   const fs = yield* FileSystem.FileSystem;

@@ -3,8 +3,13 @@ import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { run as runCommand, shellQuote } from "@dotfiles/core/commands";
-import { DotfilesError } from "@dotfiles/core/errors";
+import { DotfilesError, UsageError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
+import { object } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
+import { formatMessage } from "@optique/core/message";
+import { map, multiple } from "@optique/core/modifiers";
+import { flag } from "@optique/core/primitives";
 import type { PlatformError } from "effect";
 import { Cause, Config, Console, Effect, FileSystem, Schema } from "effect";
 
@@ -319,10 +324,31 @@ const install = Effect.fn("workstation.install")(function* () {
 
 if (import.meta.main) {
   runMain(
-    (process.argv.slice(2).includes("--fingerprint")
-      ? sourceHash().pipe(Effect.flatMap(Console.log))
-      : install()
-    ).pipe(
+    Effect.gen(function* () {
+      const parsed = yield* Effect.try({
+        try: () =>
+          runParser(
+            object({
+              fingerprint: map(
+                multiple(flag("--fingerprint")),
+                (values) => values.length > 0,
+              ),
+            }),
+            "workstation-install",
+            process.argv.slice(2),
+            {
+              help: { option: { names: ["-h", "--help"] }, onShow: () => undefined },
+              onError: (_code, error) => {
+                throw new UsageError(formatMessage(error));
+              },
+            },
+          ),
+        catch: (error) => error,
+      });
+      if (!parsed) return;
+      if (parsed.fingerprint) yield* sourceHash().pipe(Effect.flatMap(Console.log));
+      else yield* install();
+    }).pipe(
       Effect.catchCause((cause) => {
         if (Cause.hasInterruptsOnly(cause)) return Effect.failCause(cause);
         const error = Cause.squash(cause);

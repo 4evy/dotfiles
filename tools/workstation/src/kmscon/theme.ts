@@ -8,6 +8,11 @@ import {
   paletteDocumentSchema,
   rgbComponents,
 } from "@dotfiles/workstation/theme";
+import { object } from "@optique/core/constructs";
+import { formatMessage } from "@optique/core/message";
+import { parseSync } from "@optique/core/parser";
+import { argument } from "@optique/core/primitives";
+import { string } from "@optique/core/valueparser";
 import { Clock, Config, Effect, FileSystem, Schema } from "effect";
 
 import defaults from "./defaults.json";
@@ -110,11 +115,16 @@ function renderKmscon(
 }
 
 export const kmsconTheme = Effect.fn("kmsconTheme")(function* (args: string[]) {
-  const [input, output] = args;
-  if (args.length !== 2 || !input || !output)
-    return yield* Effect.fail(
-      new UsageError("Usage: kmscon-theme-config PALETTE_JSON OUTPUT_CONFIG"),
-    );
+  const parsed = parseSync(
+    object({
+      input: argument(string({ metavar: "PALETTE_JSON", pattern: /./s })),
+      output: argument(string({ metavar: "OUTPUT_CONFIG", pattern: /./s })),
+    }),
+    ["--", ...args],
+  );
+  if (!parsed.success)
+    return yield* Effect.fail(new UsageError(formatMessage(parsed.error)));
+  const { input, output } = parsed.value;
   const fs = yield* FileSystem.FileSystem;
   const document = yield* Schema.decodeUnknownEffect(
     Schema.fromJsonString(paletteDocumentSchema),

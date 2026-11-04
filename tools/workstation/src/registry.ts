@@ -1,5 +1,8 @@
 import { UsageError } from "@dotfiles/core/errors";
 import type { RuntimeServices } from "@dotfiles/core/runtime";
+import { formatMessage } from "@optique/core/message";
+import { parseSync } from "@optique/core/parser";
+import { constant } from "@optique/core/primitives";
 import type { Scope } from "effect";
 import { Effect } from "effect";
 import { discord } from "./apps/discord/discord.ts";
@@ -27,9 +30,13 @@ interface Command {
 }
 function noArguments<E, R>(action: () => Effect.Effect<void, E, R>) {
   return (args: string[]) =>
-    args.length
-      ? Effect.fail(new UsageError(`Unexpected arguments: ${args.join(" ")}`))
-      : action().pipe(Effect.as(0));
+    Effect.gen(function* () {
+      const parsed = parseSync(constant(undefined), args);
+      if (!parsed.success)
+        return yield* Effect.fail(new UsageError(formatMessage(parsed.error)));
+      yield* action();
+      return 0;
+    });
 }
 export const commands = {
   "kmscon-theme-config": {

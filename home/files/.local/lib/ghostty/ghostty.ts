@@ -12,6 +12,11 @@ import {
   FileSystem,
   runMain,
 } from "@dotfiles/runtime/runtime";
+import { or, seq } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
+import { map } from "@optique/core/modifiers";
+import { argument, constant, passThrough } from "@optique/core/primitives";
+import { string } from "@optique/core/valueparser";
 
 // Ghostty scales and crops this centered texture separately for every pane
 // https://ghostty.org/docs/config/reference#background-image-fit
@@ -38,12 +43,30 @@ runMain(
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-    const OUTPUT =
-      process.argv[2] ??
-      join(
-        homedir(),
-        ".config/ghostty/backgrounds/catppuccin-custom-emoji-scatter.png",
-      );
+    const OUTPUT = runParser(
+      or(
+        map(
+          seq(
+            argument(string({ metavar: "OUTPUT" })),
+            // Preserve the ignored trailing arguments after the output path
+            passThrough({ format: "greedy", hidden: true }),
+          ),
+          ([output]) => output,
+        ),
+        constant(
+          join(
+            homedir(),
+            ".config/ghostty/backgrounds/catppuccin-custom-emoji-scatter.png",
+          ),
+        ),
+      ),
+      "ghostty-background",
+      process.argv.slice(2),
+      {
+        help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
+        onError: process.exit,
+      },
+    );
     const SEED = yield* Config.String("GHOSTTY_SWIRL_SEED").pipe(
       Config.withDefault(DEFAULT_SEED),
     );

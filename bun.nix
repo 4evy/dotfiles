@@ -577,6 +577,10 @@
     url = "https://registry.npmjs.org/@opentelemetry/semantic-conventions/-/semantic-conventions-1.44.0.tgz";
     hash = "sha512-E3JkOlMBi3N8OGGkbl7tFyqk2MAS6/lySRZBK3Mu7AzjF1fT8oIChH9ChE48SUWzDn9Kdwta+G/p5LJ4xW4CLQ==";
   };
+  "@optique/core@1.3.6" = fetchurl {
+    url = "https://registry.npmjs.org/@optique/core/-/core-1.3.6.tgz";
+    hash = "sha512-BXVuVyxP9bg8FbyvBYrSHisnAeG3XTf1xcuUjAWgDWKfzZssMGbSrMdiv4tA+BK3+CrSo6no+uHWpiHh4HMKeg==";
+  };
   "@protobufjs/aspromise@1.1.2" = fetchurl {
     url = "https://registry.npmjs.org/@protobufjs/aspromise/-/aspromise-1.1.2.tgz";
     hash = "sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==";
@@ -724,10 +728,6 @@
   "cliui@9.0.1" = fetchurl {
     url = "https://registry.npmjs.org/cliui/-/cliui-9.0.1.tgz";
     hash = "sha512-k7ndgKhwoQveBL+/1tqGJYNz097I7WOvwbmmU2AR5+magtbjPWQTS1C5vzGkBC8Ym8UWRzfKUzUUqFLypY4Q+w==";
-  };
-  "commander@15.0.0" = fetchurl {
-    url = "https://registry.npmjs.org/commander/-/commander-15.0.0.tgz";
-    hash = "sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg==";
   };
   "culori@4.0.2" = fetchurl {
     url = "https://registry.npmjs.org/culori/-/culori-4.0.2.tgz";

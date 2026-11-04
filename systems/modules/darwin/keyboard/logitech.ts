@@ -1,8 +1,12 @@
 #!/usr/bin/env bun
 import { CString, dlopen, ptr, read } from "bun:ffi";
-import { parseArgs } from "node:util";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
+import { object } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
+import { formatMessage, message } from "@optique/core/message";
+import { flag, option } from "@optique/core/primitives";
+import { choice, string, type ValueParser } from "@optique/core/valueparser";
 import { Effect } from "effect";
 
 // hidapi is a synchronous native ABI, kept behind narrow typed adapters
@@ -220,54 +224,71 @@ const setMultiplatform = Effect.fn(function* (
   return true;
 });
 
-function integer(
-  value: string | undefined,
-  option: string,
-  max: number,
-): number | undefined {
-  if (value === undefined) return undefined;
-  if (!/^(?:0x[\da-f]+|\d+)$/i.test(value))
-    throw new Error(`${option} must be an integer`);
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed < 0 || parsed > max)
-    throw new Error(`${option} must be between 0 and ${max}`);
-  return parsed;
+// HID identifiers and platform indices accept both decimal and hexadecimal
+function integer(option: string, max: number): ValueParser<"sync", number> {
+  return {
+    mode: "sync",
+    metavar: "INTEGER",
+    placeholder: 0,
+    parse(value) {
+      if (!/^(?:0x[\da-f]+|\d+)$/i.test(value))
+        return { success: false, error: message`${option} must be an integer` };
+      const parsed = Number(value);
+      if (!Number.isInteger(parsed) || parsed < 0 || parsed > max)
+        return {
+          success: false,
+          error: message`${option} must be between 0 and ${String(max)}`,
+        };
+      return { success: true, value: parsed };
+    },
+    format: String,
+  };
 }
 
+const parser = object({
+  vendor: option("--vendor-id", integer("--vendor-id", 0xffff))
+    .multiple()
+    .map((values) => values.at(-1) ?? 0x046d),
+  product: option("--product-id", integer("--product-id", 0xffff))
+    .multiple({ min: 1 })
+    .map((values) => {
+      const product = values.at(-1);
+      if (product === undefined) throw new Error("Product ID is required");
+      return product;
+    }),
+  productName: option("--product-name", string({ metavar: "NAME" }))
+    .multiple()
+    .map((values) => values.at(-1)),
+  platform: option("--platform", integer("--platform", 0xff))
+    .multiple()
+    .map((values) => values.at(-1)),
+  os: option(
+    "--os",
+    choice(["windows", "linux", "chrome", "android", "macos", "ios", "webos"]),
+  )
+    .multiple()
+    .map((values) => values.at(-1)),
+  strict: flag("--strict")
+    .multiple()
+    .map((values) => values.length > 0),
+});
+
 function parseOptions() {
-  const { values } = parseArgs({
-    args: Bun.argv.slice(2),
-    options: {
-      "vendor-id": { type: "string", default: "0x046d" },
-      "product-id": { type: "string" },
-      "product-name": { type: "string" },
-      platform: { type: "string" },
-      os: { type: "string" },
-      strict: { type: "boolean", default: false },
-      help: { type: "boolean", short: "h" },
+  let helpShown = false;
+  const options = runParser(parser, "bun logitech.ts", Bun.argv.slice(2), {
+    brief: message`Set a Logitech keyboard's MULTIPLATFORM host mode`,
+    help: {
+      option: { names: ["-h", "--help"] },
+      onShow: () => {
+        helpShown = true;
+      },
+    },
+    stderr: () => {},
+    onError: (_code, error) => {
+      throw new Error(formatMessage(error));
     },
   });
-  if (values.help) {
-    console.log(
-      "Usage: bun logitech.ts --product-id ID [--product-name NAME] [--platform N | --os OS] [--strict]",
-    );
-    return undefined;
-  }
-  const vendor = integer(values["vendor-id"], "--vendor-id", 0xffff) ?? 0x046d;
-  const product = integer(values["product-id"], "--product-id", 0xffff);
-  if (product === undefined) throw new Error("--product-id is required");
-  const platform = integer(values.platform, "--platform", 0xff);
-  const os = values.os;
-  if (os !== undefined && !Object.hasOwn(OS_BITS, os))
-    throw new Error(`Unknown OS: ${os}`);
-  return {
-    vendor,
-    product,
-    productName: values["product-name"],
-    platform,
-    os: os as OsName | undefined,
-    strict: values.strict,
-  };
+  return helpShown ? undefined : options;
 }
 
 type HidApi = ReturnType<typeof loadHidapi>["symbols"];

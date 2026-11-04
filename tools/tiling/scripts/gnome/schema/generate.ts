@@ -4,6 +4,10 @@ import metadata from "@dotfiles/tiling/gnome/metadata" with { type: "json" };
 import { LAYOUT_PRESET_NAMES } from "@dotfiles/tiling/shared";
 import * as BunFileSystem from "@effect/platform-bun/BunFileSystem";
 import * as BunRuntime from "@effect/platform-bun/BunRuntime";
+import { object } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
+import { withDefault } from "@optique/core/modifiers";
+import { flag } from "@optique/core/primitives";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Schema from "effect/Schema";
@@ -34,6 +38,16 @@ const policy = Schema.Struct({
   "move-max": binding,
 });
 
+const options = runParser(
+  object({ check: withDefault(flag("--check"), false) }),
+  "generate-tiling-schema",
+  Bun.argv.slice(2),
+  {
+    help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
+    onError: process.exit,
+  },
+);
+
 const program = Effect.gen(function* () {
   const validated = yield* Schema.decodeUnknownEffect(policy, {
     onExcessProperty: "error",
@@ -42,7 +56,7 @@ const program = Effect.gen(function* () {
     Schema.Struct({ "settings-schema": text }),
   )(metadata);
   // KDE validates the same policy without importing platform code at runtime
-  if (Bun.argv.includes("--check")) return;
+  if (options.check) return;
 
   const xml = renderSchema(schemaId, validated);
   const fs = yield* FileSystem.FileSystem;

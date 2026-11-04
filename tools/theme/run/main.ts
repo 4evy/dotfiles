@@ -1,6 +1,10 @@
-import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
-import { Command, CommanderError, Option } from "commander";
+import { or, seq } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
+import { message } from "@optique/core/message";
+import { map } from "@optique/core/modifiers";
+import { argument, flag, passThrough } from "@optique/core/primitives";
+import { string } from "@optique/core/valueparser";
 import { Config, ConfigProvider, Effect, Runtime, Schema, Stdio, Stream } from "effect";
 import { Manifest, name, version } from "./config.ts";
 import {
@@ -21,65 +25,60 @@ function write(text: string, error = false) {
 export function run(args: string[]) {
   return Effect.gen(function* () {
     const output: Array<{ text: string; error: boolean }> = [];
-    const parser = new Command(name)
-      .description(
-        "Run a command with terminal theme integration when a matching profile exists.",
-      )
-      .addOption(
-        new Option(
-          "--print-theme",
-          "Print the detected terminal theme (dark or light).",
-        ).conflicts("printThemeNoTerminal"),
-      )
-      .addOption(
-        new Option(
-          "--print-theme-no-terminal",
-          "Print the theme without reading terminal input.",
-        ).conflicts("printTheme"),
-      )
-      .version(`${name} version ${version}`, "--version", "Show program version.")
-      .argument("[command...]", "COMMAND [ARG...]")
-      .passThroughOptions()
-      .exitOverride()
-      .configureOutput({
-        writeOut: (text) => {
-          output.push({ text, error: false });
+    const parser = or(
+      map(
+        flag("--print-theme", {
+          description: message`Print the detected terminal theme (dark or light)`,
+        }),
+        () => ({ printTheme: true, command: [] }),
+      ),
+      map(
+        flag("--print-theme-no-terminal", {
+          description: message`Print the theme without reading terminal input`,
+        }),
+        () => ({ printTheme: false, command: [] }),
+      ),
+      map(
+        seq(
+          argument(string({ metavar: "COMMAND" })),
+          passThrough({ format: "greedy" }),
+        ),
+        ([command, args]) => ({
+          printTheme: undefined,
+          command: [command, ...args],
+        }),
+      ),
+    );
+    let status: number | undefined;
+    const options = runParser(parser, name, args.length ? args : ["--help"], {
+      brief: message`Run a command with terminal theme integration`,
+      help: {
+        option: { names: ["-h", "--help"] },
+        onShow: () => {
+          status = 0;
         },
-        writeErr: (text) => {
-          output.push({
-            text: `${name}: ${text.replace(/^error: /, "")}`,
-            error: true,
-          });
-        },
-      });
-    const parsed = yield* Effect.try({
-      try: () => {
-        try {
-          parser.parse(args, { from: "user" });
-          return undefined;
-        } catch (error) {
-          if (error instanceof CommanderError) return error.exitCode === 0 ? 0 : 2;
-          throw error;
-        }
       },
-      catch: (cause) => new DotfilesError(String(cause), { cause }),
+      version: {
+        option: true,
+        value: `${name} version ${version}`,
+        onShow: () => {
+          status = 0;
+        },
+      },
+      onError: () => {
+        status = 2;
+      },
+      stdout: (text) => {
+        output.push({ text: `${text}\n`, error: false });
+      },
+      stderr: (text) => {
+        output.push({ text: `${name}: ${text}\n`, error: true });
+      },
     });
     for (const entry of output) yield* write(entry.text, entry.error);
-    if (parsed !== undefined) return parsed;
-    const options = parser.opts<{
-      printTheme?: boolean;
-      printThemeNoTerminal?: boolean;
-    }>();
-    const printTheme = options.printTheme || options.printThemeNoTerminal;
-    const command = parser.args;
-    if (printTheme && command.length) {
-      yield* write(`${name}: theme printing does not accept a command\n`, true);
-      return 2;
-    }
-    if (!printTheme && !command.length) {
-      yield* write(parser.helpInformation());
-      return 0;
-    }
+    if (status !== undefined) return status;
+    const printTheme = options.printTheme !== undefined;
+    const command = options.command;
     // Read the exact environment, including empty values and underscore keys
     const provider = yield* Effect.sync(() =>
       ConfigProvider.fromUnknown(

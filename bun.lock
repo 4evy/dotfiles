@@ -10,7 +10,7 @@
         "@dotfiles/runtime": "workspace:*",
         "@dotfiles/workstation": "workspace:*",
         "@effect/platform-bun": "4.1.2",
-        "commander": "15.0.0",
+        "@optique/core": "1.3.6",
         "drizzle-orm": "0.45.4",
         "effect": "4.1.2",
         "fast-xml-validator": "1.4.2",
@@ -41,6 +41,7 @@
         "@dotfiles/core": "workspace:*",
         "@dotfiles/runtime": "workspace:*",
         "@effect/platform-bun": "4.1.2",
+        "@optique/core": "1.3.6",
         "effect": "4.1.2",
       },
     },
@@ -48,6 +49,7 @@
       "name": "@dotfiles/runtime",
       "dependencies": {
         "@effect/platform-bun": "4.1.2",
+        "@optique/core": "1.3.6",
         "effect": "4.1.2",
         "tsrs": "0.18.0-ts7.1.0-dev.20260929",
         "vscode-jsonrpc": "10.0.0",
@@ -66,6 +68,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@effect/platform-bun": "4.1.2",
+        "@optique/core": "1.3.6",
         "effect": "4.1.2",
         "kwin-api": "6.8.1",
       },
@@ -84,6 +87,7 @@
         "@dotfiles/core": "workspace:*",
         "@dotfiles/home": "workspace:*",
         "@dotfiles/runtime": "workspace:*",
+        "@optique/core": "1.3.6",
         "effect": "4.1.2",
         "fast-xml-builder": "1.3.1",
         "fast-xml-parser": "5.11.2",
@@ -389,6 +393,8 @@
 
     "@opentelemetry/semantic-conventions": ["@opentelemetry/semantic-conventions@1.44.0", "", {}, "sha512-E3JkOlMBi3N8OGGkbl7tFyqk2MAS6/lySRZBK3Mu7AzjF1fT8oIChH9ChE48SUWzDn9Kdwta+G/p5LJ4xW4CLQ=="],
 
+    "@optique/core": ["@optique/core@1.3.6", "", {}, "sha512-BXVuVyxP9bg8FbyvBYrSHisnAeG3XTf1xcuUjAWgDWKfzZssMGbSrMdiv4tA+BK3+CrSo6no+uHWpiHh4HMKeg=="],
+
     "@protobufjs/aspromise": ["@protobufjs/aspromise@1.1.2", "", {}, "sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ=="],
 
     "@protobufjs/base64": ["@protobufjs/base64@1.1.2", "", {}, "sha512-AZkcAA5vnN/v4PDqKyMR5lx7hZttPDgClv83E//FMNhR2TMcLUhfRUBHCmSl0oi9zMgDDqRUJkSxO3wm85+XLg=="],
@@ -462,8 +468,6 @@
     "chromium-bidi": ["chromium-bidi@16.0.1", "", { "dependencies": { "mitt": "^3.0.1", "zod": "^3.24.1" }, "peerDependencies": { "devtools-protocol": "*" } }, "sha512-J63PGu/9PpeCwLIcKYyzWP6yaVL5pxuBc0shlYCYM8BaAkmlwiQboXO1iNbOgSDbVklEyYFfNEcHD8oOAWacUA=="],
 
     "cliui": ["cliui@9.0.1", "", { "dependencies": { "string-width": "^7.2.0", "strip-ansi": "^7.1.0", "wrap-ansi": "^9.0.0" } }, "sha512-k7ndgKhwoQveBL+/1tqGJYNz097I7WOvwbmmU2AR5+magtbjPWQTS1C5vzGkBC8Ym8UWRzfKUzUUqFLypY4Q+w=="],
-
-    "commander": ["commander@15.0.0", "", {}, "sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg=="],
 
     "culori": ["culori@4.0.2", "", {}, "sha512-1+BhOB8ahCn4O0cep0Sh2l9KCOfOdY+BXJnKMHFFzDEouSr/el18QwXEMRlOj9UY5nCeA8UN3a/82rUWRBeyBw=="],
 

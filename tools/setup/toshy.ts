@@ -4,6 +4,8 @@ import { basename, join, resolve } from "node:path";
 import { run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
+import { object } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
 import { Effect, FileSystem, type PlatformError } from "effect";
 
 const root = resolve(import.meta.dir, "../..");
@@ -323,14 +325,9 @@ export const provisionToshy = Effect.fn(function* () {
 });
 
 if (import.meta.main) {
-  runMain(
-    Effect.gen(function* () {
-      const args = Bun.argv.slice(2);
-      if (args.length === 1 && (args[0] === "--help" || args[0] === "-h"))
-        yield* Effect.sync(() => console.log("Usage: toshy.ts"));
-      else if (args.length)
-        return yield* Effect.fail(new DotfilesError("Usage: toshy.ts"));
-      else yield* provisionToshy();
-    }),
-  );
+  runParser(object({}), "toshy.ts", Bun.argv.slice(2), {
+    help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
+    onError: process.exit,
+  });
+  runMain(provisionToshy());
 }

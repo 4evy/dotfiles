@@ -1,9 +1,13 @@
 #!/usr/bin/env bun
 import { join } from "node:path";
-import { parseArgs } from "node:util";
 import { requireCommands, run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
+import { object } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
+import { formatMessage, message } from "@optique/core/message";
+import { argument, flag, option } from "@optique/core/primitives";
+import { string } from "@optique/core/valueparser";
 import { Effect, FileSystem } from "effect";
 
 export const DOTFILES_SIGNING_IDENTITY = "Kanata Local Code Signing";
@@ -182,38 +186,47 @@ export const signBundle = Effect.fn(function* (
     );
 });
 
+const parser = object({
+  bundle: argument(string({ metavar: "BUNDLE" })),
+  identity: option("--identity", string({ metavar: "NAME" }))
+    .multiple()
+    .map((values) => values.at(-1) ?? DOTFILES_SIGNING_IDENTITY),
+  keychain: option("--keychain", string({ metavar: "PATH" }))
+    .multiple()
+    .map((values) => values.at(-1) ?? "/Library/Keychains/System.keychain"),
+  administratorTrust: flag("--administrator-trust")
+    .multiple()
+    .map((values) => values.length > 0),
+  entitlements: option("--entitlements", string({ metavar: "PATH" }))
+    .multiple()
+    .map((values) => values.at(-1)),
+});
+
 if (import.meta.main)
   runMain(
     Effect.gen(function* () {
-      const { values, positionals } = yield* Effect.try({
-        try: () =>
-          parseArgs({
-            args: Bun.argv.slice(2),
-            allowPositionals: true,
-            options: {
-              identity: { type: "string", default: DOTFILES_SIGNING_IDENTITY },
-              keychain: {
-                type: "string",
-                default: "/Library/Keychains/System.keychain",
+      const values = yield* Effect.try({
+        try: () => {
+          let helpShown = false;
+          const values = runParser(parser, "bun codesign.ts", Bun.argv.slice(2), {
+            brief: message`Sign an application bundle with the local identity`,
+            help: {
+              option: { names: ["-h", "--help"] },
+              onShow: () => {
+                helpShown = true;
               },
-              "administrator-trust": { type: "boolean", default: false },
-              entitlements: { type: "string" },
-              help: { type: "boolean", short: "h" },
             },
-          }),
+            stderr: () => {},
+            onError: (_code, error) => {
+              throw new Error(formatMessage(error));
+            },
+          });
+          return helpShown ? undefined : values;
+        },
         catch: (cause) => new DotfilesError(String(cause)),
       });
-      if (values.help) {
-        console.log(
-          "Usage: bun codesign.ts BUNDLE [--identity NAME] [--keychain PATH] [--administrator-trust] [--entitlements PATH]",
-        );
-        return;
-      }
-      const [bundle] = positionals;
-      if (!bundle || positionals.length !== 1)
-        return yield* Effect.fail(
-          new DotfilesError("Expected one application bundle path"),
-        );
+      if (!values) return;
+      const { bundle } = values;
       // Apply explicit entitlements even when the bundle already has our identity
       if (
         values.entitlements ||
@@ -222,7 +235,7 @@ if (import.meta.main)
         yield* ensureSigningIdentity(
           values.identity,
           values.keychain,
-          values["administrator-trust"],
+          values.administratorTrust,
         );
         yield* signBundle(
           bundle,

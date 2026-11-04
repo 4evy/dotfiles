@@ -1,10 +1,16 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { run } from "@dotfiles/core/commands";
-import { DotfilesError } from "@dotfiles/core/errors";
+import { DotfilesError, UsageError } from "@dotfiles/core/errors";
 import { isExecutable, writeJson } from "@dotfiles/core/files";
 import { configHome } from "@dotfiles/core/paths";
 import { shellWords } from "@dotfiles/core/shell";
+import { object, or } from "@optique/core/constructs";
+import { formatMessage } from "@optique/core/message";
+import { map, multiple } from "@optique/core/modifiers";
+import { parseSync } from "@optique/core/parser";
+import { argument, flag, passThrough } from "@optique/core/primitives";
+import { string } from "@optique/core/valueparser";
 import { Effect, FileSystem, Option, Schema, SchemaTransformation } from "effect";
 
 const truthy = [true, 1, "1", "on", "true", "yes", "t", "y"] as const;
@@ -82,6 +88,23 @@ export const configureGPU = Effect.fn("configureGPU")(function* (directory: stri
 });
 
 export const discord = Effect.fn("discord")(function* (args: string[]) {
+  const parsed = parseSync(
+    object({
+      configureOnly: map(
+        multiple(flag("--configure-only")),
+        (values) => values.length > 0,
+      ),
+      arguments: multiple(
+        or(
+          map(argument(string()), (value) => [value]),
+          passThrough({ format: "nextToken" }),
+        ),
+      ),
+    }),
+    args,
+  );
+  if (!parsed.success)
+    return yield* Effect.fail(new UsageError(formatMessage(parsed.error)));
   if (process.platform === "darwin")
     return yield* Effect.fail(
       new DotfilesError("Discord on macOS is managed by Nixcord"),
@@ -89,7 +112,7 @@ export const discord = Effect.fn("discord")(function* (args: string[]) {
   const fs = yield* FileSystem.FileSystem;
   const config = yield* configHome();
   yield* configureGPU(join(config, "discord"));
-  if (args.includes("--configure-only")) return 0;
+  if (parsed.value.configureOnly) return 0;
   const state = process.env.XDG_STATE_HOME ?? join(homedir(), ".local/state");
   const executable = yield* Effect.findFirst(
     [

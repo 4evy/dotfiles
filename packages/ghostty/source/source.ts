@@ -3,6 +3,10 @@ import { createHash } from "node:crypto";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { download } from "@dotfiles/core/http";
 import { runMain } from "@dotfiles/core/runtime";
+import { seq } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
+import { argument } from "@optique/core/primitives";
+import { string } from "@optique/core/valueparser";
 import { Effect, FileSystem, Schema, Stream } from "effect";
 
 export const FilePin = Schema.Struct({ url: Schema.String, narHash: Schema.String });
@@ -61,15 +65,21 @@ export const downloadFile = Effect.fn(function* (pin: FilePin, destination: stri
   );
 });
 
-if (import.meta.main)
+if (import.meta.main) {
+  const [path, expected] = runParser(
+    seq(
+      argument(string({ metavar: "PATH", pattern: /[\s\S]/ })),
+      argument(string({ metavar: "NAR_HASH", pattern: /[\s\S]/ })),
+    ),
+    "source.ts",
+    Bun.argv.slice(2),
+    {
+      help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
+      onError: () => process.exit(2),
+    },
+  );
   runMain(
     Effect.gen(function* () {
-      const [path, expected, ...extra] = Bun.argv.slice(2);
-      if (!path || !expected || extra.length) {
-        console.error("Usage: bun source.ts PATH NAR_HASH");
-        process.exitCode = 2;
-        return;
-      }
       const actual = yield* fileNarHash(path);
       if (actual !== expected) {
         console.error(`NAR hash mismatch for ${path}: ${actual}`);
@@ -77,3 +87,4 @@ if (import.meta.main)
       }
     }),
   );
+}

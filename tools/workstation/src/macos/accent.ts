@@ -12,12 +12,16 @@ import {
 import { homedir, userInfo } from "node:os";
 import { join, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
-import { parseArgs } from "node:util";
 import { run } from "@dotfiles/core/commands";
 import { DotfilesError, UsageError } from "@dotfiles/core/errors";
 import { writeIfChanged } from "@dotfiles/core/files";
 import agent from "@dotfiles/workstation/assets/macos-accent" with { type: "text" };
 import { color, palettes } from "@dotfiles/workstation/theme";
+import { object } from "@optique/core/constructs";
+import { formatMessage } from "@optique/core/message";
+import { map, multiple } from "@optique/core/modifiers";
+import { parseSync } from "@optique/core/parser";
+import { flag } from "@optique/core/primitives";
 import { Console, Effect, FileSystem } from "effect";
 import Builder from "fast-xml-builder";
 import type * as FridaApi from "frida";
@@ -595,19 +599,18 @@ const accentStatus = Effect.fn("macosAccent.status")(function* () {
 });
 
 export const macosAccent = Effect.fn("macosAccent")(function* (args: string[]) {
-  const { values } = yield* Effect.try({
-    try: () =>
-      parseArgs({
-        args,
-        options: {
-          watch: { type: "boolean" },
-          install: { type: "boolean" },
-          uninstall: { type: "boolean" },
-          status: { type: "boolean" },
-        },
-      }),
-    catch: (error) => new UsageError(message(error)),
-  });
+  const parsed = parseSync(
+    object({
+      watch: map(multiple(flag("--watch")), (values) => values.length > 0),
+      install: map(multiple(flag("--install")), (values) => values.length > 0),
+      uninstall: map(multiple(flag("--uninstall")), (values) => values.length > 0),
+      status: map(multiple(flag("--status")), (values) => values.length > 0),
+    }),
+    args,
+  );
+  if (!parsed.success)
+    return yield* Effect.fail(new UsageError(formatMessage(parsed.error)));
+  const values = parsed.value;
   const options = Object.entries(values)
     .filter(([, enabled]) => enabled)
     .map(([name]) => name);

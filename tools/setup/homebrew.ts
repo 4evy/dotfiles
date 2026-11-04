@@ -1,9 +1,12 @@
 #!/usr/bin/env bun
 import { join, resolve } from "node:path";
-import { parseArgs } from "node:util";
 import { run } from "@dotfiles/core/commands";
-import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
+import { object } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
+import { withDefault } from "@optique/core/modifiers";
+import { argument, flag, option } from "@optique/core/primitives";
+import { choice, string } from "@optique/core/valueparser";
 import { Effect, FileSystem } from "effect";
 
 const ROOT = process.env.DOTFILES_REPO ?? resolve(import.meta.dir, "../..");
@@ -54,40 +57,26 @@ export const bundle = Effect.fn(function* (prefix: string, upgrade: boolean) {
 });
 
 if (import.meta.main) {
+  const values = runParser(
+    object({
+      operation: argument(choice(["bundle", "sandbox", "restore"])),
+      prefix: withDefault(
+        option("--prefix", string({ metavar: "PATH" })),
+        MACOS ? "/opt/homebrew" : "/home/linuxbrew/.linuxbrew",
+      ),
+      upgrade: withDefault(flag("--upgrade"), false),
+    }),
+    "homebrew.ts",
+    Bun.argv.slice(2),
+    {
+      help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
+      onError: process.exit,
+    },
+  );
   runMain(
     Effect.gen(function* () {
-      const { values, positionals } = yield* Effect.try({
-        try: () =>
-          parseArgs({
-            args: Bun.argv.slice(2),
-            allowPositionals: true,
-            options: {
-              prefix: {
-                type: "string",
-                default: MACOS ? "/opt/homebrew" : "/home/linuxbrew/.linuxbrew",
-              },
-              upgrade: { type: "boolean", default: false },
-              help: { type: "boolean", short: "h" },
-            },
-          }),
-        catch: (error) => new DotfilesError(String(error)),
-      });
-      const [command] = positionals;
-      if (values.help)
-        yield* Effect.sync(() =>
-          console.log(
-            "Usage: bun homebrew.ts bundle|sandbox|restore [--prefix PATH] [--upgrade]",
-          ),
-        );
-      else if (positionals.length !== 1)
-        return yield* Effect.fail(new DotfilesError("Expected one Homebrew operation"));
-      else if (command === "bundle") yield* bundle(values.prefix, values.upgrade);
-      else if (command === "sandbox" || command === "restore")
-        yield* sandbox(values.prefix, command === "restore");
-      else
-        return yield* Effect.fail(
-          new DotfilesError(`Unknown Homebrew operation: ${command}`),
-        );
+      if (values.operation === "bundle") yield* bundle(values.prefix, values.upgrade);
+      else yield* sandbox(values.prefix, values.operation === "restore");
     }),
   );
 }

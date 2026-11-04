@@ -5,6 +5,9 @@ import { DotfilesError } from "@dotfiles/core/errors";
 import { writeIfChanged } from "@dotfiles/core/files";
 import { runMain } from "@dotfiles/core/runtime";
 import rustdeskOptions from "@dotfiles/repo/data/rustdesk/options";
+import { runParser } from "@optique/core/facade";
+import { argument } from "@optique/core/primitives";
+import { choice } from "@optique/core/valueparser";
 import { Effect, FileSystem, Schema } from "effect";
 
 const macOS = process.platform === "darwin";
@@ -74,17 +77,9 @@ export const rustdesk = Effect.fn(function* () {
 });
 
 if (import.meta.main) {
-  runMain(
-    Effect.gen(function* () {
-      const usage = "Usage: applications.ts rustdesk";
-      const args = process.argv.slice(2);
-      const command = args[0];
-      if (args.length !== 1 || command === undefined)
-        return yield* Effect.fail(new DotfilesError(usage));
-      if (command === "-h" || command === "--help")
-        yield* Effect.sync(() => console.log(usage));
-      else if (command === "rustdesk") yield* rustdesk();
-      else return yield* Effect.fail(new DotfilesError(usage));
-    }),
-  );
+  runParser(argument(choice(["rustdesk"])), "applications.ts", Bun.argv.slice(2), {
+    help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
+    onError: process.exit,
+  });
+  runMain(rustdesk());
 }

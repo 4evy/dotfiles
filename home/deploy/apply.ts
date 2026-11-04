@@ -4,6 +4,11 @@ import { dirname, join, relative, resolve } from "node:path";
 import { run as runCommand } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
+import { object, or } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
+import { multiple, withDefault } from "@optique/core/modifiers";
+import { argument, command, constant } from "@optique/core/primitives";
+import { string } from "@optique/core/valueparser";
 import { Effect, FileSystem, Option, type PlatformError, Schema } from "effect";
 import { buildHjemOutput } from "./nix.ts";
 import {
@@ -17,8 +22,56 @@ import {
 const repository = resolve(import.meta.dir, "../..");
 const home = homedir();
 const state = join(process.env.XDG_STATE_HOME || join(home, ".local/state"), "hjem");
-const action = process.argv[2] || "apply";
-const requested = process.argv.slice(3).map((path) => resolve(home, path));
+const { action, targets } = runParser(
+  withDefault(
+    or(
+      command("apply", object({ action: constant("apply"), targets: constant([]) })),
+      command(
+        "build",
+        object({
+          action: constant("build"),
+          targets: multiple(argument(string({ metavar: "TARGET" }))),
+        }),
+      ),
+      command(
+        "diff",
+        object({
+          action: constant("diff"),
+          targets: multiple(argument(string({ metavar: "TARGET" }))),
+        }),
+      ),
+      command(
+        "status",
+        object({
+          action: constant("status"),
+          targets: multiple(argument(string({ metavar: "TARGET" }))),
+        }),
+      ),
+      command(
+        "packages-switch",
+        object({
+          action: constant("packages-switch"),
+          targets: multiple(argument(string({ metavar: "TARGET" }))),
+        }),
+      ),
+      command(
+        "packages-build",
+        object({
+          action: constant("packages-build"),
+          targets: multiple(argument(string({ metavar: "TARGET" }))),
+        }),
+      ),
+    ),
+    { action: "apply", targets: [] },
+  ),
+  "home/deploy/apply.ts",
+  process.argv.slice(2),
+  {
+    help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
+    onError: process.exit,
+  },
+);
+const requested = targets.map((path) => resolve(home, path));
 const environment: NodeJS.ProcessEnv = {
   ...process.env,
   HOME: home,
@@ -310,10 +363,6 @@ const hooks = Effect.fn("hooks")(function* (output: string) {
 
 const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
   const fs = yield* FileSystem.FileSystem;
-  if (!["apply", "build", "diff", "status"].includes(action))
-    return yield* Effect.fail(
-      new DotfilesError("Expected apply, build, diff, or status"),
-    );
   yield* fs.makeDirectory(state, { recursive: true, mode: 0o700 });
   const lock = join(state, "dotfiles.lock");
   let generated: string | undefined;
@@ -455,12 +504,6 @@ const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
         );
         hjem = join(result.split("\n").at(-1) || "", "bin/hjem");
       }
-      if (action === "apply" && requested.length)
-        return yield* Effect.fail(
-          new DotfilesError(
-            "Hjem activates the complete home manifest. Use just apply without target arguments",
-          ),
-        );
       activationStarted = action === "apply";
       yield* run([
         hjem,

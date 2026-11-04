@@ -1,5 +1,4 @@
 import { join } from "node:path";
-import { parseArgs } from "node:util";
 import { UsageError } from "@dotfiles/core/errors";
 import { writeIfChanged } from "@dotfiles/core/files";
 import { configHome } from "@dotfiles/core/paths";
@@ -8,6 +7,11 @@ import gtk3 from "@dotfiles/workstation/assets/gtk3" with { type: "text" };
 import gtk4 from "@dotfiles/workstation/assets/gtk4" with { type: "text" };
 import { desktopArguments, desktopOutput } from "@dotfiles/workstation/desktop";
 import { color, palettes } from "@dotfiles/workstation/theme";
+import { object } from "@optique/core/constructs";
+import { formatMessage } from "@optique/core/message";
+import { map, multiple } from "@optique/core/modifiers";
+import { parseSync } from "@optique/core/parser";
+import { flag } from "@optique/core/primitives";
 import { Effect, Stream } from "effect";
 import { ChildProcess } from "effect/process";
 
@@ -28,15 +32,16 @@ const apply = Effect.fn("gnomeAccent.apply")(function* (scheme: string) {
 });
 
 export const gnomeAccent = Effect.fn("gnomeAccent")(function* (args: string[]) {
-  const { values } = yield* Effect.try({
-    try: () =>
-      parseArgs({
-        args,
-        options: { once: { type: "boolean" }, watch: { type: "boolean" } },
-      }),
-    catch: (error) =>
-      new UsageError(error instanceof Error ? error.message : String(error)),
-  });
+  const parsed = parseSync(
+    object({
+      once: map(multiple(flag("--once")), (values) => values.length > 0),
+      watch: map(multiple(flag("--watch")), (values) => values.length > 0),
+    }),
+    args,
+  );
+  if (!parsed.success)
+    return yield* Effect.fail(new UsageError(formatMessage(parsed.error)));
+  const values = parsed.value;
   if (values.once && values.watch)
     return yield* Effect.fail(new UsageError("Use either --once or --watch"));
   if (!(yield* Effect.sync(() => Bun.which("gjs")))) {

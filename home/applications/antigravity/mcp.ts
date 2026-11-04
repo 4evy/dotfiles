@@ -1,6 +1,10 @@
 import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
 import { exitCode } from "@dotfiles/runtime/process";
+import { seq } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
+import { argument, passThrough } from "@optique/core/primitives";
+import { string } from "@optique/core/valueparser";
 import { Effect, Schema, Stdio, Stream, Struct } from "effect";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
@@ -42,20 +46,24 @@ const MessageSchema = Schema.StructWithRest(
   [Schema.Record(Schema.String, Schema.Unknown)],
 );
 
-const decode = Effect.fn("decodeMcpMessage")(function* (line: string) {
-  const json = yield* Effect.try({
-    try: () => JSON.parse(line) as unknown,
-    catch: (error) => new DotfilesError(`Invalid MCP message: ${error}`),
-  });
-  // JSON-RPC envelopes and nested MCP payloads retain fields not consumed here
-  return yield* Schema.decodeUnknownEffect(MessageSchema)(json);
-});
+// JSON-RPC envelopes and nested MCP payloads retain fields not consumed here
+const decode = Schema.decodeUnknownEffect(Schema.fromJsonString(MessageSchema));
 
 runMain(
   Effect.gen(function* () {
-    const [executable, ...args] = process.argv.slice(2);
-    if (!executable)
-      return yield* Effect.fail(new DotfilesError("Usage: mcp.ts COMMAND [ARG...]"));
+    const [executable, args] = runParser(
+      seq(
+        argument(string({ metavar: "COMMAND", pattern: /[\s\S]/ })),
+        passThrough({ format: "greedy" }),
+      ),
+      "mcp.ts",
+      process.argv.slice(2),
+      {
+        help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
+        stdout: console.error,
+        onError: process.exit,
+      },
+    );
     const stdio = yield* Stdio.Stdio;
     const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
     const upstream = yield* spawner.spawn(

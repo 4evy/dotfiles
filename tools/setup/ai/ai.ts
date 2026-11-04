@@ -4,6 +4,11 @@ import { join, resolve } from "node:path";
 import { output } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
+import { object, or } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
+import { map, withDefault } from "@optique/core/modifiers";
+import { argument, command, constant, passThrough } from "@optique/core/primitives";
+import { choice } from "@optique/core/valueparser";
 import { Effect, FileSystem, Schema } from "effect";
 import { prepareAiHome } from "./home.ts";
 
@@ -44,20 +49,36 @@ const actions = {
   configure: { generate: false, provisionFarstep: false },
   activate: { generate: false, provisionFarstep: false },
 };
-const usage = "Usage: ai.ts [apply|generate|setup|configure|activate]";
+const selected = runParser(
+  withDefault(
+    or(
+      command(
+        "setup",
+        object({
+          action: constant("setup"),
+          setupArguments: passThrough({ format: "greedy" }),
+        }),
+      ),
+      map(
+        argument(choice(["apply", "generate", "configure", "activate"])),
+        (action) => ({ action, setupArguments: [] }),
+      ),
+    ),
+    { action: "apply", setupArguments: [] },
+  ),
+  "ai.ts",
+  Bun.argv.slice(2),
+  {
+    help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
+    onError: process.exit,
+  },
+);
 
 runMain(
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    const action = Bun.argv[2] ?? "apply";
-    if (!Object.hasOwn(actions, action))
-      return yield* Effect.fail(new DotfilesError(usage));
-    const rules = actions[action as keyof typeof actions];
-    const setupArguments = Bun.argv.slice(3);
-    if (action !== "setup" && setupArguments.length)
-      return yield* Effect.fail(
-        new DotfilesError(`${action} does not accept arguments`),
-      );
+    const { action, setupArguments } = selected;
+    const rules = actions[action];
     if (action === "activate") {
       const home = homedir();
       yield* fs.makeDirectory(join(home, ".local/state/ghidra-mcp-headless"), {

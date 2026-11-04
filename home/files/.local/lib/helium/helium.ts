@@ -15,6 +15,10 @@ import {
   Schema,
   Stream,
 } from "@dotfiles/runtime/runtime";
+import { object } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
+import { withDefault } from "@optique/core/modifiers";
+import { flag } from "@optique/core/primitives";
 
 const START_TIMEOUT_MS = 15_000;
 const POLL_INTERVAL_MS = 25;
@@ -29,13 +33,6 @@ const BrowserMetadata = Schema.Struct({ "User-Agent": Schema.String });
 class HeliumError extends Data.TaggedError("HeliumError")<{
   readonly message: string;
 }> {}
-
-function parseArguments(arguments_: string[]): { refresh: boolean } {
-  if (arguments_.length === 0) return { refresh: false };
-  if (arguments_.length === 1 && arguments_[0] === "--refresh")
-    return { refresh: true };
-  throw new HeliumError({ message: "usage: helium-user-agent [--refresh]" });
-}
 
 const readBrowserVersion = Effect.fn(function* (launcher: string) {
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
@@ -194,10 +191,16 @@ const probeUserAgent = Effect.fn(function* (launcher: string) {
 
 runMain(
   Effect.gen(function* () {
-    const options = yield* Effect.try({
-      try: () => parseArguments(Bun.argv.slice(2)),
-      catch: (error) => error as HeliumError,
-    });
+    const options = runParser(
+      object({ refresh: withDefault(flag("--refresh"), false) }),
+      "helium-user-agent",
+      Bun.argv.slice(2),
+      {
+        help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
+        stdout: console.error,
+        onError: process.exit,
+      },
+    );
     const launcher = yield* Effect.sync(() => Bun.which("helium-browser"));
     if (!launcher)
       return yield* Effect.fail(

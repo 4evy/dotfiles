@@ -1,8 +1,12 @@
 #!/usr/bin/env bun
-import { parseArgs } from "node:util";
 import { output } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
+import { object, or } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
+import { formatMessage, message } from "@optique/core/message";
+import { flag, option } from "@optique/core/primitives";
+import { string } from "@optique/core/valueparser";
 import { Effect } from "effect";
 import { clients } from "./clients.ts";
 import { notificationPermissions } from "./notifications/notifications.ts";
@@ -72,36 +76,48 @@ const reconcile = Effect.fn(function* (
   yield* notifications;
 });
 
+const parser = object({
+  user: option("--user", string({ metavar: "USER" }))
+    .multiple()
+    .map((values) => values.at(-1) ?? process.env.SUDO_USER ?? process.env.USER),
+  mode: or(
+    flag("--check")
+      .multiple({ min: 1 })
+      .map(() => "check" as const),
+    flag("--dry-run")
+      .multiple({ min: 1 })
+      .map(() => "dry-run" as const),
+  ).withDefault("apply"),
+});
+
 if (import.meta.main)
   runMain(
     Effect.gen(function* () {
-      const { values } = yield* Effect.try({
-        try: () =>
-          parseArgs({
-            args: Bun.argv.slice(2),
-            options: {
-              user: {
-                type: "string",
-                default: process.env.SUDO_USER ?? process.env.USER,
+      const values = yield* Effect.try({
+        try: () => {
+          let helpShown = false;
+          const values = runParser(parser, "dotfiles-permissions", Bun.argv.slice(2), {
+            brief: message`Reconcile declared clients' macOS permissions`,
+            help: {
+              option: { names: ["-h", "--help"] },
+              onShow: () => {
+                helpShown = true;
               },
-              check: { type: "boolean", default: false },
-              "dry-run": { type: "boolean", default: false },
-              help: { type: "boolean", short: "h" },
             },
-          }),
+            stderr: () => {},
+            onError: (_code, error) => {
+              throw new Error(formatMessage(error));
+            },
+          });
+          return helpShown ? undefined : values;
+        },
         catch: (cause) => new DotfilesError(String(cause)),
       });
-      if (values.help) {
-        console.log("Usage: dotfiles-permissions --user USER [--check | --dry-run]");
-        return;
-      }
-      if (!values.user || (values.check && values["dry-run"]))
+      if (!values) return;
+      if (!values.user)
         return yield* Effect.fail(
           new DotfilesError("Specify --user and at most one check mode"),
         );
-      yield* reconcile(
-        values.user,
-        values.check ? "check" : values["dry-run"] ? "dry-run" : "apply",
-      );
+      yield* reconcile(values.user, values.mode);
     }),
   );

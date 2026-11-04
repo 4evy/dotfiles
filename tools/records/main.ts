@@ -1,6 +1,11 @@
 import { DotfilesError } from "@dotfiles/core/errors";
 import { type RuntimeServices, runMain } from "@dotfiles/core/runtime";
-import { Command, CommanderError } from "commander";
+import { or, seq } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
+import { message } from "@optique/core/message";
+import { map, optional } from "@optique/core/modifiers";
+import { argument, command, constant, option } from "@optique/core/primitives";
+import { string } from "@optique/core/valueparser";
 import { Effect, Exit, type PlatformError } from "effect";
 import { deploy } from "./deploy.ts";
 import { writeOutput } from "./files.ts";
@@ -23,82 +28,109 @@ function selectOperation(args: string[]) {
   let stdout = "";
   let stderr = "";
   let status = 0;
-  const program = new Command()
-    .name("records")
-    .description("Manage encrypted dotfile records")
-    .exitOverride()
-    .showHelpAfterError(false)
-    .configureOutput({
-      writeOut: (text) => {
-        stdout += text;
+  let completed = false;
+  const path = optional(argument(string({ metavar: "PATH" })));
+  const parser = or(
+    command(
+      "deploy",
+      map(
+        optional(option("--directory", string({ metavar: "PATH" }))),
+        (directory): Operation =>
+          (vault) =>
+            deploy(vault, directory ?? ""),
+      ),
+      { description: message`Decrypt records into protected runtime files for Hjem` },
+    ),
+    command(
+      "unpack",
+      map(
+        path,
+        (directory): Operation =>
+          (vault) =>
+            directory === undefined
+              ? unpackSource(vault)
+              : unpackWorkspace(vault, directory),
+      ),
+      { description: message`Materialize records or decrypt a protected workspace` },
+    ),
+    command(
+      "pack",
+      map(
+        path,
+        (directory): Operation =>
+          (vault) =>
+            directory === undefined
+              ? packSource(vault)
+              : packWorkspace(vault, directory),
+      ),
+      {
+        description: message`Re-encrypt materialized records or a protected workspace`,
       },
-      writeErr: (text) => {
-        stderr += text;
+    ),
+    command(
+      "check",
+      map(
+        path,
+        (directory): Operation =>
+          (vault) =>
+            check(vault, directory ?? ""),
+      ),
+      { description: message`Validate the vault, records, or a protected workspace` },
+    ),
+    command(
+      "edit",
+      map(
+        path,
+        (target): Operation =>
+          (vault) =>
+            editSource(vault, target ?? ""),
+      ),
+      { description: message`Materialize and edit the source tree or one record` },
+    ),
+    command("layout", constant(layout), {
+      description: message`Show target-to-source mappings and attributes`,
+    }),
+    command(
+      "workspace-edit",
+      map(
+        seq(
+          optional(argument(string({ metavar: "COLLECTION" }))),
+          optional(argument(string({ metavar: "INDEX" }))),
+        ),
+        ([collection, index]): Operation =>
+          (vault) =>
+            editWorkspace(vault, collection ?? "", index ?? ""),
+      ),
+      { hidden: true },
+    ),
+  );
+  const selected = runParser(parser, "records", args.length ? args : ["--help"], {
+    brief: message`Manage encrypted dotfile records`,
+    help: {
+      option: { names: ["-h", "--help"] },
+      command: true,
+      onShow: () => {
+        completed = true;
       },
-    });
-  program
-    .command("deploy")
-    .description("Decrypt records into protected runtime files for Hjem")
-    .option(
-      "--directory <path>",
-      "Protected runtime root (defaults to XDG_STATE_HOME/hjem/records)",
-    )
-    .action((options: { directory?: string }) => {
-      operation = (vault) => deploy(vault, options.directory ?? "");
-    });
-  program
-    .command("unpack [directory]")
-    .description("Materialize records or decrypt them into a protected workspace")
-    .action((directory?: string) => {
-      operation = (vault) =>
-        directory === undefined
-          ? unpackSource(vault)
-          : unpackWorkspace(vault, directory);
-    });
-  program
-    .command("pack [directory]")
-    .description("Re-encrypt materialized records or a protected workspace")
-    .action((directory?: string) => {
-      operation = (vault) =>
-        directory === undefined ? packSource(vault) : packWorkspace(vault, directory);
-    });
-  program
-    .command("check [directory]")
-    .description("Validate the vault, materialized records, or a protected workspace")
-    .action((directory?: string) => {
-      operation = (vault) => check(vault, directory ?? "");
-    });
-  program
-    .command("edit [path]")
-    .description("Materialize and edit the source tree or one record")
-    .action((path?: string) => {
-      operation = (vault) => editSource(vault, path ?? "");
-    });
-  program
-    .command("layout")
-    .description("Show target-to-source mappings and attributes")
-    .action(() => {
-      operation = layout;
-    });
-  program
-    .command("workspace-edit [collection] [index]", { hidden: true })
-    .description("Edit records in a temporary protected workspace")
-    .action((collection?: string, index?: string) => {
-      operation = (vault) => editWorkspace(vault, collection ?? "", index ?? "");
-    });
-  program.action(() => program.outputHelp());
-  try {
-    program.parse(args);
-  } catch (error) {
-    if (!(error instanceof CommanderError)) throw error;
-    status = error.exitCode === 0 ? 0 : 1;
-  }
+    },
+    onError: () => {
+      completed = true;
+      status = 1;
+    },
+    stdout: (text) => {
+      stdout += `${text}\n`;
+    },
+    stderr: (text) => {
+      stderr += `${text}\n`;
+    },
+  });
+  if (!completed) operation = selected;
   return { operation, stdout, stderr, status };
 }
 
 const main = Effect.gen(function* () {
   const selection = yield* Effect.try({
-    try: () => selectOperation(process.argv),
+    try: () => selectOperation(process.argv.slice(2)),
     catch: () => new DotfilesError("parse records command failed"),
   });
   if (selection.stdout) yield* writeOutput("stdout", selection.stdout);

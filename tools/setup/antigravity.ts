@@ -7,6 +7,8 @@ import { DotfilesError } from "@dotfiles/core/errors";
 import { isExecutable } from "@dotfiles/core/files";
 import { download } from "@dotfiles/core/http";
 import { runMain } from "@dotfiles/core/runtime";
+import { object } from "@optique/core/constructs";
+import { runParser } from "@optique/core/facade";
 import { Effect, FileSystem, Schema } from "effect";
 
 const releases =
@@ -100,14 +102,9 @@ export const installAntigravity = Effect.fn(function* () {
 });
 
 if (import.meta.main) {
-  runMain(
-    Effect.gen(function* () {
-      const args = Bun.argv.slice(2);
-      if (args.length === 1 && (args[0] === "--help" || args[0] === "-h"))
-        yield* Effect.sync(() => console.log("Usage: antigravity.ts"));
-      else if (args.length)
-        return yield* Effect.fail(new DotfilesError("Usage: antigravity.ts"));
-      else yield* installAntigravity();
-    }),
-  );
+  runParser(object({}), "antigravity.ts", Bun.argv.slice(2), {
+    help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
+    onError: process.exit,
+  });
+  runMain(installAntigravity());
 }

@@ -43,20 +43,15 @@ const CurrentSchema = Schema.StructWithRest(
   }),
   [Schema.Record(Schema.String, Schema.Unknown)],
 );
-const parseJson = (text: string) =>
-  Effect.try({
-    try: () => JSON.parse(text) as unknown,
-    catch: (error) => new DotfilesError(`Invalid MCP settings JSON: ${error}`),
-  });
+const parseSource = Schema.decodeUnknownEffect(Schema.fromJsonString(OpenCodeSchema));
+const parseCurrent = Schema.decodeUnknownEffect(Schema.fromJsonString(CurrentSchema));
 
 runMain(
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const home = process.env.HJEM_HOME_DIR || homedir();
-    const source = yield* Schema.decodeUnknownEffect(OpenCodeSchema)(
-      yield* parseJson(
-        yield* fs.readFileString(join(home, ".config/opencode/opencode.json")),
-      ),
+    const source = yield* parseSource(
+      yield* fs.readFileString(join(home, ".config/opencode/opencode.json")),
     );
     const servers = source.mcp.servers;
     // 1Password's native MCP integration is configured by Codex, not OpenCode
@@ -126,9 +121,7 @@ runMain(
           error.reason._tag === "NotFound" ? Effect.succeed("") : Effect.fail(error),
         ),
       );
-    const current = yield* Schema.decodeUnknownEffect(CurrentSchema)(
-      original.trim() ? yield* parseJson(original) : {},
-    );
+    const current = yield* parseCurrent(original.trim() ? original : "{}");
     const contents = `${JSON.stringify(
       {
         ...current,
