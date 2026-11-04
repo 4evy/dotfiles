@@ -2,17 +2,18 @@
   callPackage,
   dotfilesSourcePins,
   lib,
-  python315,
+  python314,
   symlinkJoin,
 }:
 let
   sourcePin = dotfilesSourcePins.toshy;
   source = sourcePin.outPath;
   version = lib.removePrefix "Toshy_v" sourcePin.version;
+  # Use Python 3.14 while upstream dependencies catch up with Python 3.15
   upstreamRuntime =
     (callPackage "${source}/nix/toshy-runtime.nix" {
       toshySrc = source;
-      python3 = python315;
+      python3 = python314;
     }).overrideAttrs
       {
         doCheck = false;

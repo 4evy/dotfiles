@@ -65,25 +65,9 @@ let
               (
                 _pyFinal: pyPrev:
                 let
-                  inherit (pyPrev) exceptiongroup i3ipc tkinter;
+                  inherit (pyPrev) i3ipc;
                 in
                 {
-                  # CPython 3.15 changed hint wording, not exception behavior
-                  exceptiongroup = exceptiongroup.overridePythonAttrs (
-                    old:
-                    lib.optionalAttrs (pyPrev.python.pythonVersion == "3.15") {
-                      patches = (old.patches or [ ]) ++ [
-                        ../../../packages/toshy/runtime/exceptiongroup/remove-nameerror-wording-test.patch
-                      ];
-                    }
-                  );
-                  # Python 3.15's Tk tests need libregrtest to initialize resources
-                  tkinter = tkinter.overridePythonAttrs (
-                    old:
-                    lib.optionalAttrs (pyPrev.python.pythonVersion == "3.15") {
-                      checkPhase = lib.replaceStrings [ "-m unittest" ] [ "-m test -u all,wantobjects=1" ] old.checkPhase;
-                    }
-                  );
                   # Concurrent X11 sync calls can consume each other's replies
                   # Serialize request/reply pairs while keeping checks enabled
                   i3ipc = i3ipc.overridePythonAttrs (old: {
@@ -96,7 +80,7 @@ let
             ];
           }
         ))
-        python315
+        python314
         ;
     };
   };
