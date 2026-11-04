@@ -43,6 +43,7 @@ let
     dotfiles-workstation = ../../../tools/workstation/package.nix;
     dotfiles-typescript-tools = ../../../package.nix;
     hyper-window-tiling = ../../../tools/tiling/package.nix;
+    rex = ../../../packages/rex/package.nix;
     super-engineering = ../../../packages/super-engineering/package.nix;
     theme-run = ../../../tools/theme/run/package.nix;
     toshy-runtime = ../../../packages/toshy/runtime/package.nix;

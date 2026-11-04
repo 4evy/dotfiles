@@ -31,6 +31,7 @@
           helix
           jj-patched
           kanata-with-cmd
+          rex
           super-engineering
           theme-run
           tweezle
