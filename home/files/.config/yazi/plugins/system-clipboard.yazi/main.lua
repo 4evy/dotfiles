@@ -9,6 +9,12 @@ local M = {}
 ---@class FlushableChild: Child
 ---@field flush fun(self: FlushableChild): boolean, Error?
 
+-- The upstream Yazi types omit this resource-release API
+---@class ClipboardYa: ya
+---@field drop fun(resource: Stdio)
+local ya = ya
+---@cast ya ClipboardYa
+
 M.title = "System Clipboard"
 M.getenv = os.getenv
 
@@ -141,7 +147,7 @@ function M.write_stdin(command, args, payload)
 		return nil, write_err
 	end
 
-	ya.drop(child:take_stdin())
+	ya.drop(assert(child:take_stdin()))
 	return child:wait()
 end
 
