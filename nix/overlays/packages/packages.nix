@@ -5,7 +5,6 @@ let
     callPackage
     fetchFromGitHub
     hyper-window-tiling
-    makeRustPlatform
     stdenv
     unstable
     ;
@@ -18,14 +17,12 @@ let
     ghidra-mcp
     ;
   inherit (hyper-window-tiling) gnome kde;
-  # Both Farstep executables require Rust 1.99, ahead of the pinned Nixpkgs
-  rustToolchain = (inputs.rust-overlay.lib.mkRustBin { } final).stable."1.99.1".minimal;
-  farstepRustPlatform = makeRustPlatform {
-    cargo = rustToolchain;
-    rustc = rustToolchain;
-  };
-  farstepDesktop = farstep-desktop.override { rustPlatform = farstepRustPlatform; };
-  farstepService = farstep-service.override { rustPlatform = farstepRustPlatform; };
+  # Farstep's Crane builders require Rust 1.99, ahead of pinned Nixpkgs
+  farstepCraneLib = (inputs.ai.inputs.crane.mkLib final).overrideToolchain (
+    pkgs: (inputs.rust-overlay.lib.mkRustBin { } pkgs).stable."1.99.1".minimal
+  );
+  farstepDesktop = farstep-desktop.override { craneLib = farstepCraneLib; };
+  farstepService = farstep-service.override { craneLib = farstepCraneLib; };
   aiJavaScript = callPackage ../../../packages/ai/javascript.nix {
     inherit (aiPackages) ai-app-modules ai-javascript;
   };
