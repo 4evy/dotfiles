@@ -23,6 +23,10 @@ popup-border = "all"
 rounded-corners = true
 rainbow-brackets = true
 
+# Keep messages available without covering the buffer with popup stacks
+[editor.notifications]
+style = "statusline"
+
 [editor.cursor-shape]
 insert = "bar"
 normal = "block"
@@ -67,7 +71,7 @@ trail = " "
 [editor.lsp]
 display-messages = true
 display-inlay-hints = true
-display-progress-messages = true
+display-progress-messages = false
 auto-document-highlight = true
 inlay-hints-length-limit = 50
 
