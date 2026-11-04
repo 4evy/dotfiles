@@ -3,22 +3,13 @@ import { homedir } from "node:os";
 import { basename, join } from "node:path";
 import { run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
-import { isExecutable } from "@dotfiles/core/files";
 import { runMain } from "@dotfiles/core/runtime";
 import { desktopOutput, flatpakRefs } from "@dotfiles/workstation/desktop";
 import { Effect, FileSystem } from "effect";
 
-const which = Effect.fn(function* (name: string) {
-  for (const directory of (process.env.PATH ?? "").split(":")) {
-    const path = join(directory, name);
-    if (yield* isExecutable(path)) return path;
-  }
-  return undefined;
-});
-
 const gnome = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
-  if (!(yield* which("gnome-extensions"))) return;
+  if (!Bun.which("gnome-extensions")) return;
   const installed = yield* run(["gnome-extensions", "list", "--system"], {
     capture: true,
     check: false,
@@ -43,7 +34,7 @@ const gnome = Effect.gen(function* () {
 
 const kde = Effect.gen(function* () {
   if (!process.env.XDG_CURRENT_DESKTOP?.includes("KDE")) return;
-  const writer = yield* which("kwriteconfig6");
+  const writer = Bun.which("kwriteconfig6");
   if (writer)
     yield* run(
       [
@@ -60,7 +51,7 @@ const kde = Effect.gen(function* () {
       ],
       { capture: true },
     );
-  const dbus = yield* which("qdbus6");
+  const dbus = Bun.which("qdbus6");
   if (dbus)
     yield* run([dbus, "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting.start"], {
       capture: true,

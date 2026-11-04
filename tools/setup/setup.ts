@@ -107,13 +107,8 @@ const workstation = Effect.gen(function* () {
       check: false,
       ...(input === undefined ? {} : { input }),
     }).pipe(Effect.map((result) => result.code === 0));
-  const which = Effect.fn(function* (name: string) {
-    for (const directory of (env.PATH ?? "").split(delimiter)) {
-      const path = join(directory, name);
-      if (yield* isExecutable(path)) return path;
-    }
-    return undefined;
-  });
+  const which = (name: string) =>
+    Effect.sync(() => Bun.which(name, { PATH: env.PATH ?? "" }) ?? undefined);
 
   const promptPassword = Effect.gen(function* () {
     const terminalState = yield* output(["stty", "-g"]);
