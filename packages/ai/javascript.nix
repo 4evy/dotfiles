@@ -1,6 +1,8 @@
 {
   ai-app-modules,
   ai-javascript,
+  lib,
+  nix,
   runCommand,
 }:
 let
@@ -8,10 +10,23 @@ let
     patches = (old.patches or [ ]) ++ [ ./omp-process-name.patch ];
   });
 in
-runCommand "ai-javascript-omp-process-name" { inherit (ai-javascript) meta; } ''
-  mkdir -p "$out"
-  cp -rs ${ai-javascript}/. "$out/"
-  find "$out" -type d -exec chmod u+w {} +
-  # Keep matching Vite chunks together while retaining shared runtime packages
-  cp -r --remove-destination ${modules}/. "$out/"
-''
+runCommand "ai-javascript-omp-process-name"
+  {
+    inherit (ai-javascript) meta;
+    passthru = (ai-javascript.passthru or { }) // {
+      # The upstream input owns the JavaScript sources and dependency hashes
+      updateScript = [
+        (lib.getExe nix)
+        "flake"
+        "update"
+        "ai"
+      ];
+    };
+  }
+  ''
+    mkdir -p "$out"
+    cp -rs ${ai-javascript}/. "$out/"
+    find "$out" -type d -exec chmod u+w {} +
+    # Keep matching Vite chunks together while retaining shared runtime packages
+    cp -r --remove-destination ${modules}/. "$out/"
+  ''

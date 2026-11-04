@@ -96,6 +96,7 @@ in
 packages
 // {
   aiTools = aiPackages // {
+    ai-javascript = aiJavaScript;
     ghidra-mcp = ghidraMcp;
     ai-tools = ai-tools.override {
       ghidra-mcp = ghidraMcp;

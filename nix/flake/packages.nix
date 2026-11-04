@@ -60,6 +60,7 @@
         inherit (aiTools)
           ai-tools
           ai-configs
+          ai-javascript
           farstep
           farstep-desktop
           farstep-service
@@ -105,6 +106,7 @@
           hyper-window-tiling-gnome
           hyper-window-tiling-kde
           kmscon
+          nix-gl-host
           super-engineering-native
           toshy-runtime
           uresourced

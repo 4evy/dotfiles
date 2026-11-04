@@ -31,6 +31,7 @@ symlinkJoin {
   passthru = (upstreamRuntime.passthru or { }) // {
     inherit source;
     inherit (sourcePin) revision version;
+    updateScript = sourcePin.updateScript;
   };
   inherit (upstreamRuntime) meta;
 }

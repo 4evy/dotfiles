@@ -33,6 +33,8 @@ rustPlatform.buildRustPackage {
   doCheck = false;
   doInstallCheck = false;
 
+  passthru.updateScript = sourcePin.updateScript;
+
   meta = {
     description = "BlueBuild CLI with bootc and the feature-gated recipe v2 parser";
     homepage = "https://github.com/blue-build/cli";

@@ -2,6 +2,7 @@
   lib,
   stdenvNoCC,
   fetchFromGitHub,
+  nix-update-script,
   unstable,
   patchelf,
 }:
@@ -14,8 +15,8 @@ stdenvNoCC.mkDerivation {
     rev = "5269b233f83880a0b433eafe026f0bc0d8f1a4a9";
     hash = "sha256-QZCKJoypcwgS3tDNSWMjlxEBZtOYPW3eXV24rMzKsac=";
   };
-  buildInputs = lib.attrValues { inherit (unstable) python315; };
-  nativeCheckInputs = lib.attrValues { inherit (unstable) python315; };
+  buildInputs = [ unstable.python315 ];
+  nativeCheckInputs = [ unstable.python315 ];
   dontBuild = true;
   doCheck = true;
   checkPhase = ''
@@ -31,6 +32,13 @@ stdenvNoCC.mkDerivation {
       --replace-fail 'IN_NIX_STORE = False' 'IN_NIX_STORE = True'
     runHook postInstall
   '';
+  passthru.updateScript = nix-update-script {
+    attrPath = "nix-gl-host";
+    extraArgs = [
+      "--flake"
+      "--version=branch"
+    ];
+  };
   meta = {
     description = "Expose host NVIDIA graphics libraries to Nix applications";
     homepage = "https://github.com/numtide/nix-gl-host";

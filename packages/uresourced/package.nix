@@ -19,18 +19,18 @@ stdenv.mkDerivation {
 
   src = sourcePin.outPath;
 
-  nativeBuildInputs = lib.attrValues {
-    inherit
-      glib
-      meson
-      ninja
-      pkg-config
-      ;
-  };
+  nativeBuildInputs = [
+    glib
+    meson
+    ninja
+    pkg-config
+  ];
 
-  buildInputs = lib.attrValues {
-    inherit glib pipewire systemd;
-  };
+  buildInputs = [
+    glib
+    pipewire
+    systemd
+  ];
 
   mesonFlags = [
     "-Dappmanagement=true"
@@ -40,6 +40,8 @@ stdenv.mkDerivation {
 
   doCheck = false;
   doInstallCheck = false;
+
+  passthru.updateScript = sourcePin.updateScript;
 
   meta = {
     description = "Dynamically allocate resources to the active graphical user";
