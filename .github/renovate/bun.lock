@@ -73,7 +73,7 @@
 
     "@babel/helper-validator-identifier": ["@babel/helper-validator-identifier@7.29.7", "", {}, "sha512-qehxGkRj55h/ff8EMaJ+cYhyaKlHIxqYDn682wQD7RNp9UujOQsHog2uS0r2vzr4pW+sXf90NeeayjcNaX3fFg=="],
 
-    "@babel/runtime-corejs3": ["@babel/runtime-corejs3@7.29.10", "", { "dependencies": { "core-js-pure": "^3.48.0" } }, "sha512-R4FKrg4Vy0hB7PfAxf9LOorEPd5/36SCIXPXAvjlQaQmPvtrjwoDXV15jsSm2ecsqBW1Iewwb7mEnG83xIEApg=="],
+    "@babel/runtime-corejs3": ["@babel/runtime-corejs3@7.29.13", "", { "dependencies": { "core-js-pure": "^3.48.0" } }, "sha512-vz2jdupHNmzH+i7E6u6Np8dKWMwp+P9R8lbjXerbD4YcaHa+Jc2rmSR8MhMfXpHZYcwZ28Wq0LsbcLf50TglIw=="],
 
     "@baszalmstra/rattler": ["@baszalmstra/rattler@0.2.1", "", {}, "sha512-HZ2xu6Nk+XzAeateyzDKYM47ySkjkuKtTNpKRAy+Y+YcRH1qHM2le4iLlG32wDddaHCLUsBsyBxirClOj1TLjw=="],
 
