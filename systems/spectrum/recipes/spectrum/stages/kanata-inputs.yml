@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/stage-v1.json
+name: kanata-inputs
+from: scratch
+modules:
+  - type: copy@v1
+    src: systems/spectrum/recipes/spectrum/sources/kanata.json
+    dest: /src/sources.json
+
+  - type: copy@v1
+    src: systems/spectrum/recipes/spectrum/sources/patches.json
+    dest: /src/patches.json
+
+  - type: copy@v1
+    src: packages/kanata/build.sh
+    dest: /src/build-kanata.sh

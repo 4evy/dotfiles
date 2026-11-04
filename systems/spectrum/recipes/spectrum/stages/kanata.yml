@@ -20,13 +20,14 @@ modules:
         - systemd-devel
 
   # Bind only these inputs so unrelated context edits preserve the compile cache
+  # Stage-backed binds work under SELinux without Podman-only relabel options
   - type: containerfile
     snippets:
       - |-
         RUN \
-          --mount=type=bind,src=systems/spectrum/recipes/spectrum/sources/kanata.json,target=/src/sources.json,Z \
-          --mount=type=bind,src=systems/spectrum/recipes/spectrum/sources/patches.json,target=/src/patches.json,Z \
-          --mount=type=bind,src=packages/kanata/build.sh,target=/src/build-kanata.sh,Z \
+          --mount=type=bind,from=kanata-inputs,src=/src/sources.json,target=/src/sources.json \
+          --mount=type=bind,from=kanata-inputs,src=/src/patches.json,target=/src/patches.json \
+          --mount=type=bind,from=kanata-inputs,src=/src/build-kanata.sh,target=/src/build-kanata.sh \
           --mount=type=cache,id=spectrum-kanata-cargo-registry-v1,sharing=locked,target=/root/.cargo/registry \
           --mount=type=cache,id=spectrum-kanata-cargo-git-v1,sharing=locked,target=/root/.cargo/git \
           --mount=type=cache,id=spectrum-kanata-target-v1,sharing=locked,target=/build/kanata-source/target \
