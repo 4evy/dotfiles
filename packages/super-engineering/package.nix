@@ -20,35 +20,30 @@
   wayland,
   xdg-utils,
   zenity,
-  nix-update-script,
   writeShellApplication,
   coreutils,
   curl,
   jq,
-  gnused,
   nix,
   useFHSEnv ? true,
 }:
 
 let
-  darwinVersion = "0-unstable-2026-10-29";
-  darwinRev = "c0f9eaa7ea152352346cedd9c489070eb3e291b1";
+  pins = lib.importJSON ./sources.json;
 
   sources = {
     aarch64-darwin = {
       arch = "arm64";
-      hash = "sha256-AqPGoz9o2k/5OoIFJRob+t2kukI/UYDWTfu+CRDYzmk=";
     };
     x86_64-linux = {
       arch = "x86_64";
-      hash = "sha256-imbfUqQkmM4kawfaIz+tG9Nxgju++bnwGPTfchq0tH8=";
     };
     aarch64-linux = {
       arch = "aarch64";
-      hash = "sha256-bonnxEe5aJv+2vroik5kD0bQmKz654HDhsipfHXmuv4=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
+  sourceHash = pins.hashes.${stdenvNoCC.hostPlatform.system};
   linuxSystems = builtins.filter (lib.strings.hasSuffix "-linux") (builtins.attrNames sources);
   meta = {
     description = "Workspace for coding agents, terminals, and Git worktrees";
@@ -107,6 +102,7 @@ let
     stdenvNoCC.mkDerivation {
       pname = "${finalAttrs.pname}-unwrapped";
       inherit (finalAttrs) version src meta;
+      passthru = { inherit updateScript; };
 
       dontConfigure = true;
       dontBuild = true;
@@ -190,101 +186,84 @@ let
       inherit (finalAttrs) version;
       executableName = "sc";
       runScript = lib.meta.getExe' finalAttrs.passthru.unwrapped "sc";
+      passthru = { inherit updateScript; };
       meta = finalAttrs.meta // {
         mainProgram = "sc";
       };
     };
 
-  # Refresh every source hash even when nightly builds share a date
-  updateScript =
-    finalAttrs:
-    lib.meta.getExe (writeShellApplication {
-      name = "update-super-engineering";
-      runtimeInputs = [
-        curl
-        jq
-        gnused
-        nix
-      ];
-      text = ''
-        file=packages/super-engineering/package.nix
-        payload=$(curl -fsSL https://releases.super.engineering/linux/nightly/manifest.json \
-          | jq -er '.payload | @base64d | fromjson')
-        darwin_payload=$(curl -fsSL https://releases.super.engineering/latest-v2.json \
-          | jq -ec '.nightly')
-        rev=$(jq -er '.artifacts["x86_64-unknown-linux-gnu"].commit' <<< "$payload")
-        version="0-unstable-$(jq -er '.date' <<< "$payload")"
-        darwin_rev=$(jq -er '.artifacts["aarch64-apple-darwin"].sha' <<< "$darwin_payload")
-        darwin_version="0-unstable-$(jq -er '.date' <<< "$darwin_payload")"
+  # Run from the repository root to refresh every platform, including same-day builds
+  updateScript = lib.getExe (writeShellApplication {
+    name = "update-super-engineering";
+    runtimeInputs = [
+      coreutils
+      curl
+      jq
+      nix
+    ];
+    text = ''
+      file=packages/super-engineering/sources.json
+      payload=$(curl -fsSL https://releases.super.engineering/linux/nightly/manifest.json \
+        | jq -er '.payload | @base64d | fromjson')
+      darwin_payload=$(curl -fsSL https://releases.super.engineering/latest-v2.json \
+        | jq -ec '.nightly')
+      rev=$(jq -er '.artifacts["x86_64-unknown-linux-gnu"].commit' <<< "$payload")
+      version="0-unstable-$(jq -er '.date' <<< "$payload")"
+      darwin_rev=$(jq -er '.artifacts["aarch64-apple-darwin"].sha' <<< "$darwin_payload")
+      darwin_version="0-unstable-$(jq -er '.date' <<< "$darwin_payload")"
+      hashes='{}'
 
-        sed -i -E \
-          "s/(rev = \")[^\"]+(\";)/\1$rev\2/; s/(version = \")[^\"]+(\";)/\1$version\2/; s/(darwinRev = \")[^\"]+(\";)/\1$darwin_rev\2/; s/(darwinVersion = \")[^\"]+(\";)/\1$darwin_version\2/" \
-          "$file"
+      ${lib.concatMapStringsSep "\n" (
+        system:
+        let
+          isDarwin = lib.hasSuffix "-darwin" system;
+          target = if isDarwin then "aarch64-apple-darwin" else "${sources.${system}.arch}-unknown-linux-gnu";
+        in
+        ''
+          url=$(jq -er --arg target ${lib.escapeShellArg target} '.artifacts[$target].url' \
+            <<< "${if isDarwin then "$darwin_payload" else "$payload"}")
+          hash=$(nix --extra-experimental-features nix-command store prefetch-file --json "$url" \
+            | jq -er '.hash')
+          hashes=$(jq --arg system ${lib.escapeShellArg system} --arg hash "$hash" \
+            '. + {($system): $hash}' <<< "$hashes")
+        ''
+      ) (builtins.attrNames sources)}
 
-        # Prefetch other targets without requiring cross-platform builders
-        ${lib.strings.concatMapStringsSep "\n" (
-          system:
-          let
-            info = sources.${system};
-            target =
-              if lib.strings.hasSuffix "-darwin" system then
-                "aarch64-apple-darwin"
-              else
-                "${info.arch}-unknown-linux-gnu";
-          in
-          if system == stdenvNoCC.hostPlatform.system then
-            ""
-          else
-            ''
-              url=$(jq -er --arg target ${lib.strings.escapeShellArg target} '.artifacts[$target].url' \
-                <<< "${if lib.strings.hasSuffix "-darwin" system then "$darwin_payload" else "$payload"}")
-              hash=$(nix store prefetch-file --json "$url" | jq -er '.hash')
-              old_hash=$(nix eval --raw --impure --expr ${lib.strings.escapeShellArg ''
-                let
-                  flake = builtins.getFlake (toString ./.);
-                  pkgs = import flake.inputs.nixpkgs {
-                    system = "${system}";
-                    config.allowUnfree = true;
-                  };
-                in
-                (pkgs.callPackage ./packages/super-engineering/package.nix { }).src.outputHash
-              ''})
-              sed -i "s|$old_hash|$hash|g" "$file"
-            ''
-        ) (builtins.attrNames sources)}
-
-        ${
-          lib.strings.escapeShellArgs (nix-update-script {
-            attrPath = finalAttrs.pname;
-            extraArgs = [
-              "--flake"
-              "--override-filename"
-              "packages/super-engineering/package.nix"
-            ];
-          })
-        } --version=skip --system=${stdenvNoCC.hostPlatform.system}
-      '';
-    });
+      staged=$(mktemp "$file.XXXXXX")
+      trap 'rm -f "$staged"' EXIT
+      jq -n \
+        --arg version "$version" --arg rev "$rev" \
+        --arg darwin_version "$darwin_version" --arg darwin_rev "$darwin_rev" \
+        --argjson hashes "$hashes" \
+        '{
+          linux: {version: $version, rev: $rev},
+          darwin: {version: $darwin_version, rev: $darwin_rev},
+          hashes: $hashes
+        }' > "$staged"
+      chmod --reference="$file" "$staged"
+      mv "$staged" "$file"
+    '';
+  });
 
   commonAttrs = finalAttrs: {
     pname = "super-engineering";
-    version = "0-unstable-2026-10-29";
+    inherit (pins.linux) version;
 
     src = fetchurl {
       url = "https://releases.super.engineering/linux/nightly/${finalAttrs.passthru.rev}/super-engineering-nightly-${
         builtins.substring 0 8 finalAttrs.passthru.rev
       }-linux-${source.arch}.tar.gz";
-      inherit (source) hash;
+      hash = sourceHash;
     };
 
     passthru = {
-      rev = "3248f5deeb4b1b9e3765333d3a5c81d8fd9524c2";
+      inherit (pins.linux) rev;
 
       # Share the fixed point so overrideAttrs updates every variant
       unwrapped = unwrapped finalAttrs;
       native = mkNative finalAttrs;
       cli = cli finalAttrs;
-      updateScript = updateScript finalAttrs;
+      inherit updateScript;
     };
 
     meta = meta // {
@@ -328,13 +307,13 @@ let
 
   darwin = stdenvNoCC.mkDerivation (finalAttrs: {
     pname = "super-engineering";
-    version = darwinVersion;
+    inherit (pins.darwin) version;
 
     src = fetchurl {
       url = "https://releases.super.engineering/nightly/super.engineering-nightly-${
         builtins.substring 0 8 finalAttrs.passthru.rev
       }-${source.arch}.dmg";
-      inherit (source) hash;
+      hash = sourceHash;
     };
 
     nativeBuildInputs = [
@@ -366,8 +345,8 @@ let
     '';
 
     passthru = {
-      rev = darwinRev;
-      updateScript = updateScript finalAttrs;
+      inherit (pins.darwin) rev;
+      inherit updateScript;
     };
     meta = meta // {
       platforms = [ "aarch64-darwin" ];

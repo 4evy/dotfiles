@@ -1,0 +1,15 @@
+{
+  "linux": {
+    "version": "0-unstable-2026-10-29",
+    "rev": "3248f5deeb4b1b9e3765333d3a5c81d8fd9524c2"
+  },
+  "darwin": {
+    "version": "0-unstable-2026-10-29",
+    "rev": "c0f9eaa7ea152352346cedd9c489070eb3e291b1"
+  },
+  "hashes": {
+    "aarch64-darwin": "sha256-AqPGoz9o2k/5OoIFJRob+t2kukI/UYDWTfu+CRDYzmk=",
+    "x86_64-linux": "sha256-imbfUqQkmM4kawfaIz+tG9Nxgju++bnwGPTfchq0tH8=",
+    "aarch64-linux": "sha256-bonnxEe5aJv+2vroik5kD0bQmKz654HDhsipfHXmuv4="
+  }
+}
