@@ -19,11 +19,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793733930,
-        "narHash": "sha256-Ud9HZbZC/1CRvbWjNJj8V9mlWeQMS4lIFsOW1dVhawc=",
+        "lastModified": 1793799000,
+        "narHash": "sha256-AgW3hvzjn6UpDJ07wFeL6Srk1KLrdMnugfDpN82vbOU=",
         "owner": "4evy",
         "repo": "ai",
-        "rev": "fa766849528fb9862fe8c91ba9f995b9ebd7d1be",
+        "rev": "3fadaa12d44389337692ae590acbcea4bbce024e",
         "type": "github"
       },
       "original": {
@@ -318,11 +318,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793783853,
-        "narHash": "sha256-PaAfhobMWpzXlCEWDBAZdRiYS5mLqsoQe1u0xNR8OXU=",
+        "lastModified": 1793798115,
+        "narHash": "sha256-L0Tirbo2/A+dE7w7GyMRvAKNs6Ja+hux0c3ySE/LVE8=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "2b52831d11441e3f5a4aa0387e6b8e9d495013d1",
+        "rev": "f28b0ff1bf049aba6aec995fce8498bc221a706c",
         "type": "github"
       },
       "original": {
@@ -482,11 +482,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793791800,
-        "narHash": "sha256-dyfOM2VDnYlo0orBRqFzuOHC9oviPNZXIwDeC9ZhcYQ=",
+        "lastModified": 1793793300,
+        "narHash": "sha256-Aov5aBKUwWfpIYDuIZEX352BhilFV3LpnsIzh9qit1E=",
         "owner": "4evy",
         "repo": "raycast",
-        "rev": "6602acbf94c3583c934522a0b2740308a906d745",
+        "rev": "acb6bfac457761b045288f09b344b175af44bd9d",
         "type": "github"
       },
       "original": {
