@@ -425,6 +425,13 @@
         "darwin"
       ];
     }
+    {
+      source = ".config/rex/themes.ts";
+      target = ".config/rex/themes.ts";
+      systems = [
+        "darwin"
+      ];
+    }
   ]
   ++ (builtins.map
     (source: {
@@ -1019,6 +1026,18 @@
       ];
       onChange = true;
       name = "rex_shortcuts.sh";
+    }
+    {
+      # Read Hjem's generated Ghostty palettes, not a frozen Rex export
+      command = [
+        "bun"
+        "@HOME@/.config/rex/themes.ts"
+      ];
+      systems = [
+        "darwin"
+      ];
+      onChange = false;
+      name = "rex_themes.sh";
     }
     {
       command = [
