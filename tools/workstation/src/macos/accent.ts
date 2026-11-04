@@ -19,6 +19,7 @@ import { writeIfChanged } from "@dotfiles/core/files";
 import agent from "@dotfiles/workstation/assets/macos-accent" with { type: "text" };
 import { color, palettes } from "@dotfiles/workstation/theme";
 import { Console, Effect, FileSystem } from "effect";
+import Builder from "fast-xml-builder";
 import type * as FridaApi from "frida";
 import type { Cancellable, Device, Process, Script, Session } from "frida";
 
@@ -450,14 +451,8 @@ function watcher(frida: Frida, location: Paths, accent: string) {
   };
 }
 
-function xml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
-}
+const plistBuilder = new Builder();
+const plistString = (value: string) => plistBuilder.build({ string: value });
 
 function launchAgent(location: Paths) {
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -467,7 +462,7 @@ ${marker}
 <dict>
   <key>Label</key><string>${label}</string>
   <key>ProgramArguments</key>
-  <array><string>${xml(location.executable)}</string><string>macos-catppuccin-custom-accent</string><string>--watch</string></array>
+  <array>${plistString(location.executable)}<string>macos-catppuccin-custom-accent</string><string>--watch</string></array>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <key>LimitLoadToSessionType</key><string>Aqua</string>
@@ -477,11 +472,11 @@ ${marker}
   <key>Umask</key><integer>63</integer>
   <key>EnvironmentVariables</key>
   <dict>
-    <key>XDG_DATA_HOME</key><string>${xml(location.dataHome)}</string>
-    <key>XDG_STATE_HOME</key><string>${xml(location.stateHome)}</string>
+    <key>XDG_DATA_HOME</key>${plistString(location.dataHome)}
+    <key>XDG_STATE_HOME</key>${plistString(location.stateHome)}
   </dict>
-  <key>StandardOutPath</key><string>${xml(join(location.directory, "stdout.log"))}</string>
-  <key>StandardErrorPath</key><string>${xml(join(location.directory, "stderr.log"))}</string>
+  <key>StandardOutPath</key>${plistString(join(location.directory, "stdout.log"))}
+  <key>StandardErrorPath</key>${plistString(join(location.directory, "stderr.log"))}
 </dict>
 </plist>
 `;
