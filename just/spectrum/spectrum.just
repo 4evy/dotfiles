@@ -84,4 +84,5 @@ switch *args: (_doctor 'nix')
 [linux]
 [positional-arguments]
 _switch *args: _validate
-    bluebuild switch --skip-validation "$@" systems/spectrum/recipes/spectrum.yml
+    # Match build's disk-backed temporary storage for the image transfer
+    TMPDIR=/var/tmp bluebuild switch --skip-validation "$@" systems/spectrum/recipes/spectrum.yml
