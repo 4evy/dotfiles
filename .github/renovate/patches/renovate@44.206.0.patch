@@ -156,7 +156,7 @@ index 17cde80..a91b90b 100644
  	const filteredPrConfig = generatePrBodyFingerprintConfig(config);
  	const prBodyFingerprint = fingerprint(filteredPrConfig);
 diff --git a/package.json b/package.json
-index b482f35..678bd69 100644
+index 0d372c9..ad8ca3d 100644
 --- a/package.json
 +++ b/package.json
 @@ -83,7 +83,7 @@
