@@ -24,10 +24,10 @@
           biome = {
             enable = true;
             formatCommand = "format";
-            settings = lib.recursiveUpdate (lib.importJSON ../../../biome.jsonc) {
-              # treefmt already walks the Git worktree and passes the selected
-              # files explicitly; the generated config lives in the Nix store,
-              # where Biome cannot discover this checkout's ignore file
+            settings = {
+              # Let Biome parse JSONC rather than Nix's strict JSON parser
+              extends = [ "${../../../biome.jsonc}" ];
+              # treefmt passes files explicitly, without worktree discovery
               vcs.enabled = false;
             };
             validate.enable = false;
