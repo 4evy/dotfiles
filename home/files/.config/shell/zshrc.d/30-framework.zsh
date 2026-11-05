@@ -62,8 +62,19 @@ fpath=("$HOME/.cache/zsh/completions" "${fpath[@]}")
 if [[ -r "$ZSH/oh-my-zsh.sh" ]]; then
   # compinit cannot save its dump until the explicit parent directory exists
   [[ -d ${ZSH_COMPDUMP:h} ]] || mkdir -p -- "${ZSH_COMPDUMP:h}"
-  # shellcheck source=/dev/null
-  source "$ZSH/oh-my-zsh.sh"
+  # OMZ appends metadata without locking, so simultaneous shell startups can
+  # interleave writes and turn path fragments into executable dump contents
+  zmodload zsh/system || return
+  : >> "${ZSH_COMPDUMP}.startup.lock"
+  zsystem flock -f _dotfiles_compdump_lock \
+    "${ZSH_COMPDUMP}.startup.lock" || return
+  {
+    # shellcheck source=/dev/null
+    source "$ZSH/oh-my-zsh.sh"
+  } always {
+    zsystem flock -u "$_dotfiles_compdump_lock"
+    unset _dotfiles_compdump_lock
+  }
 fi
 
 # Extend Oh My Zsh's defaults with the upstream history options that remove
