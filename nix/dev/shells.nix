@@ -38,12 +38,8 @@
               ;
             inherit (unstable) uv;
           }
-          ++ lib.optionals isLinux (
-            lib.attrValues {
-              inherit (self'.packages) bluebuild-v2;
-              inherit (pkgs) podman podman-compose;
-            }
-          );
+          # Use the host container engine with its matching storage and helpers
+          ++ lib.optionals isLinux [ self'.packages.bluebuild-v2 ];
       };
 
     in
