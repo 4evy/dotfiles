@@ -1,5 +1,4 @@
 body.body--dark {
-
   --accent: @COLOR_DARK_ACCENT@;
   --accent-text: @COLOR_DARK_PINK@;
   --accent-foreground: @COLOR_DARK_ACCENTFOREGROUND@;
@@ -60,8 +59,8 @@ body.body--dark {
       background: var(--crust);
     }
 
-    [sfc-name='MojavePlayer'] {
-      [sfc-name='AMProgressBar'] .overlay-progress-bar {
+    [sfc-name="MojavePlayer"] {
+      [sfc-name="AMProgressBar"] .overlay-progress-bar {
         background: var(--accent);
       }
 
@@ -80,10 +79,10 @@ body.body--dark {
       background: var(--base);
     }
 
-    [sfc-name='MojavePlayer'] {
+    [sfc-name="MojavePlayer"] {
       background: var(--base);
 
-      [sfc-name='AMProgressBar'] .overlay-progress-bar {
+      [sfc-name="AMProgressBar"] .overlay-progress-bar {
         background: var(--accent);
       }
 
@@ -102,7 +101,7 @@ body.body--dark {
       background: var(--base);
     }
 
-    [sfc-name='LCDPlayerMavericks'] .player {
+    [sfc-name="LCDPlayerMavericks"] .player {
       background: var(--mantle);
     }
 
@@ -141,7 +140,8 @@ body.body--dark {
       background-color: var(--selection-bg);
     }
 
-    .window-control.minimize.isWin32:hover:before, .window-control.minmax.isWin32:hover:before {
+    .window-control.minimize.isWin32:hover:before,
+    .window-control.minmax.isWin32:hover:before {
       background-color: var(--accent);
     }
 
@@ -153,7 +153,9 @@ body.body--dark {
       background-color: var(--crust);
     }
 
-    .window-control.close.isWin32:before, .window-control.minmax.isWin32:before, .window-control.minimize.isWin32:before {
+    .window-control.close.isWin32:before,
+    .window-control.minmax.isWin32:before,
+    .window-control.minimize.isWin32:before {
       background: var(--text);
     }
 
@@ -161,7 +163,8 @@ body.body--dark {
       color: var(--red);
     }
 
-    .window-control.minimize:hover, .window-control.minmax:hover {
+    .window-control.minimize:hover,
+    .window-control.minmax:hover {
       color: var(--accent-text);
     }
   }
@@ -172,7 +175,7 @@ body.body--dark {
   }
 
   /* Select Box */
-  [sfc-name='CSelect'] {
+  [sfc-name="CSelect"] {
     select {
       background-color: var(--crust);
       border-color: var(--selection-bg);
@@ -180,25 +183,25 @@ body.body--dark {
     }
 
     .c-select--label {
-      background-color: var(--base)
+      background-color: var(--base);
     }
   }
 
   /* Switch */
-  input[type=checkbox][switch] {
+  input[type="checkbox"][switch] {
     background: var(--overlay0);
   }
 
-  input[type=checkbox][switch]:checked {
+  input[type="checkbox"][switch]:checked {
     background: var(--accent);
   }
 
-  input[type=checkbox][switch]:before {
+  input[type="checkbox"][switch]:before {
     background: var(--crust);
   }
 
   /* Input Box */
-  input[type='number'] {
+  input[type="number"] {
     color: var(--text);
   }
 
@@ -213,7 +216,7 @@ body.body--dark {
     color: var(--accent-foreground);
   }
 
-  [sfc-name='HeaderSearch'] {
+  [sfc-name="HeaderSearch"] {
     .search-box {
       background: var(--mantle);
     }
@@ -222,21 +225,22 @@ body.body--dark {
       background-color: var(--base);
     }
 
-    [sfc-name='HeaderSearchItem'] [sfc-name='QItemSection'].ellipsis {
+    [sfc-name="HeaderSearchItem"] [sfc-name="QItemSection"].ellipsis {
       color: var(--text);
     }
   }
 
   /* Autoplay Icon when autoplay is enabled. */
-  [sfc-name='QueueButton'] .autoplay-badge {
+  [sfc-name="QueueButton"] .autoplay-badge {
     color: var(--crust);
   }
 
-  [sfc-name='QueueButton'].active, [title='Lyrics'].active {
+  [sfc-name="QueueButton"].active,
+  [title="Lyrics"].active {
     color: var(--accent-text);
   }
 
-  [sfc-name='Explicit'] svg {
+  [sfc-name="Explicit"] svg {
     fill: var(--accent-text);
   }
 
@@ -248,12 +252,13 @@ body.body--dark {
   /* Contents */
 
   /* Center Content Pane */
-  [sfc-name='RouterView'] {
+  [sfc-name="RouterView"] {
     background: var(--base);
     color: var(--text);
 
     .detail-content {
-      .blurb-text, .meta-data {
+      .blurb-text,
+      .meta-data {
         color: var(--subtext1);
       }
 
@@ -262,21 +267,24 @@ body.body--dark {
         color: var(--accent-text);
       }
 
-      .chip-favorite [sfc-name='QIcon'] {
+      .chip-favorite [sfc-name="QIcon"] {
         color: var(--accent-text);
       }
     }
 
-    [sfc-name='Playlist'], [sfc-name='Album'] {
-      [sfc-name='AlbumHeader'], [sfc-name='AlbumHeaderMobile'] {
-        [sfc-name='ArtistChip'] {
-          .chip-name, .chip-favorite .chip-fav-btn {
+    [sfc-name="Playlist"],
+    [sfc-name="Album"] {
+      [sfc-name="AlbumHeader"],
+      [sfc-name="AlbumHeaderMobile"] {
+        [sfc-name="ArtistChip"] {
+          .chip-name,
+          .chip-favorite .chip-fav-btn {
             color: var(--accent-text);
             opacity: 1;
           }
         }
 
-        [sfc-name='AlbumActions'] [sfc-name="MoreBtn"] {
+        [sfc-name="AlbumActions"] [sfc-name="MoreBtn"] {
           color: var(--accent-text);
         }
 
@@ -303,23 +311,27 @@ body.body--dark {
               color: var(--crust);
             }
 
-            [sfc-name='PlayingIndicator'] {
+            [sfc-name="PlayingIndicator"] {
               --eq-bars-bg-color: var(--crust);
             }
 
-            [sfc-name='Explicit'] svg {
+            [sfc-name="Explicit"] svg {
               fill: var(--crust);
             }
           }
 
-          [sfc-name='PlaylistTrack']:not(.selected), [sfc-name='AlbumTrack']:not(.selected) {
-            .artist-link, .artist-section, .album-section, button.menu-btn {
+          [sfc-name="PlaylistTrack"]:not(.selected),
+          [sfc-name="AlbumTrack"]:not(.selected) {
+            .artist-link,
+            .artist-section,
+            .album-section,
+            button.menu-btn {
               color: var(--accent-text);
             }
           }
 
           .ri-list-item:hover:not(.selected) {
-            background-color: var(--selection-bg)
+            background-color: var(--selection-bg);
           }
         }
 
@@ -328,19 +340,19 @@ body.body--dark {
         }
       }
 
-      [sfc-name='PlaylistSuggestions'] {
+      [sfc-name="PlaylistSuggestions"] {
         background: var(--mantle);
 
         .q-btn {
           color: var(--accent-text);
         }
 
-        [sfc-name='QPagination'] {
+        [sfc-name="QPagination"] {
           .q-btn {
             color: var(--text);
           }
 
-          .q-btn--standard{
+          .q-btn--standard {
             color: var(--accent-text);
           }
 
@@ -349,7 +361,7 @@ body.body--dark {
           }
         }
 
-        [sfc-name='QList'] {
+        [sfc-name="QList"] {
           .q-item__label {
             color: var(--text);
           }
@@ -365,13 +377,14 @@ body.body--dark {
       }
     }
 
-    [sfc-name='Artist'] {
+    [sfc-name="Artist"] {
       .artist-text {
         color: var(--text);
       }
 
-      [sfc-name='MediaItem'] {
-        .artist-name, .ellipsis {
+      [sfc-name="MediaItem"] {
+        .artist-name,
+        .ellipsis {
           color: var(--accent-text);
         }
 
@@ -381,15 +394,16 @@ body.body--dark {
       }
 
       /* Artist Page Header */
-      [sfc-name='QCardActions'] {
+      [sfc-name="QCardActions"] {
         .playbtn ._svg-icon {
           background: var(--base);
         }
 
-        [sfc-name='QIcon'], [sfc-name='VueFeather'] {
+        [sfc-name="QIcon"],
+        [sfc-name="VueFeather"] {
           color: var(--accent-text);
 
-          [fill=white] {
+          [fill="white"] {
             fill: var(--accent-text);
           }
         }
@@ -400,7 +414,7 @@ body.body--dark {
           color: var(--accent-text);
         }
 
-        .artist-items [sfc-name='ListItemShort'] {
+        .artist-items [sfc-name="ListItemShort"] {
           .content-album {
             color: var(--accent-text);
           }
@@ -416,14 +430,16 @@ body.body--dark {
       background: var(--surface0);
     }
 
-    [sfc-name='PowerSwoosh'] {
-      .powerswoosh-lockup-detail-title, .powerswoosh-lockup-detail-subtitle {
+    [sfc-name="PowerSwoosh"] {
+      .powerswoosh-lockup-detail-title,
+      .powerswoosh-lockup-detail-subtitle {
         color: var(--text);
       }
     }
 
-    [sfc-name='MediaItemSlider'] {
-      [sfc-name='QCard'], [sfc-name='MediaItem'] {
+    [sfc-name="MediaItemSlider"] {
+      [sfc-name="QCard"],
+      [sfc-name="MediaItem"] {
         .artistLink {
           color: var(--accent-text);
         }
@@ -434,25 +450,25 @@ body.body--dark {
       }
     }
 
-    [section='recentlyPlayed'] {
-      [sfc-name='ListItemShort'] .content-artist {
+    [section="recentlyPlayed"] {
+      [sfc-name="ListItemShort"] .content-artist {
         color: var(--accent-text);
       }
     }
 
     /* Top Right Buttons on For You and Home */
-    [title='Home Settings'] {
+    [title="Home Settings"] {
       background-color: var(--mantle);
       color: var(--accent-text);
     }
 
-    [sfc-name='GroupingHeader'] button {
+    [sfc-name="GroupingHeader"] button {
       color: var(--accent-text);
     }
   }
 
   /* Left Drawer Content */
-  [sfc-name='Sidebar'] {
+  [sfc-name="Sidebar"] {
     background: var(--crust);
     color: var(--overlay1);
 
@@ -460,7 +476,8 @@ body.body--dark {
       color: var(--accent-text);
     }
 
-    .sidebar_nav-btn:active, .active {
+    .sidebar_nav-btn:active,
+    .active {
       background: var(--accent);
 
       .nav-icon {
@@ -476,7 +493,7 @@ body.body--dark {
       opacity: 1;
     }
 
-    [sfc-name='QTabs'] {
+    [sfc-name="QTabs"] {
       background-color: var(--mantle);
 
       .q-tab__indicator {
@@ -492,17 +509,17 @@ body.body--dark {
       }
     }
 
-    [sfc-name='PageTabList'] .title-text {
+    [sfc-name="PageTabList"] .title-text {
       color: var(--text);
     }
 
-    [sfc-name='SidebarProfile'] .active {
+    [sfc-name="SidebarProfile"] .active {
       color: var(--crust);
     }
   }
 
   /* Right Drawer / Queue / Lyrics */
-  [sfc-name='RightDrawerContent'] {
+  [sfc-name="RightDrawerContent"] {
     .lyric-view {
       .lyric-word {
         --defaultColor: var(--text);
@@ -513,7 +530,8 @@ body.body--dark {
         --defaultColor: var(--accent);
       }
 
-      .lyric-text, .lyric-text-translated {
+      .lyric-text,
+      .lyric-text-translated {
         color: var(--text);
         opacity: 1;
       }
@@ -533,11 +551,11 @@ body.body--dark {
       }
     }
 
-    [sfc-name='QCard'] {
+    [sfc-name="QCard"] {
       background: var(--crust);
     }
 
-    [sfc-name='AMQueueItem'] {
+    [sfc-name="AMQueueItem"] {
       .qmd-title-text {
         color: var(--text);
       }
@@ -559,7 +577,7 @@ body.body--dark {
       }
     }
 
-    [sfc-name='QTabs'] {
+    [sfc-name="QTabs"] {
       background-color: var(--base);
 
       .q-tab {
@@ -586,14 +604,14 @@ body.body--dark {
       background-color: var(--selection-bg);
     }
 
-    [sfc-name='ContextMenuIcon'],
-    [sfc-name='QItem']:hover [sfc-name='QIcon'],
-    [sfc-name='CascadeItem']:hover [sfc-name='QIcon'],
+    [sfc-name="ContextMenuIcon"],
+    [sfc-name="QItem"]:hover [sfc-name="QIcon"],
+    [sfc-name="CascadeItem"]:hover [sfc-name="QIcon"],
     [sfc-name="VueFeather"] {
       color: var(--accent-text);
     }
 
-    [sfc-name='ContextMenuIconButton'] {
+    [sfc-name="ContextMenuIconButton"] {
       color: var(--accent-text);
 
       .text-default {
@@ -605,33 +623,36 @@ body.body--dark {
       }
     }
 
-    .q-btn.bg-primary, .q-btn.bg-primary [sfc-name='QIcon'] {
+    .q-btn.bg-primary,
+    .q-btn.bg-primary [sfc-name="QIcon"] {
       color: var(--accent-foreground);
     }
 
-    [sfc-name='QItemSection'] {
+    [sfc-name="QItemSection"] {
       color: var(--text);
 
-      [sfc-name='QIcon'] {
+      [sfc-name="QIcon"] {
         color: var(--accent-text);
       }
     }
     /* For pop-up volume sliders */
-    [sfc-name='AMVolumeSlider'] .volumeBar .volume-range {
+    [sfc-name="AMVolumeSlider"] .volumeBar .volume-range {
       --progressColor: var(--accent);
     }
   }
 
   /* General Popups using QCard */
-  [role='dialog'] [sfc-name='QCard'] {
+  [role="dialog"] [sfc-name="QCard"] {
     background-color: var(--base);
     color: var(--text);
 
-    .close, [sfc-name='QItem'], [sfc-name='QBtn']:not(.bg-red, .bg-primary).q-btn__content {
+    .close,
+    [sfc-name="QItem"],
+    [sfc-name="QBtn"]:not(.bg-red, .bg-primary).q-btn__content {
       color: var(--text);
     }
 
-    [sfc-name='QTabPanels'] {
+    [sfc-name="QTabPanels"] {
       background-color: var(--base);
 
       /* Textbox fix present only in Discord Rich Presence Dialog */
@@ -656,12 +677,13 @@ body.body--dark {
       color: var(--subtext1);
     }
 
-    .q-btn.bg-primary, .q-btn.bg-primary [sfc-name='QIcon'] {
+    .q-btn.bg-primary,
+    .q-btn.bg-primary [sfc-name="QIcon"] {
       color: var(--accent-foreground);
     }
   }
 
-  [sfc-name='QDialog'] {
+  [sfc-name="QDialog"] {
     .titlebar-button.close {
       color: var(--text);
     }
@@ -672,7 +694,7 @@ body.body--dark {
         border-right-color: var(--surface0);
       }
 
-      [sfc-name='SettingsSidebar'] {
+      [sfc-name="SettingsSidebar"] {
         background-color: var(--mantle);
 
         .settings-sidebar-item.selected {
@@ -691,18 +713,18 @@ body.body--dark {
           color: var(--accent-foreground);
         }
 
-        [sfc-name='QItemLabel'] {
+        [sfc-name="QItemLabel"] {
           color: var(--text);
         }
 
-        [sfc-name='QItemLabel'].text-caption {
+        [sfc-name="QItemLabel"].text-caption {
           color: var(--subtext1);
         }
 
-        [sfc-name='SettingItem'] {
+        [sfc-name="SettingItem"] {
           color: var(--subtext0);
 
-          .q-item__section [sfc-name='QIcon'] {
+          .q-item__section [sfc-name="QIcon"] {
             color: var(--text);
           }
         }
@@ -730,7 +752,7 @@ body.body--dark {
           background-color: var(--selection-bg);
         }
 
-        [sfc-name='QInput'].c-select .q-field__control {
+        [sfc-name="QInput"].c-select .q-field__control {
           background-color: var(--crust);
         }
 
@@ -740,12 +762,12 @@ body.body--dark {
       }
 
       .themes-page {
-        [sfc-name='QBtn'].q-btn--actionable {
+        [sfc-name="QBtn"].q-btn--actionable {
           background-color: transparent;
           color: var(--accent-text);
         }
 
-        [sfc-name='QList'] {
+        [sfc-name="QList"] {
           .cursor-pointer {
             color: var(--text);
 
@@ -763,13 +785,13 @@ body.body--dark {
               color: var(--mantle);
             }
 
-            [data-icon-name='check'] {
+            [data-icon-name="check"] {
               color: var(--accent-foreground);
             }
           }
         }
 
-        [sfc-name='QExpansionItem'] [sfc-name='QList'] {
+        [sfc-name="QExpansionItem"] [sfc-name="QList"] {
           background-color: var(--mantle);
         }
       }
@@ -780,7 +802,7 @@ body.body--dark {
           color: var(--accent-text);
         }
 
-        [sfc-name='QList'] {
+        [sfc-name="QList"] {
           .text-info + .q-btn {
             color: var(--red);
           }
@@ -791,7 +813,7 @@ body.body--dark {
     .updates-window {
       background: var(--base);
 
-      [sfc-name='QTabs'] {
+      [sfc-name="QTabs"] {
         background: var(--mantle);
 
         .q-tab {
@@ -810,15 +832,17 @@ body.body--dark {
       .versions-list {
         background-color: var(--crust);
 
-        .bg-primary, .q-hoverable:hover {
+        .bg-primary,
+        .q-hoverable:hover {
           background: var(--selection-bg);
         }
 
-        [sfc-name='QIcon'], [sfc-name='QItemLabel'] {
+        [sfc-name="QIcon"],
+        [sfc-name="QItemLabel"] {
           color: var(--text);
         }
         /* Buttons */
-        [sfc-name='QBtn'] {
+        [sfc-name="QBtn"] {
           background: var(--accent);
 
           .q-btn__content {
@@ -827,7 +851,7 @@ body.body--dark {
         }
       }
 
-      [sfc-name='QCardSection'] table td {
+      [sfc-name="QCardSection"] table td {
         color: var(--text);
       }
     }
@@ -840,7 +864,7 @@ body.body--dark {
         background: var(--base);
       }
 
-      [sfc-name='QBtn'] {
+      [sfc-name="QBtn"] {
         background: var(--accent);
 
         .q-btn__content {
@@ -851,7 +875,7 @@ body.body--dark {
   }
 
   /* CAL & Command Center */
-  [sfc-name='QGlobalDialog'] {
+  [sfc-name="QGlobalDialog"] {
     /* Close Dialog */
     .q-dialog-plugin {
       background: var(--base);
@@ -869,16 +893,16 @@ body.body--dark {
         background: var(--accent);
       }
 
-      [sfc-name='QBtn'] .q-btn__content {
+      [sfc-name="QBtn"] .q-btn__content {
         color: var(--accent-foreground);
       }
 
-      [sfc-name='QItemSection'] {
+      [sfc-name="QItemSection"] {
         color: var(--text);
       }
 
       /* Search */
-      [sfc-name='QInput'] {
+      [sfc-name="QInput"] {
         background: var(--mantle);
 
         .q-field__native {
@@ -894,22 +918,25 @@ body.body--dark {
     .am-audio-settings {
       background: var(--base);
 
-      [sfc-name='QItemLabel'], [sfc-name='QTab'][aria-selected='false'], .close {
+      [sfc-name="QItemLabel"],
+      [sfc-name="QTab"][aria-selected="false"],
+      .close {
         color: var(--text);
       }
 
       /* Equalizer */
-      [sfc-name='AMEQ'] {
+      [sfc-name="AMEQ"] {
         .mini {
           color: var(--text);
         }
 
-        .eq-freq, .eq-q {
+        .eq-freq,
+        .eq-q {
           background-color: var(--mantle);
           color: var(--text);
         }
 
-        [sfc-name='QBtn'] {
+        [sfc-name="QBtn"] {
           color: var(--crust);
         }
       }
@@ -922,25 +949,28 @@ body.body--dark {
   }
 
   /* Queue Guard */
-  .queue-guard[sfc-name='QCard'] {
+  .queue-guard[sfc-name="QCard"] {
     background-color: var(--base);
     color: var(--text);
 
-    [sfc-name='QItemLabel'] {
+    [sfc-name="QItemLabel"] {
       color: var(--text);
     }
 
-    [sfc-name='NIcon'] {
+    [sfc-name="NIcon"] {
       color: var(--accent-text);
     }
   }
 
   /* Themes / Plugins Card */
-  [data-v-ec8b2100][sfc-name='QCard'] {
+  [data-v-ec8b2100][sfc-name="QCard"] {
     background-color: var(--base);
     color: var(--text);
 
-    [sfc-name='QItemLabel'], .title-text, [sfc-name='QItemSection'], button.close [sfc-name='QIcon'] {
+    [sfc-name="QItemLabel"],
+    .title-text,
+    [sfc-name="QItemSection"],
+    button.close [sfc-name="QIcon"] {
       color: var(--text);
     }
 
@@ -953,11 +983,13 @@ body.body--dark {
   .artist-picker-modal {
     background-color: var(--base);
 
-    [sfc-name='QItemSection'], .modal-titlebar-content, .close {
+    [sfc-name="QItemSection"],
+    .modal-titlebar-content,
+    .close {
       color: var(--text);
     }
 
-    .q-item-type+.q-item-type {
+    .q-item-type + .q-item-type {
       border-top-color: var(--surface0);
     }
   }
@@ -965,13 +997,16 @@ body.body--dark {
   /* Modes */
 
   /* Miniplayer */
-  [sfc-name='MiniPlayerLayout'] [sfc-name='MiniPlayerControls'] .overlay-progress-bar {
+  [sfc-name="MiniPlayerLayout"]
+    [sfc-name="MiniPlayerControls"]
+    .overlay-progress-bar {
     --progressColor: var(--accent);
   }
 
   /* Coverflow Mode */
   .coverflow-player {
-    [sfc-name='MojavePlayer'], .minimal-player {
+    [sfc-name="MojavePlayer"],
+    .minimal-player {
       .overlay-progress-track {
         background: var(--surface0);
       }
@@ -980,20 +1015,21 @@ body.body--dark {
         --progressColor: var(--accent);
       }
 
-      [sfc-name='AMVolumeSlider'] .volume-range {
+      [sfc-name="AMVolumeSlider"] .volume-range {
         --progressColor: var(--accent);
       }
     }
   }
 
   /* Sing */
-  [sfc-name='ImmersiveSingLyrics'] {
+  [sfc-name="ImmersiveSingLyrics"] {
     .lyric-word {
       --defaultColor: var(--text);
       --gradientColor: var(--accent);
     }
 
-    .lyric-text, .lyric-text-translated {
+    .lyric-text,
+    .lyric-text-translated {
       color: var(--text);
     }
 
@@ -1002,7 +1038,8 @@ body.body--dark {
     }
 
     .finished {
-      .lyric-word, .lyric-text {
+      .lyric-word,
+      .lyric-text {
         color: var(--accent-text);
       }
     }
@@ -1020,7 +1057,7 @@ body.body--dark {
   }
 
   .immersive-player {
-    [sfc-name='AMPMetadataMojave'] {
+    [sfc-name="AMPMetadataMojave"] {
       .song-name {
         color: var(--text);
       }
@@ -1030,7 +1067,7 @@ body.body--dark {
       }
     }
 
-    [sfc-name='QTabs'] {
+    [sfc-name="QTabs"] {
       background: var(--base);
 
       .q-tab {
@@ -1046,7 +1083,7 @@ body.body--dark {
       }
     }
 
-    [sfc-name='AMQueueItem'] {
+    [sfc-name="AMQueueItem"] {
       .qmd-title-text {
         color: var(--text);
       }
@@ -1067,7 +1104,8 @@ body.body--dark {
         --gradientColor: var(--accent);
       }
 
-      .lyric-text, .lyric-text-translated {
+      .lyric-text,
+      .lyric-text-translated {
         color: var(--text);
         opacity: 1;
       }
@@ -1077,18 +1115,19 @@ body.body--dark {
       }
 
       .finished {
-        .lyric-word, .lyric-text {
+        .lyric-word,
+        .lyric-text {
           color: var(--accent-text);
         }
       }
     }
 
     /* History Tab */
-    [sfc-name='QCard'] [sfc-name='ListItemShort'] .content-artist {
+    [sfc-name="QCard"] [sfc-name="ListItemShort"] .content-artist {
       color: var(--accent-text);
     }
 
-    [sfc-name='AMProgressWidget'] {
+    [sfc-name="AMProgressWidget"] {
       .am-currenttime {
         color: var(--text);
       }
@@ -1126,11 +1165,11 @@ body.body--dark {
       }
     }
 
-    [sfc-name='AMProgressBar'] .overlay-progress-bar {
+    [sfc-name="AMProgressBar"] .overlay-progress-bar {
       --progressColor: var(--accent);
     }
 
-    [sfc-name='AMVolumeSlider'] .volume-range {
+    [sfc-name="AMVolumeSlider"] .volume-range {
       --progressColor: var(--accent);
     }
 
@@ -1141,11 +1180,13 @@ body.body--dark {
 
   /* Immersive Options Dialog */
   .sing-options-panel {
-    [sfc-name='QItemLabel'], [sfc-name='QItemSection'], [sfc-name='ModalTitleBar'] {
+    [sfc-name="QItemLabel"],
+    [sfc-name="QItemSection"],
+    [sfc-name="ModalTitleBar"] {
       color: var(--text);
     }
 
-    [sfc-name='NIcon'] {
+    [sfc-name="NIcon"] {
       color: var(--accent-text);
     }
   }
@@ -1153,65 +1194,69 @@ body.body--dark {
   /* Tabs */
 
   /* Library Songs */
-  [sfc-name='LibrarySongs'] .header-frow {
+  [sfc-name="LibrarySongs"] .header-frow {
     background: var(--base);
   }
 
   /* Library Albums */
-  [sfc-name='LibraryAlbums'] {
-    [sfc-name='CInput'] {
+  [sfc-name="LibraryAlbums"] {
+    [sfc-name="CInput"] {
       background: var(--mantle);
     }
 
-    [sfc-name='RichAlbumGrid'] [sfc-name='RichAlbumGridItem'] .artistLink {
+    [sfc-name="RichAlbumGrid"] [sfc-name="RichAlbumGridItem"] .artistLink {
       color: var(--accent-text);
     }
   }
 
   /* Library Artists */
-  [sfc-name='LibraryArtists'] {
+  [sfc-name="LibraryArtists"] {
     .artist-drawer-container {
       .bg-primary {
         background: var(--selection-bg);
       }
 
-      .text-white [sfc-name='QItemLabel'] {
+      .text-white [sfc-name="QItemLabel"] {
         color: var(--accent-text);
       }
 
-      [sfc-name='CInput'] {
+      [sfc-name="CInput"] {
         background: var(--mantle);
       }
 
-      [sfc-name='QItemLabel'] {
+      [sfc-name="QItemLabel"] {
         color: var(--text);
       }
     }
 
-    .artist-toolbar, .q-page {
+    .artist-toolbar,
+    .q-page {
       background: var(--mantle);
     }
 
-    [sfc-name='RichAlbumGrid'] [sfc-name='RichAlbumGridItem'] .artistLink {
+    [sfc-name="RichAlbumGrid"] [sfc-name="RichAlbumGridItem"] .artistLink {
       color: var(--accent-text);
     }
   }
 
   /* Themes Page and Plugins Page */
-  [sfc-name='ThemesPage'], [sfc-name='PluginsPage'] {
-    [sfc-name='GalleryItem'] [sfc-name='QCardSection'], [sfc-name='GalleryItem'] .gallery-card-content {
+  [sfc-name="ThemesPage"],
+  [sfc-name="PluginsPage"] {
+    [sfc-name="GalleryItem"] [sfc-name="QCardSection"],
+    [sfc-name="GalleryItem"] .gallery-card-content {
       background-color: var(--mantle);
       color: var(--text);
     }
 
-    [sfc-name='QBadge'] {
+    [sfc-name="QBadge"] {
       color: var(--crust);
     }
   }
 
   /* Recently Added & Artist Feed */
-  [sfc-name='RecentlyAdded'], [sfc-name='ArtistFeed']  {
-    .mediaitem-grid [sfc-name='MediaItem'] .artistLink {
+  [sfc-name="RecentlyAdded"],
+  [sfc-name="ArtistFeed"] {
+    .mediaitem-grid [sfc-name="MediaItem"] .artistLink {
       color: var(--accent-text);
     }
   }
@@ -1242,14 +1287,43 @@ body.body--dark {
   --dropdownLightGray: @COLOR_DARK_SURFACE0@;
   --dropdownLightGrayIcon: @COLOR_DARK_SUBTEXT1@;
   --dropdownActiveOutlineColor: @COLOR_DARK_PINK@;
-  --dropdownActiveOutlineColorShadow: color-mix(in srgb, @COLOR_DARK_PINK@ 35%, transparent);
+  --dropdownActiveOutlineColorShadow: color-mix(
+    in srgb,
+    @COLOR_DARK_PINK@ 35%,
+    transparent
+  );
   --hudBGColor: @COLOR_DARK_MANTLE@;
   --hudTextColor: @COLOR_DARK_TEXT@;
   --librarySongsTrackInactiveBG: @COLOR_DARK_MANTLE@;
 
-  * { scrollbar-color: color-mix(in srgb, @COLOR_DARK_PINK@ 52%, @COLOR_DARK_SURFACE0@) transparent; scrollbar-width: thin; }
-  ::-webkit-scrollbar { width: 12px; height: 12px; }
-  ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: color-mix(in srgb, @COLOR_DARK_PINK@ 50%, @COLOR_DARK_SURFACE0@); background-clip: content-box; border: 3px solid transparent; border-radius: 999px; }
-  ::-webkit-scrollbar-thumb:hover { background: @COLOR_DARK_PINK@; }
+  * {
+    scrollbar-color: color-mix(
+        in srgb,
+        @COLOR_DARK_PINK@ 52%,
+        @COLOR_DARK_SURFACE0@
+      )
+      transparent;
+    scrollbar-width: thin;
+  }
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(
+      in srgb,
+      @COLOR_DARK_PINK@ 50%,
+      @COLOR_DARK_SURFACE0@
+    );
+    background-clip: content-box;
+    border: 3px solid transparent;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: @COLOR_DARK_PINK@;
+  }
 }
