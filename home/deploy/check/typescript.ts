@@ -73,7 +73,7 @@ runMain(
     // Keep diagnostics relative even when macOS resolves /var to /private/var
     const compiler = yield* run(
       [
-        join(root, "node_modules/.bin/tsrs"),
+        join(root, "node_modules/.bin/tsc"),
         "-p",
         ".",
         "--pretty",

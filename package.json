@@ -24,17 +24,17 @@
     ],
     "catalog": {
       "@types/bun": "1.4.4",
-      "tsrs": "0.18.0-ts7.1.0-dev.20260929"
+      "typescript": "7.0.2"
     }
   },
   "scripts": {
-    "check": "bun run check:biome && bun run tsrs -p tsconfig.json && bun run --sequential --workspaces check",
+    "check": "bun run check:biome && bun run tsc -p tsconfig.json && bun run --sequential --workspaces check",
     "check:biome": "bun run biome check .",
     "format": "bun run biome check --write .",
     "lint": "bun run biome lint .",
     "lint:fix": "bun run biome lint --write .",
     "sync:omp": "bun tools/renovate/omp.ts",
-    "typecheck": "bun run tsrs -p tsconfig.json && bun run --sequential --workspaces typecheck"
+    "typecheck": "bun run tsc -p tsconfig.json && bun run --sequential --workspaces typecheck"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
@@ -47,7 +47,7 @@
     "@types/write-file-atomic": "4.0.3",
     "culori": "4.0.2",
     "fallow": "file:tools/tiling/vendor/fallow",
-    "tsrs": "catalog:",
+    "typescript": "catalog:",
     "vscode-jsonrpc": "10.0.0"
   },
   "dependencies": {

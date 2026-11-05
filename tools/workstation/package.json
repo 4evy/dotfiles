@@ -17,7 +17,7 @@
     "build": "bun build.ts",
     "check": "bun run typecheck && bun run check:fallow",
     "check:fallow": "bun run fallow dead-code --config .fallowrc.jsonc && bun run fallow health --complexity --max-crap 0 --config .fallowrc.jsonc",
-    "typecheck": "bun run tsrs --noEmit -p tsconfig.json"
+    "typecheck": "bun run tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@dotfiles/core": "workspace:*",
@@ -33,6 +33,6 @@
   },
   "devDependencies": {
     "@types/bun": "1.4.4",
-    "tsrs": "0.18.0-ts7.1.0-dev.20260929"
+    "typescript": "7.0.2"
   }
 }

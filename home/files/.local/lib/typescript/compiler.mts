@@ -3,8 +3,7 @@ import { realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-// Redirect third-party TypeScript CLI entrypoints to the managed Rust compiler
-// Project checks select tsrs directly, independent of this preload
+// Redirect standard TypeScript CLI entrypoints to the managed Rust compiler
 // Resolve before matching so renamed symlinks cannot bypass the default
 let resolved = "";
 if (process.argv[1]) {
