@@ -41,6 +41,9 @@ stdenvNoCC.mkDerivation {
       ../../bun.lock
       ../../tools/tiling/package.json
       ./package.json
+      ./build.ts
+      ./tsconfig.json
+      ../../tsconfig.json
       ./src
       ./assets
       ../../lib/typescript

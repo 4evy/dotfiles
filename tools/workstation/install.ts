@@ -12,6 +12,7 @@ import { map, multiple } from "@optique/core/modifiers";
 import { flag } from "@optique/core/primitives";
 import type { PlatformError } from "effect";
 import { Cause, Config, Console, Effect, FileSystem, Schema } from "effect";
+import { buildWorkstation } from "./build.ts";
 
 const root = resolve(import.meta.dir, "../..");
 const packageRoot = join(root, "tools/workstation");
@@ -64,9 +65,10 @@ const sourceHash = Effect.fn("workstation.sourceHash")(function* () {
       } else hash.update(yield* fs.readFile(path));
       hash.update("\0");
     });
-  for (const name of ["src", "assets", "package.json"])
+  for (const name of ["src", "assets", "package.json", "build.ts", "tsconfig.json"])
     yield* add(join(packageRoot, name));
   yield* add(join(root, "package.json"));
+  yield* add(join(root, "tsconfig.json"));
   yield* add(join(root, "bun.lock"));
   yield* add(join(root, "lib/typescript"));
   yield* add(join(root, "home/package.json"));
@@ -154,24 +156,6 @@ const installLaunchers = Effect.fn("workstation.installLaunchers")(function* (
   }
 });
 
-const build = Effect.fn("workstation.build")(function* (destination: string) {
-  const result = yield* Effect.tryPromise({
-    try: () =>
-      Bun.build({
-        entrypoints: [join(packageRoot, "src/cli.ts")],
-        target: "bun",
-        compile: {
-          outfile: destination,
-          autoloadDotenv: false,
-          autoloadBunfig: false,
-        },
-      }),
-    catch: (cause) => new DotfilesError("Could not compile workstation", { cause }),
-  });
-  if (!result.success)
-    return yield* Effect.fail(new DotfilesError(result.logs.map(String).join("\n")));
-});
-
 const install = Effect.fn("workstation.install")(function* () {
   const fs = yield* FileSystem.FileSystem;
   if (yield* fs.exists("/etc/NIXOS")) return;
@@ -201,7 +185,11 @@ const install = Effect.fn("workstation.install")(function* () {
           prefix: ".build-",
         });
         const output = join(temporary, "workstation");
-        yield* build(output);
+        yield* Effect.tryPromise({
+          try: () => buildWorkstation(output),
+          catch: (cause) =>
+            new DotfilesError("Could not compile workstation", { cause }),
+        });
         yield* run([output, "--help"], true);
         yield* fs.rename(output, executable);
         yield* fs.writeFileString(stamp, `${fingerprint}\n`);
