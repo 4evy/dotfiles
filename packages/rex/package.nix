@@ -45,6 +45,7 @@ in
 # nix run .#rex -- ... exposes the CLI on both platforms
 # macOS also installs Rex Beta.app and rex-app, Linux is server-only upstream
 # Native builds also install Bash, Fish, and Zsh completions
+# Snapshot is upstream's rolling prerelease channel for Rex Beta
 # Run passthru.updateScript from the repo root to refresh every snapshot pin
 stdenvNoCC.mkDerivation {
   pname = "rex";
