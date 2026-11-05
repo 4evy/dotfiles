@@ -13,8 +13,9 @@ export const paletteDocumentSchema = Schema.Struct({
   }),
 });
 export type Palette = typeof paletteSchema.Type;
-export const palettes =
-  Schema.decodeUnknownSync(paletteDocumentSchema)(document).catppuccin_custom;
+export const palettes = Schema.decodeUnknownSync(paletteDocumentSchema)(
+  document,
+).catppuccin_custom;
 
 export function color(palette: Palette, role: string): string {
   const value = palette[role];
@@ -26,5 +27,9 @@ export function rgbComponents(hex: string): [number, number, number] {
   if (!/^#?[\da-fA-F]{6}$/.test(hex))
     throw new DotfilesError(`Invalid RGB color: ${hex}`);
   const number = Number.parseInt(hex.replace(/^#/, ""), 16);
-  return [(number >> 16) / 255, ((number >> 8) & 255) / 255, (number & 255) / 255];
+  return [
+    (number >> 16) / 255,
+    ((number >> 8) & 255) / 255,
+    (number & 255) / 255,
+  ];
 }

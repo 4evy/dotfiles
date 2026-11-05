@@ -8,7 +8,9 @@ import { root } from "./paths.ts";
 function parseChecksums(content: string): Map<string, string> {
   const checksums = new Map<string, string>();
   for (const line of content.split(/\r?\n/)) {
-    const match = line.match(/^[ \t]*([a-f\d]{64})[ \t]+\*?(?:\.\/)?(.+?)\s*$/i);
+    const match = line.match(
+      /^[ \t]*([a-f\d]{64})[ \t]+\*?(?:\.\/)?(.+?)\s*$/i,
+    );
     if (!match?.[1] || !match[2]) continue;
     const hash = match[1].toLowerCase();
     const previous = checksums.get(match[2]);
@@ -33,7 +35,8 @@ function replaceOnce(
 ): string {
   const matches = [...content.matchAll(pattern)];
   const [match] = matches;
-  if (matches.length !== 1 || !match) throw new Error(`Expected one ${description}`);
+  if (matches.length !== 1 || !match)
+    throw new Error(`Expected one ${description}`);
   return (
     content.slice(0, match.index) +
     replacement(match) +
@@ -55,7 +58,9 @@ export const updateBunBootstrap = Effect.fn(function* () {
   const content = yield* fs.readFileString(path);
   const version = content.match(/releases\/download\/bun-v([^/]+)\//)?.[1];
   if (!version)
-    return yield* Effect.fail(new DotfilesError("Missing Bun bootstrap version"));
+    return yield* Effect.fail(
+      new DotfilesError("Missing Bun bootstrap version"),
+    );
   const checksums = yield* checksumsAt(
     `https://github.com/oven-sh/bun/releases/download/bun-v${version}/SHASUMS256.txt`,
   );
@@ -85,7 +90,9 @@ export const updateMise = Effect.fn(function* () {
       runs: Schema.Struct({
         steps: Schema.Array(
           Schema.Struct({
-            env: Schema.optionalKey(Schema.Record(Schema.String, Schema.Unknown)),
+            env: Schema.optionalKey(
+              Schema.Record(Schema.String, Schema.Unknown),
+            ),
           }),
         ),
       }),
@@ -96,10 +103,14 @@ export const updateMise = Effect.fn(function* () {
   );
   const [installer] = installers;
   if (installers.length !== 1)
-    return yield* Effect.fail(new DotfilesError("Expected one mise install step"));
+    return yield* Effect.fail(
+      new DotfilesError("Expected one mise install step"),
+    );
   const version = installer?.env?.MISE_VERSION;
   if (typeof version !== "string" || !/^v\S+$/.test(version))
-    return yield* Effect.fail(new DotfilesError("Missing mise bootstrap version"));
+    return yield* Effect.fail(
+      new DotfilesError("Missing mise bootstrap version"),
+    );
   const checksums = yield* checksumsAt(
     `https://github.com/jdx/mise/releases/download/${version}/SHASUMS256.txt`,
   );
@@ -151,7 +162,9 @@ export const updateBrowser = Effect.fn(function* () {
   );
   const [pin] = pins;
   if (pins.length !== 1 || !pin)
-    return yield* Effect.fail(new DotfilesError("Expected one browser TWP CRX pin"));
+    return yield* Effect.fail(
+      new DotfilesError("Expected one browser TWP CRX pin"),
+    );
   const version = pin.version;
   // Retain the pinned Chromium variant rather than switching MV2/MV3 assets
   const variant = (yield* transform(() => new URL(pin.url))).pathname.match(
@@ -216,6 +229,8 @@ export const updateBrowser = Effect.fn(function* () {
     updated = updated.replace(block, () => replacement);
   }
   if (!found)
-    return yield* Effect.fail(new DotfilesError("Missing browser TWP CRX table"));
+    return yield* Effect.fail(
+      new DotfilesError("Missing browser TWP CRX table"),
+    );
   yield* writeIfChanged(path, updated);
 });

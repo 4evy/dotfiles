@@ -22,12 +22,17 @@ export function requireCommands(...names: string[]) {
   return Effect.suspend(() => {
     const missing = names.find((name) => !Bun.which(name));
     return missing
-      ? Effect.fail(new DotfilesError(`Required command is not available: ${missing}`))
+      ? Effect.fail(
+          new DotfilesError(`Required command is not available: ${missing}`),
+        )
       : Effect.void;
   });
 }
 
-function commandFailure(argv: readonly string[], result: CommandResult): DotfilesError {
+function commandFailure(
+  argv: readonly string[],
+  result: CommandResult,
+): DotfilesError {
   const details = result.stderr.trim() || result.stdout.trim();
   return new DotfilesError(
     `Command failed (${result.code}): ${argv.map(shellQuote).join(" ")}${details ? `\n${details}` : ""}`,
@@ -68,7 +73,9 @@ export function run(argv: readonly string[], options: RunOptions = {}) {
       const stdout = options.capture
         ? Stream.mkString(Stream.decodeText(child.stdout))
         : redirect
-          ? Stream.run(child.stdout, (yield* Stdio.Stdio).stderr()).pipe(Effect.as(""))
+          ? Stream.run(child.stdout, (yield* Stdio.Stdio).stderr()).pipe(
+              Effect.as(""),
+            )
           : Effect.succeed("");
       // Drain both pipes while waiting, so neither can block the child
       const completed = yield* Effect.all(
@@ -105,7 +112,9 @@ export function run(argv: readonly string[], options: RunOptions = {}) {
     Effect.mapError((cause) =>
       cause instanceof DotfilesError
         ? cause
-        : new DotfilesError(`Could not run ${argv[0]}: ${cause.message}`, { cause }),
+        : new DotfilesError(`Could not run ${argv[0]}: ${cause.message}`, {
+            cause,
+          }),
     ),
   );
 }
@@ -135,9 +144,12 @@ export function execProcess(
   return Effect.try({
     try: (): never => {
       const executable = Bun.which(path);
-      if (!executable) throw new DotfilesError(`Command is not available: ${path}`);
+      if (!executable)
+        throw new DotfilesError(`Command is not available: ${path}`);
       if (!process.execve)
-        throw new DotfilesError("This Bun version does not support process.execve");
+        throw new DotfilesError(
+          "This Bun version does not support process.execve",
+        );
       process.execve(executable, [argumentZero, ...args], env);
       throw new DotfilesError(`Could not execute ${path}`);
     },

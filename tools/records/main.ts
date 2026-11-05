@@ -21,7 +21,11 @@ import { check, packWorkspace, unpackWorkspace } from "./workspace.ts";
 
 type Operation = (
   vault: Vault,
-) => Effect.Effect<void, DotfilesError | PlatformError.PlatformError, RuntimeServices>;
+) => Effect.Effect<
+  void,
+  DotfilesError | PlatformError.PlatformError,
+  RuntimeServices
+>;
 
 function selectOperation(args: string[]) {
   let operation: Operation | undefined;
@@ -39,7 +43,9 @@ function selectOperation(args: string[]) {
           (vault) =>
             deploy(vault, directory ?? ""),
       ),
-      { description: message`Decrypt records into protected runtime files for Hjem` },
+      {
+        description: message`Decrypt records into protected runtime files for Hjem`,
+      },
     ),
     command(
       "unpack",
@@ -51,7 +57,9 @@ function selectOperation(args: string[]) {
               ? unpackSource(vault)
               : unpackWorkspace(vault, directory),
       ),
-      { description: message`Materialize records or decrypt a protected workspace` },
+      {
+        description: message`Materialize records or decrypt a protected workspace`,
+      },
     ),
     command(
       "pack",
@@ -75,7 +83,9 @@ function selectOperation(args: string[]) {
           (vault) =>
             check(vault, directory ?? ""),
       ),
-      { description: message`Validate the vault, records, or a protected workspace` },
+      {
+        description: message`Validate the vault, records, or a protected workspace`,
+      },
     ),
     command(
       "edit",
@@ -85,7 +95,9 @@ function selectOperation(args: string[]) {
           (vault) =>
             editSource(vault, target ?? ""),
       ),
-      { description: message`Materialize and edit the source tree or one record` },
+      {
+        description: message`Materialize and edit the source tree or one record`,
+      },
     ),
     command("layout", constant(layout), {
       description: message`Show target-to-source mappings and attributes`,
@@ -104,26 +116,31 @@ function selectOperation(args: string[]) {
       { hidden: true },
     ),
   );
-  const selected = runParser(parser, "records", args.length ? args : ["--help"], {
-    brief: message`Manage encrypted dotfile records`,
-    help: {
-      option: { names: ["-h", "--help"] },
-      command: true,
-      onShow: () => {
+  const selected = runParser(
+    parser,
+    "records",
+    args.length ? args : ["--help"],
+    {
+      brief: message`Manage encrypted dotfile records`,
+      help: {
+        option: { names: ["-h", "--help"] },
+        command: true,
+        onShow: () => {
+          completed = true;
+        },
+      },
+      onError: () => {
         completed = true;
+        status = 1;
+      },
+      stdout: (text) => {
+        stdout += `${text}\n`;
+      },
+      stderr: (text) => {
+        stderr += `${text}\n`;
       },
     },
-    onError: () => {
-      completed = true;
-      status = 1;
-    },
-    stdout: (text) => {
-      stdout += `${text}\n`;
-    },
-    stderr: (text) => {
-      stderr += `${text}\n`;
-    },
-  });
+  );
   if (!completed) operation = selected;
   return { operation, stdout, stderr, status };
 }

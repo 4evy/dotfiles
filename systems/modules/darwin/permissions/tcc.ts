@@ -47,7 +47,8 @@ export const userDatabase = Effect.fn(function* (uid: string, home: string) {
     const paths = handles
       .split("\n")
       .filter(
-        (line) => line.startsWith("n/") && line.endsWith(policy.databases.suffix),
+        (line) =>
+          line.startsWith("n/") && line.endsWith(policy.databases.suffix),
       );
     const [path] = paths;
     if (paths.length === 1 && path) return path.slice(1);
@@ -132,7 +133,8 @@ export const inspectTcc = Effect.fn(function* (
               row.flags === policy.authorization.flags &&
               (row.csreq === null
                 ? client.requirement === null
-                : client.requirement !== null && row.csreq.equals(client.requirement))
+                : client.requirement !== null &&
+                  row.csreq.equals(client.requirement))
             )
               deletions.push(row);
           }
@@ -267,13 +269,20 @@ export const applyTcc = Effect.fn(function* (
   uid: string,
 ) {
   const fs = yield* FileSystem.FileSystem;
-  const backup = join(policy.backups, new Date().toISOString().replaceAll(":", "-"));
+  const backup = join(
+    policy.backups,
+    new Date().toISOString().replaceAll(":", "-"),
+  );
   yield* fs.makeDirectory(backup, { recursive: true, mode: 0o700 });
   for (const [index, plan] of plans.entries()) {
     const path = join(backup, index === 0 ? "system.db" : `user-${uid}.db`);
-    yield* fs.writeFile(path, yield* attempt(() => plan.db.$client.serialize()), {
-      mode: 0o600,
-    });
+    yield* fs.writeFile(
+      path,
+      yield* attempt(() => plan.db.$client.serialize()),
+      {
+        mode: 0o600,
+      },
+    );
   }
   console.log(`TCC backups: ${backup}`);
   for (const plan of plans) yield* applyPlan(plan);

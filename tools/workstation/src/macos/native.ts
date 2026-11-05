@@ -21,9 +21,14 @@ interface Frameworks {
   };
   NSFont: {
     fontWithNameSize(name: string, size: number): NativeObject;
-    monospacedSystemFontOfSizeWeight(size: number, weight: number): NativeObject;
+    monospacedSystemFontOfSizeWeight(
+      size: number,
+      weight: number,
+    ): NativeObject;
   };
-  NSKeyedArchiver: { archivedDataWithRootObject(value: NativeObject): NativeObject };
+  NSKeyedArchiver: {
+    archivedDataWithRootObject(value: NativeObject): NativeObject;
+  };
   NSMutableDictionary: {
     readonly dictionary: NativeDictionary;
     dictionaryWithDictionary(value: NativeObject): NativeDictionary;
@@ -37,7 +42,10 @@ interface Frameworks {
   };
 }
 declare const $: Frameworks;
-declare const ObjC: { import(name: string): void; unwrap(value: unknown): unknown };
+declare const ObjC: {
+  import(name: string): void;
+  unwrap(value: unknown): unknown;
+};
 
 // Keep this function self-contained so its JavaScript can run in JXA's
 // Objective-C bridge after Bun erases the TypeScript declarations
@@ -108,7 +116,10 @@ export function nativeTerminal(
     $(policy.profileNames[currentVariant]),
     "Startup Window Settings",
   );
-  domain.setObjectForKey($(policy.defaultProfilesVersion), "DefaultProfilesVersion");
+  domain.setObjectForKey(
+    $(policy.defaultProfilesVersion),
+    "DefaultProfilesVersion",
+  );
   domain.setObjectForKey(
     $(policy.profile.ProfileCurrentVersion),
     "ProfileCurrentVersion",

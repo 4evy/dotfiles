@@ -52,7 +52,9 @@ runMain(
       const original = join(root, file);
       if (!(yield* fs.exists(original))) continue;
       sources.set(target, file);
-      yield* fs.makeDirectory(dirname(join(staging, target)), { recursive: true });
+      yield* fs.makeDirectory(dirname(join(staging, target)), {
+        recursive: true,
+      });
       yield* fs.copyFile(original, join(staging, target));
     }
     const text = yield* fs.readFileString(join(source, "tsconfig.json"));
@@ -65,11 +67,16 @@ runMain(
         ...config,
         extends: join(source, "tsconfig.json"),
         include: [],
-        files: [...sources.keys()].filter((path) => scriptExtensions[extname(path)]),
+        files: [...sources.keys()].filter(
+          (path) => scriptExtensions[extname(path)],
+        ),
       }),
     );
     // Deployed package checks use the workspace's development dependencies
-    yield* fs.symlink(join(root, "node_modules"), join(staging, "node_modules"));
+    yield* fs.symlink(
+      join(root, "node_modules"),
+      join(staging, "node_modules"),
+    );
     // Keep diagnostics relative even when macOS resolves /var to /private/var
     const compiler = yield* run(
       [
@@ -80,11 +87,19 @@ runMain(
         "false",
         ...Bun.argv.slice(2),
       ],
-      { cwd: staging, capture: true, check: false, stderr: "inherit", stdin: "ignore" },
+      {
+        cwd: staging,
+        capture: true,
+        check: false,
+        stderr: "inherit",
+        stdin: "ignore",
+      },
     );
     process.stdout.write(
-      compiler.stdout.replace(/^(.+?)(\(\d+,\d+\):)/gm, (line, file, location) =>
-        sources.has(file) ? `${sources.get(file)}${location}` : line,
+      compiler.stdout.replace(
+        /^(.+?)(\(\d+,\d+\):)/gm,
+        (line, file, location) =>
+          sources.has(file) ? `${sources.get(file)}${location}` : line,
       ),
     );
     process.exitCode = compiler.code;

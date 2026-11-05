@@ -16,7 +16,9 @@ import { Effect, Stream } from "effect";
 import { ChildProcess } from "effect/process";
 
 const apply = Effect.fn("gnomeAccent.apply")(function* (scheme: string) {
-  const palette = scheme.includes("prefer-dark") ? palettes.dark : palettes.light;
+  const palette = scheme.includes("prefer-dark")
+    ? palettes.dark
+    : palettes.light;
   for (const [version, template] of [
     [3, gtk3],
     [4, gtk4],
@@ -25,7 +27,10 @@ const apply = Effect.fn("gnomeAccent.apply")(function* (scheme: string) {
       .replaceAll(`\${legacy}`, gtk3)
       .replaceAll(/\$\{(\w+)\}/g, (_, role: string) => color(palette, role));
     yield* writeIfChanged(
-      join(yield* configHome(), `gtk-${version}.0/catppuccin-custom-accent.css`),
+      join(
+        yield* configHome(),
+        `gtk-${version}.0/catppuccin-custom-accent.css`,
+      ),
       css,
     );
   }

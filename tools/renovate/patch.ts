@@ -33,7 +33,9 @@ export const updateRenovatePatch = Effect.fn(function* () {
 
   // Never accept an unpatched Renovate upgrade: PRs and issues are forbidden
   // Require the complete old patch to apply before changing its version binding
-  const staging = yield* fs.makeTempDirectoryScoped({ prefix: "renovate-patch-" });
+  const staging = yield* fs.makeTempDirectoryScoped({
+    prefix: "renovate-patch-",
+  });
   const metadataData = yield* download(
     `https://registry.npmjs.org/renovate/${version}`,
     (response) => response.json,
@@ -43,7 +45,9 @@ export const updateRenovatePatch = Effect.fn(function* () {
       dist: Schema.Struct({ tarball: Schema.String, integrity: Schema.String }),
     }),
   )(metadataData);
-  yield* Schema.decodeUnknownEffect(Schema.URLFromString)(metadata.dist.tarball);
+  yield* Schema.decodeUnknownEffect(Schema.URLFromString)(
+    metadata.dist.tarball,
+  );
   const archive = new Uint8Array(
     yield* download(metadata.dist.tarball, (response) => response.arrayBuffer),
   );
@@ -54,15 +58,24 @@ export const updateRenovatePatch = Effect.fn(function* () {
     );
   const archivePath = join(staging, "source.tar.gz");
   yield* fs.writeFile(archivePath, archive);
-  yield* run(["tar", "-xzf", archivePath, "--strip-components=1", "-C", staging], {
-    cwd: root,
-    capture: true,
-  });
+  yield* run(
+    ["tar", "-xzf", archivePath, "--strip-components=1", "-C", staging],
+    {
+      cwd: root,
+      capture: true,
+    },
+  );
   yield* fs.remove(archivePath);
   yield* run(["git", "init", "--quiet"], { cwd: staging, capture: true });
-  yield* run(["git", "add", "--all", "--force"], { cwd: staging, capture: true });
+  yield* run(["git", "add", "--all", "--force"], {
+    cwd: staging,
+    capture: true,
+  });
   const oldPatch = join(directory, patchPath);
-  yield* run(["git", "apply", "--check", oldPatch], { cwd: staging, capture: true });
+  yield* run(["git", "apply", "--check", oldPatch], {
+    cwd: staging,
+    capture: true,
+  });
   yield* run(["git", "apply", oldPatch], { cwd: staging, capture: true });
   const newPatch = `patches/renovate@${version}.patch`;
   // Bun needs exact hunk coordinates, even when git apply accepts old offsets

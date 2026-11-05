@@ -5,7 +5,9 @@ export function focusedWindow(): Window | null {
   const window = workspace.activeWindow;
   if (!window) return null;
 
-  return [window.fullScreen, window.skipTaskbar, window.specialWindow].some(Boolean)
+  return [window.fullScreen, window.skipTaskbar, window.specialWindow].some(
+    Boolean,
+  )
     ? null
     : window;
 }

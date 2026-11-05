@@ -109,7 +109,9 @@ const LAYOUT_PRESETS = {
 
 export type LayoutPreset = keyof typeof LAYOUT_PRESETS;
 
-export const LAYOUT_PRESET_NAMES = Object.keys(LAYOUT_PRESETS) as LayoutPreset[];
+export const LAYOUT_PRESET_NAMES = Object.keys(
+  LAYOUT_PRESETS,
+) as LayoutPreset[];
 
 export function createCycleState(): CycleState {
   return {
@@ -155,7 +157,10 @@ export function fitLayoutPresetRectToMinimumSize(
   minimum: Size,
 ): Rect {
   const width = Math.min(Math.max(rect.width, minimum.width), workArea.width);
-  const height = Math.min(Math.max(rect.height, minimum.height), workArea.height);
+  const height = Math.min(
+    Math.max(rect.height, minimum.height),
+    workArea.height,
+  );
   const { anchor } = LAYOUT_PRESETS[preset];
 
   return roundedWithin(workArea, {
@@ -184,7 +189,10 @@ function anchoredPosition(
 
 function roundedWithin(workArea: Rect, rect: Rect): Rect {
   const width = Math.min(Math.max(Math.round(rect.width), 1), workArea.width);
-  const height = Math.min(Math.max(Math.round(rect.height), 1), workArea.height);
+  const height = Math.min(
+    Math.max(Math.round(rect.height), 1),
+    workArea.height,
+  );
   const maxX = workArea.x + workArea.width - width;
   const maxY = workArea.y + workArea.height - height;
 

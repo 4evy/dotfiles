@@ -61,7 +61,9 @@ export default class HyperWindowTilingExtension extends Extension {
               applyLayout(
                 binding.action === "cycle" ? binding.presets : "maximize",
                 bindingName,
-              ).pipe(Effect.provideService(Scheduler.PreventSchedulerYield, true)),
+              ).pipe(
+                Effect.provideService(Scheduler.PreventSchedulerYield, true),
+              ),
             );
           };
           return Effect.acquireRelease(

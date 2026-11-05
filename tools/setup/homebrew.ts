@@ -42,7 +42,8 @@ export const bundle = Effect.fn(function* (prefix: string, upgrade: boolean) {
     Effect.gen(function* () {
       yield* Effect.acquireRelease(
         updateSandbox(prefix, deniedRule, temporaryRule),
-        () => updateSandbox(prefix, temporaryRule, deniedRule).pipe(Effect.orDie),
+        () =>
+          updateSandbox(prefix, temporaryRule, deniedRule).pipe(Effect.orDie),
       );
       yield* run([
         join(prefix, "bin/brew"),
@@ -75,7 +76,8 @@ if (import.meta.main) {
   );
   runMain(
     Effect.gen(function* () {
-      if (values.operation === "bundle") yield* bundle(values.prefix, values.upgrade);
+      if (values.operation === "bundle")
+        yield* bundle(values.prefix, values.upgrade);
       else yield* sandbox(values.prefix, values.operation === "restore");
     }),
   );

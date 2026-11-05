@@ -31,11 +31,13 @@ const homebrewURL = `https://raw.githubusercontent.com/Homebrew/install/${homebr
 const homebrewSHA256 =
   "5f333bbe53bc490e51e7ccb1df8779b3dd6ee73a1a7379efda216edb08ccb148";
 
-const log = (message: string) => Effect.sync(() => console.log(`\n==> ${message}`));
+const log = (message: string) =>
+  Effect.sync(() => console.log(`\n==> ${message}`));
 
 const workstation = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
-  const nixos = process.platform === "linux" && (yield* fs.exists("/etc/NIXOS"));
+  const nixos =
+    process.platform === "linux" && (yield* fs.exists("/etc/NIXOS"));
   const userBin = join(homedir(), ".local/bin");
   let brewPrefix: string;
   if (process.platform === "darwin") {
@@ -47,7 +49,9 @@ const workstation = Effect.gen(function* () {
   } else if (process.platform === "linux") {
     if (!nixos && !(yield* fs.exists("/usr/bin/bootc")))
       return yield* Effect.fail(
-        new DotfilesError("Linux workstation setup supports only BlueBuild and NixOS"),
+        new DotfilesError(
+          "Linux workstation setup supports only BlueBuild and NixOS",
+        ),
       );
     brewPrefix = "/home/linuxbrew/.linuxbrew";
   } else
@@ -84,7 +88,10 @@ const workstation = Effect.gen(function* () {
   };
   let sudoReady = false;
 
-  const command = (args: string[], options: RunOptions & { quiet?: boolean } = {}) =>
+  const command = (
+    args: string[],
+    options: RunOptions & { quiet?: boolean } = {},
+  ) =>
     run(args, {
       cwd: root,
       env,
@@ -133,7 +140,9 @@ const workstation = Effect.gen(function* () {
           process.stderr.write(`[sudo] password for ${userInfo().username}: `);
         });
         return yield* terminal.readLine.pipe(
-          Effect.mapError(() => new DotfilesError("Sudo password input closed")),
+          Effect.mapError(
+            () => new DotfilesError("Sudo password input closed"),
+          ),
         );
       }),
     );
@@ -141,7 +150,9 @@ const workstation = Effect.gen(function* () {
 
   const password = Effect.gen(function* () {
     if (!(yield* which("sudo")))
-      return yield* Effect.fail(new DotfilesError("Privileged tasks require sudo"));
+      return yield* Effect.fail(
+        new DotfilesError("Privileged tasks require sudo"),
+      );
     const validate = (value: string) =>
       succeeds(["sudo", "-S", "-k", "-p", "", "-v"], `${value}\n`);
     let value = env.DOTFILES_SUDO_PASSWORD;
@@ -160,14 +171,18 @@ const workstation = Effect.gen(function* () {
       if (yield* validate(value)) return value;
       yield* Effect.sync(() => console.error("Sorry, try again"));
     }
-    return yield* Effect.fail(new DotfilesError("Failed to validate sudo credentials"));
+    return yield* Effect.fail(
+      new DotfilesError("Failed to validate sudo credentials"),
+    );
   });
 
   const ensureSudo = Effect.gen(function* () {
     if (sudoReady) return;
     if (!env.SUDO_ASKPASS || !(yield* succeeds(["sudo", "-n", "-k", "-v"]))) {
       const credential = yield* password;
-      const directory = yield* fs.makeTempDirectoryScoped({ prefix: "dotfiles-sudo." });
+      const directory = yield* fs.makeTempDirectoryScoped({
+        prefix: "dotfiles-sudo.",
+      });
       const helper = join(directory, "askpass");
       yield* fs.writeFileString(
         helper,
@@ -176,7 +191,9 @@ const workstation = Effect.gen(function* () {
       );
       const sudo = env.DOTFILES_REAL_SUDO ?? (yield* which("sudo"));
       if (!sudo)
-        return yield* Effect.fail(new DotfilesError("Privileged tasks require sudo"));
+        return yield* Effect.fail(
+          new DotfilesError("Privileged tasks require sudo"),
+        );
       // Both sudo calls share the wrapper's parent-PID authentication ticket
       yield* fs.writeFileString(
         join(directory, "sudo"),
@@ -222,10 +239,15 @@ const workstation = Effect.gen(function* () {
             .toLowerCase();
           if (!/^[0-9a-f]{64}$/.test(checksum))
             return yield* Effect.fail(
-              new DotfilesError("Homebrew installer requires a valid SHA-256 checksum"),
+              new DotfilesError(
+                "Homebrew installer requires a valid SHA-256 checksum",
+              ),
             );
           yield* log("Downloading the Homebrew installer");
-          const content = yield* download(url, (response) => response.arrayBuffer).pipe(
+          const content = yield* download(
+            url,
+            (response) => response.arrayBuffer,
+          ).pipe(
             Effect.retry({ times: 3, schedule: Schedule.spaced("1 second") }),
             Effect.map((buffer) => new Uint8Array(buffer)),
           );
@@ -235,12 +257,16 @@ const workstation = Effect.gen(function* () {
             );
           yield* fs.writeFile(installer, content);
           yield* log(`Installing Homebrew into ${brewPrefix}`);
-          yield* command(["bash", installer], { env: { ...env, NONINTERACTIVE: "1" } });
+          yield* command(["bash", installer], {
+            env: { ...env, NONINTERACTIVE: "1" },
+          });
         }),
       );
     }
     if (!(yield* isExecutable(brew)))
-      return yield* Effect.fail(new DotfilesError(`Homebrew did not create ${brew}`));
+      return yield* Effect.fail(
+        new DotfilesError(`Homebrew did not create ${brew}`),
+      );
   });
 
   const prepareHomebrew = () =>
@@ -255,7 +281,10 @@ const workstation = Effect.gen(function* () {
           );
       }
       yield* ensureHomebrew;
-      if ((yield* output([join(brewPrefix, "bin/brew"), "--prefix"])) !== brewPrefix)
+      if (
+        (yield* output([join(brewPrefix, "bin/brew"), "--prefix"])) !==
+        brewPrefix
+      )
         return yield* Effect.fail(
           new DotfilesError("Homebrew reported an unexpected prefix"),
         );
@@ -264,9 +293,12 @@ const workstation = Effect.gen(function* () {
   const installUv = () =>
     Effect.gen(function* () {
       if (!(yield* isExecutable(join(brewPrefix, "bin/uv"))))
-        yield* command([join(brewPrefix, "bin/brew"), "install", "--formula", "uv"], {
-          env: { ...env, HOMEBREW_NO_ASK: "1" },
-        });
+        yield* command(
+          [join(brewPrefix, "bin/brew"), "install", "--formula", "uv"],
+          {
+            env: { ...env, HOMEBREW_NO_ASK: "1" },
+          },
+        );
     });
 
   const installUserland = () =>
@@ -318,7 +350,8 @@ const workstation = Effect.gen(function* () {
       "--print-out-paths",
     ]);
     const nixEnv = yield* which("nix-env");
-    if (!nixEnv) return yield* Effect.fail(new DotfilesError("Nix is missing nix-env"));
+    if (!nixEnv)
+      return yield* Effect.fail(new DotfilesError("Nix is missing nix-env"));
     const profile = "/nix/var/nix/profiles/dotfiles-farstep";
     yield* command(["sudo", nixEnv, "--profile", profile, "--set", farstep]);
     yield* command([
@@ -340,7 +373,13 @@ const workstation = Effect.gen(function* () {
       env.DOTFILES_KEEP_INPUT_REMAPPER !== "1" &&
       (yield* succeeds(["systemctl", "cat", "input-remapper.service"]))
     )
-      yield* command(["sudo", "systemctl", "mask", "--now", "input-remapper.service"]);
+      yield* command([
+        "sudo",
+        "systemctl",
+        "mask",
+        "--now",
+        "input-remapper.service",
+      ]);
     yield* command(["sudo", "systemctl", "start", "kanata-main.service"]);
   });
 
@@ -357,8 +396,17 @@ const workstation = Effect.gen(function* () {
           "(import ./flake.nix).inputs.darwin.url",
         ]);
         // Refresh local working trees after edits change their recorded NAR hash
-        if (darwinSource.startsWith("git+file:") || darwinSource.startsWith("path:"))
-          yield* command(["nix", "flake", "update", "darwin", "--allow-dirty-locks"]);
+        if (
+          darwinSource.startsWith("git+file:") ||
+          darwinSource.startsWith("path:")
+        )
+          yield* command([
+            "nix",
+            "flake",
+            "update",
+            "darwin",
+            "--allow-dirty-locks",
+          ]);
         const system = yield* output([
           "nix",
           "build",
@@ -405,7 +453,9 @@ type Step = {
     host: Workstation,
   ) => Effect.Effect<
     unknown,
-    DotfilesError | PlatformError.PlatformError | HttpClientError.HttpClientError,
+    | DotfilesError
+    | PlatformError.PlatformError
+    | HttpClientError.HttpClientError,
     RuntimeServices | Scope.Scope
   >;
   nixos?: boolean;
@@ -420,7 +470,11 @@ const bootstrapSteps: Step[] = [
 ];
 const setupSteps: Step[] = [
   ...bootstrapSteps,
-  { name: "nix", description: "Prepare Nix", action: (host) => host.installNix() },
+  {
+    name: "nix",
+    description: "Prepare Nix",
+    action: (host) => host.installNix(),
+  },
   {
     name: "userland",
     description: "Install Homebrew tools and Rust",
@@ -461,7 +515,10 @@ function stepOptions(all: Step[]) {
         ),
         map(
           multiple(
-            seq(multiple(option("--only", step), { min: 1 }), multiple(argument(step))),
+            seq(
+              multiple(option("--only", step), { min: 1 }),
+              multiple(argument(step)),
+            ),
             { min: 1 },
           ),
           (groups) => {

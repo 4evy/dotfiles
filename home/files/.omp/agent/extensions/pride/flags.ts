@@ -41,7 +41,9 @@ const WAVE_COLUMNS = (() => {
     bend: bendingMode(column),
     ripple: RIPPLE_WEIGHT * rippleMode(column),
   }));
-  const peak = Math.max(...columns.map(({ bend, ripple }) => Math.hypot(bend, ripple)));
+  const peak = Math.max(
+    ...columns.map(({ bend, ripple }) => Math.hypot(bend, ripple)),
+  );
   for (const column of columns) {
     column.bend /= peak;
     column.ripple /= peak;
@@ -206,7 +208,10 @@ function prepareStarfield(theme: Theme, background: number): StarRow[] {
   }));
 }
 
-const STAR_FIELDS = new WeakMap<Theme, { background: number; rows: StarRow[] }>();
+const STAR_FIELDS = new WeakMap<
+  Theme,
+  { background: number; rows: StarRow[] }
+>();
 
 export function renderBanner(
   theme: Theme,

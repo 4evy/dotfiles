@@ -64,7 +64,8 @@ type SystemLibrary = {
   close(): void;
 };
 
-const framework = "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation";
+const framework =
+  "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation";
 
 function openCoreFoundation(): CoreFoundation {
   if (process.platform !== "darwin") {
@@ -76,7 +77,10 @@ function openCoreFoundation(): CoreFoundation {
     CFGetTypeID: { args: ["ptr"], returns: "u64" },
     CFEqual: { args: ["ptr", "ptr"], returns: "u8" },
     CFStringGetTypeID: { args: [], returns: "u64" },
-    CFStringCreateWithCString: { args: ["ptr", "cstring", "u32"], returns: "ptr" },
+    CFStringCreateWithCString: {
+      args: ["ptr", "cstring", "u32"],
+      returns: "ptr",
+    },
     CFStringGetLength: { args: ["ptr"], returns: "i64" },
     CFStringGetMaximumSizeForEncoding: { args: ["i64", "u32"], returns: "i64" },
     CFStringGetCString: { args: ["ptr", "ptr", "i64", "u32"], returns: "u8" },
@@ -87,7 +91,10 @@ function openCoreFoundation(): CoreFoundation {
     CFArraySetValueAtIndex: { args: ["ptr", "i64", "ptr"], returns: "void" },
     CFDictionaryGetTypeID: { args: [], returns: "u64" },
     CFDictionaryGetValue: { args: ["ptr", "ptr"], returns: "ptr" },
-    CFDictionaryCreateMutableCopy: { args: ["ptr", "i64", "ptr"], returns: "ptr" },
+    CFDictionaryCreateMutableCopy: {
+      args: ["ptr", "i64", "ptr"],
+      returns: "ptr",
+    },
     CFDictionarySetValue: { args: ["ptr", "ptr", "ptr"], returns: "void" },
     CFNumberGetTypeID: { args: [], returns: "u64" },
     CFNumberIsFloatType: { args: ["ptr"], returns: "u8" },
@@ -133,7 +140,8 @@ function openCoreFoundation(): CoreFoundation {
   function close(): void {
     for (let value = owned.pop(); value !== undefined; value = owned.pop())
       cf.CFRelease(value);
-    if (frameworkHandle !== null && system) system.symbols.dlclose(frameworkHandle);
+    if (frameworkHandle !== null && system)
+      system.symbols.dlclose(frameworkHandle);
     system?.close();
     library.close();
   }
@@ -155,7 +163,11 @@ function openCoreFoundation(): CoreFoundation {
     return own(cf.CFStringCreateWithCString(null, value, utf8), "CFString");
   }
 
-  function requireType(value: Pointer | null, type: bigint, label: string): Pointer {
+  function requireType(
+    value: Pointer | null,
+    type: bigint,
+    label: string,
+  ): Pointer {
     if (value === null || cf.CFGetTypeID(value) !== type) {
       throw new Error(`Invalid ${label} type`);
     }
@@ -176,7 +188,9 @@ function openCoreFoundation(): CoreFoundation {
       const capacity =
         size(cf.CFStringGetMaximumSizeForEncoding(length, utf8), label) + 1;
       const buffer = Buffer.allocUnsafe(capacity);
-      if (!cf.CFStringGetCString(reference, ptr(buffer), BigInt(capacity), utf8)) {
+      if (
+        !cf.CFStringGetCString(reference, ptr(buffer), BigInt(capacity), utf8)
+      ) {
         throw new Error(`Cannot decode ${label}`);
       }
       const decoded = buffer.toString("utf8", 0, buffer.indexOf(0));
@@ -199,7 +213,10 @@ function openCoreFoundation(): CoreFoundation {
 
     function createNumber(value: bigint): Pointer {
       numberStorage[0] = BigInt.asIntN(64, value);
-      return own(cf.CFNumberCreate(null, sint64, numberStorage), "flags number");
+      return own(
+        cf.CFNumberCreate(null, sint64, numberStorage),
+        "flags number",
+      );
     }
 
     system = dlopen("/usr/lib/libSystem.B.dylib", {
@@ -210,10 +227,12 @@ function openCoreFoundation(): CoreFoundation {
     const loader = system;
     // Resolve the exported CFString globals, not strings resembling their names
     frameworkHandle = system.symbols.dlopen(framework, 1);
-    if (frameworkHandle === null) throw new Error("Cannot open CoreFoundation globals");
+    if (frameworkHandle === null)
+      throw new Error("Cannot open CoreFoundation globals");
     function global(name: string): Pointer {
       const symbol = loader.symbols.dlsym(frameworkHandle, name);
-      if (symbol === null) throw new Error(`Missing CoreFoundation global ${name}`);
+      if (symbol === null)
+        throw new Error(`Missing CoreFoundation global ${name}`);
       const address = typeof symbol === "bigint" ? Number(symbol) : symbol;
       if (!Number.isSafeInteger(address))
         throw new Error(`Unrepresentable CoreFoundation global ${name}`);
@@ -255,8 +274,12 @@ function openCoreFoundation(): CoreFoundation {
         if (errorReference !== 0) owned.push(errorReference);
         if (root === null) {
           const code =
-            errorReference === 0 ? "unknown" : cf.CFErrorGetCode(errorReference);
-          throw new Error(`Cannot decode ${source} preferences (CF error ${code})`);
+            errorReference === 0
+              ? "unknown"
+              : cf.CFErrorGetCode(errorReference);
+          throw new Error(
+            `Cannot decode ${source} preferences (CF error ${code})`,
+          );
         }
         own(root, `${source} preferences`);
         return requireType(root, types.dictionary, `${source} preferences`);
@@ -286,7 +309,9 @@ function openCoreFoundation(): CoreFoundation {
   }
 }
 
-export function withCoreFoundation<T>(run: (foundation: CoreFoundation) => T): T {
+export function withCoreFoundation<T>(
+  run: (foundation: CoreFoundation) => T,
+): T {
   const foundation = openCoreFoundation();
   try {
     return run(foundation);

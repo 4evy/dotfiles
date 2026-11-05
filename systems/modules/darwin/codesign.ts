@@ -34,13 +34,18 @@ export const ensureSigningIdentity = Effect.fn(function* (
   const fs = yield* FileSystem.FileSystem;
   yield* requireCommands("/usr/bin/codesign", "/usr/bin/security", "openssl");
   if (yield* signingIdentityAvailable(identity, keychain)) return false;
-  if (!(yield* fs.exists(keychain)) || (yield* fs.stat(keychain)).type !== "File")
+  if (
+    !(yield* fs.exists(keychain)) ||
+    (yield* fs.stat(keychain)).type !== "File"
+  )
     return yield* Effect.fail(
       new DotfilesError(`code-signing keychain does not exist: ${keychain}`),
     );
   yield* Effect.scoped(
     Effect.gen(function* () {
-      const root = yield* fs.makeTempDirectoryScoped({ prefix: "dotfiles-codesign-" });
+      const root = yield* fs.makeTempDirectoryScoped({
+        prefix: "dotfiles-codesign-",
+      });
       const config = join(root, "codesign-openssl.cnf");
       const privateKey = join(root, "identity.key");
       const certificate = join(root, "identity.crt");
@@ -111,7 +116,9 @@ basicConstraints = critical, CA:false
   );
   if (!(yield* signingIdentityAvailable(identity, keychain)))
     return yield* Effect.fail(
-      new DotfilesError(`created code-signing identity is invalid: ${identity}`),
+      new DotfilesError(
+        `created code-signing identity is invalid: ${identity}`,
+      ),
     );
   return true;
 });
@@ -133,14 +140,19 @@ export const bundleHasSigningIdentity = Effect.fn(function* (
   });
   if (
     result.code !== 0 ||
-    !result.stderr.split("\n").some((line) => line.trim() === `Authority=${identity}`)
+    !result.stderr
+      .split("\n")
+      .some((line) => line.trim() === `Authority=${identity}`)
   )
     return false;
   return (
-    (yield* run(["/usr/bin/codesign", "--verify", "--deep", "--strict", bundle], {
-      check: false,
-      capture: true,
-    })).code === 0
+    (yield* run(
+      ["/usr/bin/codesign", "--verify", "--deep", "--strict", bundle],
+      {
+        check: false,
+        capture: true,
+      },
+    )).code === 0
   );
 });
 
@@ -151,7 +163,10 @@ export const signBundle = Effect.fn(function* (
   entitlements?: string,
 ) {
   const fs = yield* FileSystem.FileSystem;
-  if (!(yield* fs.exists(bundle)) || (yield* fs.stat(bundle)).type !== "Directory")
+  if (
+    !(yield* fs.exists(bundle)) ||
+    (yield* fs.stat(bundle)).type !== "Directory"
+  )
     return yield* Effect.fail(
       new DotfilesError(`application bundle does not exist: ${bundle}`),
     );
@@ -208,19 +223,24 @@ if (import.meta.main)
       const values = yield* Effect.try({
         try: () => {
           let helpShown = false;
-          const values = runParser(parser, "bun codesign.ts", Bun.argv.slice(2), {
-            brief: message`Sign an application bundle with the local identity`,
-            help: {
-              option: { names: ["-h", "--help"] },
-              onShow: () => {
-                helpShown = true;
+          const values = runParser(
+            parser,
+            "bun codesign.ts",
+            Bun.argv.slice(2),
+            {
+              brief: message`Sign an application bundle with the local identity`,
+              help: {
+                option: { names: ["-h", "--help"] },
+                onShow: () => {
+                  helpShown = true;
+                },
+              },
+              stderr: () => {},
+              onError: (_code, error) => {
+                throw new Error(formatMessage(error));
               },
             },
-            stderr: () => {},
-            onError: (_code, error) => {
-              throw new Error(formatMessage(error));
-            },
-          });
+          );
           return helpShown ? undefined : values;
         },
         catch: (cause) => new DotfilesError(String(cause)),

@@ -6,7 +6,10 @@ import * as Scheduler from "effect/Scheduler";
 import { native } from "./native.js";
 
 const MOVE_RESIZE_RETRY_DELAY_MS = 75;
-const IGNORED_WINDOW_TYPES = new Set([Meta.WindowType.DESKTOP, Meta.WindowType.DOCK]);
+const IGNORED_WINDOW_TYPES = new Set([
+  Meta.WindowType.DESKTOP,
+  Meta.WindowType.DOCK,
+]);
 
 export const focusedWindow = native("read focused window", () => {
   const window = global.display.focus_window;
@@ -37,7 +40,9 @@ export const createWindowOperations = Effect.gen(function* () {
     Effect.sync(() => new Set<number>()),
     (pending) =>
       Effect.forEach(pending, (source) =>
-        native("remove pending window resize", () => GLib.Source.remove(source)),
+        native("remove pending window resize", () =>
+          GLib.Source.remove(source),
+        ),
       ).pipe(Effect.orDie),
   );
 
@@ -59,24 +64,28 @@ export const createWindowOperations = Effect.gen(function* () {
     }
     yield* moveResizeFrame(window, rect);
     const source = yield* native("schedule window resize retry", () =>
-      GLib.timeout_add(GLib.PRIORITY_DEFAULT, MOVE_RESIZE_RETRY_DELAY_MS, () => {
-        // Native callbacks are synchronous. Never use Effect.sleep or fork here
-        Effect.runSync(
-          Effect.gen(function* () {
-            const alive = yield* native(
-              "read retry window state",
-              () => window.is_alive,
-            );
-            if (alive && serials.get(window) === serial) {
-              yield* moveResizeFrame(window, rect);
-            }
-          }).pipe(
-            Effect.ensuring(Effect.sync(() => sources.delete(source))),
-            Effect.provideService(Scheduler.PreventSchedulerYield, true),
-          ),
-        );
-        return GLib.SOURCE_REMOVE;
-      }),
+      GLib.timeout_add(
+        GLib.PRIORITY_DEFAULT,
+        MOVE_RESIZE_RETRY_DELAY_MS,
+        () => {
+          // Native callbacks are synchronous. Never use Effect.sleep or fork here
+          Effect.runSync(
+            Effect.gen(function* () {
+              const alive = yield* native(
+                "read retry window state",
+                () => window.is_alive,
+              );
+              if (alive && serials.get(window) === serial) {
+                yield* moveResizeFrame(window, rect);
+              }
+            }).pipe(
+              Effect.ensuring(Effect.sync(() => sources.delete(source))),
+              Effect.provideService(Scheduler.PreventSchedulerYield, true),
+            ),
+          );
+          return GLib.SOURCE_REMOVE;
+        },
+      ),
     );
     sources.add(source);
   });

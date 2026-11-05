@@ -1,5 +1,9 @@
 {
-  "location": { "name": "default-sofia", "latitude": 42.6977, "longitude": 23.3219 },
+  "location": {
+    "name": "default-sofia",
+    "latitude": 42.6977,
+    "longitude": 23.3219
+  },
   "roles": {
     "black": "surface1",
     "red": "red",

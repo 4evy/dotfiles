@@ -18,9 +18,13 @@ if (
     resolved,
   )
 ) {
-  const result = spawnSync(join(homedir(), ".local/bin/tsrs"), process.argv.slice(2), {
-    stdio: "inherit",
-  });
+  const result = spawnSync(
+    join(homedir(), ".local/bin/tsrs"),
+    process.argv.slice(2),
+    {
+      stdio: "inherit",
+    },
+  );
   if (result.error) throw result.error;
   if (result.signal) process.kill(process.pid, result.signal);
   else process.exit(result.status ?? 1);

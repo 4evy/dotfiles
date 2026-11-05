@@ -5,7 +5,9 @@ import { DotfilesError } from "./errors.ts";
 // Consume inside the request scope so failures and interruption release the body
 export function download<A, E, R>(
   url: string,
-  consume: (response: HttpClientResponse.HttpClientResponse) => Effect.Effect<A, E, R>,
+  consume: (
+    response: HttpClientResponse.HttpClientResponse,
+  ) => Effect.Effect<A, E, R>,
 ): Effect.Effect<
   A,
   E | DotfilesError,
@@ -22,7 +24,9 @@ export function download<A, E, R>(
         .pipe(
           Effect.mapError(
             (cause) =>
-              new DotfilesError(`Download failed: ${url}: ${cause.message}`, { cause }),
+              new DotfilesError(`Download failed: ${url}: ${cause.message}`, {
+                cause,
+              }),
           ),
         );
       return yield* consume(response);
@@ -31,7 +35,9 @@ export function download<A, E, R>(
     Effect.timeoutOrElse({
       duration: "120 seconds",
       orElse: () =>
-        Effect.fail(new DotfilesError(`Download timed out after 120 seconds: ${url}`)),
+        Effect.fail(
+          new DotfilesError(`Download timed out after 120 seconds: ${url}`),
+        ),
     }),
   );
 }

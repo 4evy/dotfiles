@@ -12,7 +12,9 @@ import {
 import { isRecord } from "@dotfiles/runtime/validation";
 import { RAL } from "vscode-jsonrpc/node";
 
-const JsonObject = Schema.fromJsonString(Schema.Record(Schema.String, Schema.Unknown));
+const JsonObject = Schema.fromJsonString(
+  Schema.Record(Schema.String, Schema.Unknown),
+);
 const decodeObject = Schema.decodeUnknownOption(JsonObject);
 
 function jsonObject(body: Buffer): Record<string, unknown> | undefined {
@@ -49,7 +51,8 @@ export class DiagnosticFilter<E = never, R = never> {
         !this.#responses.has(message.method)
       )
         return;
-      if (typeof message.id !== "string" && typeof message.id !== "number") return;
+      if (typeof message.id !== "string" && typeof message.id !== "number")
+        return;
       if (message.method === "textDocument/diagnostic") {
         const document = isRecord(message.params)
           ? message.params.textDocument
@@ -101,7 +104,9 @@ function messageParser() {
   return function* (chunk: Uint8Array | undefined): Generator<Buffer> {
     if (chunk === undefined) {
       if (length !== undefined || line || headerLines)
-        throw new Error("LSP message ended before Content-Length bytes were read");
+        throw new Error(
+          "LSP message ended before Content-Length bytes were read",
+        );
       return;
     }
     const bytes = Buffer.isBuffer(chunk)
@@ -182,7 +187,10 @@ function messages<E, R>(chunks: Stream.Stream<Uint8Array, E, R>) {
 }
 
 const frame = (body: Buffer) =>
-  Stream.make(Buffer.from(`Content-Length: ${body.length}\r\n\r\n`, "ascii"), body);
+  Stream.make(
+    Buffer.from(`Content-Length: ${body.length}\r\n\r\n`, "ascii"),
+    body,
+  );
 
 export const proxyLspServer = Effect.fn(function* <E, R>(
   argv: string[],

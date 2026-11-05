@@ -7,7 +7,7 @@
     "systems/spectrum/recipes/spectrum/sources/sources.ts",
     "home/{deploy,applications,theme}/**/*.ts",
     "home/files/.omp/agent/extensions/**/*.ts",
-    "home/files/.local/lib/{helium,helix,solaar,vscode}/*.ts"
+    "home/files/.local/lib/{helium,helix,solaar,vscode}/*.ts",
   ],
   "ignorePatterns": [
     "!home/files/.local/**",
@@ -21,6 +21,6 @@
     // Workstation runs Fallow through its own package check script
     "tools/workstation/src/**",
     "tools/workstation/assets/**",
-    "tools/tiling/vendor/**"
-  ]
+    "tools/tiling/vendor/**",
+  ],
 }

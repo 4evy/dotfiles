@@ -13,7 +13,7 @@ Use the app-managed `cua_repl` tool for native app interaction. Follow its
 first-call instructions and read its returned documentation before continuing.
 When the user names an app, select it directly:
 
-``` javascript
+```javascript
 let app = await cua.getApp(appName);
 ```
 

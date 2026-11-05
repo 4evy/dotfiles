@@ -6,12 +6,15 @@ import { Config, Console, Effect, FileSystem } from "effect";
 function section(name: string) {
   return Console.log(`\n== ${name} ==`);
 }
-const printCommand = Effect.fn("desktopAudit.printCommand")(function* (args: string[]) {
+const printCommand = Effect.fn("desktopAudit.printCommand")(function* (
+  args: string[],
+) {
   const result = yield* run(args, { check: false, capture: true });
   if (result.stdout) yield* Console.log(result.stdout.trimEnd());
   return result.stdout;
 });
-const available = (command: string) => Effect.sync(() => Boolean(Bun.which(command)));
+const available = (command: string) =>
+  Effect.sync(() => Boolean(Bun.which(command)));
 const printIfAvailable = Effect.fn("desktopAudit.printIfAvailable")(function* (
   command: string,
   ...args: string[]
@@ -28,7 +31,11 @@ function matchingLines(
 ): string {
   const lines = text.split(/\r?\n/).filter((line) => pattern.test(line));
   return (
-    limit === undefined ? lines : tail ? lines.slice(-limit) : lines.slice(0, limit)
+    limit === undefined
+      ? lines
+      : tail
+        ? lines.slice(-limit)
+        : lines.slice(0, limit)
   ).join("\n");
 }
 const auditSystem = Effect.fn("desktopAudit.system")(function* () {
@@ -43,13 +50,16 @@ const auditSystem = Effect.fn("desktopAudit.system")(function* () {
 });
 const readText = Effect.fn("desktopAudit.readText")(function* (path: string) {
   const fs = yield* FileSystem.FileSystem;
-  return (yield* fs.exists(path)) ? (yield* fs.readFileString(path)).trim() : "";
+  return (yield* fs.exists(path))
+    ? (yield* fs.readFileString(path)).trim()
+    : "";
 });
 const auditGraphics = Effect.fn("desktopAudit.graphics")(function* () {
   const fs = yield* FileSystem.FileSystem;
   yield* section("graphics");
   yield* printIfAvailable("lspci", "-nnk", "-d", "::03xx");
-  if (yield* fs.exists("/dev/dri")) yield* printIfAvailable("ls", "-l", "/dev/dri");
+  if (yield* fs.exists("/dev/dri"))
+    yield* printIfAvailable("ls", "-l", "/dev/dri");
   if (yield* available("lsmod"))
     yield* Console.log(
       matchingLines(
@@ -99,81 +109,109 @@ const memoryPercent = Effect.fn("desktopAudit.memoryPercent")(function* () {
     const info = yield* fs.readFileString("/proc/meminfo");
     const total = Number(/^MemTotal:\s+(\d+)/m.exec(info)?.[1]);
     const available = Number(/^MemAvailable:\s+(\d+)/m.exec(info)?.[1]);
-    if (total > 0 && Number.isFinite(available)) return (1 - available / total) * 100;
+    if (total > 0 && Number.isFinite(available))
+      return (1 - available / total) * 100;
   }
   return yield* Effect.sync(() => (1 - freemem() / totalmem()) * 100);
 });
-const auditPowerAndDesktop = Effect.fn("desktopAudit.powerAndDesktop")(function* () {
-  const fs = yield* FileSystem.FileSystem;
-  yield* section("power");
-  yield* printIfAvailable("powerprofilesctl", "get");
-  for (const path of [
-    "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor",
-    "/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference",
-  ])
-    if (yield* fs.exists(path)) yield* Console.log(`${path}=${yield* readText(path)}`);
-  yield* section("pressure");
-  yield* printIfAvailable("uptime");
-  yield* printIfAvailable("free", "-h");
-  yield* printIfAvailable("systemd-inhibit", "--list", "--no-pager");
-  yield* Console.log(
-    `load=${JSON.stringify(yield* Effect.sync(loadavg))} memory_used=${(yield* memoryPercent()).toFixed(1)}%`,
-  );
-  yield* section("failed-units");
-  if (yield* available("systemctl")) {
-    yield* printCommand(["systemctl", "--failed", "--no-pager"]);
-    yield* printCommand(["systemctl", "--user", "--failed", "--no-pager"]);
-  }
-  yield* section("gnome");
-  yield* printIfAvailable("gsettings", "get", "org.gnome.shell", "enabled-extensions");
-  yield* printIfAvailable("gnome-extensions", "list", "--enabled");
-  if (yield* available("journalctl"))
+const auditPowerAndDesktop = Effect.fn("desktopAudit.powerAndDesktop")(
+  function* () {
+    const fs = yield* FileSystem.FileSystem;
+    yield* section("power");
+    yield* printIfAvailable("powerprofilesctl", "get");
+    for (const path of [
+      "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor",
+      "/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference",
+    ])
+      if (yield* fs.exists(path))
+        yield* Console.log(`${path}=${yield* readText(path)}`);
+    yield* section("pressure");
+    yield* printIfAvailable("uptime");
+    yield* printIfAvailable("free", "-h");
+    yield* printIfAvailable("systemd-inhibit", "--list", "--no-pager");
     yield* Console.log(
-      matchingLines(
-        yield* output(
-          ["journalctl", "--user", "-b", "--no-pager", "-p", "warning..alert"],
-          { check: false },
+      `load=${JSON.stringify(yield* Effect.sync(loadavg))} memory_used=${(yield* memoryPercent()).toFixed(1)}%`,
+    );
+    yield* section("failed-units");
+    if (yield* available("systemctl")) {
+      yield* printCommand(["systemctl", "--failed", "--no-pager"]);
+      yield* printCommand(["systemctl", "--user", "--failed", "--no-pager"]);
+    }
+    yield* section("gnome");
+    yield* printIfAvailable(
+      "gsettings",
+      "get",
+      "org.gnome.shell",
+      "enabled-extensions",
+    );
+    yield* printIfAvailable("gnome-extensions", "list", "--enabled");
+    if (yield* available("journalctl"))
+      yield* Console.log(
+        matchingLines(
+          yield* output(
+            [
+              "journalctl",
+              "--user",
+              "-b",
+              "--no-pager",
+              "-p",
+              "warning..alert",
+            ],
+            { check: false },
+          ),
+          /gnome-shell|mutter|extension|clutter|st_widget|g_closure|gpu|egl|vulkan|wayland/i,
+          80,
+          true,
         ),
-        /gnome-shell|mutter|extension|clutter|st_widget|g_closure|gpu|egl|vulkan|wayland/i,
-        80,
-        true,
-      ),
-    );
-});
-const auditProcessesAndLogs = Effect.fn("desktopAudit.processesAndLogs")(function* () {
-  yield* section("chromium");
-  if (yield* available("ps"))
-    yield* Console.log(
-      matchingLines(
-        yield* output(["ps", "-eo", "pid,ppid,pcpu,pmem,comm,args", "--sort=-pcpu"], {
-          check: false,
-        }),
-        /helium|chrom|electron|discord/i,
-        40,
-      ),
-    );
-  yield* section("kernel-gpu");
-  if (yield* available("journalctl"))
-    yield* Console.log(
-      matchingLines(
-        yield* output(["journalctl", "-k", "-b", "--no-pager"], { check: false }),
-        /nouveau|nvidia|amdgpu|i915|drm|gpu|xid|timeout|hang|stall|firmware/i,
-        120,
-        true,
-      ),
-    );
-  yield* section("hot-processes");
-  if (yield* available("ps"))
-    yield* Console.log(
-      (yield* output(
-        ["ps", "-eo", "pid,ppid,ni,pri,psr,pcpu,pmem,comm,args", "--sort=-pcpu"],
-        { check: false },
-      ))
-        .split("\n")
-        .slice(0, 30)
-        .join("\n"),
-    );
-});
+      );
+  },
+);
+const auditProcessesAndLogs = Effect.fn("desktopAudit.processesAndLogs")(
+  function* () {
+    yield* section("chromium");
+    if (yield* available("ps"))
+      yield* Console.log(
+        matchingLines(
+          yield* output(
+            ["ps", "-eo", "pid,ppid,pcpu,pmem,comm,args", "--sort=-pcpu"],
+            {
+              check: false,
+            },
+          ),
+          /helium|chrom|electron|discord/i,
+          40,
+        ),
+      );
+    yield* section("kernel-gpu");
+    if (yield* available("journalctl"))
+      yield* Console.log(
+        matchingLines(
+          yield* output(["journalctl", "-k", "-b", "--no-pager"], {
+            check: false,
+          }),
+          /nouveau|nvidia|amdgpu|i915|drm|gpu|xid|timeout|hang|stall|firmware/i,
+          120,
+          true,
+        ),
+      );
+    yield* section("hot-processes");
+    if (yield* available("ps"))
+      yield* Console.log(
+        (yield* output(
+          [
+            "ps",
+            "-eo",
+            "pid,ppid,ni,pri,psr,pcpu,pmem,comm,args",
+            "--sort=-pcpu",
+          ],
+          { check: false },
+        ))
+          .split("\n")
+          .slice(0, 30)
+          .join("\n"),
+      );
+  },
+);
 export const desktopAudit = Effect.fn("desktopAudit")(function* () {
   for (const collect of [
     auditSystem,

@@ -70,7 +70,10 @@ const texts = v.optional(v.array(text), () => []);
 const requiredTexts = v.pipe(v.array(requiredText), v.minLength(1));
 const environmentName = v.pipe(
   text,
-  v.check((value) => value.length > 0 && !value.includes("=") && !value.includes("\0")),
+  v.check(
+    (value) =>
+      value.length > 0 && !value.includes("=") && !value.includes("\0"),
+  ),
 );
 const environment = v.optional(v.record(text, text), () => ({}));
 const optionalText = v.optional(text, "");
@@ -164,7 +167,10 @@ const fragmentSchema = v.strictObject({
     v.strictObject({
       ...runtimeEntries,
       theme_environment: v.pipe(v.array(text), v.minLength(1)),
-      theme_aliases: v.strictObject({ dark: requiredTexts, light: requiredTexts }),
+      theme_aliases: v.strictObject({
+        dark: requiredTexts,
+        light: requiredTexts,
+      }),
       theme_terminal_program_environment: requiredText,
       theme_terminal_queries: v.pipe(
         v.record(text, v.picklist(["background", "color-scheme"])),
@@ -276,7 +282,8 @@ export function readFile(path: string) {
 export function configPaths(env: Variables): string[] {
   if (env.THEME_RUN_CONFIG !== undefined)
     return env.THEME_RUN_CONFIG.split(delimiter).filter(Boolean);
-  if (env.XDG_CONFIG_HOME) return [join(env.XDG_CONFIG_HOME, name, "config.toml")];
+  if (env.XDG_CONFIG_HOME)
+    return [join(env.XDG_CONFIG_HOME, name, "config.toml")];
   if (env.HOME) return [join(env.HOME, ".config", name, "config.toml")];
   return [];
 }
@@ -294,9 +301,12 @@ export class Manifest {
       yield* Effect.try({
         try: () => manifest.loadFragment(defaults, "embedded defaults.toml"),
         catch: (cause) =>
-          new DotfilesError(cause instanceof Error ? cause.message : String(cause), {
-            cause,
-          }),
+          new DotfilesError(
+            cause instanceof Error ? cause.message : String(cause),
+            {
+              cause,
+            },
+          ),
       });
       for (const path of configPaths(env)) {
         const contents = yield* readFile(path).pipe(
@@ -304,7 +314,9 @@ export class Manifest {
             errorCode(cause) === "ENOENT"
               ? Effect.succeed(undefined)
               : Effect.fail(
-                  new DotfilesError(`read ${path}: ${String(cause)}`, { cause }),
+                  new DotfilesError(`read ${path}: ${String(cause)}`, {
+                    cause,
+                  }),
                 ),
           ),
         );
@@ -312,17 +324,23 @@ export class Manifest {
         yield* Effect.try({
           try: () => manifest.loadFragment(contents, path),
           catch: (cause) =>
-            new DotfilesError(cause instanceof Error ? cause.message : String(cause), {
-              cause,
-            }),
+            new DotfilesError(
+              cause instanceof Error ? cause.message : String(cause),
+              {
+                cause,
+              },
+            ),
         });
       }
       yield* Effect.try({
         try: () => manifest.validate(),
         catch: (cause) =>
-          new DotfilesError(cause instanceof Error ? cause.message : String(cause), {
-            cause,
-          }),
+          new DotfilesError(
+            cause instanceof Error ? cause.message : String(cause),
+            {
+              cause,
+            },
+          ),
       });
       return manifest;
     });
@@ -333,9 +351,11 @@ export class Manifest {
       // Required fields and enum constraints may be repaired by later fragments
       const value = v.parse(decodedFragmentSchema, parse(contents)) as Fragment;
       if (value.runtime) this.runtime = value.runtime;
-      for (const item of value.interpreter) this.interpreters.set(item.name, item);
+      for (const item of value.interpreter)
+        this.interpreters.set(item.name, item);
       for (const item of value.runner) this.runners.set(item.name, item);
-      for (const item of value.integration) this.integrations.set(item.name, item);
+      for (const item of value.integration)
+        this.integrations.set(item.name, item);
     } catch (error) {
       throw new Error(`parse ${source}: ${String(error)}`, { cause: error });
     }
@@ -343,7 +363,9 @@ export class Manifest {
 
   findRunner(command: string): Runner | undefined {
     const key = basename(command);
-    return this.runners.get(key) ?? this.runners.get(this.aliases.get(key) ?? "");
+    return (
+      this.runners.get(key) ?? this.runners.get(this.aliases.get(key) ?? "")
+    );
   }
 
   private validate(): void {
@@ -379,7 +401,8 @@ export class Manifest {
               `integration ${JSON.stringify(item.name)}: ${key} is required`,
             );
         }
-        if (!item.config_flags.length) throw new Error("config_flags is required");
+        if (!item.config_flags.length)
+          throw new Error("config_flags is required");
         if (!["system", "cache"].includes(item.temporary_location))
           throw new Error("invalid temporary_location");
         if (item.temporary_location === "cache" && !item.cache_subdirectory)
@@ -390,7 +413,9 @@ export class Manifest {
           !item.temporary_prefix.endsWith("XXXXXX") ||
           basename(item.temporary_prefix) !== item.temporary_prefix
         ) {
-          throw new Error("temporary prefix must be a basename ending in XXXXXX");
+          throw new Error(
+            "temporary prefix must be a basename ending in XXXXXX",
+          );
         }
       }
     }

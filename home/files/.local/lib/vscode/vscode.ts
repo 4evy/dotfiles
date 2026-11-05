@@ -29,7 +29,10 @@ runMain(
       process.exitCode = yield* exitCode(child);
     } else {
       // Imported Justfiles produce unreliable diagnostics in just-lsp
-      const diagnostics = new DiagnosticFilter(() => Effect.succeed(true), true);
+      const diagnostics = new DiagnosticFilter(
+        () => Effect.succeed(true),
+        true,
+      );
       process.exitCode = yield* proxyLspServer(
         [server],
         diagnostics.observe,

@@ -51,9 +51,9 @@ const theme = Effect.fn("kmscon.theme")(function* (now: Date) {
     Config.withDefault(""),
   );
   if (forced) {
-    const name = yield* Schema.decodeUnknownEffect(Schema.Literals(["light", "dark"]))(
-      forced,
-    ).pipe(
+    const name = yield* Schema.decodeUnknownEffect(
+      Schema.Literals(["light", "dark"]),
+    )(forced).pipe(
       Effect.mapError(
         () => new DotfilesError(`Unsupported DOTFILES_KMSCON_THEME: ${forced}`),
       ),
@@ -63,7 +63,9 @@ const theme = Effect.fn("kmscon.theme")(function* (now: Date) {
   let latitude = yield* coordinate("DOTFILES_KMSCON_LATITUDE", -90, 90);
   let longitude = yield* coordinate("DOTFILES_KMSCON_LONGITUDE", -180, 180);
   const location =
-    latitude === undefined && longitude === undefined ? defaults.location.name : "env";
+    latitude === undefined && longitude === undefined
+      ? defaults.location.name
+      : "env";
   if (location === defaults.location.name) {
     latitude = defaults.location.latitude;
     longitude = defaults.location.longitude;
@@ -81,7 +83,8 @@ const theme = Effect.fn("kmscon.theme")(function* (now: Date) {
       source: `sun polar latitude=${coordinateText(latitude)} longitude=${coordinateText(longitude)} elevation=${elevation.toFixed(2)}`,
     };
   return {
-    name: sunrise <= now && now < sunset ? ("light" as const) : ("dark" as const),
+    name:
+      sunrise <= now && now < sunset ? ("light" as const) : ("dark" as const),
     source: `sun ${location} latitude=${coordinateText(latitude)} longitude=${coordinateText(longitude)}`,
   };
 });

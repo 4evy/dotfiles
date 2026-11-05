@@ -22,12 +22,16 @@ export const installAntigravity = Effect.fn(function* () {
   const fs = yield* FileSystem.FileSystem;
   if (process.platform !== "darwin" && process.platform !== "linux")
     return yield* Effect.fail(
-      new DotfilesError(`Unsupported Antigravity platform: ${process.platform}`),
+      new DotfilesError(
+        `Unsupported Antigravity platform: ${process.platform}`,
+      ),
     );
   const arch = process.arch === "x64" ? "amd64" : process.arch;
   if (arch !== "amd64" && arch !== "arm64")
     return yield* Effect.fail(
-      new DotfilesError(`Unsupported Antigravity architecture: ${process.arch}`),
+      new DotfilesError(
+        `Unsupported Antigravity architecture: ${process.arch}`,
+      ),
     );
 
   // Keep existing, self-updating Apps, including versions newer than the cask
@@ -48,14 +52,18 @@ export const installAntigravity = Effect.fn(function* () {
   if (installed) {
     if (installed.type !== "File")
       return yield* Effect.fail(
-        new DotfilesError(`Refusing to replace an existing non-file at ${target}`),
+        new DotfilesError(
+          `Refusing to replace an existing non-file at ${target}`,
+        ),
       );
     if (!(yield* isExecutable(target)))
       return yield* Effect.fail(
         new DotfilesError(`Antigravity CLI is not executable: ${target}`),
       );
     yield* Effect.sync(() =>
-      console.log(`Antigravity CLI already installed at ${target}, using self-updates`),
+      console.log(
+        `Antigravity CLI already installed at ${target}, using self-updates`,
+      ),
     );
     return;
   }
@@ -71,7 +79,10 @@ export const installAntigravity = Effect.fn(function* () {
       const manifest = yield* download(
         `${releases}/manifests/${platform}.json`,
         (response) =>
-          Effect.flatMap(response.json, Schema.decodeUnknownEffect(manifestSchema)),
+          Effect.flatMap(
+            response.json,
+            Schema.decodeUnknownEffect(manifestSchema),
+          ),
       );
       const payload = join(workspace, "payload");
       const bytes = new Uint8Array(
@@ -85,7 +96,8 @@ export const installAntigravity = Effect.fn(function* () {
 
       const archive = new URL(manifest.url).pathname.endsWith(".tar.gz");
       const binary = archive ? join(workspace, "antigravity") : payload;
-      if (archive) yield* run(["tar", "-xzf", payload, "-C", workspace, "antigravity"]);
+      if (archive)
+        yield* run(["tar", "-xzf", payload, "-C", workspace, "antigravity"]);
       if ((yield* fs.lstat(binary)).type !== "File")
         return yield* Effect.fail(
           new DotfilesError("Antigravity CLI payload is not a regular file"),
@@ -96,7 +108,9 @@ export const installAntigravity = Effect.fn(function* () {
       // Install its verified payload directly, leaving PATH and aliases to dotfiles
       // A hard link publishes atomically without replacing a concurrent installation
       yield* fs.link(binary, target);
-      yield* Effect.sync(() => console.log(`Installed Antigravity CLI at ${target}`));
+      yield* Effect.sync(() =>
+        console.log(`Installed Antigravity CLI at ${target}`),
+      );
     }),
   );
 });

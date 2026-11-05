@@ -44,7 +44,9 @@ function delimitedBlock(begin: string, end: string) {
   return {
     remove,
     replace: (content: string, entries: string[]) =>
-      [remove(content).trimEnd(), begin, ...entries, end].filter(Boolean).join("\n"),
+      [remove(content).trimEnd(), begin, ...entries, end]
+        .filter(Boolean)
+        .join("\n"),
   };
 }
 const localExcludeBlock = delimitedBlock(
@@ -105,9 +107,15 @@ export function sourceFiles(v: Vault, value: CollectionSet): SourceFile[] {
     }
   }
   for (const path of seen) {
-    for (let parent = dirname(path); parent !== v.source; parent = dirname(parent)) {
+    for (
+      let parent = dirname(path);
+      parent !== v.source;
+      parent = dirname(parent)
+    ) {
       if (seen.has(parent))
-        throw new DotfilesError("plaintext record destinations must not overlap");
+        throw new DotfilesError(
+          "plaintext record destinations must not overlap",
+        );
     }
   }
   return result;
@@ -143,8 +151,10 @@ export function unpackSource(v: Vault) {
       if (!(yield* pathExists(source.path))) continue;
       if (yield* isRegular(source.path)) {
         if (
-          Buffer.compare(yield* fs.readFile(source.path), Buffer.from(source.body)) ===
-          0
+          Buffer.compare(
+            yield* fs.readFile(source.path),
+            Buffer.from(source.body),
+          ) === 0
         )
           continue;
       }
@@ -197,7 +207,9 @@ export function unpackSource(v: Vault) {
         }).pipe(Effect.orDie),
       ),
     );
-    yield* v.stdout(`unpacked ${sources.length} plaintext files into ${v.source}\n`);
+    yield* v.stdout(
+      `unpacked ${sources.length} plaintext files into ${v.source}\n`,
+    );
   });
 }
 
@@ -206,14 +218,21 @@ export function packSource(v: Vault) {
     const fs = yield* FileSystem.FileSystem;
     yield* requireUnpackedMarker(v);
     const current = yield* v.decryptCollections();
-    yield* validateSearchIgnore(v, yield* validate(() => sourceFiles(v, current)));
+    yield* validateSearchIgnore(
+      v,
+      yield* validate(() => sourceFiles(v, current)),
+    );
     const updated = yield* collectionsWithSourceBodies(v, current);
     const sources = yield* validate(() => sourceFiles(v, updated));
-    if (equalCollections(updated, current)) yield* v.stdout("records unchanged\n");
+    if (equalCollections(updated, current))
+      yield* v.stdout("records unchanged\n");
     else yield* v.packCollections(updated);
     for (const source of sources) {
       if (
-        Buffer.compare(yield* fs.readFile(source.path), Buffer.from(source.body)) !== 0
+        Buffer.compare(
+          yield* fs.readFile(source.path),
+          Buffer.from(source.body),
+        ) !== 0
       )
         yield* replaceTextFile(source.path, source.body, source.mode);
       yield* fs.chmod(source.path, source.mode);
@@ -252,7 +271,10 @@ export function layout(v: Vault) {
               variant.system,
               `variant${variant.hostname ? ",host-specific" : ""}`,
               target,
-              relative(v.repository, variantSourcePath(v, current, target, index)),
+              relative(
+                v.repository,
+                variantSourcePath(v, current, target, index),
+              ),
             ]);
       }
       const widths = Array.from({ length: 4 }, (_, column) =>
@@ -303,7 +325,9 @@ export function editWorkspace(v: Vault, collection = "", index = "") {
             ? join(root, collection, ...(index ? [pad(Number(index))] : []))
             : root;
           if (!(yield* isDirectory(target)))
-            return yield* Effect.fail(new DotfilesError("record does not exist"));
+            return yield* Effect.fail(
+              new DotfilesError("record does not exist"),
+            );
           const editor = yield* validate(() =>
             editorCommand(process.env.VISUAL ?? process.env.EDITOR ?? ""),
           );
@@ -326,7 +350,8 @@ export function editWorkspace(v: Vault, collection = "", index = "") {
 
 function editorCommand(setting: string): string[] {
   const words = split(setting);
-  if (!words.length) throw new DotfilesError("VISUAL or EDITOR must name an editor");
+  if (!words.length)
+    throw new DotfilesError("VISUAL or EDITOR must name an editor");
   return words;
 }
 
@@ -335,7 +360,11 @@ function collectionsWithSourceBodies(v: Vault, value: CollectionSet) {
     const updated = structuredClone(value);
     for (const current of records(updated)) {
       const item = current.record;
-      for (let variant = -1; variant < (item.variants?.length ?? 0); variant++) {
+      for (
+        let variant = -1;
+        variant < (item.variants?.length ?? 0);
+        variant++
+      ) {
         const bodies: string[] = [];
         for (const target of item.paths) {
           const path = yield* validate(() =>
@@ -353,7 +382,8 @@ function collectionsWithSourceBodies(v: Vault, value: CollectionSet) {
           const entry = variant < 0 ? item : item.variants?.[variant];
           if (!entry) throw new DotfilesError("missing record variant");
           const unique = new Set(bodies);
-          if (unique.size === 2 && unique.has(entry.body)) unique.delete(entry.body);
+          if (unique.size === 2 && unique.has(entry.body))
+            unique.delete(entry.body);
           if (unique.size !== 1)
             throw new DotfilesError(
               `plaintext copies for ${current.collection} record ${pad(current.index)} contain conflicting edits`,
@@ -395,7 +425,10 @@ function concealSourceFiles(v: Vault, sources: SourceFile[]) {
       yield* validateSourceParents(source.path);
       if (
         !(yield* isRegular(source.path)) ||
-        Buffer.compare(yield* fs.readFile(source.path), Buffer.from(source.body)) !== 0
+        Buffer.compare(
+          yield* fs.readFile(source.path),
+          Buffer.from(source.body),
+        ) !== 0
       )
         return yield* Effect.fail(
           new DotfilesError(
@@ -411,7 +444,8 @@ function concealSourceFiles(v: Vault, sources: SourceFile[]) {
     for (const directory of new Set(removable.map(dirname))) {
       let current = directory;
       while (current !== v.source && isWithin(v.source, current)) {
-        if (!(yield* isDirectory(current)) || !(yield* directoryEmpty(current))) break;
+        if (!(yield* isDirectory(current)) || !(yield* directoryEmpty(current)))
+          break;
         yield* removeEmptyDirectory(current);
         current = dirname(current);
       }
@@ -447,7 +481,9 @@ function localExcludePath(v: Vault) {
 }
 
 function localExcludeEntries(v: Vault, paths: string[]): string[] {
-  return [v.marker, ...paths].map((path) => `/${relative(v.repository, path)}`).sort();
+  return [v.marker, ...paths]
+    .map((path) => `/${relative(v.repository, path)}`)
+    .sort();
 }
 
 function verifyGitExcludes(v: Vault, paths: string[]) {
@@ -471,7 +507,9 @@ function planLocalExcludes(v: Vault, paths: string[]) {
     const path = yield* localExcludePath(v);
     if (!(yield* isDirectory(dirname(path))))
       return yield* Effect.fail(
-        new DotfilesError(`git exclude directory does not exist: ${dirname(path)}`),
+        new DotfilesError(
+          `git exclude directory does not exist: ${dirname(path)}`,
+        ),
       );
     const [content, mode] = yield* readOptionalTextFile(path);
     return {
@@ -488,10 +526,15 @@ function validateLocalExcludes(v: Vault, paths: string[]) {
     const exclude = yield* localExcludePath(v);
     if (!(yield* isRegular(exclude)))
       return yield* Effect.fail(
-        new DotfilesError("missing local Git exclude file, run `just records unpack`"),
+        new DotfilesError(
+          "missing local Git exclude file, run `just records unpack`",
+        ),
       );
     const content = yield* fs.readFileString(exclude);
-    if (content !== localExcludeBlock.replace(content, localExcludeEntries(v, paths)))
+    if (
+      content !==
+      localExcludeBlock.replace(content, localExcludeEntries(v, paths))
+    )
       return yield* Effect.fail(
         new DotfilesError(
           "local Git exclude block is stale, run `just records unpack`",
@@ -508,7 +551,11 @@ function validateLocalExcludes(v: Vault, paths: string[]) {
   });
 }
 
-function searchIgnoreContent(v: Vault, current: string, sources: SourceFile[]): string {
+function searchIgnoreContent(
+  v: Vault,
+  current: string,
+  sources: SourceFile[],
+): string {
   const entries = sources
     .map(
       (source) =>
@@ -523,16 +570,28 @@ function planSearchIgnore(v: Vault, sources: SourceFile[]) {
     const label = relative(v.repository, v.searchIgnore);
     const tracked = yield* run(
       ["git", "-C", v.repository, "ls-files", "--error-unmatch", "--", label],
-      { check: false, stdin: "ignore", outputMode: "discard", stderr: "ignore" },
+      {
+        check: false,
+        stdin: "ignore",
+        outputMode: "discard",
+        stderr: "ignore",
+      },
     );
     if (tracked.code === 0)
       return yield* Effect.fail(
-        new DotfilesError(`refusing to modify tracked ripgrep ignore file: ${label}`),
+        new DotfilesError(
+          `refusing to modify tracked ripgrep ignore file: ${label}`,
+        ),
       );
     yield* validateSourceParents(v.searchIgnore);
-    if ((yield* pathExists(v.searchIgnore)) && !(yield* isRegular(v.searchIgnore)))
+    if (
+      (yield* pathExists(v.searchIgnore)) &&
+      !(yield* isRegular(v.searchIgnore))
+    )
       return yield* Effect.fail(
-        new DotfilesError(`ripgrep ignore overlay must be a regular file: ${label}`),
+        new DotfilesError(
+          `ripgrep ignore overlay must be a regular file: ${label}`,
+        ),
       );
     const [content, mode] = yield* readOptionalTextFile(v.searchIgnore);
     return { body: searchIgnoreContent(v, content, sources), mode };
@@ -571,7 +630,8 @@ function writeMarker(v: Vault) {
   return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const content = `${marshalJSON({ version: layoutVersion })}\n`;
-    if (!(yield* pathExists(v.marker))) return yield* writePrivate(v.marker, content);
+    if (!(yield* pathExists(v.marker)))
+      return yield* writePrivate(v.marker, content);
     if (!(yield* isRegular(v.marker)))
       return yield* Effect.fail(
         new DotfilesError(`records marker must be a regular file: ${v.marker}`),
@@ -585,7 +645,9 @@ function requireUnpackedMarker(v: Vault) {
   return Effect.gen(function* () {
     if (!(yield* isRegular(v.marker)))
       return yield* Effect.fail(
-        new DotfilesError("records are not unpacked, run `just records unpack` first"),
+        new DotfilesError(
+          "records are not unpacked, run `just records unpack` first",
+        ),
       );
     const content = yield* readUTF8(v.marker, "records marker");
     const marker = yield* validate(() => parseJSON(content, "records marker"));
@@ -597,7 +659,9 @@ function requireUnpackedMarker(v: Vault) {
       !("version" in marker) ||
       marker.version !== layoutVersion
     )
-      return yield* Effect.fail(new DotfilesError("unsupported records marker"));
+      return yield* Effect.fail(
+        new DotfilesError("unsupported records marker"),
+      );
   });
 }
 
@@ -619,7 +683,8 @@ function resolveEditorTarget(
       ? relative(home, target)
       : target;
   for (const current of records(value))
-    if (current.record.paths.includes(normalized)) return sourcePathFor(v, normalized);
+    if (current.record.paths.includes(normalized))
+      return sourcePathFor(v, normalized);
   throw new DotfilesError(`unknown record path: ${target}`);
 }
 

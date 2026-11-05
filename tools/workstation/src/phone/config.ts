@@ -14,7 +14,8 @@ export function normalizeIP(value: string): string {
   const version = isIP(address);
   if (
     !version ||
-    (scope !== undefined && (version !== 6 || !scope || value.split("%").length !== 2))
+    (scope !== undefined &&
+      (version !== 6 || !scope || value.split("%").length !== 2))
   )
     throw new UsageError("Invalid IP address");
   if (version === 4) return address;
@@ -146,14 +147,19 @@ const phoneOptions = {
 } as const;
 const options = Object.entries(phoneOptions);
 export const phoneUsage = `${options
-  .map(([name, option]) => `[--${name}${option.argument ? ` ${option.argument}` : ""}]`)
+  .map(
+    ([name, option]) =>
+      `[--${name}${option.argument ? ` ${option.argument}` : ""}]`,
+  )
   .join(" ")} [-- SCRCPY_ARGUMENTS...]`;
 export const phoneEnvironment = options.map(([, option]) => option.environment);
 const configSchema = Schema.Struct({
   ...(Object.fromEntries(
     options.map(([, option]) => [option.field, option.schema]),
   ) as {
-    [K in keyof typeof phoneOptions as (typeof phoneOptions)[K]["field"]]: (typeof phoneOptions)[K]["schema"];
+    [
+      K in keyof typeof phoneOptions as (typeof phoneOptions)[K]["field"]
+    ]: (typeof phoneOptions)[K]["schema"];
   }),
   scrcpyArgs: Schema.Array(Schema.String).pipe(
     Schema.withDecodingDefault(Effect.succeed([])),
@@ -179,7 +185,9 @@ const phoneParser = object({
               (values) => values.at(-1),
             )
           : map(
-              multiple(option(`--${name}`, string({ metavar: definition.argument }))),
+              multiple(
+                option(`--${name}`, string({ metavar: definition.argument })),
+              ),
               (values) => values.at(-1),
             ),
       ]),
@@ -215,7 +223,8 @@ export const phoneConfig = Effect.fn("phoneConfig")(function* (args: string[]) {
   }));
   const config = yield* Schema.decodeUnknownEffect(configSchema)(input).pipe(
     Effect.mapError(
-      (error) => new UsageError(`Invalid phone-mirror configuration: ${error.message}`),
+      (error) =>
+        new UsageError(`Invalid phone-mirror configuration: ${error.message}`),
     ),
   );
   return Object.freeze(config);

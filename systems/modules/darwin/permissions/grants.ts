@@ -20,8 +20,10 @@ export type Grant = {
 
 export type Access = typeof access.$inferSelect;
 
-const authorizationOverrides: Record<string, { value: number; version: number }> =
-  policy.authorization.serviceOverrides;
+const authorizationOverrides: Record<
+  string,
+  { value: number; version: number }
+> = policy.authorization.serviceOverrides;
 const ephemeralExpiries = new Map(
   policy.services.ephemeral.map(({ service, expirySeconds }) => [
     service,
@@ -29,7 +31,11 @@ const ephemeralExpiries = new Map(
   ]),
 );
 
-export function grantFor(service: string, client: Client, target?: Target): Grant {
+export function grantFor(
+  service: string,
+  client: Client,
+  target?: Target,
+): Grant {
   const authorization = authorizationOverrides[service] ?? policy.authorization;
   const expirySeconds = ephemeralExpiries.get(service);
   return {
@@ -59,11 +65,14 @@ export function plansFor(
       path: userPath,
       grants: installed.flatMap((client) => [
         ...policy.services.user.map((service) => grantFor(service, client)),
-        ...policy.services.ephemeral.map(({ service }) => grantFor(service, client)),
-        ...policy.services.applicationTargets.flatMap(({ service, signedOnly }) =>
-          targets
-            .filter((target) => !signedOnly || target.type === 0)
-            .map((target) => grantFor(service, client, target)),
+        ...policy.services.ephemeral.map(({ service }) =>
+          grantFor(service, client),
+        ),
+        ...policy.services.applicationTargets.flatMap(
+          ({ service, signedOnly }) =>
+            targets
+              .filter((target) => !signedOnly || target.type === 0)
+              .map((target) => grantFor(service, client, target)),
         ),
       ]),
     },
@@ -71,7 +80,10 @@ export function plansFor(
 }
 
 export function matches(row: Access | undefined, grant: Grant): boolean {
-  const equal = (actual: Uint8Array | null, expected: Uint8Array | null | undefined) =>
+  const equal = (
+    actual: Uint8Array | null,
+    expected: Uint8Array | null | undefined,
+  ) =>
     expected == null
       ? actual === null
       : actual !== null && Buffer.from(actual).equals(expected);
@@ -82,7 +94,8 @@ export function matches(row: Access | undefined, grant: Grant): boolean {
     row.authVersion === grant.authVersion &&
     row.policyId === null &&
     row.flags === policy.authorization.flags &&
-    row.indirectObjectIdentifierType === (grant.target ? grant.target.type : 0) &&
+    row.indirectObjectIdentifierType ===
+      (grant.target ? grant.target.type : 0) &&
     equal(row.csreq, grant.client.requirement) &&
     equal(row.indirectObjectCodeIdentity, grant.target?.requirement)
   );

@@ -91,7 +91,8 @@ const configRules: Record<string, ConfigRule> = {
         ...opencodeConfig.watcher,
         ignore: [
           ...new Set([
-            ...((managed.watcher as { ignore?: string[] } | undefined)?.ignore ?? []),
+            ...((managed.watcher as { ignore?: string[] } | undefined)
+              ?.ignore ?? []),
             ...opencodeConfig.watcher.ignore,
           ]),
         ],
@@ -114,7 +115,9 @@ export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
 ) {
   const fs = yield* FileSystem.FileSystem;
   const home = homedir();
-  const manifestText = yield* fs.readFileString(join(exported, "manifest.json"));
+  const manifestText = yield* fs.readFileString(
+    join(exported, "manifest.json"),
+  );
   const manifestJson = yield* Effect.try({
     try: () => JSON.parse(manifestText) as unknown,
     catch: (error) => new DotfilesError(`Invalid AI export manifest: ${error}`),
@@ -139,7 +142,8 @@ export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
     const text = yield* fs.readFileString(path);
     const value = yield* Effect.try({
       try: () => formats[format].parse(text) as unknown,
-      catch: (error) => new DotfilesError(`Invalid AI configuration ${path}: ${error}`),
+      catch: (error) =>
+        new DotfilesError(`Invalid AI configuration ${path}: ${error}`),
     });
     return yield* Schema.decodeUnknownEffect(ConfigurationSchema)(
       emptyIfNull && value == null ? {} : value,
@@ -151,7 +155,9 @@ export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
       file.path.split("/").some((part) => ["", ".", ".."].includes(part))
     )
       return yield* Effect.fail(
-        new DotfilesError("The AI config export contains an invalid destination"),
+        new DotfilesError(
+          "The AI config export contains an invalid destination",
+        ),
       );
     const target = join(destination, file.path);
     yield* fs.makeDirectory(dirname(target), { recursive: true, mode: 0o700 });
@@ -168,20 +174,31 @@ export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
         rule.preserveCurrent && currentExists
           ? yield* readConfiguration(currentPath, rule.format, true)
           : {};
-      const managed = yield* readConfiguration(join(exported, file.path), rule.format);
+      const managed = yield* readConfiguration(
+        join(exported, file.path),
+        rule.format,
+      );
       const config = rule.preserveCurrent
         ? merge(
             current,
-            rule.managedOverrides ? { ...managed, ...rule.managedOverrides } : managed,
+            rule.managedOverrides
+              ? { ...managed, ...rule.managedOverrides }
+              : managed,
           )
         : managed;
       const overrides =
-        typeof rule.overrides === "function" ? rule.overrides(managed) : rule.overrides;
+        typeof rule.overrides === "function"
+          ? rule.overrides(managed)
+          : rule.overrides;
       const contents = yield* Effect.try({
         try: () =>
-          formats[rule.format].stringify(overrides ? merge(config, overrides) : config),
+          formats[rule.format].stringify(
+            overrides ? merge(config, overrides) : config,
+          ),
         catch: (error) =>
-          new DotfilesError(`Could not render AI configuration ${file.path}: ${error}`),
+          new DotfilesError(
+            `Could not render AI configuration ${file.path}: ${error}`,
+          ),
       });
       yield* fs.writeFileString(target, contents, { mode: 0o600 });
     } else yield* fs.copyFile(join(exported, file.path), target);
@@ -205,7 +222,10 @@ export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
   for (const [path, relative] of Object.entries(links)) {
     const target = join(destination, path);
     yield* fs.makeDirectory(dirname(target), { recursive: true, mode: 0o700 });
-    yield* fs.symlink(isAbsolute(relative) ? relative : join(source, relative), target);
+    yield* fs.symlink(
+      isAbsolute(relative) ? relative : join(source, relative),
+      target,
+    );
     files.push({ path, private: false, type: "symlink" });
   }
   if (process.platform === "linux") {

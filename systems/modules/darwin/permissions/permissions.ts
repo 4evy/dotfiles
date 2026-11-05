@@ -20,18 +20,24 @@ const reconcile = Effect.fn(function* (
   mode: "apply" | "check" | "dry-run",
 ) {
   if (process.platform !== "darwin")
-    return yield* Effect.fail(new DotfilesError("TCC permissions require macOS"));
+    return yield* Effect.fail(
+      new DotfilesError("TCC permissions require macOS"),
+    );
   if (process.getuid?.() !== 0)
     return yield* Effect.fail(
       new DotfilesError("Run with sudo to access both TCC databases"),
     );
   const sip = yield* output(["/usr/bin/csrutil", "status"]);
   if (!sip.includes("status: disabled.")) {
-    console.log("Skipping macOS permissions: SIP is not disabled. No changes made");
+    console.log(
+      "Skipping macOS permissions: SIP is not disabled. No changes made",
+    );
     return;
   }
   if (!/^[a-zA-Z0-9_-]+$/.test(user) || user === "root")
-    return yield* Effect.fail(new DotfilesError("Expected a non-root local username"));
+    return yield* Effect.fail(
+      new DotfilesError("Expected a non-root local username"),
+    );
   const account = yield* output([
     "/usr/bin/dscl",
     ".",
@@ -43,7 +49,9 @@ const reconcile = Effect.fn(function* (
   const home = account.match(/^NFSHomeDirectory: (.+)$/m)?.[1];
   const uid = account.match(/^UniqueID: (\d+)$/m)?.[1];
   if (!home?.startsWith("/") || !uid)
-    return yield* Effect.fail(new DotfilesError(`Could not resolve account: ${user}`));
+    return yield* Effect.fail(
+      new DotfilesError(`Could not resolve account: ${user}`),
+    );
   const userPath = yield* userDatabase(uid, home);
   const discovered = yield* clients(home, uid, user);
   const installed = discovered.filter((client) => client.grantPermissions);
@@ -58,10 +66,13 @@ const reconcile = Effect.fn(function* (
     mode,
   );
   if (mode === "dry-run") {
-    for (const client of installed) console.log(`Managed client: ${client.identifier}`);
+    for (const client of installed)
+      console.log(`Managed client: ${client.identifier}`);
   }
   const changes = yield* inspectTcc(installed, targets, userPath, mode);
-  console.log(`${installed.length} clients, ${targets.length} AppleEvents targets`);
+  console.log(
+    `${installed.length} clients, ${targets.length} AppleEvents targets`,
+  );
   if (mode !== "apply" || changes.count === 0) {
     const notificationCount = yield* notifications;
     if (mode === "check" && changes.persistentCount + notificationCount > 0)
@@ -79,7 +90,9 @@ const reconcile = Effect.fn(function* (
 const parser = object({
   user: option("--user", string({ metavar: "USER" }))
     .multiple()
-    .map((values) => values.at(-1) ?? process.env.SUDO_USER ?? process.env.USER),
+    .map(
+      (values) => values.at(-1) ?? process.env.SUDO_USER ?? process.env.USER,
+    ),
   mode: or(
     flag("--check")
       .multiple({ min: 1 })
@@ -96,19 +109,24 @@ if (import.meta.main)
       const values = yield* Effect.try({
         try: () => {
           let helpShown = false;
-          const values = runParser(parser, "dotfiles-permissions", Bun.argv.slice(2), {
-            brief: message`Reconcile declared clients' macOS permissions`,
-            help: {
-              option: { names: ["-h", "--help"] },
-              onShow: () => {
-                helpShown = true;
+          const values = runParser(
+            parser,
+            "dotfiles-permissions",
+            Bun.argv.slice(2),
+            {
+              brief: message`Reconcile declared clients' macOS permissions`,
+              help: {
+                option: { names: ["-h", "--help"] },
+                onShow: () => {
+                  helpShown = true;
+                },
+              },
+              stderr: () => {},
+              onError: (_code, error) => {
+                throw new Error(formatMessage(error));
               },
             },
-            stderr: () => {},
-            onError: (_code, error) => {
-              throw new Error(formatMessage(error));
-            },
-          });
+          );
           return helpShown ? undefined : values;
         },
         catch: (cause) => new DotfilesError(String(cause)),

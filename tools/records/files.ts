@@ -63,7 +63,9 @@ export function writePrivate(path: string, content: string | Uint8Array) {
       yield* Effect.tryPromise(() => file.writeFile(content));
     }),
   ).pipe(
-    Effect.mapError(() => new DotfilesError(`could not write private file: ${path}`)),
+    Effect.mapError(
+      () => new DotfilesError(`could not write private file: ${path}`),
+    ),
   );
 }
 
@@ -98,7 +100,9 @@ export function replaceTextFile(
       yield* fs.chmod(replacement, permission);
       yield* fs.rename(replacement, path);
     }),
-  ).pipe(Effect.mapError(() => new DotfilesError(`could not replace file: ${path}`)));
+  ).pipe(
+    Effect.mapError(() => new DotfilesError(`could not replace file: ${path}`)),
+  );
 }
 
 export function removeEmptyDirectory(path: string) {
@@ -117,7 +121,9 @@ export function readUTF8(path: string, label: string) {
     const content = yield* fs.readFile(path);
     return yield* Effect.try({
       try: () =>
-        new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(content),
+        new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(
+          content,
+        ),
       catch: () => new DotfilesError(`${label} is not valid UTF-8`),
     });
   });
@@ -147,7 +153,11 @@ export function parseJSON(content: string, label: string): unknown {
         invalid = true;
       },
     },
-    { disallowComments: true, allowTrailingComma: false, allowEmptyContent: false },
+    {
+      disallowComments: true,
+      allowTrailingComma: false,
+      allowEmptyContent: false,
+    },
   );
   if (!invalid) {
     try {
@@ -177,7 +187,10 @@ function deterministic(value: unknown): unknown {
     return Object.fromEntries(
       Object.keys(value)
         .sort()
-        .map((key) => [key, deterministic((value as Record<string, unknown>)[key])]),
+        .map((key) => [
+          key,
+          deterministic((value as Record<string, unknown>)[key]),
+        ]),
     );
   }
   return value;
@@ -185,13 +198,15 @@ function deterministic(value: unknown): unknown {
 
 export function marshalJSON(value: unknown): string {
   const encoded = JSON.stringify(deterministic(value));
-  if (encoded === undefined) throw new DotfilesError("value cannot be encoded as JSON");
+  if (encoded === undefined)
+    throw new DotfilesError("value cannot be encoded as JSON");
   return encoded;
 }
 
 export function marshalPrettyJSON(value: unknown): string {
   const encoded = JSON.stringify(deterministic(value), null, 2);
-  if (encoded === undefined) throw new DotfilesError("value cannot be encoded as JSON");
+  if (encoded === undefined)
+    throw new DotfilesError("value cannot be encoded as JSON");
   return encoded;
 }
 

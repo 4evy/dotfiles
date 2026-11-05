@@ -36,7 +36,11 @@ export class PrideFlags extends Text {
   #disposed = false;
   #native: { text: string; activity: Activity; node: NativeNode } | undefined;
 
-  constructor(ctx: ExtensionContext, tui: TUI, activity: (now: number) => Activity) {
+  constructor(
+    ctx: ExtensionContext,
+    tui: TUI,
+    activity: (now: number) => Activity,
+  ) {
     super("pride", 0, 0);
     this.ctx = ctx;
     this.tui = tui;
@@ -63,7 +67,8 @@ export class PrideFlags extends Text {
     const blend = -Math.expm1(-elapsed / RESPONSE_SECONDS);
     if (!this.#reduceMotion) {
       const advance =
-        targetSpeed * elapsed + (this.#speed - targetSpeed) * RESPONSE_SECONDS * blend;
+        targetSpeed * elapsed +
+        (this.#speed - targetSpeed) * RESPONSE_SECONDS * blend;
       this.#phase = (this.#phase + advance) % FULL_TURN;
       // Star twinkle keeps its own gentle cadence through activity changes
       this.#starPhase =
@@ -99,7 +104,10 @@ export class PrideFlags extends Text {
       this.#paint();
     }
     const text = this.getText();
-    if (this.#native?.text !== text || this.#native.activity !== this.#activity) {
+    if (
+      this.#native?.text !== text ||
+      this.#native.activity !== this.#activity
+    ) {
       // ANSI retains the RGB backgrounds of the half-block pixels
       const described = ansi(text, {
         cols: WIDGET_COLUMNS,

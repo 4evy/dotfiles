@@ -89,31 +89,64 @@
   },
   {
     "target": ".cache/zsh/completions/_atuin",
-    "command": ["env", "SHELL=/bin/zsh", "atuin", "gen-completions", "--shell", "zsh"],
+    "command": [
+      "env",
+      "SHELL=/bin/zsh",
+      "atuin",
+      "gen-completions",
+      "--shell",
+      "zsh"
+    ],
     "requireCommand": "atuin",
     "required": true
   },
   {
     "target": ".local/share/bash-completion/completions/cargo",
-    "command": ["env", "SHELL=/bin/bash", "rustup", "completions", "bash", "cargo"],
+    "command": [
+      "env",
+      "SHELL=/bin/bash",
+      "rustup",
+      "completions",
+      "bash",
+      "cargo"
+    ],
     "requireCommand": "rustup",
     "required": true
   },
   {
     "target": ".cache/zsh/completions/_cargo",
-    "command": ["env", "SHELL=/bin/zsh", "rustup", "completions", "zsh", "cargo"],
+    "command": [
+      "env",
+      "SHELL=/bin/zsh",
+      "rustup",
+      "completions",
+      "zsh",
+      "cargo"
+    ],
     "requireCommand": "rustup",
     "required": true
   },
   {
     "target": ".local/share/bash-completion/completions/delta",
-    "command": ["env", "SHELL=/bin/bash", "delta", "--generate-completion", "bash"],
+    "command": [
+      "env",
+      "SHELL=/bin/bash",
+      "delta",
+      "--generate-completion",
+      "bash"
+    ],
     "requireCommand": "delta",
     "required": true
   },
   {
     "target": ".cache/zsh/completions/_delta",
-    "command": ["env", "SHELL=/bin/zsh", "delta", "--generate-completion", "zsh"],
+    "command": [
+      "env",
+      "SHELL=/bin/zsh",
+      "delta",
+      "--generate-completion",
+      "zsh"
+    ],
     "requireCommand": "delta",
     "required": true
   },
@@ -131,7 +164,14 @@
   },
   {
     "target": ".local/share/bash-completion/completions/gh",
-    "command": ["env", "SHELL=/bin/bash", "gh", "completion", "--shell", "bash"],
+    "command": [
+      "env",
+      "SHELL=/bin/bash",
+      "gh",
+      "completion",
+      "--shell",
+      "bash"
+    ],
     "requireCommand": "gh",
     "required": true
   },

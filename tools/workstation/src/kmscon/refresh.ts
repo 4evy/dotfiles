@@ -10,7 +10,9 @@ import { argument, option } from "@optique/core/primitives";
 import { string } from "@optique/core/valueparser";
 import { Effect, FileSystem, Schema } from "effect";
 
-const ttys = new Set(Array.from({ length: 6 }, (_, index) => `tty${index + 1}`));
+const ttys = new Set(
+  Array.from({ length: 6 }, (_, index) => `tty${index + 1}`),
+);
 const stateSchema = Schema.fromJsonString(
   Schema.Struct({
     config_sha256: Schema.String,
@@ -49,7 +51,9 @@ const pendingTtys = Effect.fn("kmsconRefresh.pendingTtys")(function* (
   }).pipe(Effect.catch(() => Effect.succeed(new Set(ttys))));
 });
 
-export const kmsconRefresh = Effect.fn("kmsconRefresh")(function* (args: string[]) {
+export const kmsconRefresh = Effect.fn("kmsconRefresh")(function* (
+  args: string[],
+) {
   const fs = yield* FileSystem.FileSystem;
   const parsed = parseSync(
     object({
@@ -79,7 +83,13 @@ export const kmsconRefresh = Effect.fn("kmsconRefresh")(function* (args: string[
     }
     if (
       (yield* run(
-        ["farstep-desktop", "systemd", "try", "restart", `kmsconvt@${tty}.service`],
+        [
+          "farstep-desktop",
+          "systemd",
+          "try",
+          "restart",
+          `kmsconvt@${tty}.service`,
+        ],
         { check: false },
       )).code !== 0
     ) {

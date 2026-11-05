@@ -6,7 +6,11 @@ import { SecureRandom } from "effect/crypto";
 import { DotfilesError } from "./errors.ts";
 
 // Write JSON atomically and report whether content or permissions changed
-export function writeJson(path: string, value: unknown, mode: number | string = 0o644) {
+export function writeJson(
+  path: string,
+  value: unknown,
+  mode: number | string = 0o644,
+) {
   return writeIfChanged(path, `${JSON.stringify(value, null, 2)}\n`, mode);
 }
 
@@ -51,7 +55,9 @@ export function ensureDirectory(path: string, mode?: number | string) {
   }).pipe(
     Effect.mapError(
       (cause) =>
-        new DotfilesError(`Could not create ${path}: ${cause.message}`, { cause }),
+        new DotfilesError(`Could not create ${path}: ${cause.message}`, {
+          cause,
+        }),
     ),
   );
 }
@@ -105,7 +111,9 @@ export function writeIfChanged(
   ).pipe(
     Effect.mapError(
       (cause) =>
-        new DotfilesError(`Could not write ${path}: ${cause.message}`, { cause }),
+        new DotfilesError(`Could not write ${path}: ${cause.message}`, {
+          cause,
+        }),
     ),
   );
 }

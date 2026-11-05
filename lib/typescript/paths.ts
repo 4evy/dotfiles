@@ -21,7 +21,9 @@ export function configHome() {
 }
 
 export function cachePath(...parts: string[]) {
-  return environmentDirectory("XDG_CACHE_HOME", "Library/Caches", ".cache").pipe(
-    Effect.map((directory) => join(directory, "dotfiles", ...parts)),
-  );
+  return environmentDirectory(
+    "XDG_CACHE_HOME",
+    "Library/Caches",
+    ".cache",
+  ).pipe(Effect.map((directory) => join(directory, "dotfiles", ...parts)));
 }

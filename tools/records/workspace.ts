@@ -37,7 +37,9 @@ export function unpackWorkspace(v: Vault, destination: string) {
         yield* restore(
           Effect.gen(function* () {
             yield* writeWorkspacePlan(plan);
-            yield* v.stdout(`unpacked ${recordCount(value)} records into ${root}\n`);
+            yield* v.stdout(
+              `unpacked ${recordCount(value)} records into ${root}\n`,
+            );
           }),
         ).pipe(
           Effect.onError(() =>
@@ -104,7 +106,9 @@ export function prepareDestination(v: Vault, destination: string) {
     const root = join(parent, basename(path));
     if (isWithin(v.repository, root))
       return yield* Effect.fail(
-        new DotfilesError("plaintext workspaces must be outside the repository"),
+        new DotfilesError(
+          "plaintext workspaces must be outside the repository",
+        ),
       );
     return { root, created: true };
   });
@@ -132,12 +136,16 @@ export function existingWorkspace(v: Vault, source: string) {
     path = yield* fs.realPath(path);
     if (isWithin(v.repository, path))
       return yield* Effect.fail(
-        new DotfilesError("plaintext workspaces must be outside the repository"),
+        new DotfilesError(
+          "plaintext workspaces must be outside the repository",
+        ),
       );
     const resolvedInfo = yield* fs.lstat(path);
     if ((resolvedInfo.mode & 0o077) !== 0)
       return yield* Effect.fail(
-        new DotfilesError("workspace permissions must not grant group or other access"),
+        new DotfilesError(
+          "workspace permissions must not grant group or other access",
+        ),
       );
     return path;
   });
@@ -206,7 +214,11 @@ export function readWorkspace(root: string) {
     if (!(yield* isRegular(formatPath)))
       return yield* Effect.fail(new DotfilesError("missing workspace format"));
     const format = yield* parseJSONObject(formatPath, "workspace format");
-    if (Object.keys(format).some((key) => key !== "collections" && key !== "version"))
+    if (
+      Object.keys(format).some(
+        (key) => key !== "collections" && key !== "version",
+      )
+    )
       return yield* Effect.fail(
         new DotfilesError("workspace format is not valid JSON (unknown field)"),
       );
@@ -216,7 +228,9 @@ export function readWorkspace(root: string) {
       format.collections.some((name: unknown) => typeof name !== "string") ||
       !equalNames(format.collections as string[], collectionNames)
     )
-      return yield* Effect.fail(new DotfilesError("unsupported workspace format"));
+      return yield* Effect.fail(
+        new DotfilesError("unsupported workspace format"),
+      );
     const result: CollectionSet = {};
     for (const collection of collectionNames) {
       const collectionRoot = join(root, collection);
@@ -266,14 +280,21 @@ function assertEntries(directory: string, expected: readonly string[]) {
     const fs = yield* FileSystem.FileSystem;
     if (!equalNames(yield* fs.readDirectory(directory), expected))
       return yield* Effect.fail(
-        new DotfilesError(`unexpected files in protected workspace: ${directory}`),
+        new DotfilesError(
+          `unexpected files in protected workspace: ${directory}`,
+        ),
       );
   });
 }
 
-function equalNames(actual: readonly string[], expected: readonly string[]): boolean {
+function equalNames(
+  actual: readonly string[],
+  expected: readonly string[],
+): boolean {
   const names = new Set(actual);
-  return names.size === expected.length && expected.every((name) => names.has(name));
+  return (
+    names.size === expected.length && expected.every((name) => names.has(name))
+  );
 }
 
 export function directoryEmpty(path: string) {

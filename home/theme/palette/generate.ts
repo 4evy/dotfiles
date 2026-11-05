@@ -9,7 +9,13 @@ import {
 import { DotfilesError } from "@dotfiles/core/errors";
 import { writeJson } from "@dotfiles/core/files";
 import { runMain } from "@dotfiles/core/runtime";
-import { clampChroma, converter, formatHex, type Oklch, wcagContrast } from "culori";
+import {
+  clampChroma,
+  converter,
+  formatHex,
+  type Oklch,
+  wcagContrast,
+} from "culori";
 import { Effect, Schema } from "effect";
 import parameters from "./parameters.json";
 import roles from "./roles.json";
@@ -30,7 +36,9 @@ const identifierSchema = Schema.String.check(
 const flavorSchema = Schema.Literals(["latte", "frappe", "macchiato", "mocha"]);
 const roleReferencesSchema = Schema.Record(
   identifierSchema,
-  Schema.String.check(Schema.isPattern(/^(token|derived):[A-Za-z][A-Za-z0-9]*$/)),
+  Schema.String.check(
+    Schema.isPattern(/^(token|derived):[A-Za-z][A-Za-z0-9]*$/),
+  ),
 );
 const modeSchema = Schema.Struct({
   flavor: flavorSchema,
@@ -92,7 +100,9 @@ function roleDefinitions(value: unknown): RoleDefinitions {
   for (const mode of MODES) {
     for (const role of Object.keys(parsed.modes[mode].roles)) {
       if (Object.hasOwn(common, role))
-        throw new Error(`Role ${role} must be common or mode-specific, not both`);
+        throw new Error(
+          `Role ${role} must be common or mode-specific, not both`,
+        );
     }
   }
   const lightKeys = Object.keys({ ...common, ...parsed.modes.light.roles });
@@ -181,7 +191,8 @@ function resolveRoles(
       const [kind, name] = reference.split(":") as [string, string];
       if (kind === "token") return [role, token(colors, name)];
       const value = Object.hasOwn(derived, name) ? derived[name] : undefined;
-      if (value === undefined) throw new Error(`Unresolved derived color: ${name}`);
+      if (value === undefined)
+        throw new Error(`Unresolved derived color: ${name}`);
       return [role, value];
     }),
   );
@@ -198,10 +209,18 @@ export function buildPalette(
   const fillFlavor = flavor(upstream, parameters.fillFlavor);
   const fillForeground = token(fillFlavor.colors, parameters.fillForeground);
   const pinkFill = hex(
-    derive(fillFlavor.colors, parameters.reference.pink, parameters.hueConcentration),
+    derive(
+      fillFlavor.colors,
+      parameters.reference.pink,
+      parameters.hueConcentration,
+    ),
   );
   const blueFill = hex(
-    derive(fillFlavor.colors, parameters.reference.blue, parameters.hueConcentration),
+    derive(
+      fillFlavor.colors,
+      parameters.reference.blue,
+      parameters.hueConcentration,
+    ),
   );
   for (const fill of [pinkFill, blueFill]) {
     if (wcagContrast(fill, fillForeground) < parameters.minimumTextContrast)
@@ -291,7 +310,8 @@ if (import.meta.main) {
     Effect.gen(function* () {
       const document = yield* Effect.try({
         try: () => buildPalette({ flavors, version }, roles, parameters),
-        catch: (cause) => new DotfilesError("Could not build palette", { cause }),
+        catch: (cause) =>
+          new DotfilesError("Could not build palette", { cause }),
       });
       yield* writeJson(resolve(import.meta.dir, "palette.json"), document);
     }),

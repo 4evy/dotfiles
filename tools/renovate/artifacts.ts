@@ -27,18 +27,28 @@ runMain(
     const pinUpdates = [
       { input: ".github/renovate/package.json", update: updateRenovatePatch },
       { input: "tools/setup/setup.sh", update: updateBunBootstrap },
-      { input: ".github/actions/setup/check/tools/action.yaml", update: updateMise },
+      {
+        input: ".github/actions/setup/check/tools/action.yaml",
+        update: updateMise,
+      },
       { input: "home/applications/helium/config.toml", update: updateBrowser },
       {
         input: "home/files/.local/share/nix/chatgpt/package.nix",
         update: () =>
           Effect.gen(function* () {
-            yield* run(["nix", "run", ".#update-chatgpt", "--", "--version=skip"], {
-              cwd: join(root, "home/files/.local/share/nix/chatgpt"),
-              capture: true,
-            });
             yield* run(
-              ["deadnix", "--fail", "home/files/.local/share/nix/chatgpt/package.nix"],
+              ["nix", "run", ".#update-chatgpt", "--", "--version=skip"],
+              {
+                cwd: join(root, "home/files/.local/share/nix/chatgpt"),
+                capture: true,
+              },
+            );
+            yield* run(
+              [
+                "deadnix",
+                "--fail",
+                "home/files/.local/share/nix/chatgpt/package.nix",
+              ],
               { cwd: root, capture: true },
             );
           }),
@@ -79,7 +89,10 @@ runMain(
     }
 
     const chatgpt = "home/files/.local/share/nix/chatgpt";
-    if (changed.has(`${chatgpt}/flake.nix`) || changed.has(`${chatgpt}/flake.lock`)) {
+    if (
+      changed.has(`${chatgpt}/flake.nix`) ||
+      changed.has(`${chatgpt}/flake.lock`)
+    ) {
       yield* Effect.scoped(
         Effect.gen(function* () {
           const staging = yield* fs.makeTempDirectoryScoped({
@@ -94,7 +107,10 @@ runMain(
             join(root, chatgpt, "flake.lock"),
             join(staging, "flake.lock"),
           );
-          yield* run(["nix", "flake", "update"], { cwd: staging, capture: true });
+          yield* run(["nix", "flake", "update"], {
+            cwd: staging,
+            capture: true,
+          });
           yield* fs.copyFile(
             join(staging, "flake.lock"),
             join(root, chatgpt, "flake.lock"),
@@ -122,7 +138,11 @@ runMain(
     }
     changed = yield* changedPaths();
     const runtime = "home/files/.local/lib";
-    if (["package.json", "bun.lock"].some((name) => changed.has(join(runtime, name)))) {
+    if (
+      ["package.json", "bun.lock"].some((name) =>
+        changed.has(join(runtime, name)),
+      )
+    ) {
       // Refresh the deployed lock outside workspace discovery
       yield* Effect.scoped(
         Effect.gen(function* () {
@@ -131,10 +151,13 @@ runMain(
           });
           for (const name of ["package.json", "bun.lock"])
             yield* fs.copyFile(join(root, runtime, name), join(staging, name));
-          yield* run(["bun", "install", "--ignore-scripts", "--lockfile-only"], {
-            cwd: staging,
-            capture: true,
-          });
+          yield* run(
+            ["bun", "install", "--ignore-scripts", "--lockfile-only"],
+            {
+              cwd: staging,
+              capture: true,
+            },
+          );
           yield* fs.copyFile(
             join(staging, "bun.lock"),
             join(root, runtime, "bun.lock"),
@@ -178,7 +201,10 @@ runMain(
         ],
         { cwd: root, capture: true },
       );
-      yield* run(["deadnix", "--edit", outputPath], { cwd: root, capture: true });
+      yield* run(["deadnix", "--edit", outputPath], {
+        cwd: root,
+        capture: true,
+      });
       yield* run(["nixfmt", outputPath], { cwd: root, capture: true });
     }
   }),

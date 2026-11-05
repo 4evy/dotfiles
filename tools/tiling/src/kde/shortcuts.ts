@@ -2,7 +2,10 @@ import type { BindingName, LayoutPreset } from "@dotfiles/tiling/shared";
 import { BINDING_NAMES, BINDINGS } from "@dotfiles/tiling/shared";
 
 type ShortcutHandlers = {
-  applyCycle: (bindingName: BindingName, presets: readonly LayoutPreset[]) => void;
+  applyCycle: (
+    bindingName: BindingName,
+    presets: readonly LayoutPreset[],
+  ) => void;
   maximizeFocusedWindow: () => void;
 };
 
@@ -26,5 +29,10 @@ function registerTilingShortcut(
   shortcut: string,
   handler: () => void,
 ) {
-  registerShortcut(`hyper-window-tiling-${bindingName}`, title, shortcut, handler);
+  registerShortcut(
+    `hyper-window-tiling-${bindingName}`,
+    title,
+    shortcut,
+    handler,
+  );
 }

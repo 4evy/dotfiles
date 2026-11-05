@@ -50,6 +50,7 @@ work and resolve conflicts, not just propose commands or stop after rebasing.
    is denied, conflicts on GitHub, or has an uncertain outcome, inspect the
    remote state and resolve the blocker before fetching or rebasing. Ask when
    resolution requires additional permission or a destructive choice.
+
 6. For a non-fork, skip fork synchronization. Only after the fork is confirmed
    synced, or confirmed not a fork, run `jj git fetch --remote <remote>`.
    Resolve the freshly fetched `<branch>@<remote>` to its full commit ID.

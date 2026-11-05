@@ -14,7 +14,8 @@ const upstreamId = "catppuccin.catppuccin-vsc-icons";
 const extensionMetadata = {
   name: "catppuccin-custom-catppuccin-icons",
   displayName: "Catppuccin Custom — Catppuccin Icons",
-  description: "Catppuccin file icon shapes using the Catppuccin Custom palette.",
+  description:
+    "Catppuccin file icon shapes using the Catppuccin Custom palette.",
   publisher: "evy",
   engines: { vscode: "^1.83.0" },
   categories: ["Themes"],
@@ -37,17 +38,25 @@ const themeSchema = Schema.StructWithRest(
   [Schema.Record(Schema.String, Schema.Unknown)],
 );
 
-const prefixReferences = Effect.fn("prefixReferences")(function* (value: unknown) {
-  const association = yield* Schema.decodeUnknownEffect(associationSchema)(value);
+const prefixReferences = Effect.fn("prefixReferences")(function* (
+  value: unknown,
+) {
+  const association =
+    yield* Schema.decodeUnknownEffect(associationSchema)(value);
   if (typeof association === "string") return `${lightPrefix}${association}`;
   return Object.fromEntries(
-    Object.entries(association).map(([key, item]) => [key, `${lightPrefix}${item}`]),
+    Object.entries(association).map(([key, item]) => [
+      key,
+      `${lightPrefix}${item}`,
+    ]),
   );
 });
 
 const buildTheme = Effect.fn("buildTheme")(function* (upstream: string) {
   const fs = yield* FileSystem.FileSystem;
-  const input = yield* fs.readFileString(join(upstream, "dist/mocha/theme.json"));
+  const input = yield* fs.readFileString(
+    join(upstream, "dist/mocha/theme.json"),
+  );
   const { iconDefinitions, ...theme } = yield* Schema.decodeUnknownEffect(
     Schema.fromJsonString(themeSchema),
   )(input);
@@ -65,7 +74,10 @@ const buildTheme = Effect.fn("buildTheme")(function* (upstream: string) {
     for (const [name, definition] of Object.entries(iconDefinitions))
       definitions[`${prefix}${name}`] = {
         ...definition,
-        iconPath: definition.iconPath.replace("./icons/", `./icons/${variant}/`),
+        iconPath: definition.iconPath.replace(
+          "./icons/",
+          `./icons/${variant}/`,
+        ),
       };
   }
   return { ...theme, light, iconDefinitions: definitions };
@@ -97,7 +109,9 @@ function copyIcons(
               (_match, role: string) => color(palette, role),
             ),
           catch: (error) =>
-            error instanceof DotfilesError ? error : new DotfilesError(String(error)),
+            error instanceof DotfilesError
+              ? error
+              : new DotfilesError(String(error)),
         });
         yield* fs.writeFileString(output, svg);
       }
@@ -122,7 +136,9 @@ function files(
   });
 }
 
-const contentVersion = Effect.fn("contentVersion")(function* (extension: string) {
+const contentVersion = Effect.fn("contentVersion")(function* (
+  extension: string,
+) {
   const fs = yield* FileSystem.FileSystem;
   const digest = createHash("sha256");
   for (const path of yield* files(extension))
@@ -185,7 +201,9 @@ const buildVSIX = Effect.fn("buildVSIX")(function* (
           ],
         },
       },
-      Installation: { InstallationTarget: { "@_Id": "Microsoft.VisualStudio.Code" } },
+      Installation: {
+        InstallationTarget: { "@_Id": "Microsoft.VisualStudio.Code" },
+      },
       Dependencies: "",
       Assets: {
         Asset: {
@@ -201,7 +219,8 @@ const buildVSIX = Effect.fn("buildVSIX")(function* (
     "extension.vsixmanifest": Buffer.from(manifest),
   };
   for (const path of yield* files(extension))
-    entries[`extension/${relative(extension, path)}`] = yield* fs.readFile(path);
+    entries[`extension/${relative(extension, path)}`] =
+      yield* fs.readFile(path);
   yield* fs.writeFile(destination, zipSync(entries));
 });
 
@@ -209,7 +228,11 @@ export const vscodeIcons = Effect.fn("vscodeIcons")(function* () {
   const code = yield* Effect.sync(() => Bun.which("code"));
   if (!code) return;
   const fs = yield* FileSystem.FileSystem;
-  const upstream = (yield* output([code, "--locate-extension", upstreamId])).trim();
+  const upstream = (yield* output([
+    code,
+    "--locate-extension",
+    upstreamId,
+  ])).trim();
   if (!upstream) return;
   if (!(yield* fs.exists(upstream)))
     return yield* Effect.fail(

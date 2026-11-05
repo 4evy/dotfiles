@@ -66,7 +66,11 @@ export const commands = {
     usage: "",
     environment: [],
   },
-  "desktop-perf-audit": { run: noArguments(desktopAudit), usage: "", environment: [] },
+  "desktop-perf-audit": {
+    run: noArguments(desktopAudit),
+    usage: "",
+    environment: [],
+  },
   "discord-equicord": {
     run: discord,
     usage: "[--configure-only] [DISCORD_ARGUMENTS...]",

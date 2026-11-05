@@ -7,7 +7,15 @@ import { map } from "@optique/core/modifiers";
 import { parseSync } from "@optique/core/parser";
 import { argument } from "@optique/core/primitives";
 import { choice, string } from "@optique/core/valueparser";
-import { Config, Effect, FileSystem, Option, Schema, Stdio, Stream } from "effect";
+import {
+  Config,
+  Effect,
+  FileSystem,
+  Option,
+  Schema,
+  Stdio,
+  Stream,
+} from "effect";
 
 const recordMetadata = Schema.fromJsonString(
   Schema.Struct({ paths: Schema.NonEmptyArray(Schema.String) }),
@@ -37,16 +45,25 @@ const regularFile = Effect.fn("jjDiff.regularFile")(function* (path: string) {
 });
 const directory = Effect.fn("jjDiff.directory")(function* (path: string) {
   const fs = yield* FileSystem.FileSystem;
-  return (yield* fs.exists(path)) && (yield* fs.stat(path)).type === "Directory";
+  return (
+    (yield* fs.exists(path)) && (yield* fs.stat(path)).type === "Directory"
+  );
 });
-const parseArguments = Effect.fn("jjDiff.parseArguments")(function* (args: string[]) {
+const parseArguments = Effect.fn("jjDiff.parseArguments")(function* (
+  args: string[],
+) {
   const parsed = parseSync(
     object({
       format: argument(choice(["patch", "stat"])),
       left: argument(string({ metavar: "LEFT", pattern: /./s })),
       right: argument(string({ metavar: "RIGHT", pattern: /./s })),
-      repository: argument(string({ metavar: "DOTFILES_REPOSITORY", pattern: /./s })),
-      width: map(argument(string({ metavar: "WIDTH", pattern: /^\d+$/ })), Number),
+      repository: argument(
+        string({ metavar: "DOTFILES_REPOSITORY", pattern: /./s }),
+      ),
+      width: map(
+        argument(string({ metavar: "WIDTH", pattern: /^\d+$/ })),
+        Number,
+      ),
     }),
     ["--", ...args],
   );
@@ -58,7 +75,9 @@ const parseArguments = Effect.fn("jjDiff.parseArguments")(function* (args: strin
       new UsageError("Snapshot paths must be safe relative paths"),
     );
   if (!(yield* directory(left)) || !(yield* directory(right)))
-    return yield* Effect.fail(new UsageError("Snapshot paths must name directories"));
+    return yield* Effect.fail(
+      new UsageError("Snapshot paths must name directories"),
+    );
   if (!(yield* regularFile(join(repository, "Justfile"))))
     return yield* Effect.fail(
       new UsageError("Dotfiles repository must contain a Justfile"),
@@ -82,7 +101,9 @@ const recordTarget = Effect.fn("jjDiff.recordTarget")(function* (path: string) {
       new DotfilesError(`Record metadata has no target path: ${path}`),
     );
   if (!safeRelativePath(target))
-    return yield* Effect.fail(new DotfilesError(`Unsafe record target: ${target}`));
+    return yield* Effect.fail(
+      new DotfilesError(`Unsafe record target: ${target}`),
+    );
   return target;
 });
 const materializeRecords = Effect.fn("jjDiff.materializeRecords")(function* (
@@ -103,7 +124,9 @@ const materializeRecords = Effect.fn("jjDiff.materializeRecords")(function* (
   );
   if (encryptedExists)
     return yield* Effect.fail(
-      new DotfilesError(`Temporary encrypted vault already exists: ${encrypted}`),
+      new DotfilesError(
+        `Temporary encrypted vault already exists: ${encrypted}`,
+      ),
     );
   yield* Effect.uninterruptible(
     Effect.gen(function* () {
@@ -126,11 +149,14 @@ const materializeRecords = Effect.fn("jjDiff.materializeRecords")(function* (
     },
   );
   yield* fs.remove(encrypted);
-  for (const metadata of yield* fs.glob(join(resolve(vault), "*/*/metadata.json"))) {
+  for (const metadata of yield* fs.glob(
+    join(resolve(vault), "*/*/metadata.json"),
+  )) {
     if (!(yield* regularFile(metadata))) continue;
     const record = dirname(metadata);
     const body = join(record, "body");
-    if (!(yield* fs.exists(body)) || (yield* fs.stat(body)).type !== "File") continue;
+    if (!(yield* fs.exists(body)) || (yield* fs.stat(body)).type !== "File")
+      continue;
     const target = join(record, "target", yield* recordTarget(metadata));
     yield* fs.makeDirectory(dirname(target), { recursive: true });
     yield* fs.rename(body, target);
@@ -149,7 +175,9 @@ const cleanup = Effect.fn("jjDiff.cleanup")(function* (workspaces: string[]) {
     );
   if (failures.length)
     return yield* Effect.fail(
-      new DotfilesError(`Failed to remove plaintext workspace: ${failures.join(", ")}`),
+      new DotfilesError(
+        `Failed to remove plaintext workspace: ${failures.join(", ")}`,
+      ),
     );
 });
 function lines(text: string): string[] {
@@ -158,11 +186,15 @@ function lines(text: string): string[] {
 function rewritePaths(patch: string, left: string, right: string): string {
   return lines(patch)
     .map((line) => {
-      if (!/^(?:diff --git |--- |\+\+\+ |Binary files )/.test(line)) return line;
+      if (!/^(?:diff --git |--- |\+\+\+ |Binary files )/.test(line))
+        return line;
       let rendered = line;
       for (const prefix of ["a", "b"])
         for (const snapshot of [left, right])
-          rendered = rendered.replaceAll(`${prefix}/${snapshot}/`, `${prefix}/`);
+          rendered = rendered.replaceAll(
+            `${prefix}/${snapshot}/`,
+            `${prefix}/`,
+          );
       return rendered;
     })
     .join("");
@@ -207,8 +239,10 @@ function annotateStatuses(patch: string): string {
       if (line.startsWith("diff --git ")) status = "M";
       else if (line.startsWith("new file mode ")) status = "A";
       else if (line.startsWith("deleted file mode ")) status = "D";
-      if (line.startsWith("--- a/")) return line.replace("--- a/", `--- a/${status} `);
-      if (line.startsWith("+++ b/")) return line.replace("+++ b/", `+++ b/${status} `);
+      if (line.startsWith("--- a/"))
+        return line.replace("--- a/", `--- a/${status} `);
+      if (line.startsWith("+++ b/"))
+        return line.replace("+++ b/", `+++ b/${status} `);
       if (line.startsWith("Binary files a/"))
         return line
           .replace("Binary files a/", `Binary files a/${status} `)
@@ -254,7 +288,8 @@ const diffstat = Effect.fn("jjDiff.diffstat")(function* (
 export const jjDiff = Effect.fn("jjDiff")(function* (args: string[]) {
   const fs = yield* FileSystem.FileSystem;
   const stdio = yield* Stdio.Stdio;
-  const { format, left, right, repository, width } = yield* parseArguments(args);
+  const { format, left, right, repository, width } =
+    yield* parseArguments(args);
   const result = yield* Effect.acquireUseRelease(
     Effect.sync(() => [] as string[]),
     (workspaces) =>
@@ -262,7 +297,10 @@ export const jjDiff = Effect.fn("jjDiff")(function* (args: string[]) {
         const leftVault = join(left, "secrets/records.yaml");
         const rightVault = join(right, "secrets/records.yaml");
         let same = false;
-        if ((yield* regularFile(leftVault)) && (yield* regularFile(rightVault))) {
+        if (
+          (yield* regularFile(leftVault)) &&
+          (yield* regularFile(rightVault))
+        ) {
           const leftBytes = yield* fs.readFile(leftVault);
           const rightBytes = yield* fs.readFile(rightVault);
           same =
@@ -273,7 +311,9 @@ export const jjDiff = Effect.fn("jjDiff")(function* (args: string[]) {
           yield* materializeRecords(left, repository, workspaces);
           yield* materializeRecords(right, repository, workspaces);
         }
-        const color = Option.isNone(yield* Config.option(Config.String("NO_COLOR")));
+        const color = Option.isNone(
+          yield* Config.option(Config.String("NO_COLOR")),
+        );
         const patch = yield* gitDiff(left, right, color);
         yield* Stream.make(
           format === "patch" ? patch : yield* diffstat(patch, width, color),

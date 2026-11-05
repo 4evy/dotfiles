@@ -11,14 +11,18 @@ runMain(
     const temporaryDirectory = yield* fs.realPath(tmpdir());
     const isTemporaryUri = Effect.fn(function* (uri: unknown) {
       if (typeof uri !== "string") return false;
-      const path = yield* Effect.try(() => fileURLToPath(uri)).pipe(Effect.option);
+      const path = yield* Effect.try(() => fileURLToPath(uri)).pipe(
+        Effect.option,
+      );
       if (path._tag === "None") return false;
       const document = (yield* fs.exists(path.value))
         ? yield* fs.realPath(path.value)
         : path.value;
       const difference = relative(temporaryDirectory, document);
       return (
-        difference !== ".." && !difference.startsWith("../") && !isAbsolute(difference)
+        difference !== ".." &&
+        !difference.startsWith("../") &&
+        !isAbsolute(difference)
       );
     });
     const server = yield* Effect.sync(() => Bun.which("rumdl"));

@@ -3,7 +3,7 @@
   "vcs": {
     "enabled": true,
     "clientKind": "git",
-    "useIgnoreFile": true
+    "useIgnoreFile": true,
   },
   "files": {
     "ignoreUnknown": true,
@@ -14,20 +14,20 @@
       "!!**/*.md",
       "!!**/*.yaml",
       "!!**/*.yml",
-      "!!home/files/Library/Application Support/sh.cider.genten/themes/**/*.scss"
-    ]
+      "!!home/files/Library/Application Support/sh.cider.genten/themes/**/*.scss",
+    ],
   },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
     "indentWidth": 2,
-    "lineWidth": 88
+    "lineWidth": 88,
   },
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended"
-    }
+      "preset": "recommended",
+    },
   },
   "overrides": [
     {
@@ -35,18 +35,18 @@
       "linter": {
         "rules": {
           "complexity": {
-            "noImportantStyles": "off"
-          }
-        }
-      }
-    }
+            "noImportantStyles": "off",
+          },
+        },
+      },
+    },
   ],
   "assist": {
     "enabled": true,
     "actions": {
       "source": {
-        "organizeImports": "on"
-      }
-    }
-  }
+        "organizeImports": "on",
+      },
+    },
+  },
 }

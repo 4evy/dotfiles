@@ -39,12 +39,18 @@ const CodexSchema = Schema.Struct({
 });
 const CurrentSchema = Schema.StructWithRest(
   Schema.Struct({
-    mcpServers: Schema.optionalKey(Schema.Record(Schema.String, Schema.Unknown)),
+    mcpServers: Schema.optionalKey(
+      Schema.Record(Schema.String, Schema.Unknown),
+    ),
   }),
   [Schema.Record(Schema.String, Schema.Unknown)],
 );
-const parseSource = Schema.decodeUnknownEffect(Schema.fromJsonString(OpenCodeSchema));
-const parseCurrent = Schema.decodeUnknownEffect(Schema.fromJsonString(CurrentSchema));
+const parseSource = Schema.decodeUnknownEffect(
+  Schema.fromJsonString(OpenCodeSchema),
+);
+const parseCurrent = Schema.decodeUnknownEffect(
+  Schema.fromJsonString(CurrentSchema),
+);
 
 runMain(
   Effect.gen(function* () {
@@ -60,7 +66,8 @@ runMain(
       const text = yield* fs.readFileString(codexFile);
       const parsed = yield* Effect.try({
         try: () => Bun.TOML.parse(text),
-        catch: (error) => new DotfilesError(`Invalid Codex MCP settings: ${error}`),
+        catch: (error) =>
+          new DotfilesError(`Invalid Codex MCP settings: ${error}`),
       });
       const codex = yield* Schema.decodeUnknownEffect(CodexSchema)(parsed);
       const password = codex.mcp_servers?.["1password"];
@@ -118,7 +125,9 @@ runMain(
       .readFileString(target)
       .pipe(
         Effect.catch((error) =>
-          error.reason._tag === "NotFound" ? Effect.succeed("") : Effect.fail(error),
+          error.reason._tag === "NotFound"
+            ? Effect.succeed("")
+            : Effect.fail(error),
         ),
       );
     const current = yield* parseCurrent(original.trim() ? original : "{}");

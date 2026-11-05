@@ -21,11 +21,17 @@ import {
 
 const repository = resolve(import.meta.dir, "../..");
 const home = homedir();
-const state = join(process.env.XDG_STATE_HOME || join(home, ".local/state"), "hjem");
+const state = join(
+  process.env.XDG_STATE_HOME || join(home, ".local/state"),
+  "hjem",
+);
 const { action, targets } = runParser(
   withDefault(
     or(
-      command("apply", object({ action: constant("apply"), targets: constant([]) })),
+      command(
+        "apply",
+        object({ action: constant("apply"), targets: constant([]) }),
+      ),
       command(
         "build",
         object({
@@ -106,7 +112,9 @@ const exists = Effect.fn("exists")(function* (path: string) {
   return yield* fs.lstat(path).pipe(
     Effect.as(true),
     Effect.catch((error) =>
-      error.reason._tag === "NotFound" ? Effect.succeed(false) : Effect.fail(error),
+      error.reason._tag === "NotFound"
+        ? Effect.succeed(false)
+        : Effect.fail(error),
     ),
   );
 });
@@ -121,7 +129,9 @@ function expand(value: string, output: string) {
 const homeTarget = Effect.fn("homeTarget")(function* (path: string) {
   const target = resolve(home, path);
   if (!target.startsWith(`${home}/`))
-    return yield* Effect.fail(new DotfilesError(`Invalid home target: ${path}`));
+    return yield* Effect.fail(
+      new DotfilesError(`Invalid home target: ${path}`),
+    );
   return target;
 });
 
@@ -149,7 +159,8 @@ const publicFiles = Effect.fn("publicFiles")(function* (output: string) {
     yield* readJson(join(built, "generators.json")),
   );
   for (const generator of generators) {
-    if (generator.systems && !generator.systems.includes(process.platform)) continue;
+    if (generator.systems && !generator.systems.includes(process.platform))
+      continue;
     const target = yield* homeTarget(generator.target);
     const source = join(output, "files", relative(home, target));
     yield* fs.makeDirectory(dirname(source), { recursive: true, mode: 0o700 });
@@ -192,7 +203,9 @@ const preparedAi = Effect.fn("preparedAi")(function* (
   );
   if (metadata.platform && metadata.platform !== process.platform)
     return yield* Effect.fail(
-      new DotfilesError("Prepared AI configuration belongs to another platform"),
+      new DotfilesError(
+        "Prepared AI configuration belongs to another platform",
+      ),
     );
   const files: Entry[] = [];
   for (const entry of metadata.files) {
@@ -208,12 +221,21 @@ const preparedAi = Effect.fn("preparedAi")(function* (
       });
     } else {
       const source = join(output, "ai", relative(home, target));
-      yield* fs.makeDirectory(dirname(source), { recursive: true, mode: 0o700 });
+      yield* fs.makeDirectory(dirname(source), {
+        recursive: true,
+        mode: 0o700,
+      });
       yield* fs.copyFile(original, source);
       const executable = ((yield* fs.stat(original)).mode & 0o111) !== 0;
       yield* fs.chmod(
         source,
-        entry.private ? (executable ? 0o700 : 0o600) : executable ? 0o755 : 0o644,
+        entry.private
+          ? executable
+            ? 0o700
+            : 0o600
+          : executable
+            ? 0o755
+            : 0o644,
       );
       files.push({
         type: entry.private ? "copy" : "symlink",
@@ -247,7 +269,11 @@ const generationReferenced = Effect.fn("generationReferenced")(function* (
   const fs = yield* FileSystem.FileSystem;
   const visit = (
     directory: string,
-  ): Effect.Effect<boolean, PlatformError.PlatformError, FileSystem.FileSystem> =>
+  ): Effect.Effect<
+    boolean,
+    PlatformError.PlatformError,
+    FileSystem.FileSystem
+  > =>
     Effect.gen(function* () {
       if (!(yield* exists(directory))) return false;
       for (const name of yield* fs.readDirectory(directory)) {
@@ -260,7 +286,8 @@ const generationReferenced = Effect.fn("generationReferenced")(function* (
               yield* readJson(path),
             );
             return manifest.files.some(
-              (file) => file.source === output || file.source.startsWith(`${output}/`),
+              (file) =>
+                file.source === output || file.source.startsWith(`${output}/`),
             );
           }).pipe(
             // Retain prepared sources when existing state cannot be inspected
@@ -279,20 +306,23 @@ const same = Effect.fn("same")(function* (entry: Entry) {
   return yield* Effect.gen(function* () {
     const source = yield* fs.stat(entry.source);
     const target = yield* fs.lstat(entry.target);
-    if (entry.type === "symlink" && target.type !== "SymbolicLink") return false;
+    if (entry.type === "symlink" && target.type !== "SymbolicLink")
+      return false;
     if (entry.type === "copy" && target.type === "SymbolicLink") return false;
     if (source.type === "Directory")
       return (yield* fs.readLink(entry.target)) === entry.source;
     const expectedMode = entry.permissions
       ? Number.parseInt(entry.permissions, 8)
       : source.mode & 0o777;
-    if (((yield* fs.stat(entry.target)).mode & 0o777) !== expectedMode) return false;
+    if (((yield* fs.stat(entry.target)).mode & 0o777) !== expectedMode)
+      return false;
     const [left, right] = yield* Effect.all([
       fs.readFile(entry.source),
       fs.readFile(entry.target),
     ]);
     return (
-      left.length === right.length && left.every((byte, index) => byte === right[index])
+      left.length === right.length &&
+      left.every((byte, index) => byte === right[index])
     );
   }).pipe(
     Effect.catch((error) => {
@@ -318,7 +348,8 @@ function fingerprintInput(
       return;
     }
     const link = yield* fs.lstat(path);
-    if (link.type === "SymbolicLink") fingerprint.update(yield* fs.readLink(path));
+    if (link.type === "SymbolicLink")
+      fingerprint.update(yield* fs.readLink(path));
     const info = yield* fs.stat(path);
     fingerprint.update(String(info.mode & 0o777));
     if (info.type !== "Directory") {
@@ -329,7 +360,8 @@ function fingerprintInput(
     if (visited.has(identity)) return;
     visited.add(identity);
     for (const name of (yield* fs.readDirectory(path)).sort()) {
-      if (["node_modules", "__pycache__", ".git", ".jj"].includes(name)) continue;
+      if (["node_modules", "__pycache__", ".git", ".jj"].includes(name))
+        continue;
       yield* fingerprintInput(fingerprint, join(path, name), visited);
     }
   });
@@ -343,10 +375,17 @@ const hooks = Effect.fn("hooks")(function* (output: string) {
   const hashes = join(state, "hook-state");
   yield* fs.makeDirectory(hashes, { recursive: true, mode: 0o700 });
   for (const hook of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-    const marker = join(hashes, createHash("sha256").update(hook.name).digest("hex"));
-    const previous = (yield* exists(marker)) ? yield* fs.readFileString(marker) : "";
+    const marker = join(
+      hashes,
+      createHash("sha256").update(hook.name).digest("hex"),
+    );
+    const previous = (yield* exists(marker))
+      ? yield* fs.readFileString(marker)
+      : "";
     // Script hooks use immutable store paths, argv hooks declare mutable inputs
-    const fingerprint = createHash("sha256").update(JSON.stringify(hook.command));
+    const fingerprint = createHash("sha256").update(
+      JSON.stringify(hook.command),
+    );
     for (const input of hook.inputs || [])
       yield* fingerprintInput(fingerprint, resolve(repository, input));
     const hash = fingerprint.digest("hex");
@@ -379,7 +418,8 @@ const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
                 : error,
             ),
           ),
-        () => fs.remove(lock, { recursive: true, force: true }).pipe(Effect.orDie),
+        () =>
+          fs.remove(lock, { recursive: true, force: true }).pipe(Effect.orDie),
       );
       yield* Effect.addFinalizer(() =>
         Effect.gen(function* () {
@@ -414,7 +454,8 @@ const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
       );
       const privateJson = yield* Effect.try({
         try: () => JSON.parse(privateText) as unknown,
-        catch: (error) => new DotfilesError(`Invalid private manifest: ${error}`),
+        catch: (error) =>
+          new DotfilesError(`Invalid private manifest: ${error}`),
       });
       const privateManifest =
         yield* Schema.decodeUnknownEffect(ManifestSchema)(privateJson);
@@ -432,7 +473,9 @@ const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
         entry.clobber = true;
       }
       // Resolve aliases to prepared sources so activation order cannot break links
-      const byTarget = new Map(manifest.files.map((entry) => [entry.target, entry]));
+      const byTarget = new Map(
+        manifest.files.map((entry) => [entry.target, entry]),
+      );
       for (const entry of manifest.files) {
         if (entry.type !== "symlink") continue;
         entry.source = resolve(entry.source);
@@ -449,9 +492,13 @@ const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
         }
       }
       const manifestPath = join(output, "manifest.json");
-      yield* fs.writeFileString(manifestPath, JSON.stringify(manifest, null, 2), {
-        mode: 0o600,
-      });
+      yield* fs.writeFileString(
+        manifestPath,
+        JSON.stringify(manifest, null, 2),
+        {
+          mode: 0o600,
+        },
+      );
       if (action === "diff" || action === "status") {
         let changed = 0;
         for (const entry of manifest.files) {
@@ -516,7 +563,9 @@ const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
         "--impure",
       ]);
       if (action === "apply") {
-        yield* fs.remove(join(state, "dotfiles-manifest.json"), { force: true });
+        yield* fs.remove(join(state, "dotfiles-manifest.json"), {
+          force: true,
+        });
         if (managesAi) yield* run(["bun", "tools/setup/ai/ai.ts", "activate"]);
         yield* hooks(output);
       }

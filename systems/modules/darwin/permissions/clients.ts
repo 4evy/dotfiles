@@ -22,7 +22,9 @@ const attempt = <A>(action: () => A) =>
   });
 const compileRequirement = Effect.fn(function* (expression: string) {
   const fs = yield* FileSystem.FileSystem;
-  const directory = yield* fs.makeTempDirectoryScoped({ prefix: "dotfiles-tcc-" });
+  const directory = yield* fs.makeTempDirectoryScoped({
+    prefix: "dotfiles-tcc-",
+  });
   const file = join(directory, "requirement.bin");
   yield* run(["/usr/bin/csreq", "-r", "-", "-b", file], {
     input: expression,
@@ -91,7 +93,9 @@ const identity = Effect.fn(function* (
       ? requirement.stderr.match(/^Executable=(.+)$/m)?.[1]
       : (bundleIdentifier ?? path);
   if (!identifier)
-    return yield* Effect.fail(new DotfilesError(`No executable identity: ${path}`));
+    return yield* Effect.fail(
+      new DotfilesError(`No executable identity: ${path}`),
+    );
   return {
     path,
     identifier,
@@ -104,11 +108,19 @@ const identity = Effect.fn(function* (
   } satisfies Client;
 });
 
-export const clients = Effect.fn(function* (home: string, uid: string, user: string) {
+export const clients = Effect.fn(function* (
+  home: string,
+  uid: string,
+  user: string,
+) {
   const fs = yield* FileSystem.FileSystem;
-  const repo = process.env.DOTFILES_REPO ?? resolve(import.meta.dir, "../../../..");
+  const repo =
+    process.env.DOTFILES_REPO ?? resolve(import.meta.dir, "../../../..");
   const expand = (path: string) =>
-    path.replaceAll("{home}", home).replaceAll("{uid}", uid).replaceAll("{repo}", repo);
+    path
+      .replaceAll("{home}", home)
+      .replaceAll("{uid}", uid)
+      .replaceAll("{repo}", repo);
   const apps = new Map<string, boolean>(
     policy.applications.targets.map((path) => [expand(path), false]),
   );
@@ -126,7 +138,9 @@ export const clients = Effect.fn(function* (home: string, uid: string, user: str
   for (const file of policy.applications.homebrew.brewfiles) {
     const manifest = expand(file);
     if (!(yield* fs.exists(manifest)))
-      return yield* Effect.fail(new DotfilesError(`Missing app manifest: ${manifest}`));
+      return yield* Effect.fail(
+        new DotfilesError(`Missing app manifest: ${manifest}`),
+      );
     const casks = yield* output([
       ...brew,
       "bundle",
@@ -135,9 +149,16 @@ export const clients = Effect.fn(function* (home: string, uid: string, user: str
       "--file",
       manifest,
     ]);
-    for (const token of casks.trim().split(/\s+/).filter(Boolean)) declared.add(token);
+    for (const token of casks.trim().split(/\s+/).filter(Boolean))
+      declared.add(token);
   }
-  const text = yield* output([...brew, "info", "--json=v2", "--cask", "--installed"]);
+  const text = yield* output([
+    ...brew,
+    "info",
+    "--json=v2",
+    "--cask",
+    "--installed",
+  ]);
   const installed = yield* Schema.decodeUnknownEffect(
     Schema.Struct({
       casks: Schema.Array(
@@ -204,7 +225,8 @@ export const clients = Effect.fn(function* (home: string, uid: string, user: str
   const executables = new Set(policy.executables.map(expand));
   for (const root of resources) {
     for (const name of policy.sky.apps) apps.set(join(root, name), true);
-    for (const name of policy.sky.executables) executables.add(join(root, name));
+    for (const name of policy.sky.executables)
+      executables.add(join(root, name));
   }
   const result: Client[] = [];
   const identifiers = new Map<string, Client>();

@@ -54,8 +54,13 @@
       { "service": "SystemPolicyAppDataDetailed", "signedOnly": true }
     ],
     "existingTargets": ["FileProviderDomain"],
-    "ephemeral": [{ "service": "SystemPolicySysAdminFiles", "expirySeconds": 60 }],
-    "retiredUnscoped": ["SystemPolicyDeveloperFiles", "SystemPolicyAppDataDetailed"],
+    "ephemeral": [
+      { "service": "SystemPolicySysAdminFiles", "expirySeconds": 60 }
+    ],
+    "retiredUnscoped": [
+      "SystemPolicyDeveloperFiles",
+      "SystemPolicyAppDataDetailed"
+    ],
     "excluded": {
       "All": "Reset pseudo-service, not a wildcard grant",
       "Location": "Separate locationd authorization, not a TCC service",

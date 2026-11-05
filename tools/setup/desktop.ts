@@ -53,19 +53,27 @@ const kde = Effect.gen(function* () {
     );
   const dbus = Bun.which("qdbus6");
   if (dbus)
-    yield* run([dbus, "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting.start"], {
-      capture: true,
-      check: false,
-    });
+    yield* run(
+      [dbus, "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting.start"],
+      {
+        capture: true,
+        check: false,
+      },
+    );
 });
 
 const children = Effect.fn(function* (directory: string) {
   const fs = yield* FileSystem.FileSystem;
   if (!(yield* fs.exists(directory))) return [];
-  return (yield* fs.readDirectory(directory)).map((name) => join(directory, name));
+  return (yield* fs.readDirectory(directory)).map((name) =>
+    join(directory, name),
+  );
 });
 
-const copyFontFragments = Effect.fn(function* (target: string, fragments: string[]) {
+const copyFontFragments = Effect.fn(function* (
+  target: string,
+  fragments: string[],
+) {
   const fs = yield* FileSystem.FileSystem;
   yield* fs.makeDirectory(target, { recursive: true });
   let changed = false;
@@ -100,7 +108,12 @@ const flatpakFonts = Effect.gen(function* () {
     const app = join(home, ".var/app", id);
     if (!(yield* fs.exists(app))) continue;
     if ((yield* fs.stat(app)).type !== "Directory") continue;
-    if (!(yield* copyFontFragments(join(app, "config/fontconfig/conf.d"), fragments)))
+    if (
+      !(yield* copyFontFragments(
+        join(app, "config/fontconfig/conf.d"),
+        fragments,
+      ))
+    )
       continue;
     for (const cache of yield* children(join(app, "cache/fontconfig"))) {
       const entry = yield* fs.lstat(cache).pipe(

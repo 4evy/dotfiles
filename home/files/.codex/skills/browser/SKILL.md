@@ -18,7 +18,7 @@ Follow `cua_repl`'s first-call instructions and read its returned documentation
 before continuing. Select an existing tab when the request identifies one. To
 open a URL in the in-app browser, the entry point is:
 
-``` javascript
+```javascript
 let tab = await cua.createBrowserTab("iab", url, { visible: true });
 ```
 

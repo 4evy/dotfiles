@@ -33,7 +33,9 @@ export function executionStatus(error: unknown): number {
 }
 
 export function expandPath(value: string, env: Variables): string {
-  return value.startsWith("~/") && env.HOME ? join(env.HOME, value.slice(2)) : value;
+  return value.startsWith("~/") && env.HOME
+    ? join(env.HOME, value.slice(2))
+    : value;
 }
 
 function executableCandidate(path: string, skipPaths: string[]) {
@@ -66,7 +68,8 @@ export function candidate(raw: string, skipPaths: string[], env: Variables) {
       if (!value) return undefined;
     }
     value = expandPath(value, env);
-    if (value.includes("/")) return yield* executableCandidate(value, skipPaths);
+    if (value.includes("/"))
+      return yield* executableCandidate(value, skipPaths);
     for (const directory of (env.PATH || "/usr/local/bin:/usr/bin:/bin").split(
       delimiter,
     )) {
@@ -89,14 +92,18 @@ function resolve(runner: Runner, requested: string, env: Variables) {
     skipPaths.push(process.execPath);
     const requestedPath = yield* candidate(requested, skipPaths, env);
     if (requestedPath) return requestedPath;
-    for (const program of runner.programs.length ? runner.programs : [runner.name]) {
+    for (const program of runner.programs.length
+      ? runner.programs
+      : [runner.name]) {
       if (program === requested) continue;
       const path = yield* candidate(program, skipPaths, env);
       if (path) return path;
     }
     return yield* Effect.fail(
       new DotfilesError("file does not exist", {
-        cause: Object.assign(new Error("file does not exist"), { code: "ENOENT" }),
+        cause: Object.assign(new Error("file does not exist"), {
+          code: "ENOENT",
+        }),
       }),
     );
   });
@@ -109,7 +116,8 @@ function usesInterpreter(interpreter: Interpreter, path: string) {
       const file = yield* fs.open(path, { flag: "r" });
       const buffer = Buffer.allocUnsafe(512);
       const bytesRead = yield* file.read(buffer);
-      const line = buffer.toString("utf8", 0, bytesRead).split("\n", 1)[0] ?? "";
+      const line =
+        buffer.toString("utf8", 0, bytesRead).split("\n", 1)[0] ?? "";
       if (!line.startsWith("#!")) return false;
       const [command, argument] = line.slice(2).trim().split(/\s+/);
       return (
@@ -143,7 +151,8 @@ export function configArguments(
     const flag = integration.config_flags.find((flag) =>
       argument.startsWith(`${flag}=`),
     );
-    if (flag !== undefined) path ??= expandPath(argument.slice(flag.length + 1), env);
+    if (flag !== undefined)
+      path ??= expandPath(argument.slice(flag.length + 1), env);
     else filtered.push(argument);
   }
   return [
@@ -181,7 +190,11 @@ export function patchAssignment(
   return output;
 }
 
-function makeTemporary(integration: Integration, contents: string, env: Variables) {
+function makeTemporary(
+  integration: Integration,
+  contents: string,
+  env: Variables,
+) {
   return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const random = yield* SecureRandom.SecureRandom;
@@ -189,7 +202,8 @@ function makeTemporary(integration: Integration, contents: string, env: Variable
       integration.temporary_location === "system"
         ? env.TMPDIR || "/tmp"
         : join(
-            env.XDG_CACHE_HOME || (env.HOME ? join(env.HOME, ".cache") : "/tmp"),
+            env.XDG_CACHE_HOME ||
+              (env.HOME ? join(env.HOME, ".cache") : "/tmp"),
             integration.cache_subdirectory,
           );
     yield* fs.makeDirectory(directory, { recursive: true, mode: 0o755 });
@@ -231,7 +245,8 @@ export function prepare(
       temporaryPath: "",
     };
     if (!integration) return result;
-    const theme = mode === "dark" ? integration.dark_theme : integration.light_theme;
+    const theme =
+      mode === "dark" ? integration.dark_theme : integration.light_theme;
     switch (integration.strategy) {
       case "arguments":
         result.args = [
@@ -252,12 +267,19 @@ export function prepare(
         const [path, arguments_] = configArguments(integration, extra, env);
         const contents = yield* readFile(path).pipe(
           Effect.catch((error) =>
-            errorCode(error) === "ENOENT" ? Effect.succeed("") : Effect.fail(error),
+            errorCode(error) === "ENOENT"
+              ? Effect.succeed("")
+              : Effect.fail(error),
           ),
         );
         result.temporaryPath = yield* makeTemporary(
           integration,
-          patchAssignment(contents, integration.assignment, integration.quote, theme),
+          patchAssignment(
+            contents,
+            integration.assignment,
+            integration.quote,
+            theme,
+          ),
           env,
         );
         result.args = [
@@ -319,7 +341,12 @@ function forwardSignals(pid: number) {
   return Effect.acquireRelease(
     Effect.sync(() => {
       const handlers = new Map<NodeJS.Signals, () => void>();
-      for (const signal of ["SIGHUP", "SIGINT", "SIGQUIT", "SIGTERM"] as const) {
+      for (const signal of [
+        "SIGHUP",
+        "SIGINT",
+        "SIGQUIT",
+        "SIGTERM",
+      ] as const) {
         const handler = () => {
           // Signal delivery is a native callback boundary, not a process engine
           // The child may have exited before its exit notification is observed
@@ -354,9 +381,12 @@ export function runInvocation(invocation: Invocation) {
           throw new Error("this Bun runtime does not implement process.execve");
         },
         catch: (cause) =>
-          new DotfilesError(cause instanceof Error ? cause.message : String(cause), {
-            cause,
-          }),
+          new DotfilesError(
+            cause instanceof Error ? cause.message : String(cause),
+            {
+              cause,
+            },
+          ),
       });
     }
     return yield* Effect.scoped(
@@ -423,9 +453,12 @@ export function execUnknown(argv: string[], env: Variables) {
         throw new Error("this Bun runtime does not implement process.execve");
       },
       catch: (cause) =>
-        new DotfilesError(cause instanceof Error ? cause.message : String(cause), {
-          cause,
-        }),
+        new DotfilesError(
+          cause instanceof Error ? cause.message : String(cause),
+          {
+            cause,
+          },
+        ),
     });
   }).pipe(Effect.catch((error) => Effect.succeed(executionStatus(error))));
 }

@@ -7,8 +7,13 @@ export function desktopArguments(...args: string[]): [string, ...string[]] {
   return ["gjs", "-c", source, ...args];
 }
 
-export const desktopOutput = Effect.fn("desktopOutput")(function* (...args: string[]) {
-  const result = yield* run(desktopArguments(...args), { capture: true, check: false });
+export const desktopOutput = Effect.fn("desktopOutput")(function* (
+  ...args: string[]
+) {
+  const result = yield* run(desktopArguments(...args), {
+    capture: true,
+    check: false,
+  });
   if (result.code !== 0)
     return yield* Effect.fail(
       new DotfilesError(`Desktop ${args[0]} failed: ${result.stderr.trim()}`),

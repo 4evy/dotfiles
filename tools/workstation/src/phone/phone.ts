@@ -35,14 +35,19 @@ function detail(result: CommandResult): string {
     "unknown error"
   );
 }
-const resolveTailscaleIP = Effect.fn("resolveTailscaleIP")(function* (name: string) {
-  const result = yield* command(["tailscale", "ip", "--", name], { timeout: 8 });
+const resolveTailscaleIP = Effect.fn("resolveTailscaleIP")(function* (
+  name: string,
+) {
+  const result = yield* command(["tailscale", "ip", "--", name], {
+    timeout: 8,
+  });
   if (result.code !== 0)
     return yield* Effect.fail(
       new DotfilesError(`Tailscale IP lookup failed: ${detail(result)}`),
     );
   const addresses = yield* Effect.try({
-    try: () => result.stdout.trim().split(/\r?\n/).filter(Boolean).map(normalizeIP),
+    try: () =>
+      result.stdout.trim().split(/\r?\n/).filter(Boolean).map(normalizeIP),
     catch: () => new DotfilesError("Tailscale IP lookup returned invalid data"),
   });
   const address = addresses.find((value) => isIP(value) === 4) ?? addresses[0];
@@ -54,10 +59,14 @@ const resolveTailscaleIP = Effect.fn("resolveTailscaleIP")(function* (name: stri
 });
 function cacheFile(name: string) {
   const safeName =
-    name.replace(/[^A-Za-z0-9_.-]+/g, "-").replace(/^[-.]+|[-.]+$/g, "") || "phone";
+    name.replace(/[^A-Za-z0-9_.-]+/g, "-").replace(/^[-.]+|[-.]+$/g, "") ||
+    "phone";
   return cachePath("phone-mirror", `${safeName}.json`);
 }
-const cachedIP = Effect.fn("cachedPhoneIP")(function* (path: string, name: string) {
+const cachedIP = Effect.fn("cachedPhoneIP")(function* (
+  path: string,
+  name: string,
+) {
   const fs = yield* FileSystem.FileSystem;
   return yield* fs.readFileString(path).pipe(
     Effect.flatMap(
@@ -68,10 +77,14 @@ const cachedIP = Effect.fn("cachedPhoneIP")(function* (path: string, name: strin
   );
 });
 function endpoint(host: string, port: number): string {
-  return isIP(host.split("%")[0] ?? "") === 6 ? `[${host}]:${port}` : `${host}:${port}`;
+  return isIP(host.split("%")[0] ?? "") === 6
+    ? `[${host}]:${port}`
+    : `${host}:${port}`;
 }
 function serialHost(serial: string): string | undefined {
-  const colon = serial.startsWith("[") ? serial.indexOf("]:") : serial.lastIndexOf(":");
+  const colon = serial.startsWith("[")
+    ? serial.indexOf("]:")
+    : serial.lastIndexOf(":");
   if (colon < 0) return undefined;
   try {
     return normalizeIP(serial.slice(serial.startsWith("[") ? 1 : 0, colon));
@@ -132,7 +145,9 @@ const scanSchema = Schema.Struct({
         Schema.Array(
           Schema.Struct({
             ports: Schema.optionalKey(
-              Schema.Struct({ port: Schema.optionalKey(Schema.Array(portSchema)) }),
+              Schema.Struct({
+                port: Schema.optionalKey(Schema.Array(portSchema)),
+              }),
             ),
           }),
         ),
@@ -163,7 +178,9 @@ const openPorts = Effect.fn("openPhonePorts")(function* (xml: string) {
       if (port.protocol === "tcp" && port.state?.state === "open")
         ports.add(
           yield* Schema.decodeUnknownEffect(portNumberSchema)(port.portid).pipe(
-            Effect.mapError(() => new DotfilesError("Invalid Nmap scan output")),
+            Effect.mapError(
+              () => new DotfilesError("Invalid Nmap scan output"),
+            ),
           ),
         );
   return [...ports];
@@ -193,7 +210,8 @@ const scanOpenPorts = Effect.fn("scanPhonePorts")(function* (host: string) {
   return yield* openPorts(result.stdout);
 });
 
-const adb = (args: string[], timeout = 10) => command(["adb", ...args], { timeout });
+const adb = (args: string[], timeout = 10) =>
+  command(["adb", ...args], { timeout });
 
 const devices = Effect.fn("phoneDevices")(function* () {
   const result = yield* adb(["devices", "-l"]);
@@ -245,7 +263,9 @@ const discover = Effect.fn("discoverPhone")(function* (
   online: number,
 ) {
   yield* requireCommands("nmap");
-  yield* Console.error("phone-mirror: probing Wireless Debugging ports 30000-49999");
+  yield* Console.error(
+    "phone-mirror: probing Wireless Debugging ports 30000-49999",
+  );
   for (const port of yield* scanOpenPorts(host)) {
     const connected = yield* connect(host, port);
     if (connected) return yield* makeStable(config, connected, host);
@@ -269,7 +289,9 @@ const connectPhone = Effect.fn("connectPhone")(function* (
       new DotfilesError(`Could not start ADB: ${detail(started)}`),
     );
   const target = [...(yield* devices())]
-    .filter(([serial, state]) => state === "device" && serialHost(serial) === host)
+    .filter(
+      ([serial, state]) => state === "device" && serialHost(serial) === host,
+    )
     .map(([serial]) => serial);
   if (target.length)
     return yield* makeStable(
@@ -285,7 +307,8 @@ const connectPhone = Effect.fn("connectPhone")(function* (
   const online = [...(yield* devices())]
     .filter(([, state]) => state === "device")
     .map(([serial]) => serial);
-  if (online.length === 1) return yield* makeStable(config, online[0] ?? "", host);
+  if (online.length === 1)
+    return yield* makeStable(config, online[0] ?? "", host);
   return yield* discover(config, host, online.length);
 });
 
@@ -323,7 +346,9 @@ const preferLAN = Effect.fn("preferPhoneLAN")(function* (
       continue;
     const connected = yield* connect(address, config.port);
     if (connected) {
-      yield* Console.error(`phone-mirror: using local network address ${address}`);
+      yield* Console.error(
+        `phone-mirror: using local network address ${address}`,
+      );
       return connected;
     }
   }
@@ -341,7 +366,9 @@ const targetIP = Effect.fn("phoneTargetIP")(function* (
       Effect.gen(function* () {
         const host = yield* cachedIP(cache, config.name);
         if (!host) return yield* Effect.fail(error);
-        yield* Console.error(`phone-mirror: using cached Tailscale address ${host}`);
+        yield* Console.error(
+          `phone-mirror: using cached Tailscale address ${host}`,
+        );
         return { host, cached: true };
       }),
     ),
@@ -373,7 +400,8 @@ const hydrateGUIEnvironment = Effect.fn("phoneGUIEnvironment")(function* (
     const equals = line.indexOf("=");
     if (equals < 0) continue;
     const key = line.slice(0, equals);
-    if (Object.hasOwn(guiKeys, key)) environment[key] ??= line.slice(equals + 1);
+    if (Object.hasOwn(guiKeys, key))
+      environment[key] ??= line.slice(equals + 1);
   }
 });
 
@@ -417,9 +445,12 @@ export const phoneMirror = Effect.fn("phoneMirror")(function* (args: string[]) {
     );
   if (process.platform === "linux" && config.sdlVideoDriver)
     environment.SDL_VIDEODRIVER ??= config.sdlVideoDriver;
-  const result = yield* run(["scrcpy", ...(yield* scrcpyArguments(config, serial))], {
-    env: environment,
-    check: false,
-  });
+  const result = yield* run(
+    ["scrcpy", ...(yield* scrcpyArguments(config, serial))],
+    {
+      env: environment,
+      check: false,
+    },
+  );
   return result.code;
 });

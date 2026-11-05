@@ -16,12 +16,17 @@ const ToolSchema = Schema.StructWithRest(
   [Schema.Record(Schema.String, Schema.Unknown)],
 );
 const ContentSchema = Schema.StructWithRest(
-  Schema.Struct({ type: Schema.String, text: Schema.optionalKey(Schema.String) }),
+  Schema.Struct({
+    type: Schema.String,
+    text: Schema.optionalKey(Schema.String),
+  }),
   [Schema.Record(Schema.String, Schema.Unknown)],
 );
 const MessageSchema = Schema.StructWithRest(
   Schema.Struct({
-    id: Schema.optionalKey(Schema.Union([Schema.String, Schema.Number, Schema.Null])),
+    id: Schema.optionalKey(
+      Schema.Union([Schema.String, Schema.Number, Schema.Null]),
+    ),
     method: Schema.optionalKey(Schema.String),
     params: Schema.optionalKey(
       Schema.StructWithRest(
@@ -97,7 +102,8 @@ runMain(
       Effect.catch((error) => {
         if (
           error._tag === "PlatformError" &&
-          (error.reason.cause as NodeJS.ErrnoException | undefined)?.code === "EPIPE"
+          (error.reason.cause as NodeJS.ErrnoException | undefined)?.code ===
+            "EPIPE"
         )
           return Effect.void;
         return Effect.fail(error);

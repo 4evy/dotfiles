@@ -88,7 +88,12 @@ export function run(action: Action, input: Input): void {
       const after = apps(
         cf.CFDictionaryGetValue(
           readPropertyList(
-            join(input.container, "Library", "Preferences", `${input.suite}.plist`),
+            join(
+              input.container,
+              "Library",
+              "Preferences",
+              `${input.suite}.plist`,
+            ),
             "Current",
           ),
           keys.apps,
@@ -131,7 +136,9 @@ export function run(action: Action, input: Input): void {
       action === "synchronize" &&
       !cf._CFPreferencesSynchronizeWithContainer(suite, user, host, container)
     ) {
-      throw new Error("Cannot synchronize notification preferences before backup");
+      throw new Error(
+        "Cannot synchronize notification preferences before backup",
+      );
     }
     const copied = cf._CFPreferencesCopyValueWithContainer(
       keys.apps,
@@ -143,8 +150,11 @@ export function run(action: Action, input: Input): void {
     if (copied !== null) own(copied, "apps preferences");
     const current = apps(copied, "Current");
     const registered = new Set<string>();
-    const changes: { identifier: string; beforeFlags: string; afterFlags: string }[] =
-      [];
+    const changes: {
+      identifier: string;
+      beforeFlags: string;
+      afterFlags: string;
+    }[] = [];
     let updated: Pointer | null = null;
     for (let index = 0; index < current.length; index++) {
       const app = current[index] as App;
@@ -162,7 +172,11 @@ export function run(action: Action, input: Input): void {
           cf.CFArrayCreateMutableCopy(null, 0n, copied),
           "apps array copy",
         );
-        cf.CFArraySetValueAtIndex(updated, BigInt(index), replacement(app, flags));
+        cf.CFArraySetValueAtIndex(
+          updated,
+          BigInt(index),
+          replacement(app, flags),
+        );
       }
     }
     if (updated !== null) {
@@ -174,7 +188,9 @@ export function run(action: Action, input: Input): void {
         host,
         container,
       );
-      if (!cf._CFPreferencesSynchronizeWithContainer(suite, user, host, container)) {
+      if (
+        !cf._CFPreferencesSynchronizeWithContainer(suite, user, host, container)
+      ) {
         throw new Error("Cannot synchronize notification preferences");
       }
     }

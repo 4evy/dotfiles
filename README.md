@@ -43,7 +43,7 @@
 
 I keep the repo at `~/dotfiles`:
 
-``` bash
+```bash
 git clone https://github.com/4evy/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 ```
@@ -55,14 +55,14 @@ cd ~/dotfiles
 
 On a fresh Bluefin install, I switch to the Spectrum image:
 
-``` bash
+```bash
 sudo bootc switch ghcr.io/4evy/spectrum:latest
 systemctl reboot
 ```
 
 After the reboot, I finish the setup:
 
-``` bash
+```bash
 cd ~/dotfiles
 just setup
 ```
@@ -76,7 +76,7 @@ just setup
 
 On an installed NixOS system, I apply the flake and finish the shared setup:
 
-``` bash
+```bash
 sudo nixos-rebuild \
   --option extra-substituters https://install.determinate.systems \
   --option extra-trusted-public-keys cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= \
@@ -88,7 +88,7 @@ just setup
 The extra cache options are only needed for the first rebuild. Afterward, this
 shorter command is enough:
 
-``` bash
+```bash
 sudo nixos-rebuild switch --flake .#nixos
 ```
 
@@ -101,7 +101,7 @@ sudo nixos-rebuild switch --flake .#nixos
 
 Requires macOS 27 or newer. From the cloned repo, I run:
 
-``` bash
+```bash
 tools/setup/setup.sh setup
 ```
 
