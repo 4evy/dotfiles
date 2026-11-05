@@ -3,7 +3,6 @@ final: prev:
 let
   inherit (final)
     callPackage
-    fetchFromGitHub
     hyper-window-tiling
     stdenv
     unstable
@@ -14,7 +13,6 @@ let
     farstep
     farstep-desktop
     farstep-service
-    ghidra-mcp
     ;
   inherit (hyper-window-tiling) gnome kde;
   # Farstep's Crane builders require Rust 1.99, ahead of pinned Nixpkgs
@@ -25,17 +23,6 @@ let
   farstepService = farstep-service.override { craneLib = farstepCraneLib; };
   aiJavaScript = callPackage ../../../packages/ai/javascript.nix {
     inherit (aiPackages) ai-app-modules ai-javascript;
-  };
-  # The pinned Ghidra MCP revision has an incorrect upstream source hash
-  ghidraMcp = ghidra-mcp.override {
-    fetchFromGitHub =
-      args:
-      fetchFromGitHub (
-        args
-        // lib.optionalAttrs ((args.rev or null) == "0c9573efc174bbb1ea8f3c2336ec4bb3ebfe9f10") {
-          hash = "sha256-zdlsKxNU1E/fSQ0NcfrufKulk8A05LYEL4qejblUo+g=";
-        }
-      );
   };
   packageFiles = {
     bluebuild-v2 = ../../../packages/bluebuild/package.nix;
@@ -91,9 +78,7 @@ packages
 // {
   aiTools = aiPackages // {
     ai-javascript = aiJavaScript;
-    ghidra-mcp = ghidraMcp;
     ai-tools = ai-tools.override {
-      ghidra-mcp = ghidraMcp;
       ai-javascript = aiJavaScript;
     };
     farstep-desktop = farstepDesktop;
