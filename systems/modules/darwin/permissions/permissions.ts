@@ -26,10 +26,10 @@ const reconcile = Effect.fn(function* (
       new DotfilesError("Run with sudo to access both TCC databases"),
     );
   const sip = yield* output(["/usr/bin/csrutil", "status"]);
-  if (!sip.includes("status: disabled."))
-    return yield* Effect.fail(
-      new DotfilesError("Direct TCC management requires SIP disabled. No changes made"),
-    );
+  if (!sip.includes("status: disabled.")) {
+    console.log("Skipping macOS permissions: SIP is not disabled. No changes made");
+    return;
+  }
   if (!/^[a-zA-Z0-9_-]+$/.test(user) || user === "root")
     return yield* Effect.fail(new DotfilesError("Expected a non-root local username"));
   const account = yield* output([

@@ -3,7 +3,7 @@
 apply: (_doctor 'apply')
     bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} apply
 
-# Grant broad macOS privacy permissions, or inspect with --check or --dry-run
+# Manage macOS privacy permissions with SIP off, otherwise skip (--check, --dry-run)
 [group('setup')]
 [macos]
 [positional-arguments]
