@@ -201,11 +201,6 @@ let
         done
       '';
     };
-    "macos_catppuccin_custom_appearance.sh".text = optionalHomeCommand {
-      name = "macos-catppuccin-custom-appearance";
-      # These macOS hooks historically invoke PATH even when the home tool exists
-      preferHome = false;
-    };
     "nix_github_auth.sh" = {
       runtimeInputs = [ pkgs.coreutils ];
       text = ''

@@ -1149,19 +1149,6 @@
       name = "00_typescript_dependencies.sh";
     }
     {
-      systems = [
-        "darwin"
-      ];
-      onChange = true;
-      inputs = [
-        "home/theme/palette/palette.json"
-        "tools/workstation/assets/macos/accent.js"
-        "tools/workstation/src/macos/accent.ts"
-        "tools/workstation/src/macos/appearance.ts"
-      ];
-      name = "macos_catppuccin_custom_appearance.sh";
-    }
-    {
       command = [
         "bun"
         "install"
