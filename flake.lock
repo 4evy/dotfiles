@@ -179,11 +179,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793779279,
-        "narHash": "sha256-pShrnOJMiPPtB0l294p6zj3yds+MGRHgqiI8LkAxnas=",
+        "lastModified": 1793836069,
+        "narHash": "sha256-Q9/MZhM9ppQQCUwWgpW15B2j1OGFekGoDzqBQisUKlk=",
         "owner": "euvlok",
         "repo": "pkgs",
-        "rev": "458d70d152f65366e38162f3b7af7e8ab4d38fd6",
+        "rev": "90e699f128e8738db780b7b7ae78a392fd6dd94b",
         "type": "github"
       },
       "original": {
@@ -318,11 +318,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793811174,
-        "narHash": "sha256-S0cI4MEBlHZ7VBCgTw529yxgtyBATA5LiPVTCnklvRI=",
+        "lastModified": 1793850359,
+        "narHash": "sha256-ysDCqKSN6qscLO5KNB3P1ZWNGOUVtNbn4ytadvaqg3I=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "ff4bbff1f0fff6f26ba20faae180135f175ecaae",
+        "rev": "063ef3e98e605504dde33914ec8a020a34a018bf",
         "type": "github"
       },
       "original": {
@@ -395,11 +395,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1793781119,
-        "narHash": "sha256-sCQlYTzUSDCdDJBgeAhaFS9wIh/F8z/Drfa8gGGZpo0=",
-        "rev": "c9e1c5f1b197a28c6935b297a3b2772a9ff69c0b",
+        "lastModified": 1793840328,
+        "narHash": "sha256-LqcfywlS4+BqFx2WedBxYtmSBWEu6GomqiuOghdtlzo=",
+        "rev": "ae2b13d55ef7c751d16ebc990d2338c8044003e5",
         "type": "tarball",
-        "url": "https://releases.nixos.org/nixos/unstable-small/nixos-26.11pre1108204.c9e1c5f1b197/nixexprs.tar.zst"
+        "url": "https://releases.nixos.org/nixos/unstable-small/nixos-26.11pre1108738.ae2b13d55ef7/nixexprs.tar.zst"
       },
       "original": {
         "type": "tarball",
@@ -482,11 +482,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793793300,
-        "narHash": "sha256-Aov5aBKUwWfpIYDuIZEX352BhilFV3LpnsIzh9qit1E=",
+        "lastModified": 1793821531,
+        "narHash": "sha256-OVjoBYif+4vpAw99tMg+zjaOK+XqVkzmA0/jVpjCirU=",
         "owner": "4evy",
         "repo": "raycast",
-        "rev": "acb6bfac457761b045288f09b344b175af44bd9d",
+        "rev": "058604c25dd13ea6c3d09b6569df6984d534c2dc",
         "type": "github"
       },
       "original": {
