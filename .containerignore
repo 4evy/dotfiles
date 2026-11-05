@@ -35,6 +35,8 @@ home/records/**
 !tools/workstation/
 tools/workstation/*
 !tools/workstation/package.json
+!tools/workstation/build.ts
+!tools/workstation/tsconfig.json
 !tools/workstation/install.ts
 !tools/workstation/install.sh
 !tools/workstation/assets/

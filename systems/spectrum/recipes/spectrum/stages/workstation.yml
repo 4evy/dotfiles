@@ -45,6 +45,19 @@ modules:
     src: lib/typescript
     dest: /src/lib/typescript
 
+  # Build entrypoint and compiler configs are also source fingerprint inputs
+  - type: copy@v1
+    src: tsconfig.json
+    dest: /src/tsconfig.json
+
+  - type: copy@v1
+    src: tools/workstation/tsconfig.json
+    dest: /src/tools/workstation/tsconfig.json
+
+  - type: copy@v1
+    src: tools/workstation/build.ts
+    dest: /src/tools/workstation/build.ts
+
   - type: copy@v1
     src: tools/workstation/src
     dest: /src/tools/workstation/src
