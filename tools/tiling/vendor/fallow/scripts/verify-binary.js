@@ -42,8 +42,8 @@ const DIGEST_TIMEOUT_MS = 10000;
 // works offline and cannot be silently downgraded by tampering with the network
 // path.
 const EMBEDDED_PUBLIC_KEY = Buffer.from([
-  131, 78, 111, 215, 115, 51, 230, 238, 223, 119, 147, 71, 199, 16, 172, 180, 3, 210,
-  216, 35, 77, 85, 159, 94, 215, 200, 126, 85, 42, 222, 11, 209,
+  131, 78, 111, 215, 115, 51, 230, 238, 223, 119, 147, 71, 199, 16, 172, 180, 3,
+  210, 216, 35, 77, 85, 159, 94, 215, 200, 126, 85, 42, 222, 11, 209,
 ]);
 
 // SPKI DER header for Ed25519 (RFC 8410). 12 bytes prepended to a 32-byte raw
@@ -153,7 +153,9 @@ function normalizeDigest(digest) {
     return null;
   }
   const lower = digest.trim().toLowerCase();
-  const value = lower.startsWith("sha256:") ? lower.slice("sha256:".length) : lower;
+  const value = lower.startsWith("sha256:")
+    ? lower.slice("sha256:".length)
+    : lower;
   return /^[0-9a-f]{64}$/.test(value) ? value : null;
 }
 
@@ -223,7 +225,10 @@ function httpsJson(url, redirects = 0) {
           redirects < 5
         ) {
           response.resume();
-          httpsJson(response.headers.location, redirects + 1).then(resolve, reject);
+          httpsJson(response.headers.location, redirects + 1).then(
+            resolve,
+            reject,
+          );
           return;
         }
 
@@ -243,7 +248,9 @@ function httpsJson(url, redirects = 0) {
             resolve(JSON.parse(body));
           } catch (err) {
             reject(
-              new Error(`GitHub release API returned invalid JSON: ${err.message}`),
+              new Error(
+                `GitHub release API returned invalid JSON: ${err.message}`,
+              ),
             );
           }
         });
@@ -267,14 +274,18 @@ async function fetchReleaseDigest(version, assetName) {
     releaseDigestCache.set(key, release);
   }
   const asset = Array.isArray(release.assets)
-    ? release.assets.find((candidate) => candidate && candidate.name === assetName)
+    ? release.assets.find(
+        (candidate) => candidate && candidate.name === assetName,
+      )
     : null;
   if (!asset) {
     throw new Error(`release v${version} does not contain asset ${assetName}`);
   }
   const digest = normalizeDigest(asset.digest);
   if (!digest) {
-    throw new Error(`release asset ${assetName} is missing a valid SHA-256 digest`);
+    throw new Error(
+      `release asset ${assetName} is missing a valid SHA-256 digest`,
+    );
   }
   return digest;
 }
@@ -318,7 +329,8 @@ function binaryTargetsForPlatform(platformId) {
   // process.platform. Production callers pass `<platform>-<arch>...` strings
   // that already encode windows-ness (`win32-x64-msvc`, `win32-arm64-msvc`),
   // and tests can synthesize a Windows verify without running on Windows.
-  const isWindows = typeof platformId === "string" && platformId.startsWith("win32");
+  const isWindows =
+    typeof platformId === "string" && platformId.startsWith("win32");
   const ext = isWindows ? ".exe" : "";
   // The platform package ships the multicall CLI plus the local-only
   // similar-code provider. Both are signed and digest-pinned. Verifying them
@@ -565,7 +577,8 @@ async function verifyInstalled(options) {
     return { ok: true, skipped: true, reason: `${SKIP_ENV} is set` };
   }
 
-  const verify = typeof opts.verifyFn === "function" ? opts.verifyFn : verifyBinaryAt;
+  const verify =
+    typeof opts.verifyFn === "function" ? opts.verifyFn : verifyBinaryAt;
   const digestProvider =
     typeof opts.digestProvider === "function"
       ? opts.digestProvider
@@ -621,7 +634,8 @@ function verifyInstalledSync(options) {
     return { ok: true, skipped: true, reason: `${SKIP_ENV} is set` };
   }
 
-  const verify = typeof opts.verifyFn === "function" ? opts.verifyFn : verifyBinaryAt;
+  const verify =
+    typeof opts.verifyFn === "function" ? opts.verifyFn : verifyBinaryAt;
   const digestProvider =
     typeof opts.digestProvider === "function" ? opts.digestProvider : null;
 

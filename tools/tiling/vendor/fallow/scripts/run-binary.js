@@ -79,7 +79,9 @@ function describeVerifiedStatus(result) {
 function resolvePlatformPaths() {
   const pkg = resolvePlatformPackageName();
   if (!pkg) {
-    process.stderr.write(`Unsupported platform: ${process.platform}-${process.arch}\n`);
+    process.stderr.write(
+      `Unsupported platform: ${process.platform}-${process.arch}\n`,
+    );
     process.exit(1);
   }
   try {
@@ -143,7 +145,10 @@ function resolveTypeAwareCompanion(
     const manifestPath = resolvePackage("fallow-type-aware/package.json");
     const manifest = JSON.parse(readFile(manifestPath, "utf8"));
     if (manifest.version !== fallowVersion) return undefined;
-    const companion = path.join(path.dirname(manifestPath), "fallow-type-aware.mjs");
+    const companion = path.join(
+      path.dirname(manifestPath),
+      "fallow-type-aware.mjs",
+    );
     return fs.existsSync(companion) ? companion : undefined;
   } catch {
     return undefined;
@@ -209,7 +214,9 @@ function guardBrokenStdout() {
 // the subcommand via `prependArgs`; signal, exit-code, and version-line
 // handling stay identical to a bare `fallow` invocation.
 function runBinary(binaryBaseName, options = {}) {
-  const prependArgs = Array.isArray(options.prependArgs) ? options.prependArgs : [];
+  const prependArgs = Array.isArray(options.prependArgs)
+    ? options.prependArgs
+    : [];
   // Do not read `process.stdout` or write to `process.stderr` before the child
   // exits: under Bun that makes the inherited pipes non-blocking for the child.
   const { pkg, manifestPath, platformPkgDir } = resolvePlatformPaths();
@@ -248,7 +255,8 @@ function runBinary(binaryBaseName, options = {}) {
     }
     // Child has already written its --version line via inherited stdio;
     // append the verified line here only on a clean exit.
-    if (e.status === 0) writeVerifiedLineIfVersionQuery(verifyResult, resolvedVersion);
+    if (e.status === 0)
+      writeVerifiedLineIfVersionQuery(verifyResult, resolvedVersion);
     process.exit(exitCodeForChildFailure(e));
   }
 

@@ -74,7 +74,14 @@ function emitVerifyLog(env, payload) {
   // Stable single-line format. Fields are space-separated key=value pairs.
   // Order matters for log-grep ergonomics; do not reorder casually.
   const parts = [];
-  for (const key of ["outcome", "cache", "sentinel", "reason", "code", "binary"]) {
+  for (const key of [
+    "outcome",
+    "cache",
+    "sentinel",
+    "reason",
+    "code",
+    "binary",
+  ]) {
     if (payload[key] !== undefined && payload[key] !== null) {
       const v = String(payload[key]).replace(/[\s"]/g, "_");
       parts.push(`${key}=${v}`);
@@ -150,7 +157,10 @@ function sentinelStructureMatches(parsed, manifest, platformPkgDir) {
 // same mtime cannot ride a stale cache entry.
 function sha256OfFile(absPath) {
   try {
-    return crypto.createHash("sha256").update(fs.readFileSync(absPath)).digest("hex");
+    return crypto
+      .createHash("sha256")
+      .update(fs.readFileSync(absPath))
+      .digest("hex");
   } catch {
     return null;
   }
@@ -261,7 +271,8 @@ function buildVerifyOptions(input, manifest) {
   const opts = {
     dirOverride: input.platformPkgDir,
     version: manifest.version,
-    platformId: (input.packageName || "").replace(/^@fallow-cli\//, "") || "unknown",
+    platformId:
+      (input.packageName || "").replace(/^@fallow-cli\//, "") || "unknown",
   };
   if (typeof input.verifyFn === "function") opts.verifyFn = input.verifyFn;
   if (typeof input.digestProvider === "function")
@@ -269,7 +280,13 @@ function buildVerifyOptions(input, manifest) {
   return opts;
 }
 
-function buildSentinelOptions(input, platformPkgDir, packageName, env, platform) {
+function buildSentinelOptions(
+  input,
+  platformPkgDir,
+  packageName,
+  env,
+  platform,
+) {
   const opts = { platformPkgDir, packageName, env, platform };
   for (const key of ["homedir", "isWritable", "ensureDir"]) {
     if (Object.prototype.hasOwnProperty.call(input, key)) {
@@ -346,7 +363,13 @@ function ensureVerified(input) {
   }
 
   const sentinel = resolveSentinelPath(
-    buildSentinelOptions(input || {}, platformPkgDir, packageName, env, platform),
+    buildSentinelOptions(
+      input || {},
+      platformPkgDir,
+      packageName,
+      env,
+      platform,
+    ),
   );
 
   // Cache hit: sentinel exists, schema matches, mtimes match, version matches.
@@ -354,7 +377,11 @@ function ensureVerified(input) {
     sentinel.path &&
     isSentinelValid(sentinel.path, platformPkgDir, manifest, platform)
   ) {
-    emitVerifyLog(env, { outcome: "ok", cache: "hit", sentinel: sentinel.path });
+    emitVerifyLog(env, {
+      outcome: "ok",
+      cache: "hit",
+      sentinel: sentinel.path,
+    });
     return { ok: true, cached: true, sentinelPath: sentinel.path };
   }
 
