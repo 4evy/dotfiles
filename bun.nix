@@ -569,9 +569,9 @@
     url = "https://registry.npmjs.org/@opentelemetry/sdk-trace/-/sdk-trace-2.9.0.tgz";
     hash = "sha512-sGA19HvtrrSKYsseHphluH6j3p6Xa3fqc7c7y8f/7mYWejc1lyDFcpSdD1kYa50HCLUeEo4zA5bW0pniaPszuw==";
   };
-  "@opentelemetry/semantic-conventions@1.44.0" = fetchurl {
-    url = "https://registry.npmjs.org/@opentelemetry/semantic-conventions/-/semantic-conventions-1.44.0.tgz";
-    hash = "sha512-E3JkOlMBi3N8OGGkbl7tFyqk2MAS6/lySRZBK3Mu7AzjF1fT8oIChH9ChE48SUWzDn9Kdwta+G/p5LJ4xW4CLQ==";
+  "@opentelemetry/semantic-conventions@1.45.0" = fetchurl {
+    url = "https://registry.npmjs.org/@opentelemetry/semantic-conventions/-/semantic-conventions-1.45.0.tgz";
+    hash = "sha512-aOP45mbcOKbQVvFWfQmgoOPT8R2iwbbbgl83k4CujGV9BrJhFr3qG55MFpwFs4YLabpuW3HhzUY9eQxPlDqaZw==";
   };
   "@optique/core@1.3.6" = fetchurl {
     url = "https://registry.npmjs.org/@optique/core/-/core-1.3.6.tgz";
@@ -862,9 +862,9 @@
     url = "https://registry.npmjs.org/get-east-asian-width/-/get-east-asian-width-1.7.0.tgz";
     hash = "sha512-XjH1AECxf0giL2V1aU8vKyRR2ppRUb5c0EvT7zuJTokQ74bNo52zOtghqdWIqrhUD79fo3x0WfKZdOqxF6LG1Q==";
   };
-  "global-agent@4.1.6" = fetchurl {
-    url = "https://registry.npmjs.org/global-agent/-/global-agent-4.1.6.tgz";
-    hash = "sha512-V9u791atI/bS7RryfRTK2oixDWo6/RCrIikjwuQ4kADPRZZml1C6LUJXc7y6qRhaAF8geo3bIvE/siAGJCw38A==";
+  "global-agent@4.1.7" = fetchurl {
+    url = "https://registry.npmjs.org/global-agent/-/global-agent-4.1.7.tgz";
+    hash = "sha512-pxaZqdsMwPA4i7TuRKpDUONm2xGRjvYdRoidCQz7VleUKVuUfh/4p5Q3QDTGrpAE5Kz5TxxcZ+uqEgTkoKRNtg==";
   };
   "globalthis@1.0.4" = fetchurl {
     url = "https://registry.npmjs.org/globalthis/-/globalthis-1.0.4.tgz";
@@ -898,9 +898,9 @@
     url = "https://registry.npmjs.org/long/-/long-5.3.2.tgz";
     hash = "sha512-mNAgZ1GmyNhD7AuqnTG3/VQ26o760+ZYBPKjPvugO8+nLbYfX6TVpJPseBvopbdY+qpZ/lKUnmEc1LeZYS3QAA==";
   };
-  "lucide-react@1.69.0" = fetchurl {
-    url = "https://registry.npmjs.org/lucide-react/-/lucide-react-1.69.0.tgz";
-    hash = "sha512-UTFECm4yEgkgMN0kfLuxWcmlk+4u02Jrqehgk3ZXRx/Ud68OpP7hjkp67bvkBHmIpMaZCIveF1QDYeupO7XmYQ==";
+  "lucide-react@1.70.0" = fetchurl {
+    url = "https://registry.npmjs.org/lucide-react/-/lucide-react-1.70.0.tgz";
+    hash = "sha512-gCTPPN1MlQUBtUgdsUv+0CAUj+X8hifRUiRBw4E5v7lvDIOIpx0EZezdGQMSimS8pKA6esvullJub4GYr0mCHA==";
   };
   "matcher@4.0.0" = fetchurl {
     url = "https://registry.npmjs.org/matcher/-/matcher-4.0.0.tgz";
