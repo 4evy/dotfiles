@@ -1,5 +1,5 @@
 diff --git a/dist/modules/platform/github/graphql.js b/dist/modules/platform/github/graphql.js
-index e65680e..9d69366 100644
+index e59101d..b228b55 100644
 --- a/dist/modules/platform/github/graphql.js
 +++ b/dist/modules/platform/github/graphql.js
 @@ -11,6 +11,7 @@ query($owner: String!, $name: String!, $user: String) {
@@ -11,7 +11,7 @@ index e65680e..9d69366 100644
      autoMergeAllowed
      mergeCommitAllowed
 diff --git a/dist/modules/platform/github/index.js b/dist/modules/platform/github/index.js
-index ba6239e..4fe237d 100644
+index 6008998..80cfb42 100644
 --- a/dist/modules/platform/github/index.js
 +++ b/dist/modules/platform/github/index.js
 @@ -397,7 +397,10 @@ async function initRepo({ repository, forkCreation, forkOrg, forkToken, gitUrl,
@@ -71,7 +71,7 @@ index ba6239e..4fe237d 100644
  	const base = targetBranch;
  	const head = `${config.repository.split("/")[0]}:${sourceBranch}`;
 diff --git a/dist/util/git/index.js b/dist/util/git/index.js
-index d5014d1..0eed4e4 100644
+index cc11676..bfa48ba 100644
 --- a/dist/util/git/index.js
 +++ b/dist/util/git/index.js
 @@ -619,6 +619,8 @@ async function resetHardFromRemote(remoteAndBranch) {
@@ -135,7 +135,7 @@ index d5014d1..0eed4e4 100644
  	await git.raw([
  		"update-ref",
 diff --git a/dist/workers/repository/update/pr/index.js b/dist/workers/repository/update/pr/index.js
-index 17cde80..a91b90b 100644
+index 16082a3..6119a3b 100644
 --- a/dist/workers/repository/update/pr/index.js
 +++ b/dist/workers/repository/update/pr/index.js
 @@ -69,6 +69,16 @@ function addPullRequestNoteIfAttestationHasBeenLost(upgrade, currentReleaseHasAt
@@ -156,7 +156,7 @@ index 17cde80..a91b90b 100644
  	const filteredPrConfig = generatePrBodyFingerprintConfig(config);
  	const prBodyFingerprint = fingerprint(filteredPrConfig);
 diff --git a/package.json b/package.json
-index 0d372c9..ad8ca3d 100644
+index e453d5d..7124da1 100644
 --- a/package.json
 +++ b/package.json
 @@ -83,7 +83,7 @@

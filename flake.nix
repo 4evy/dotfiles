@@ -85,7 +85,7 @@
         flake-parts.follows = "flake-parts";
         git-hooks-nix.follows = "git-hooks-nix";
       };
-      url = "https://flakehub.com/f/DeterminateSystems/determinate/=3.24.1";
+      url = "https://flakehub.com/f/DeterminateSystems/determinate/=3.24.2";
     };
 
     darwin = {
@@ -119,7 +119,7 @@
 
     source-oh-my-zsh = {
       flake = false;
-      url = "github:ohmyzsh/ohmyzsh/b509b1c6ed0c1ba37de12cbd37f30b2b2f61193a";
+      url = "github:ohmyzsh/ohmyzsh/cca3bdfbef8c52ef8939ce7911ff68852b949daa";
     };
     source-zsh-autosuggestions = {
       flake = false;
@@ -173,7 +173,7 @@
 
     source-toshy = {
       flake = false;
-      url = "github:RedBearAK/Toshy/Toshy_v26.08.0";
+      url = "github:RedBearAK/Toshy/Toshy_v26.11.0";
     };
 
     source-uresourced = {
