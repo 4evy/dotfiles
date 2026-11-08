@@ -37,10 +37,7 @@ function isWritable(dir) {
   // Probe by creating a unique zero-byte file and deleting it. Cross-platform
   // and tolerant of pnpm/yarn/bun store layouts where the dir is real but the
   // package manager owns its contents.
-  const probe = path.join(
-    dir,
-    `.fallow-verify-probe-${process.pid}-${Date.now()}`,
-  );
+  const probe = path.join(dir, `.fallow-verify-probe-${process.pid}-${Date.now()}`);
   let fd;
   try {
     fd = fs.openSync(probe, "wx");
@@ -68,9 +65,7 @@ function ensureDirExists(dir) {
 
 function xdgCacheRoot(env, homeDir, platformId) {
   if (platformId === "win32") {
-    return env.LOCALAPPDATA && env.LOCALAPPDATA.length > 0
-      ? env.LOCALAPPDATA
-      : null;
+    return env.LOCALAPPDATA && env.LOCALAPPDATA.length > 0 ? env.LOCALAPPDATA : null;
   }
   if (env.XDG_CACHE_HOME && env.XDG_CACHE_HOME.length > 0) {
     return env.XDG_CACHE_HOME;
@@ -110,11 +105,7 @@ function tryCacheDirEnv(env, filename, ensureDir, writableProbe) {
   const dir = env.FALLOW_VERIFY_CACHE_DIR;
   if (!dir || dir.length === 0) return null;
   if (!ensureDir(dir) || !writableProbe(dir)) return null;
-  return {
-    path: path.join(dir, filename),
-    location: "cache-dir-env",
-    writable: true,
-  };
+  return { path: path.join(dir, filename), location: "cache-dir-env", writable: true };
 }
 
 function xdgLocationLabel(env, platformId) {
@@ -122,14 +113,7 @@ function xdgLocationLabel(env, platformId) {
   return env.XDG_CACHE_HOME ? "xdg" : "home-cache";
 }
 
-function tryXdgFallback(
-  env,
-  homeDir,
-  platformId,
-  filename,
-  ensureDir,
-  writableProbe,
-) {
+function tryXdgFallback(env, homeDir, platformId, filename, ensureDir, writableProbe) {
   const root = xdgCacheRoot(env, homeDir, platformId);
   if (!root) return null;
   const dir = path.join(root, "fallow", "sentinels");
@@ -157,23 +141,14 @@ function resolveSentinelPath(options) {
   // fallback (tests rely on this to exercise the "no cache home" branch).
   const homeDir = "homedir" in opts ? opts.homedir : os.homedir();
   const platformId = opts.platform || process.platform;
-  const writableProbe =
-    typeof opts.isWritable === "function" ? opts.isWritable : isWritable;
-  const ensureDir =
-    typeof opts.ensureDir === "function" ? opts.ensureDir : ensureDirExists;
+  const writableProbe = typeof opts.isWritable === "function" ? opts.isWritable : isWritable;
+  const ensureDir = typeof opts.ensureDir === "function" ? opts.ensureDir : ensureDirExists;
   const filename = packageIdToFilename(opts.packageName);
 
   return (
     tryPlatformPkgDir(opts.platformPkgDir, writableProbe) ||
     tryCacheDirEnv(env, filename, ensureDir, writableProbe) ||
-    tryXdgFallback(
-      env,
-      homeDir,
-      platformId,
-      filename,
-      ensureDir,
-      writableProbe,
-    ) || {
+    tryXdgFallback(env, homeDir, platformId, filename, ensureDir, writableProbe) || {
       path: null,
       location: "none",
       writable: false,

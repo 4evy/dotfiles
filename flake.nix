@@ -143,7 +143,7 @@
     };
     source-noto-color-emoji = {
       flake = false;
-      url = "file+https://raw.githubusercontent.com/googlefonts/noto-emoji/e20cbc2bbec1926686be9f9bee7d1d2cfa1fea0e/2D/fonts/NotoColorEmoji.ttf";
+      url = "file+https://raw.githubusercontent.com/googlefonts/noto-emoji/99701e07d3d1fe1bdbcdb14964547f0fd592966f/2D/fonts/NotoColorEmoji.ttf";
     };
 
     source-bluebuild-cli = {
@@ -159,7 +159,7 @@
     source-karabiner-vhid-package = {
       flake = false;
       # Upstream's tagged copy avoids the unreliable release download route
-      url = "file+https://raw.githubusercontent.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v8.7.0/dist/Karabiner-DriverKit-VirtualHIDDevice-8.7.0.pkg";
+      url = "file+https://raw.githubusercontent.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v8.8.0/dist/Karabiner-DriverKit-VirtualHIDDevice-8.8.0.pkg";
     };
 
     source-kmscon = {

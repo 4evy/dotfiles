@@ -6,23 +6,36 @@
   "properties": {
     "$schema": {
       "description": "A string pointing at fallow's JSON Schema URL, used only by editors for autocomplete and validation of the config file; it has no effect on analysis and is stripped before serialization (serde skip_serializing, writeOnly in the schema). Set it to `./node_modules/fallow/schema.json` for npm installs (version-aligned, offline, avoids VS Code's untrusted-remote-schema prompt), or `https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json` for non-npm installs; any other value is ignored by fallow.",
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "writeOnly": true
     },
     "minimumVersion": {
       "description": "The lowest fallow version this config is written for, as `MAJOR.MINOR.PATCH`. An older binary stops with a message naming both versions instead of failing on the first field it does not recognize, so a config committed to a shared repository says which upgrade it needs rather than reading like a typo. Optional and unset by default; set it in the same change that adds a field introduced in a newer version. It gates nothing on its own: an unknown key still fails on a binary at or above this version, because there the key really is a typo.",
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "extends": {
-      "description": "An ordered array of parent config sources to inherit before this file's own keys apply; each entry is a file-relative path, an `npm:<package>` specifier, or an `https://` URL (`http://` is rejected), deep-merged in order so objects merge field-by-field while arrays and scalars in this file replace the parent's, with cycle and depth guards. Set it to share a base config across a monorepo or team; it is consumed at load and stripped before serialization (serde skip_serializing).",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
+      "description": "A single parent config source, or an ordered array of them, to inherit before this file's own keys apply; each source is a file-relative path, an `npm:<package>` specifier, or an `https://` URL (`http://` is rejected), deep-merged in order so objects merge field-by-field while arrays and scalars in this file replace the parent's, with cycle and depth guards. Set it to share a base config across a monorepo or team; it is consumed at load and stripped before serialization (serde skip_serializing).",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ],
       "writeOnly": true
     },
     "entry": {
-      "description": "An array of project-root-relative glob patterns whose matching files are seeded as manual entry points, on top of the framework and package.json entries fallow discovers automatically, so their transitive imports are not reported as unused. Set it (e.g. `[\"src/main.ts\"]`) when a file is a real runtime root that no plugin or manifest declares; patterns are validated at load and matched against discovered files.",
+      "description": "An array of project-root-relative glob patterns whose matching files are seeded as manual entry points, on top of the framework and package.json entries fallow discovers automatically, so their transitive imports are not reported as unused. Set it (e.g. `[\"src/main.ts\"]`) when a file is a real runtime root that no plugin or manifest declares; patterns are validated at load and matched against discovered files. For a script that does not run in production, use a `framework[]` entry with `entryPointRole: \"support\"` and leave its glob out of `entry`: a file that also matches `entry` stays a runtime root. A single `*` stays within one path segment; use `**` to match across directories.",
       "type": "array",
       "items": {
         "type": "string"
@@ -30,7 +43,7 @@
       "default": []
     },
     "ignorePatterns": {
-      "description": "An array of project-root-relative glob patterns for files to exclude from analysis entirely; entries are unioned with fallow's built-in defaults (**/node_modules/**, **/dist/**, **/build/**, **/.git/**, **/coverage/**, **/*.min.js, **/*.min.mjs, **/*.min.cjs, **/*.bundle.js), so custom globs add to rather than replace them. Set it (e.g. `[\"generated/**\"]`) to drop generated or vendored trees from every detector; patterns are validated at load. A `!`-prefixed entry is an exception that applies after the defaults and the positive patterns: `\"!src/policy/coverage/**\"` brings back hand-written source under a built-in default such as `**/coverage/**`, and `\"!.config/**\"` adds a hidden directory to discovery. Paths under `node_modules` or `.git` can not be lifted, and a `!` entry that names one of these segments is a config error.",
+      "description": "An array of project-root-relative glob patterns for files to exclude from analysis entirely; entries are unioned with fallow's built-in defaults (**/node_modules/**, **/dist/**, **/build/**, **/.git/**, **/coverage/**, **/*.min.js, **/*.min.mjs, **/*.min.cjs, **/*.bundle.js), so custom globs add to rather than replace them. Set it (e.g. `[\"generated/**\"]`) to drop generated or vendored trees from every detector; patterns are validated at load. A `!`-prefixed entry is an exception that applies after the defaults and the positive patterns: `\"!src/policy/coverage/**\"` brings back hand-written source under a built-in default such as `**/coverage/**`, and `\"!.config/**\"` adds a hidden directory to discovery. Paths under `node_modules` or `.git` can not be lifted, and a `!` entry that names one of these segments is a config error. A single `*` stays within one path segment; use `**` to match across directories.",
       "type": "array",
       "items": {
         "type": "string"
@@ -38,14 +51,14 @@
       "default": []
     },
     "ignoreFindings": {
-      "description": "An array of project-root-relative glob patterns whose source-owned dead-code findings are hidden after analysis without excluding matching files from discovery, parsing, resolution, or the module graph. Use `/` as the path separator on every platform. Positive patterns select paths to hide; `!`-prefixed patterns keep matching paths reportable, and a negated-only array reports only those exception paths. A finding with multiple source owners is hidden only when every owner matches, so a cycle, duplicate-export group, or unlisted dependency with any reportable location remains visible. Architecture, policy, suppression-hygiene, and framework-correctness findings remain visible even when a referenced path matches, as do manifest-owned findings that no source file owns: unused dependencies, unused dev and optional dependencies, catalog entries, and dependency overrides. Use `ignorePatterns` instead when a generated or vendored file must not be analyzed at all.",
+      "description": "An array of project-root-relative glob patterns whose source-owned dead-code findings are hidden after analysis without excluding matching files from discovery, parsing, resolution, or the module graph. Use `/` as the path separator on every platform. Positive patterns select paths to hide; `!`-prefixed patterns keep matching paths reportable, and a negated-only array reports only those exception paths. A finding with multiple source owners is hidden only when every owner matches, so a cycle, duplicate-export group, or unlisted dependency with any reportable location remains visible. Architecture, policy, suppression-hygiene, and framework-correctness findings remain visible even when a referenced path matches, as do manifest-owned findings that no source file owns: unused dependencies, unused dev and optional dependencies, catalog entries, and dependency overrides. Use `ignorePatterns` instead when a generated or vendored file must not be analyzed at all. A matching file that parses with errors reports no `source-parse-degraded` diagnostic, and its partial parse does not mark other findings as incomplete; use this only for files that are broken on purpose, such as syntax-error test fixtures. A single `*` stays within one path segment; use `**` to match across directories.",
       "type": "array",
       "items": {
         "type": "string"
       }
     },
     "framework": {
-      "description": "Declares inline external framework plugins as data (array of plugin objects), each with `name` plus optional `enablers` (package names that activate it) or richer `detection` (dependency/file-existence/`all`/`any` checks, taking priority over `enablers`), `entryPoints` (+ `entryPointRole` runtime/support/test), `configPatterns`, `alwaysUsed`, `toolingDependencies`, `usedExports` (`{ pattern, exports }`), and `usedClassMembers`. Set it to keep a custom or in-house framework's entry points, config files, and conventions reachable without a Rust plugin; these definitions are appended to plugins discovered via `plugins`, `.fallow/plugins/`, and root `fallow-plugin-*` files (first occurrence of a name wins), and cannot do AST-based config parsing.",
+      "description": "Declares inline external framework plugins as data (array of plugin objects), each with `name` plus optional `enablers` (package names that activate it) or richer `detection` (dependency/file-existence/`all`/`any` checks, taking priority over `enablers`); an entry with neither never activates, and config load warns. Each entry can also have `entryPoints` (+ `entryPointRole` runtime/support/test), `configPatterns`, `alwaysUsed`, `toolingDependencies`, `usedExports` (`{ pattern, exports }`), and `usedClassMembers`. Set it to keep a custom or in-house framework's entry points, config files, and conventions reachable without a Rust plugin; these definitions are appended to plugins discovered via `plugins`, `.fallow/plugins/`, and root `fallow-plugin-*` files (first occurrence of a name wins), and cannot do AST-based config parsing.",
       "type": "array",
       "items": {
         "$ref": "#/$defs/ExternalPluginDef"
@@ -88,7 +101,7 @@
       "default": []
     },
     "ignoreExports": {
-      "description": "A list of per-file rules that exempt named exports from `unused-export` and from duplicate-exports grouping for files matching a glob. Each entry is `{ file: <glob>, exports: [<name>, ...] }` where `exports: [\"*\"]` exempts every export in the file and a name list exempts only those names; built for component-library barrels (shadcn/Radix/bits-ui `index.ts`) that intentionally re-export the same short names across many files.",
+      "description": "A list of per-file rules that exempt named exports from `unused-export` and from duplicate-exports grouping for files matching a glob. Each entry is `{ file: <glob>, exports: [<name>, ...] }` where `exports: [\"*\"]` exempts every export in the file and a name list exempts only those names; built for component-library barrels (shadcn/Radix/bits-ui `index.ts`) that intentionally re-export the same short names across many files. A single `*` stays within one path segment; use `**` to match across directories.",
       "type": "array",
       "items": {
         "$ref": "#/$defs/IgnoreExportRule"
@@ -161,8 +174,12 @@
         "ignore": []
       }
     },
+    "mutation": {
+      "description": "Configures the explicit `fallow mutation` workflow: `runner` (`auto`\nor `vitest`), `operators` (kebab-case names, default each operator),\n`minScore` (0 to 100; a lower score exits with code 1), and\n`concurrency` (half the logical cores). No key starts a run, and the\nside-effect override is a CLI flag only.",
+      "$ref": "#/$defs/MutationConfig"
+    },
     "health": {
-      "description": "Sets complexity and health thresholds for `fallow health` (also applied in combined `fallow` and `fallow audit`): `maxCyclomatic` (20), `maxCognitive` (15), `maxCrap` (30.0, findings at or above this are reported), `crapRefactorBand` (5, cyclomatic band below `maxCyclomatic` where a secondary refactor action is added), `maxUnitSize` (max function lines before a large-function finding, 60), `coverage`/`coverageRoot` (Istanbul coverage path and path-prefix strip for accurate CRAP), `ignore` globs (remove files from findings AND the health score), `thresholdOverrides` (per-file/per-function ceilings via `files`/`functions`/`maxCyclomatic`/`maxCognitive`/`maxCrap`/`maxUnitSize`/`reason`), `ownership` (`botPatterns` and `emailMode` for `--ownership`), and `suggestInlineSuppression` (true, emit `suppress-line` action hints in JSON). Raise thresholds to relax which functions are flagged, wire `coverage` for real CRAP scores, or exempt generated/test files via `ignore` (drops them from the score too) or `thresholdOverrides` (keeps them visible under a higher ceiling). The four `max*` thresholds govern findings only and never move `health_score`: its penalties use fixed calibration so grades stay comparable across projects, and `ignore` is the lever that removes files from the score.",
+      "description": "Sets complexity and health thresholds for `fallow health` (also applied in combined `fallow` and `fallow audit`): `maxCyclomatic` (20), `maxCognitive` (15), `maxCrap` (30.0, findings at or above this are reported), `crapRefactorBand` (5, cyclomatic band below `maxCyclomatic` where a secondary refactor action is added), `maxUnitSize` (max function lines before a large-function finding, 60), `maxFileLines` (max physical lines per file before a file-level finding, 0 means off), `coverage`/`coverageRoot` (Istanbul coverage path and path-prefix strip for accurate CRAP), `ignore` globs (remove files from findings AND the health score), `thresholdOverrides` (per-file/per-function ceilings via `files`/`functions`/`maxCyclomatic`/`maxCognitive`/`maxCrap`/`maxUnitSize`/`maxFileLines`/`reason`), `ownership` (`botPatterns` and `emailMode` for `--ownership`), and `suggestInlineSuppression` (true, emit `suppress-line` action hints in JSON). Raise thresholds to relax which functions are flagged, wire `coverage` for real CRAP scores, or exempt generated/test files via `ignore` (drops them from the score too) or `thresholdOverrides` (keeps them visible under a higher ceiling). The `max*` thresholds govern findings only and never move `health_score`: its penalties use fixed calibration so grades stay comparable across projects, and `ignore` is the lever that removes files from the score.",
       "$ref": "#/$defs/HealthConfig",
       "default": {
         "maxCyclomatic": 20,
@@ -183,6 +200,12 @@
             "*-service-account*"
           ],
           "emailMode": "handle"
+        },
+        "changeCoupling": {
+          "maxFilesPerCommit": 30,
+          "minRevisions": 5,
+          "minSharedRevisions": 5,
+          "minDegree": 0.3
         },
         "suggestInlineSuppression": true
       }
@@ -214,6 +237,9 @@
         "unused-component-inputs": "warn",
         "unused-component-outputs": "warn",
         "unused-svelte-events": "warn",
+        "unused-effect-layers": "warn",
+        "unused-tagged-errors": "warn",
+        "unproduced-catch-tags": "warn",
         "unused-server-actions": "warn",
         "unused-load-data-keys": "warn",
         "prop-drilling": "off",
@@ -227,6 +253,7 @@
         "complexity-cyclomatic": "error",
         "complexity-cognitive": "error",
         "complexity-crap": "error",
+        "complexity-file-lines": "error",
         "unresolved-imports": "error",
         "unlisted-dependencies": "error",
         "duplicate-exports": "error",
@@ -253,7 +280,12 @@
         "mixed-client-server-barrel": "warn",
         "misplaced-directive": "warn",
         "route-collision": "error",
-        "dynamic-segment-name-conflict": "error"
+        "dynamic-segment-name-conflict": "error",
+        "weakened-tests": "warn",
+        "added-suppression": "warn",
+        "test-only-branch": "warn",
+        "diverged-clone-sibling": "off",
+        "added-dependency": "off"
       }
     },
     "unusedComponentProps": {
@@ -263,6 +295,10 @@
     "circularDependencies": {
       "description": "Options for the `circular-dependencies` rule, currently only `ignoreLazyImports`. Set `{ \"ignoreLazyImports\": true }` to skip import edges that load on demand or on another thread (an `import()` inside a function, a template `import()`, a lazy `import.meta.glob`, a worker URL, a webpack worker loader request such as `worker-loader!./work.js`) when fallow looks for cycles. A top-level `await import()`, `require()`, an eager glob, and an edge that also has a static import stay in the cycle graph. Default `false` leaves the rule unchanged.",
       "$ref": "#/$defs/CircularDependenciesConfig"
+    },
+    "effect": {
+      "description": "Options for projects that use the Effect library, currently only `schemaExportsAsTypes`. Set `{ \"schemaExportsAsTypes\": true }` to report an unused exported Effect schema (a class that extends `Schema.Class`, `Schema.TaggedClass`, `Schema.TaggedError` and the other `Schema` class factories, or a const such as `Schema.Struct({...})` or `Schema.String.pipe(Schema.brand(\"Id\"))`) as an unused type under the `unused-types` rule, not as an unused export, so `\"unused-types\": \"off\"` hides it. `Schema` must come from `effect`, `effect/Schema` or `@effect/schema`. Default `false` leaves every report unchanged.",
+      "$ref": "#/$defs/EffectConfig"
     },
     "boundaries": {
       "description": "Configures architecture boundary enforcement: which source directories belong to which named zone and which zones may import which others, reported as boundary-violation, boundary-coverage-violation, and boundary-call-violation findings (severity via rules.boundary-violation, default error). Set to enforce a layered/module architecture; the object holds `preset` (one of layered, hexagonal, feature-sliced, bulletproof, whose default zones/rules are merged in with the user-declared zones/rules taking precedence), `zones` (each with `name`, `patterns`, `autoDiscover`, optional `root`), `rules` (each with `from`, `allow`, `allowTypeOnly` target-zone lists), `coverage` (`requireAllFiles` plus `allowUnmatched` globs for files matching no zone), and `calls` (a `forbidden` list of `{from, callee}` banned-call rules per zone).",
@@ -319,15 +355,22 @@
       }
     },
     "dynamicallyLoaded": {
-      "description": "An array of project-root-relative glob patterns for files loaded at runtime by a mechanism the static graph cannot see (dynamic path resolution, config-driven loading); matching files are seeded as entry points so they and their imports stay reachable. Empty by default; set it (e.g. `[\"plugins/**/*.ts\", \"locales/**/*.json\"]`) for plugin or locale trees pulled in dynamically.",
+      "description": "An array of project-root-relative glob patterns for files loaded at runtime by a mechanism the static graph cannot see (dynamic path resolution, config-driven loading); matching files are seeded as entry points so they and their imports stay reachable. Empty by default; set it (e.g. `[\"plugins/**/*.ts\", \"locales/**/*.json\"]`) for plugin or locale trees pulled in dynamically. A single `*` stays within one path segment; use `**` to match across directories.",
       "type": "array",
       "items": {
         "type": "string"
       },
       "default": []
     },
+    "markupExtensions": {
+      "description": "An array of file extensions, without the leading dot, for server-side template files whose text counts as CSS class references for the `unreferenced-css-class` finding of `fallow health --css`. These files are read as text only: they do not join source discovery or the module graph, so they never become unused files and their imports are not followed. Templates are more lenient than Markdown: the whole text of a template file counts as a dynamic class reference, so any class-like word in it counts as used, also a common word such as `hidden` or `title` in prose or a template tag. A Markdown file joins the reference text only when it has dynamic class syntax. The extensions `liquid`, `njk`, `hbs`, `handlebars`, `twig`, and `blade.php` are always read; set this (e.g. `[\"tpl\", \"erb\"]`) for other template languages. An extension matches the end of a file name, ignoring case, so `blade.php` matches `welcome.blade.php`. Values may contain only letters, digits, `.`, `-`, and `_`. A value whose last segment is a script, stylesheet, data or asset extension (`js`, `ts`, `css`, `json`, `svg`, `xml`, `map`, and similar, so also `module.css` or `d.ts`), or a compound value that ends in a markup extension that fallow already reads (`page.html`), is a config error. The walk uses the ignore files of source discovery (`.gitignore`, `.ignore`), skips `ignorePatterns`, `health.ignore`, `node_modules`, `vendor`, and build output directories, reads only regular files, and skips files over the `--max-file-size` limit. In `extends`, a child list replaces the parent list.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "overrides": {
-      "description": "An ordered list of per-file rule-severity overrides: each entry re-severities specific analysis rules for files its globs match, layered on top of the top-level `rules` defaults. Set to relax or tighten rules for a subset of paths (e.g. downgrade unused-exports to warn under a generated directory); each entry has `files` (glob-pattern array) and `rules` (a partial per-rule severity map of error/warn/off). Entries apply in list order and a file matched by several entries takes every matching entry's overrides (later entries win on conflict); inter-file rules (duplicate-exports, circular-dependencies, re-export-cycle) have no effect in an override (fallow warns during analysis and points to the right mechanism: top-level `ignoreExports` for duplicate-exports, a file-level `// fallow-ignore-file` comment for the others).",
+      "description": "An ordered list of per-file rule-severity overrides: each entry re-severities specific analysis rules for files its globs match, layered on top of the top-level `rules` defaults. Set to relax or tighten a rule for a subset of paths (e.g. downgrade unused-exports to warn under a generated directory); each entry has `files` (glob-pattern array) and `rules` (a partial per-rule severity map of error/warn/off). Entries apply in list order and a file matched by several entries takes every matching entry's overrides (later entries win on conflict). For most rules, an override cannot start a detector for a rule that is off at top level, so set the top-level rule on and use an override to set `off` for the other paths. Project-level rules ignore overrides: unused-dependencies, unused-dev-dependencies, unused-optional-dependencies, unlisted-dependencies, type-only-dependencies, test-only-dependencies, dev-dependencies-in-production, duplicate-exports, re-export-cycle and unused-catalog-entries. Fallow reports each such entry as an `override-rule-ineffective` diagnostic that names the mechanism that works. A single `*` stays within one path segment; use `**` to match across directories.",
       "type": "array",
       "items": {
         "$ref": "#/$defs/ConfigOverride"
@@ -336,7 +379,10 @@
     },
     "codeowners": {
       "description": "A project-root-relative path to a CODEOWNERS file, used by fallow health --hotspots --ownership to attribute declared owners and compute unowned/drifting ownership state; setting it overrides the default probe order (CODEOWNERS, .github/CODEOWNERS, .gitlab/CODEOWNERS, docs/CODEOWNERS). String, defaults to null (auto-probe the standard locations); set it only when the CODEOWNERS file lives at a non-standard location.",
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "publicPackages": {
       "description": "An array of internal workspace package names (or globs matched against workspace package names) whose public API is intentionally consumed outside the analyzed graph; their entry points and re-export surface become reachability roots, so their exported files, exports, and class members are not reported as unused. Set it (e.g. `[\"@myorg/shared-lib\", \"@myorg/*\"]`) for library packages in a monorepo that ship an API to external consumers; only meaningful when workspaces are present (an empty list or no workspaces is a no-op).",
@@ -382,7 +428,7 @@
       "default": false
     },
     "failOnParseError": {
-      "description": "When true, the run fails with exit code 1 if fallow could not parse a source file cleanly (a `source-parse-degraded` entry in `workspace_diagnostics[]`), and the `parse-error` entry of `gate_outcomes` names each such file. Boolean, defaults to false, so a file the parser rejects only warns. Applies to `fallow dead-code`, `fallow health`, `fallow audit` and the bare `fallow` run; the CLI flag `--fail-on-parse-error` arms the same gate for one run. Older fallow versions reject this key as unknown, so pair it with `minimumVersion` set to the release that added it.",
+      "description": "When true, the run fails with exit code 1 if fallow could not parse a source file cleanly (a `source-parse-degraded` or `source-nesting-too-deep` entry in `workspace_diagnostics[]`), and the `parse-error` entry of `gate_outcomes` names each such file. Boolean, defaults to false, so a file the parser rejects only warns. Applies to `fallow dead-code`, `fallow health`, `fallow audit` and the bare `fallow` run; the CLI flag `--fail-on-parse-error` arms the same gate for one run. Older fallow versions reject this key as unknown, so pair it with `minimumVersion` set to the release that added it.",
       "type": "boolean",
       "default": false
     },
@@ -416,7 +462,7 @@
           "default": null
         },
         "enablers": {
-          "description": "Package names that activate this plugin when found in package.json.\nSupports exact matches and prefix patterns (ending with `/`).\nOnly used when `detection` is not set.",
+          "description": "Package names that activate this plugin when found in package.json.\nSupports exact matches and prefix patterns (ending with `/`).\nOnly used when `detection` is not set. A plugin with neither `detection`\nnor `enablers` never activates, and config load warns.",
           "type": "array",
           "items": {
             "type": "string"
@@ -432,7 +478,7 @@
           "default": []
         },
         "entryPointRole": {
-          "description": "Coverage role for `entryPoints`.\n\nDefaults to `support`. Set to `runtime` for application entry points\nor `test` for test framework entry points.",
+          "description": "Coverage role for `entryPoints`.\n\nDefaults to `support`. Set to `runtime` for application entry points\nor `test` for test framework entry points. In production mode, a file\nthat only entries with an explicit `support` role match takes no part\nin dead-code analysis.",
           "$ref": "#/$defs/EntryPointRole",
           "default": "support"
         },
@@ -446,6 +492,14 @@
         },
         "configPatterns": {
           "description": "Glob patterns for config files (marked as always-used when active).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "configDefaultExportOptOut": {
+          "description": "Entries of `configPatterns` whose files do not get the `default`\nexport credit under `includeEntryExports`. Use it when the tool reads\nnamed exports, or when the pattern also matches ordinary source files.\nWrite each entry exactly as in `configPatterns`. Other entries have\nno effect.",
           "type": "array",
           "items": {
             "type": "string"
@@ -485,7 +539,9 @@
           "default": []
         }
       },
-      "required": ["name"]
+      "required": [
+        "name"
+      ]
     },
     "PluginDetection": {
       "description": "How to detect if a plugin should be activated.\n\nWhen set on an `ExternalPluginDef`, this takes priority over `enablers`.\nSupports dependency checks, file existence checks, and boolean combinators.",
@@ -494,67 +550,79 @@
           "description": "Plugin detected if this package is in dependencies.",
           "type": "object",
           "properties": {
-            "package": {
-              "description": "Exact package name looked up in the project's declared dependencies.",
-              "type": "string"
-            },
             "type": {
               "type": "string",
               "const": "dependency"
+            },
+            "package": {
+              "description": "Exact package name looked up in the project's declared dependencies.",
+              "type": "string"
             }
           },
-          "required": ["type", "package"]
+          "required": [
+            "type",
+            "package"
+          ]
         },
         {
           "description": "Plugin detected if this file pattern matches.",
           "type": "object",
           "properties": {
-            "pattern": {
-              "description": "Project-root-relative glob; the plugin activates when any\ndiscovered file matches it. Validated at load like other user\nglobs (no absolute paths or `..` segments).",
-              "type": "string"
-            },
             "type": {
               "type": "string",
               "const": "fileExists"
+            },
+            "pattern": {
+              "description": "Project-root-relative glob; the plugin activates when any\ndiscovered file matches it. Validated at load like other user\nglobs (no absolute paths or `..` segments).\nA single `*` stays within one path segment; use `**` to match across directories.",
+              "type": "string"
             }
           },
-          "required": ["type", "pattern"]
+          "required": [
+            "type",
+            "pattern"
+          ]
         },
         {
           "description": "All conditions must be true.",
           "type": "object",
           "properties": {
+            "type": {
+              "type": "string",
+              "const": "all"
+            },
             "conditions": {
               "description": "Sub-conditions combined with logical AND.",
               "type": "array",
               "items": {
                 "$ref": "#/$defs/PluginDetection"
               }
-            },
-            "type": {
-              "type": "string",
-              "const": "all"
             }
           },
-          "required": ["type", "conditions"]
+          "required": [
+            "type",
+            "conditions"
+          ]
         },
         {
           "description": "Any condition must be true.",
           "type": "object",
           "properties": {
+            "type": {
+              "type": "string",
+              "const": "any"
+            },
             "conditions": {
               "description": "Sub-conditions combined with logical OR.",
               "type": "array",
               "items": {
                 "$ref": "#/$defs/PluginDetection"
               }
-            },
-            "type": {
-              "type": "string",
-              "const": "any"
             }
           },
-          "required": ["type", "conditions"]
+          "required": [
+            "type",
+            "conditions"
+          ]
         }
       ]
     },
@@ -583,7 +651,7 @@
       "type": "object",
       "properties": {
         "manifests": {
-          "description": "Recursive glob selecting the manifest files to read (e.g. `**/kibana.jsonc`).",
+          "description": "Recursive glob selecting the manifest files to read (e.g. `**/kibana.jsonc`).\nA single `*` stays within one path segment; use `**` to match across directories.",
           "type": "string"
         },
         "format": {
@@ -607,7 +675,10 @@
           }
         }
       },
-      "required": ["manifests", "entries"]
+      "required": [
+        "manifests",
+        "entries"
+      ]
     },
     "ManifestFormat": {
       "description": "Format of the manifest files a [`ManifestEntryRule`] reads.\n\n`jsonc` (the default) also parses plain JSON, so it is the tolerant choice.",
@@ -646,7 +717,9 @@
         }
       },
       "additionalProperties": false,
-      "required": ["exists"]
+      "required": [
+        "exists"
+      ]
     },
     "ManifestSeedRule": {
       "description": "A single entry seeded by a [`ManifestEntryRule`], resolved relative to the\nmanifest's directory.",
@@ -665,14 +738,16 @@
           "default": {}
         }
       },
-      "required": ["path"]
+      "required": [
+        "path"
+      ]
     },
     "ExternalUsedExport": {
       "description": "Exports considered used for files matching a pattern.",
       "type": "object",
       "properties": {
         "pattern": {
-          "description": "Glob pattern for files.",
+          "description": "Glob pattern for files.\nA single `*` stays within one path segment; use `**` to match across directories.",
           "type": "string"
         },
         "exports": {
@@ -683,7 +758,10 @@
           }
         }
       },
-      "required": ["pattern", "exports"]
+      "required": [
+        "pattern",
+        "exports"
+      ]
     },
     "UsedClassMemberRule": {
       "description": "A `usedClassMembers` entry from config or an external plugin.\n\nSupports either a plain member name or glob pattern (`\"agInit\"`,\n`\"enter*\"`) or a scoped rule that only applies when a class matches\nspecific `extends` / `implements` heritage clauses.",
@@ -704,11 +782,17 @@
       "properties": {
         "extends": {
           "description": "Only apply when the class extends this parent class name.",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "implements": {
           "description": "Only apply when the class implements this interface name.",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "members": {
           "description": "Member names or glob patterns that should be treated as framework-used.",
@@ -719,7 +803,9 @@
         }
       },
       "additionalProperties": false,
-      "required": ["members"]
+      "required": [
+        "members"
+      ]
     },
     "WorkspaceConfig": {
       "description": "Workspace configuration for monorepo support.",
@@ -747,7 +833,7 @@
       "type": "object",
       "properties": {
         "file": {
-          "description": "Glob pattern for files.",
+          "description": "Glob pattern for files.\nA single `*` stays within one path segment; use `**` to match across directories.",
           "type": "string"
         },
         "exports": {
@@ -759,7 +845,10 @@
         }
       },
       "additionalProperties": false,
-      "required": ["file", "exports"]
+      "required": [
+        "file",
+        "exports"
+      ]
     },
     "IgnoreCatalogReferenceRule": {
       "description": "Rule for suppressing an `unresolved-catalog-reference` finding.",
@@ -771,15 +860,23 @@
         },
         "catalog": {
           "description": "Optional catalog-name filter: when set, the rule suppresses only references to this exact catalog name (string equality), and when omitted it applies regardless of which catalog is referenced. Use it to scope suppression to one catalog (e.g. `\"react18\"`) while leaving other catalog references for the same package reportable.",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "consumer": {
-          "description": "Optional glob matched against the consuming workspace `package.json` path (compiled into a glob matcher at config load): when set, the rule suppresses the finding only for consumers whose path matches, and when omitted it applies to every consumer. Use it to suppress a catalog reference in one specific workspace during a staged migration.",
-          "type": ["string", "null"]
+          "description": "Optional glob matched against the consuming workspace `package.json` path (compiled into a glob matcher at config load): when set, the rule suppresses the finding only for consumers whose path matches, and when omitted it applies to every consumer. Use it to suppress a catalog reference in one specific workspace during a staged migration. A single `*` stays within one path segment; use `**` to match across directories.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false,
-      "required": ["package"]
+      "required": [
+        "package"
+      ]
     },
     "IgnoreDependencyOverrideRule": {
       "description": "Rule for suppressing dependency-override findings.",
@@ -791,11 +888,16 @@
         },
         "source": {
           "description": "Optional source filter matched by exact string equality against the override's declaring-file label: set it to `\"pnpm-workspace.yaml\"` or `\"package.json\"` to scope the suppression to overrides declared in that file, or omit it to suppress the package's override regardless of where it is declared.",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false,
-      "required": ["package"]
+      "required": [
+        "package"
+      ]
     },
     "IgnoreExportsUsedInFileConfig": {
       "description": "Value of the `ignoreExportsUsedInFile` config key: whether an export\nreferenced elsewhere in its own file is suppressed from `unused-export`.",
@@ -873,7 +975,7 @@
           "default": 0.0
         },
         "ignore": {
-          "description": "Additional ignore patterns for duplication analysis.",
+          "description": "Additional ignore patterns for duplication analysis.\nA single `*` stays within one path segment; use `**` to match across directories.",
           "type": "array",
           "items": {
             "type": "string"
@@ -966,15 +1068,24 @@
       "properties": {
         "ignoreIdentifiers": {
           "description": "Blind all identifiers (variable names, function names, etc.) to the same hash.\nDefault in `semantic` mode.",
-          "type": ["boolean", "null"]
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "ignoreStringValues": {
           "description": "Blind string literal values to the same hash.\nDefault in `weak` and `semantic` modes.",
-          "type": ["boolean", "null"]
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "ignoreNumericValues": {
           "description": "Blind numeric literal values to the same hash.\nDefault in `semantic` mode.",
-          "type": ["boolean", "null"]
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       }
     },
@@ -998,7 +1109,7 @@
           "default": 3
         },
         "ignore": {
-          "description": "Additional project-root-relative globs excluded only from similar-code\nextraction. Global `ignorePatterns` remain authoritative first.",
+          "description": "Additional project-root-relative globs excluded only from similar-code\nextraction. Global `ignorePatterns` remain authoritative first.\nA single `*` stays within one path segment; use `**` to match across directories.",
           "type": "array",
           "items": {
             "type": "string"
@@ -1007,6 +1118,156 @@
         }
       },
       "additionalProperties": false
+    },
+    "MutationConfig": {
+      "description": "Project settings for `fallow mutation`.\n\nProject config cannot widen what a run executes: the override that keeps\nmutants near file system, process, network or database sinks is a CLI\nflag only (`--allow-side-effects`), and no key starts a run.",
+      "type": "object",
+      "properties": {
+        "runner": {
+          "description": "The test runner: `auto`, `vitest`, `node-test` or `bun-test`. `auto`\ndetects it from the project.",
+          "$ref": "#/$defs/MutationRunner",
+          "default": "auto"
+        },
+        "operators": {
+          "description": "The operators to use. Unset uses each operator. `--operators` wins.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/MutationOperatorName"
+          }
+        },
+        "minScore": {
+          "description": "The minimum mutation score, from 0 to 100. When the score of a run is\nlower, `fallow mutation` exits with code 1. Unset never fails a run.\n`--min-score` wins.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double",
+          "minimum": 0.0,
+          "maximum": 100.0
+        },
+        "concurrency": {
+          "description": "The number of companion processes. Unset uses half the logical cores.\n`--concurrency` wins.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint",
+          "minimum": 1
+        },
+        "typecheck": {
+          "description": "Type-check each survived mutant through the TypeScript-Go companion\nof `--type-aware`. A survivor that does not type-check becomes\n`compile_error` and does not count in the score. Unset or `false`\nchecks no survivor. `--typecheck` turns the check on.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "runnerConfig": {
+          "description": "The config file of the test runner, relative to the project root, for\nexample `vitest.integration.config.mjs`. The file must exist inside\nthe project root. Only the Vitest runner reads it. Unset uses the\ndefault config discovery of the runner. `--runner-config` wins.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "MutationRunner": {
+      "description": "The test runner of `fallow mutation`.",
+      "oneOf": [
+        {
+          "description": "Detect the runner from the project: the `vitest` dependency, the\ntest module that the test files import, a Bun file at the root, or a\n`node --test` script.",
+          "type": "string",
+          "const": "auto"
+        },
+        {
+          "description": "Vitest 4.1 to 5 from the project `node_modules`.",
+          "type": "string",
+          "const": "vitest"
+        },
+        {
+          "description": "`node:test` of Node.js 22.18 or later. Each test file runs in its own\nNode process.",
+          "type": "string",
+          "const": "node-test"
+        },
+        {
+          "description": "`bun test` of Bun 1.4 or later. Each test file runs in its own Bun\nprocess.",
+          "type": "string",
+          "const": "bun-test"
+        }
+      ]
+    },
+    "MutationOperatorName": {
+      "description": "A mutation operator name, kebab-case.",
+      "oneOf": [
+        {
+          "description": "`a + b` to `a - b`, and the other arithmetic pairs.",
+          "type": "string",
+          "const": "arithmetic-operator"
+        },
+        {
+          "description": "`a < b` to `a <= b`, and the other relational pairs.",
+          "type": "string",
+          "const": "relational-operator"
+        },
+        {
+          "description": "`a && b` to `a || b`, and the reverse.",
+          "type": "string",
+          "const": "logical-operator"
+        },
+        {
+          "description": "A condition to its negation.",
+          "type": "string",
+          "const": "negate-condition"
+        },
+        {
+          "description": "A unary operator removed or changed.",
+          "type": "string",
+          "const": "unary-operator"
+        },
+        {
+          "description": "`i++` to `i--`, and the reverse.",
+          "type": "string",
+          "const": "update-operator"
+        },
+        {
+          "description": "A call statement removed.",
+          "type": "string",
+          "const": "removed-call"
+        },
+        {
+          "description": "A return value changed.",
+          "type": "string",
+          "const": "return-value"
+        },
+        {
+          "description": "`true` to `false`, and the reverse.",
+          "type": "string",
+          "const": "boolean-literal"
+        },
+        {
+          "description": "A string literal emptied or filled.",
+          "type": "string",
+          "const": "string-literal"
+        },
+        {
+          "description": "`a?.b` to `a.b`.",
+          "type": "string",
+          "const": "optional-chaining"
+        },
+        {
+          "description": "One token of a regular expression literal changed: an anchor\nremoved, a character class negated, or a class escape with the\nopposite case.",
+          "type": "string",
+          "const": "regex-literal"
+        },
+        {
+          "description": "`z.number().int()` to `z.number()` in a module-level `const`\ninitializer: one call link of a fluent chain removed.",
+          "type": "string",
+          "const": "removed-chain-link"
+        }
+      ]
     },
     "HealthConfig": {
       "description": "Configuration for complexity health metrics (`fallow health`).",
@@ -1019,6 +1280,10 @@
           "minimum": 0,
           "maximum": 65535,
           "default": 20
+        },
+        "cyclomaticPolicy": {
+          "description": "How the cyclomatic gate counts complexity (default: `standard`).\n`literal-membership` counts a chain of strict equality checks of one\nidentifier against primitive literals (`kind === \"a\" || kind === \"b\"`)\nas one predicate. The policy applies to the `maxCyclomatic` gate and\nto every CRAP score, so the `maxCrap` gate reads the same value.\nFindings then report the standard value as `standard_cyclomatic`. The\nhealth score, complexity density, and hotspots keep the standard\ncount. Older fallow versions reject this key as unknown, so pair it\nwith `minimumVersion`.",
+          "$ref": "#/$defs/CyclomaticPolicy"
         },
         "maxCognitive": {
           "description": "Maximum allowed cognitive complexity per function (default: 15).\nFunctions exceeding this threshold are reported. Governs findings\nonly, never the health score.",
@@ -1049,18 +1314,30 @@
           "minimum": 0,
           "default": 60
         },
+        "maxFileLines": {
+          "description": "Maximum file length in physical lines before the file is reported as a\ncomplexity finding with `exceeded: \"file_lines\"` (default: `0`, off).\nEvery line counts, also blank lines and comment lines. A final newline\ndoes not add a line. Set a limit such as `500` to enable the check, and\nraise it per file via `thresholdOverrides[].maxFileLines`. The\n`complexity-file-lines` rule decides if a finding fails the run. In\n`fallow audit`, a long file that did not grow stays inherited. Older\nfallow versions reject this key as unknown, so pair it with\n`minimumVersion`.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
         "coverage": {
           "description": "Path to Istanbul coverage data (coverage-final.json) or raw V8 coverage\n(a `NODE_V8_COVERAGE` directory or one V8 JSON file) for accurate\nper-function CRAP scores. Relative paths resolve against the project root. The CLI\n`--coverage` flag and `FALLOW_COVERAGE` environment variable override\nthis value. Consulted by `fallow health`, bare `fallow`, `fallow audit`,\n`fallow viz`, and the MCP `audit` / `check_health` tools.",
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "default": null
         },
         "coverageRoot": {
           "description": "Absolute prefix to strip from Istanbul file paths before CRAP matching.\nUse when coverage was generated under a different checkout root in CI\nor Docker. The CLI `--coverage-root` flag and `FALLOW_COVERAGE_ROOT`\nenvironment variable override this value. Consulted by `fallow health`,\nbare `fallow`, `fallow audit`, `fallow viz`, and the MCP `audit` /\n`check_health` tools.",
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "default": null
         },
         "ignore": {
-          "description": "Glob patterns to exclude from complexity analysis.",
+          "description": "Glob patterns to exclude from complexity analysis.\nA single `*` stays within one path segment; use `**` to match across directories.",
           "type": "array",
           "items": {
             "type": "string"
@@ -1089,6 +1366,16 @@
             "emailMode": "handle"
           }
         },
+        "changeCoupling": {
+          "description": "Change coupling thresholds for the `change_coupling` section and the\nhidden-coupling refactoring targets. Older fallow versions reject this\nkey as unknown, so pair it with `minimumVersion` set to the release\nthat added it.",
+          "$ref": "#/$defs/ChangeCouplingConfig",
+          "default": {
+            "maxFilesPerCommit": 30,
+            "minRevisions": 5,
+            "minSharedRevisions": 5,
+            "minDegree": 0.3
+          }
+        },
         "suggestInlineSuppression": {
           "description": "Whether health JSON output emits `suppress-line` action hints\nalongside complexity findings (default: `true`). Set to `false` to\nopt out across the project: useful for teams that manage suppressions\nexclusively through `// fallow-ignore-*` comments authored by hand or\nthrough the `fallow.suppress` LSP code action, but who do not want\nCI-driven `suppress-line` action hints in their JSON output.\n`--baseline` activates auto-omission regardless of this setting,\nsince baseline files are a separate suppression mechanism.",
           "type": "boolean",
@@ -1097,12 +1384,27 @@
       },
       "additionalProperties": false
     },
+    "CyclomaticPolicy": {
+      "description": "How `fallow health` counts cyclomatic complexity for its gates.\n\nThe policy changes the cyclomatic value that the `maxCyclomatic` gate reads\nand the cyclomatic value in every CRAP score. It does not change the health\nscore, the complexity density, or the hotspot ranking: those keep the\nstandard count so that grades stay comparable across projects.",
+      "oneOf": [
+        {
+          "description": "Count every decision point, `&&`, `||`, and `??` operator (`McCabe`).",
+          "type": "string",
+          "const": "standard"
+        },
+        {
+          "description": "Count a literal membership chain as one predicate. A chain such as\n`kind === \"a\" || kind === \"b\" || kind === \"c\"` adds no cyclomatic\nincrements for its `||` operators. Only strict equality checks of one\nidentifier against string, number, bigint, boolean, or `null` literals\nqualify. Member access, calls, mixed operators, and different operands\nkeep the standard count.",
+          "type": "string",
+          "const": "literal-membership"
+        }
+      ]
+    },
     "HealthThresholdOverride": {
       "description": "Per-file or per-function health threshold override.",
       "type": "object",
       "properties": {
         "files": {
-          "description": "Project-root-relative file globs this override applies to.",
+          "description": "Project-root-relative file globs this override applies to.\nA single `*` stays within one path segment; use `**` to match across directories.",
           "type": "array",
           "items": {
             "type": "string"
@@ -1117,36 +1419,62 @@
         },
         "maxCyclomatic": {
           "description": "Local cyclomatic complexity ceiling.",
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "format": "uint16",
           "minimum": 0,
           "maximum": 65535
         },
         "maxCognitive": {
           "description": "Local cognitive complexity ceiling.",
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "format": "uint16",
           "minimum": 0,
           "maximum": 65535
         },
         "maxCrap": {
           "description": "Local CRAP ceiling.",
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "format": "double"
         },
         "maxUnitSize": {
           "description": "Local unit-size ceiling: maximum function length in lines of code before\nit is reported as an oversized \"large function\". Leave `functions` empty\nto relax the bar for every function in the matching files (which covers\nboth the `describe()` wrapper and the individual `it()` blocks in a test\nsuite).",
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "maxFileLines": {
+          "description": "Local file-length ceiling in physical lines. `0` turns the file-length\ncheck off for the matching files. The ceiling applies to whole files,\nso an entry that sets it must leave `functions` empty.",
+          "type": [
+            "integer",
+            "null"
+          ],
           "format": "uint32",
           "minimum": 0
         },
         "reason": {
           "description": "Human-readable rationale for the exception.",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false,
-      "required": ["files"]
+      "required": [
+        "files"
+      ]
     },
     "OwnershipConfig": {
       "description": "Configuration for ownership analysis (`fallow health --hotspots --ownership`).",
@@ -1198,6 +1526,43 @@
           "const": "hash"
         }
       ]
+    },
+    "ChangeCouplingConfig": {
+      "description": "Thresholds for change coupling (`change_coupling` in `fallow health`).\n\nThe defaults are the Code Maat defaults. A pair of files is hidden coupling\nwhen each file has `minRevisions` commits, the pair shares\n`minSharedRevisions` commits, the coupling degree reaches `minDegree`, and\nno import or re-export chain connects the two files.",
+      "type": "object",
+      "properties": {
+        "maxFilesPerCommit": {
+          "description": "Skip a commit that changes more analyzed files than this (default:\n30, from 2 to 1000). Bulk commits (renames, format passes) create\nfalse pairs. The upper bound keeps the pair count of one commit small.",
+          "type": "integer",
+          "format": "uint",
+          "minimum": 2,
+          "maximum": 1000,
+          "default": 30
+        },
+        "minRevisions": {
+          "description": "Minimum commits for each file of a pair (default: 5).",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0,
+          "default": 5
+        },
+        "minSharedRevisions": {
+          "description": "Minimum commits that change both files of a pair (default: 5).",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0,
+          "default": 5
+        },
+        "minDegree": {
+          "description": "Minimum coupling degree, from 0 to 1 (default: 0.3). The degree is the\nnumber of shared commits divided by the mean commit count of the two\nfiles.",
+          "type": "number",
+          "format": "double",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.3
+        }
+      },
+      "additionalProperties": false
     },
     "TypeAwareConfig": {
       "description": "Shared opt-in configuration for TypeScript semantic analysis.",
@@ -1292,22 +1657,22 @@
           "default": "error"
         },
         "unused-store-members": {
-          "description": "Store members (Pinia `state` / `getters` / `actions` key, or a\nsetup-store returned key) declared but never accessed by any consumer\nproject-wide. Defaults to `warn`, not `error` like the closed-set\nclass/enum member rules: a store has an OPEN declaration surface\n(plugins, `$onAction`, dynamic dispatch) so analyzer confidence is\ngenuinely lower; warn encodes that without failing CI. Promotable to\n`error` once validated on a codebase.",
+          "description": "Store members (Pinia `state` / `getters` / `actions` key, or a\nsetup-store returned key) declared but never accessed by any consumer\nproject-wide. Defaults to `warn`, not `error` like the closed-set\nclass/enum member rules: a store has an OPEN declaration surface\n(plugins, `$onAction`, dynamic dispatch) so analyzer confidence is\ngenuinely lower. A `warn` finding does not change the CLI exit code\nunless `--fail-on-issues` is set. The dead-code count gate of the GitHub\nAction counts it unless `fail-on-issues` is `false`. Promotable to\n`error` once validated on a codebase.",
           "$ref": "#/$defs/Severity",
           "default": "warn"
         },
         "unprovided-injects": {
-          "description": "Vue `inject(KEY)` / Svelte `getContext(KEY)` whose symbol KEY is\n`provide`/`setContext`'d nowhere in the project (the\ninjected-never-provided dead-half). Defaults to `warn`, not `error`:\na DI key has an open provide surface (plugins, app-level provide) so\nanalyzer confidence is lower; warn encodes that without failing CI.",
+          "description": "Vue `inject(KEY)` / Svelte `getContext(KEY)` whose symbol KEY is\n`provide`/`setContext`'d nowhere in the project (the\ninjected-never-provided dead-half). Defaults to `warn`, not `error`: a\nDI key has an open provide surface (plugins, app-level provide) so\nanalyzer confidence is lower. A `warn` finding does not change the CLI\nexit code unless `--fail-on-issues` is set. The dead-code count gate of\nthe GitHub Action counts it unless `fail-on-issues` is `false`.",
           "$ref": "#/$defs/Severity",
           "default": "warn"
         },
         "unrendered-components": {
-          "description": "Vue/Svelte single-file component reachable in the module graph but\nrendered nowhere in the project (the imported-but-never-rendered\ndead-half). Defaults to `warn`, not `error`: a component can be rendered\nreflectively (dynamic `<component :is>`), so analyzer confidence is\nlower; warn encodes that without failing CI.",
+          "description": "Vue/Svelte single-file component reachable in the module graph but\nrendered nowhere in the project (the imported-but-never-rendered\ndead-half). Defaults to `warn`, not `error`: a component can be rendered\nreflectively (dynamic `<component :is>`), so analyzer confidence is\nlower. A `warn` finding does not change the CLI exit code unless\n`--fail-on-issues` is set. The dead-code count gate of the GitHub Action\ncounts it unless `fail-on-issues` is `false`.",
           "$ref": "#/$defs/Severity",
           "default": "warn"
         },
         "unused-component-props": {
-          "description": "Vue `<script setup>` `defineProps`, Svelte 5 `$props()`, or React\ndeclared prop referenced nowhere inside its own component. The\nsingle-component dead-input direction. Defaults to `warn`, not `error`: a\nprop can be part of a deliberately-stable public component API, so\nanalyzer confidence is lower; warn encodes that without failing CI.",
+          "description": "Vue `<script setup>` `defineProps`, Svelte 5 `$props()`, or React\ndeclared prop referenced nowhere inside its own component. The\nsingle-component dead-input direction. Defaults to `warn`, not `error`:\na prop can be part of a deliberately-stable public component API, so\nanalyzer confidence is lower. A `warn` finding does not change the CLI\nexit code unless `--fail-on-issues` is set. The dead-code count gate of\nthe GitHub Action counts it unless `fail-on-issues` is `false`.",
           "$ref": "#/$defs/Severity",
           "default": "warn"
         },
@@ -1317,37 +1682,52 @@
           "default": "off"
         },
         "unused-component-emits": {
-          "description": "Vue `<script setup>` `defineEmits` declared event emitted nowhere inside\nits own single-file component (no `emit('<name>')` call). The single-file\ndead-input direction. Defaults to `warn`, not `error`: an emit can be part\nof a deliberately-stable public component API, so analyzer confidence is\nlower; warn encodes that without failing CI.",
+          "description": "Vue `<script setup>` `defineEmits` declared event emitted nowhere inside\nits own single-file component (no `emit('<name>')` call). The\nsingle-file dead-input direction. Defaults to `warn`, not `error`: an\nemit can be part of a deliberately-stable public component API, so\nanalyzer confidence is lower. A `warn` finding does not change the CLI\nexit code unless `--fail-on-issues` is set. The dead-code count gate of\nthe GitHub Action counts it unless `fail-on-issues` is `false`.",
           "$ref": "#/$defs/Severity",
           "default": "warn"
         },
         "unused-component-inputs": {
-          "description": "Angular `@Input()` / signal `input()` / `model()` declared input read\nnowhere inside its own component (neither the inline/external template nor\nthe class body). The single-file dead-input direction, the Angular\nanalogue of `unused-component-prop`. Defaults to `warn`, not `error`: an\ninput can be part of a deliberately-stable public component API, so\nanalyzer confidence is lower; warn encodes that without failing CI.",
+          "description": "Angular `@Input()` / signal `input()` / `model()` declared input read\nnowhere inside its own component (neither the inline/external template\nnor the class body). The single-file dead-input direction, the Angular\nanalogue of `unused-component-prop`. Defaults to `warn`, not `error`: an\ninput can be part of a deliberately-stable public component API, so\nanalyzer confidence is lower. A `warn` finding does not change the CLI\nexit code unless `--fail-on-issues` is set. The dead-code count gate of\nthe GitHub Action counts it unless `fail-on-issues` is `false`.",
           "$ref": "#/$defs/Severity",
           "default": "warn"
         },
         "unused-component-outputs": {
-          "description": "Angular `@Output()` / signal `output()` declared output emitted nowhere\ninside its own component (no `this.<output>.emit(...)`). The single-file\ndead-output direction, the Angular analogue of `unused-component-emit`.\nDefaults to `warn`, not `error`: an output can be part of a\ndeliberately-stable public component API, so analyzer confidence is lower;\nwarn encodes that without failing CI.",
+          "description": "Angular `@Output()` / signal `output()` declared output emitted nowhere\ninside its own component (no `this.<output>.emit(...)`). The single-file\ndead-output direction, the Angular analogue of `unused-component-emit`.\nDefaults to `warn`, not `error`: an output can be part of a\ndeliberately-stable public component API, so analyzer confidence is\nlower. A `warn` finding does not change the CLI exit code unless\n`--fail-on-issues` is set. The dead-code count gate of the GitHub Action\ncounts it unless `fail-on-issues` is `false`.",
           "$ref": "#/$defs/Severity",
           "default": "warn"
         },
         "unused-svelte-events": {
-          "description": "Svelte component dispatching a custom event via `createEventDispatcher()`\nwhose event name is listened to nowhere in the analyzed project. The\ncross-file dead-output direction (no eslint-plugin-svelte / svelte-check\nrule covers the listener side). Defaults to `warn`, not `error`: a\ndispatched event can be part of a deliberately-stable public component\nAPI, or a listener may be added later, so analyzer confidence is lower;\nwarn encodes that without failing CI.",
+          "description": "Svelte component dispatching a custom event via\n`createEventDispatcher()` whose event name is listened to nowhere in the\nanalyzed project. The cross-file dead-output direction (no\neslint-plugin-svelte / svelte-check rule covers the listener side).\nDefaults to `warn`, not `error`: a dispatched event can be part of a\ndeliberately-stable public component API, or a listener may be added\nlater, so analyzer confidence is lower. A `warn` finding does not change\nthe CLI exit code unless `--fail-on-issues` is set. The dead-code count\ngate of the GitHub Action counts it unless `fail-on-issues` is `false`.",
+          "$ref": "#/$defs/Severity",
+          "default": "warn"
+        },
+        "unused-effect-layers": {
+          "description": "Effect layer composed only into other layers that nothing uses. Gated\non the project declaring `effect`. Defaults to `warn`: code outside the\nanalyzed project can still compose the layer.",
+          "$ref": "#/$defs/Severity",
+          "default": "warn"
+        },
+        "unused-tagged-errors": {
+          "description": "Effect tagged error class that only type positions or `catchTag`\nhandlers reference. Gated on the project declaring `effect`. Defaults\nto `warn`: consumers outside the project can construct the error.",
+          "$ref": "#/$defs/Severity",
+          "default": "warn"
+        },
+        "unproduced-catch-tags": {
+          "description": "`catchTag` handler for a project tag that no code produces, when no\n`unused-tagged-errors` finding covers it. Gated on the project\ndeclaring `effect`. Defaults to `warn`.",
           "$ref": "#/$defs/Severity",
           "default": "warn"
         },
         "unused-server-actions": {
-          "description": "Next.js Server Action (an export of a `\"use server\"` file) referenced by\nno code in the project: no import-and-call, no `action={fn}` binding, no\n`<form action={fn}>`. Cross-graph dead-export direction, reclassified out\nof `unused-export` for `\"use server\"` files. Defaults to `warn`, not\n`error`: the rule is new and false-negative-preferring, and reflective\naction-dispatch shapes can hide a real consumer; warn encodes that\nwithout failing CI until corpus-validated.",
+          "description": "Next.js Server Action (an export of a `\"use server\"` file) referenced by\nno code in the project: no import-and-call, no `action={fn}` binding, no\n`<form action={fn}>`. Cross-graph dead-export direction, reclassified\nout of `unused-export` for `\"use server\"` files. Defaults to `warn`, not\n`error`: the rule is new and false-negative-preferring, and reflective\naction-dispatch shapes can hide a real consumer. The rule stays at\n`warn` until corpus validation. A `warn` finding does not change the CLI\nexit code unless `--fail-on-issues` is set. The dead-code count gate of\nthe GitHub Action counts it unless `fail-on-issues` is `false`.",
           "$ref": "#/$defs/Severity",
           "default": "warn"
         },
         "unused-load-data-keys": {
-          "description": "SvelteKit `+page.{ts,server.ts,js,server.js}` `load()` return-object key\nread by no consumer: not off the sibling `+page.svelte`'s `data.<key>`,\nnor project-wide via `page.data.<key>` / `$page.data.<key>`. Cross-file\ndead-input direction. Defaults to `warn`, not `error`: the rule is new and\nfalse-negative-preferring (a whole-object `data` pass abstains), and a\nload fetch can have side effects so deletion is a human call; warn encodes\nthat without failing CI until corpus-validated.",
+          "description": "SvelteKit `+page.{ts,server.ts,js,server.js}` `load()` return-object key\nread by no consumer: not off the sibling `+page.svelte`'s `data.<key>`,\nnor project-wide via `page.data.<key>` / `$page.data.<key>`. Cross-file\ndead-input direction. Defaults to `warn`, not `error`: the rule is new\nand false-negative-preferring (a whole-object `data` pass abstains), and\na load fetch can have side effects so deletion is a human call. The rule\nstays at `warn` until corpus validation. A `warn` finding does not\nchange the CLI exit code unless `--fail-on-issues` is set. The dead-code\ncount gate of the GitHub Action counts it unless `fail-on-issues` is\n`false`.",
           "$ref": "#/$defs/Severity",
           "default": "warn"
         },
         "prop-drilling": {
-          "description": "React/Preact prop forwarded unchanged through `>= N` intermediate\npass-through components until a component that substantively consumes it.\nA graph-derived health signal. Defaults to `off` (opt-in), like\n`private-type-leak` / `security-*`: the located per-chain records and the\nsmall capped health penalty are dormant until the user enables the rule.",
+          "description": "React/Preact prop forwarded unchanged through `>= N` intermediate\npass-through components until a component that substantively consumes it.\nA graph-derived health signal. Defaults to `off` (opt-in), like\n`private-type-leak` / `security-*`: the located per-chain records and the\nsmall capped health penalty are dormant until the user enables the rule.\n`error` enforces the finding in CI; `warn` stays advisory even under\nstrict flags. Overrides resolve for the source hop and can enable the\nrule while the base rule is off.",
           "$ref": "#/$defs/Severity",
           "default": "off"
         },
@@ -1398,6 +1778,11 @@
         },
         "complexity-crap": {
           "description": "A function above the CRAP ceiling (`health.maxCrap` or a\n`thresholdOverrides` entry). The threshold decides if the finding\nexists; this rule decides if it fails the run. Defaults to `error`.\n`off` hides the findings only. `health.maxCrap: 0` also turns off the\nthreshold-relative file-score signals.",
+          "$ref": "#/$defs/Severity",
+          "default": "error"
+        },
+        "complexity-file-lines": {
+          "description": "A file above the file-length ceiling (`health.maxFileLines` or a\n`thresholdOverrides` entry). The threshold decides if the finding\nexists, and it is off by default; this rule decides if it fails the\nrun. Defaults to `error`.",
           "$ref": "#/$defs/Severity",
           "default": "error"
         },
@@ -1535,19 +1920,44 @@
           "description": "Sibling Next.js dynamic route segments at one tree position using\ndifferent param spellings (`[id]` vs `[slug]`). Next.js throws \"You\ncannot use different slug names for the same dynamic path\" at dev and\nproduction runtime when the position is hit; `next build` does NOT catch\nit (the build succeeds), so CI passes while the route crashes on its\nfirst request. fallow catches it statically. Defaults to `error`: the\nroute is a deterministic runtime crash on first request, so failing CI\nis the honest signal even though `next build` stays green (this is the\n\"error-runtime\" severity tier, shared with `route-collision`).",
           "$ref": "#/$defs/Severity",
           "default": "error"
+        },
+        "weakened-tests": {
+          "description": "An audit diff that weakens tests: a new skip or focus marker, removed\ntest cases, fewer assertions, or a lowered coverage threshold.\n`fallow audit` only. Defaults to `warn`.",
+          "$ref": "#/$defs/Severity",
+          "default": "warn"
+        },
+        "added-suppression": {
+          "description": "An audit diff that adds a lint, type-check, coverage or Fallow\nsuppression comment. `fallow audit` only. Defaults to `warn`.",
+          "$ref": "#/$defs/Severity",
+          "default": "warn"
+        },
+        "test-only-branch": {
+          "description": "An audit diff that adds a test-environment branch to a non-test source\nfile. `fallow audit` only. Defaults to `warn`.",
+          "$ref": "#/$defs/Severity",
+          "default": "warn"
+        },
+        "diverged-clone-sibling": {
+          "description": "An audit diff that edits one copy of a base clone group so that it no\nlonger matches its siblings, while no sibling changed. `fallow audit`\nonly. Opt-in; defaults to `off`, because copies often differ on\npurpose.",
+          "$ref": "#/$defs/Severity",
+          "default": "off"
+        },
+        "added-dependency": {
+          "description": "An audit diff that adds a dependency to a `package.json`. `fallow\naudit` only. Opt-in; defaults to `off`.",
+          "$ref": "#/$defs/Severity",
+          "default": "off"
         }
       }
     },
     "Severity": {
-      "description": "Severity level for rules.\n\nControls whether an issue type causes CI failure (`error`), is reported\nwithout failing (`warn`), or is suppressed entirely (`off`).",
+      "description": "Severity level for rules.\n\nControls whether an issue type sets a non-zero exit code (`error`), is\nreported without an effect on the exit code (`warn`), or is suppressed\nentirely (`off`). `--fail-on-issues` promotes `warn` to `error`. The\ndead-code count gate of the GitHub Action counts `warn` findings unless its\n`fail-on-issues` input is `false`.",
       "oneOf": [
         {
-          "description": "Report and fail CI (non-zero exit code).",
+          "description": "Report and set a non-zero exit code.",
           "type": "string",
           "const": "error"
         },
         {
-          "description": "Report but don't fail CI.",
+          "description": "Report without an effect on the exit code.",
           "type": "string",
           "const": "warn"
         },
@@ -1564,7 +1974,10 @@
       "properties": {
         "ignorePattern": {
           "description": "Regex matched against each declared prop's LOCAL destructure binding name\n(e.g. `_stage` in `let { stage: _stage } = $props()`), which falls back\nto the public prop name when there is no alias. A prop whose local name\nmatches is treated as intentionally unused and never reported as\n`unused-component-props`. Matching is unanchored (substring), like\nESLint's `RegExp.test`, so anchor with `^_` to match a leading\nunderscore. Compiled and validated at config load (an invalid regex fails\nload). Applies to Vue, Svelte, Astro, and React/Preact props.",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -1575,6 +1988,17 @@
       "properties": {
         "ignoreLazyImports": {
           "description": "Skip import edges that load their target on demand or on another\nthread when fallow looks for cycles. A literal `import()` inside a\nfunction, a template `import()`, a lazy `import.meta.glob`, a worker\nURL and a webpack worker loader request (`worker-loader!./work.js`)\nare lazy edges. A top-level `await import()`, `require()` and an\neager `import.meta.glob` load before the module finishes, so they stay.\nAn edge that also carries a static import stays. Default `false`.",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "EffectConfig": {
+      "description": "Options for projects that use the Effect library.\n\nThe default changes nothing: each Effect export is reported like any\nother export.",
+      "type": "object",
+      "properties": {
+        "schemaExportsAsTypes": {
+          "description": "Report an unused exported Effect schema as an unused type, under the\n`unused-types` rule, and not as an unused export. An Effect schema\ndefines a runtime value and a type (`typeof User.Type`), so a team\nthat keeps exported types as contracts can keep schemas too. With\n`\"unused-types\": \"off\"`, fallow does not report them. A schema is a\nclass that extends a `Schema` class factory (`Schema.Class`,\n`Schema.TaggedClass`, `Schema.TaggedError`, `Schema.TaggedRequest`,\n`Schema.Error`, `Schema.Opaque`), or a const whose\nvalue is a `Schema` constructor, member or pipe chain\n(`Schema.Struct({...})`, `Schema.String.pipe(Schema.brand(\"Id\"))`).\nEach `pipe` argument must be a `Schema` transform.\n`Schema` must come from `effect`, `effect/Schema` or `@effect/schema`.\nDefault `false`.",
           "type": "boolean"
         }
       },
@@ -1655,7 +2079,7 @@
           "type": "string"
         },
         "patterns": {
-          "description": "Membership patterns.",
+          "description": "Membership patterns.\nA single `*` stays within one path segment; use `**` to match across directories.",
           "type": "array",
           "items": {
             "type": "string"
@@ -1670,10 +2094,15 @@
         },
         "root": {
           "description": "Optional subtree scope.",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
-      "required": ["name"]
+      "required": [
+        "name"
+      ]
     },
     "BoundaryRule": {
       "description": "An import rule between zones.",
@@ -1699,7 +2128,9 @@
           }
         }
       },
-      "required": ["from"]
+      "required": [
+        "from"
+      ]
     },
     "BoundaryCoverageConfig": {
       "description": "Boundary zone coverage policy.",
@@ -1710,7 +2141,7 @@
           "type": "boolean"
         },
         "allowUnmatched": {
-          "description": "Glob patterns for files that may remain unmatched by any zone.",
+          "description": "Glob patterns for files that may remain unmatched by any zone.\nA single `*` stays within one path segment; use `**` to match across directories.",
           "type": "array",
           "items": {
             "type": "string"
@@ -1740,11 +2171,14 @@
           "type": "string"
         },
         "callee": {
-          "description": "Forbidden callee pattern(s). Matching is segment-aware, not substring:\n`child_process.*` matches `child_process.exec` (and named imports from\n`child_process` / `node:child_process`), `fetch` matches only `fetch`,\nand a leading `*.` suffix-matches any object (`*.innerHTML`).",
+          "description": "Forbidden callee pattern(s). A pattern matches `Date()` and `new Date()`. Matching is\nsegment-aware, not substring: `child_process.*` matches `child_process.exec` (and named\nimports from `child_process` / `node:child_process`), `fetch` matches only `fetch`,\nand a leading `*.` suffix-matches any object (`*.innerHTML`).",
           "$ref": "#/$defs/ForbiddenCallee"
         }
       },
-      "required": ["from", "callee"]
+      "required": [
+        "from",
+        "callee"
+      ]
     },
     "ForbiddenCallee": {
       "description": "One callee pattern or a list of patterns for a single `from` zone.",
@@ -1787,7 +2221,10 @@
         },
         "vendorKeyPrefix": {
           "description": "Prefix to remove from each key of a `--flag-state` vendor export\nbefore the key is compared with the flag names in the code. For\nexample, `\"web.\"` makes the vendor key `web.new-checkout` match the\ncode flag `new-checkout`. A key without the prefix is compared as it\nis.",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },
@@ -1808,10 +2245,15 @@
         },
         "provider": {
           "description": "Optional SDK/provider label shown in output (e.g., `\"LaunchDarkly\"`).",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
-      "required": ["function"]
+      "required": [
+        "function"
+      ]
     },
     "SecurityConfig": {
       "description": "Scopes `fallow security` catalogue behavior. An absent category block admits\nevery catalogue category. `hardcoded-secret` is include-required and only\nruns when explicitly listed in `security.categories.include`.",
@@ -1844,14 +2286,20 @@
       "properties": {
         "include": {
           "description": "Catalogue category ids to admit. When set, all others are excluded.",
-          "type": ["array", "null"],
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
           }
         },
         "exclude": {
           "description": "Catalogue category ids to remove from the admitted set.",
-          "type": ["array", "null"],
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
           }
@@ -1956,20 +2404,22 @@
       "type": "object",
       "properties": {
         "files": {
-          "description": "Glob-pattern string array selecting which source files this override entry applies to (patterns are validated and compiled to matchers at config load). Set to scope the entry's rule severities to a subset of paths (e.g. `[\"src/generated/**\", \"**/*.test.ts\"]`); when several override entries match one file, its severities come from every matching entry, applied in list order (later entries win on conflict).",
+          "description": "Glob-pattern string array selecting which source files this override entry applies to (patterns are validated and compiled to matchers at config load). Set to scope the entry's rule severities to a subset of paths (e.g. `[\"src/generated/**\", \"**/*.test.ts\"]`); when several override entries match one file, its severities come from every matching entry, applied in list order (later entries win on conflict). A single `*` stays within one path segment; use `**` to match across directories.",
           "type": "array",
           "items": {
             "type": "string"
           }
         },
         "rules": {
-          "description": "Partial per-rule severity map applied only to files matching this entry's `files` globs; each rule key takes `error`, `warn`, or `off`, and omitted rules keep their top-level severity. Set to change how specific rules (e.g. unused-exports, unused-files) behave for the scoped paths. Inter-file rules (duplicate-exports, circular-dependencies, re-export-cycle) have no effect in an override; fallow warns during analysis and names the right mechanism instead (top-level `ignoreExports` for duplicate-exports, a file-level `// fallow-ignore-file` comment for circular-dependencies and re-export-cycle).",
+          "description": "Partial per-rule severity map applied only to files matching this entry's `files` globs; each rule key takes `error`, `warn`, or `off`, and omitted rules keep their top-level severity. Set to change how specific rules (e.g. unused-exports, unused-files) behave for the scoped paths. Project-level rules ignore overrides: unused-dependencies, unused-dev-dependencies, unused-optional-dependencies, unlisted-dependencies, type-only-dependencies, test-only-dependencies, dev-dependencies-in-production, duplicate-exports, re-export-cycle and unused-catalog-entries. Fallow reports each such entry as an `override-rule-ineffective` diagnostic that names the mechanism that works. For most other rules, an override cannot start a detector for a rule that is off at top level.",
           "$ref": "#/$defs/PartialRulesConfig",
           "default": {}
         }
       },
       "additionalProperties": false,
-      "required": ["files"]
+      "required": [
+        "files"
+      ]
     },
     "PartialRulesConfig": {
       "description": "Partial per-issue-type severity for overrides. All fields optional.",
@@ -2184,6 +2634,39 @@
             }
           ]
         },
+        "unused-effect-layers": {
+          "description": "Optional override for [`RulesConfig::unused_effect_layers`].",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Severity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unused-tagged-errors": {
+          "description": "Optional override for [`RulesConfig::unused_tagged_errors`].",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Severity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unproduced-catch-tags": {
+          "description": "Optional override for [`RulesConfig::unproduced_catch_tags`].",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Severity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "unused-server-actions": {
           "description": "Optional override for [`RulesConfig::unused_server_actions`].",
           "anyOf": [
@@ -2318,6 +2801,17 @@
         },
         "complexity-crap": {
           "description": "Optional override for [`RulesConfig::complexity_crap`].",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Severity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "complexity-file-lines": {
+          "description": "Optional override for [`RulesConfig::complexity_file_lines`].",
           "anyOf": [
             {
               "$ref": "#/$defs/Severity"
@@ -2615,6 +3109,61 @@
         },
         "dynamic-segment-name-conflict": {
           "description": "Optional override for [`RulesConfig::dynamic_segment_name_conflict`].",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Severity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "weakened-tests": {
+          "description": "Optional override for [`RulesConfig::weakened_tests`].",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Severity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "added-suppression": {
+          "description": "Optional override for [`RulesConfig::added_suppression`].",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Severity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "test-only-branch": {
+          "description": "Optional override for [`RulesConfig::test_only_branch`].",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Severity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "diverged-clone-sibling": {
+          "description": "Optional override for [`RulesConfig::diverged_clone_sibling`].",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Severity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "added-dependency": {
+          "description": "Optional override for [`RulesConfig::added_dependency`].",
           "anyOf": [
             {
               "$ref": "#/$defs/Severity"
@@ -2938,35 +3487,81 @@
           "description": "Selects which findings affect the `fallow audit` verdict: `new-only` (default) fails only on findings introduced by the current changeset (running a base-snapshot attribution pass), while `all` fails on every finding in changed files and skips that pass. Set to `all` to gate the full backlog in changed files; the `--gate` CLI flag overrides this.",
           "$ref": "#/$defs/AuditGate"
         },
+        "worsened": {
+          "description": "Selects how a worsened complexity finding affects the `fallow audit` verdict under `gate: new-only`. A worsened finding was already in the base snapshot, and a measured value is higher now. Any growth of cyclomatic, cognitive or CRAP counts. The line count must grow by at least 5 lines, and it includes comments and blank lines. `warn` (default) makes the verdict at least `warn` and does not fail the run. `error` counts a worsened finding like an introduced finding. `off` reports only the growth of a metric that the finding exceeds as worsened, which gives at least `warn`. A finding whose exceeded metric grew is worsened when it stays in its severity tier (`moderate`, `high`, `critical`), and introduced when it moves to a higher tier or exceeds a metric that the base finding did not exceed. The `--worsened` CLI flag overrides this.",
+          "$ref": "#/$defs/AuditWorsened"
+        },
+        "deadCode": {
+          "description": "Toggles the dead-code sub-analysis in `fallow audit` (unused files, exports, types, members and dependencies, plus boundary violations and circular dependencies, which come from the same pass). Defaults to on when unset; set `false` to leave it out of the verdict, summary and attribution, on the head and on the base snapshot. `fallow audit --skip dead-code` turns it off for one run and `--only` replaces this selection. The review brief (`--brief`, `fallow review`) keeps every sub-analysis because it reads the module graph.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "health": {
+          "description": "Toggles the health sub-analysis in `fallow audit` (complexity and CRAP findings, plus styling findings, which come from the same pass). Defaults to on when unset; set `false` to leave it out of the verdict, summary and attribution, on the head and on the base snapshot. `fallow audit --skip health` turns it off for one run and `--only` replaces this selection.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "dupes": {
+          "description": "Toggles the duplication sub-analysis in `fallow audit`. Defaults to on when unset; set `false` to leave clone groups out of the verdict, summary and attribution, on the head and on the base snapshot. `fallow audit --skip dupes` turns it off for one run and `--only` replaces this selection.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "css": {
           "description": "Toggles styling analytics (CSS and CSS-in-JS) in the `fallow audit` health sub-pass; these findings are descriptive and verdict-neutral by default (they change the exit code only when a css-* rule is set to error). Defaults to on when unset; set `false` to skip styling analysis. The `--no-css` CLI flag forces it off regardless.",
-          "type": ["boolean", "null"]
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "cssDeep": {
           "description": "Toggles the project-wide CSS reachability pass in `fallow audit`, whose cross-file findings are narrowed back to changed anchors. Defaults to on when unset and runs only when css analytics are enabled; set `false` to keep local styling analytics but skip the whole-project scan. The `--css-deep` flag re-enables it and `--no-css-deep` forces it off.",
-          "type": ["boolean", "null"]
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "deadCodeBaseline": {
           "description": "Path to a saved dead-code baseline file (produced by `fallow dead-code --save-baseline`) that the audit's dead-code sub-analysis compares against, suppressing pre-existing dead-code issues. The `--dead-code-baseline` CLI flag overrides it and both resolve relative to the project root; each sub-analysis uses a distinct baseline format, so this is separate from `healthBaseline` and `dupesBaseline`.",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "healthBaseline": {
           "description": "Path to a saved health/complexity baseline file (produced by `fallow health --save-baseline`) that the audit's health sub-analysis compares against, suppressing pre-existing complexity/health findings. The `--health-baseline` CLI flag overrides it and both resolve relative to the project root; its baseline format is distinct from the dead-code and dupes baselines.",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "dupesBaseline": {
           "description": "Path to a saved duplication baseline file (produced by `fallow dupes --save-baseline`) that the audit's duplication sub-analysis compares clone groups against, suppressing pre-existing duplicate clones. The `--dupes-baseline` CLI flag overrides it and both resolve relative to the project root; its baseline format is distinct from the dead-code and health baselines.",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "cacheMaxAgeDays": {
-          "description": "Garbage-collection threshold, in whole days, for the persistent reusable base-snapshot worktree caches `fallow audit` creates: entries older than this window are swept on each audit run. Set to control cache accumulation; `0` disables the sweep and unset defaults to 30 days. Each sweep also reclaims abandoned entries minted under other repo identities (deleted or moved repos, other git worktrees) once they age past this repo's threshold; entries whose recorded owner root still exists are skipped and stay governed by that repo's own setting. The `FALLOW_AUDIT_CACHE_MAX_AGE_DAYS` environment variable overrides this field.",
-          "type": ["integer", "null"],
+          "description": "Garbage-collection threshold, in whole days, for the persistent reusable base-snapshot worktree caches `fallow audit` creates: entries older than this window are swept on each audit run. Set to control cache accumulation; `0` disables the sweep and unset defaults to 30 days. Each sweep also reclaims abandoned entries minted under other repo identities (deleted or moved repos, other git worktrees) once they age past this repo's threshold; entries whose recorded owner root still exists are skipped and stay governed by that repo's own setting. The same window applies to the base-snapshot files in the project cache directory, counted from their last use; independent of this window, audit keeps only the newest 32 of those files. The `FALLOW_AUDIT_CACHE_MAX_AGE_DAYS` environment variable overrides this field.",
+          "type": [
+            "integer",
+            "null"
+          ],
           "format": "uint32",
           "minimum": 0
         },
         "typeAware": {
           "description": "Overrides the top-level `typeAware.enabled` opt-in for `fallow audit` only: set `false` to keep persistent type-aware analysis on for cleanup commands (`dead-code`, `fix`, `health`) while the audit gate stays syntactic, or `true` to enable it for audit alone. Unset inherits `typeAware.enabled`. The `--type-aware`/`--no-type-aware` CLI flags and the `FALLOW_TYPE_AWARE` environment variable both take precedence over this field.",
-          "type": ["boolean", "null"]
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       }
     },
@@ -2985,17 +3580,43 @@
         }
       ]
     },
+    "AuditWorsened": {
+      "description": "Value of `audit.worsened`: how a worsened complexity finding affects the\n`fallow audit` verdict.",
+      "oneOf": [
+        {
+          "description": "A worsened finding makes the verdict at least `warn` and does not fail\nthe run. The default.",
+          "type": "string",
+          "const": "warn"
+        },
+        {
+          "description": "A worsened finding counts like an introduced finding.",
+          "type": "string",
+          "const": "error"
+        },
+        {
+          "description": "Growth only in metrics that the finding does not exceed stays\ninherited. Growth of an exceeded metric stays worsened and gives at\nleast `warn`.",
+          "type": "string",
+          "const": "off"
+        }
+      ]
+    },
     "CacheConfig": {
       "description": "The `cache` config section: location and size ceiling of fallow's\npersistent caches (default directory `<root>/.fallow`).",
       "type": "object",
       "properties": {
         "dir": {
           "description": "Directory for fallow's persistent analysis cache. Relative paths resolve\nfrom the project root.",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "maxSizeMb": {
           "description": "Maximum size of the persistent extraction cache, in megabytes.",
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "format": "uint32",
           "minimum": 0
         }

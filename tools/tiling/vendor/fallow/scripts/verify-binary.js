@@ -42,8 +42,8 @@ const DIGEST_TIMEOUT_MS = 10000;
 // works offline and cannot be silently downgraded by tampering with the network
 // path.
 const EMBEDDED_PUBLIC_KEY = Buffer.from([
-  131, 78, 111, 215, 115, 51, 230, 238, 223, 119, 147, 71, 199, 16, 172, 180, 3,
-  210, 216, 35, 77, 85, 159, 94, 215, 200, 126, 85, 42, 222, 11, 209,
+  131, 78, 111, 215, 115, 51, 230, 238, 223, 119, 147, 71, 199, 16, 172, 180, 3, 210, 216, 35, 77,
+  85, 159, 94, 215, 200, 126, 85, 42, 222, 11, 209,
 ]);
 
 // SPKI DER header for Ed25519 (RFC 8410). 12 bytes prepended to a 32-byte raw
@@ -69,11 +69,7 @@ function _verifyWithKey(binaryPath, rawPubKey) {
     binaryBytes = fs.readFileSync(binaryPath);
   } catch (err) {
     if (err && err.code === "ENOENT") {
-      return {
-        ok: false,
-        code: "binary-missing",
-        message: `binary not found at ${binaryPath}`,
-      };
+      return { ok: false, code: "binary-missing", message: `binary not found at ${binaryPath}` };
     }
     return {
       ok: false,
@@ -92,11 +88,7 @@ function _verifyWithKey(binaryPath, rawPubKey) {
       // in verifyOneBinary{,Sync}, which knows the resolved platform-package
       // version and can distinguish a pre-signing version from a >=2.77.0
       // package whose signature is missing (a tampering signal). Refs #944.
-      return {
-        ok: false,
-        code: "sig-missing",
-        message: `signature not found at ${sigPath}`,
-      };
+      return { ok: false, code: "sig-missing", message: `signature not found at ${sigPath}` };
     }
     return {
       ok: false,
@@ -128,11 +120,7 @@ function _verifyWithKey(binaryPath, rawPubKey) {
   try {
     valid = crypto.verify(null, binaryBytes, publicKey, signature);
   } catch (err) {
-    return {
-      ok: false,
-      code: "sig-invalid",
-      message: `crypto.verify threw: ${err.message}`,
-    };
+    return { ok: false, code: "sig-invalid", message: `crypto.verify threw: ${err.message}` };
   }
   if (!valid) {
     return {
@@ -153,9 +141,7 @@ function normalizeDigest(digest) {
     return null;
   }
   const lower = digest.trim().toLowerCase();
-  const value = lower.startsWith("sha256:")
-    ? lower.slice("sha256:".length)
-    : lower;
+  const value = lower.startsWith("sha256:") ? lower.slice("sha256:".length) : lower;
   return /^[0-9a-f]{64}$/.test(value) ? value : null;
 }
 
@@ -163,18 +149,11 @@ function sha256Hex(binaryPath) {
   try {
     return {
       ok: true,
-      digest: crypto
-        .createHash("sha256")
-        .update(fs.readFileSync(binaryPath))
-        .digest("hex"),
+      digest: crypto.createHash("sha256").update(fs.readFileSync(binaryPath)).digest("hex"),
     };
   } catch (err) {
     if (err && err.code === "ENOENT") {
-      return {
-        ok: false,
-        code: "binary-missing",
-        message: `binary not found at ${binaryPath}`,
-      };
+      return { ok: false, code: "binary-missing", message: `binary not found at ${binaryPath}` };
     }
     return {
       ok: false,
@@ -212,10 +191,7 @@ function httpsJson(url, redirects = 0) {
   return new Promise((resolve, reject) => {
     const request = https.get(
       url,
-      {
-        headers: { "User-Agent": "fallow-binary-verifier" },
-        timeout: DIGEST_TIMEOUT_MS,
-      },
+      { headers: { "User-Agent": "fallow-binary-verifier" }, timeout: DIGEST_TIMEOUT_MS },
       (response) => {
         if (
           response.statusCode &&
@@ -225,10 +201,7 @@ function httpsJson(url, redirects = 0) {
           redirects < 5
         ) {
           response.resume();
-          httpsJson(response.headers.location, redirects + 1).then(
-            resolve,
-            reject,
-          );
+          httpsJson(response.headers.location, redirects + 1).then(resolve, reject);
           return;
         }
 
@@ -247,11 +220,7 @@ function httpsJson(url, redirects = 0) {
           try {
             resolve(JSON.parse(body));
           } catch (err) {
-            reject(
-              new Error(
-                `GitHub release API returned invalid JSON: ${err.message}`,
-              ),
-            );
+            reject(new Error(`GitHub release API returned invalid JSON: ${err.message}`));
           }
         });
       },
@@ -274,18 +243,14 @@ async function fetchReleaseDigest(version, assetName) {
     releaseDigestCache.set(key, release);
   }
   const asset = Array.isArray(release.assets)
-    ? release.assets.find(
-        (candidate) => candidate && candidate.name === assetName,
-      )
+    ? release.assets.find((candidate) => candidate && candidate.name === assetName)
     : null;
   if (!asset) {
     throw new Error(`release v${version} does not contain asset ${assetName}`);
   }
   const digest = normalizeDigest(asset.digest);
   if (!digest) {
-    throw new Error(
-      `release asset ${assetName} is missing a valid SHA-256 digest`,
-    );
+    throw new Error(`release asset ${assetName} is missing a valid SHA-256 digest`);
   }
   return digest;
 }
@@ -329,8 +294,7 @@ function binaryTargetsForPlatform(platformId) {
   // process.platform. Production callers pass `<platform>-<arch>...` strings
   // that already encode windows-ness (`win32-x64-msvc`, `win32-arm64-msvc`),
   // and tests can synthesize a Windows verify without running on Windows.
-  const isWindows =
-    typeof platformId === "string" && platformId.startsWith("win32");
+  const isWindows = typeof platformId === "string" && platformId.startsWith("win32");
   const ext = isWindows ? ".exe" : "";
   // The platform package ships the multicall CLI plus the local-only
   // similar-code provider. Both are signed and digest-pinned. Verifying them
@@ -495,31 +459,17 @@ function describeSigMissing(result, version) {
 // sync (returns string) or async (returns Promise<string>), and the loop body
 // awaits the value regardless. Keeps the outer functions a flat for-loop so
 // cyclomatic + cognitive complexity stays low.
-async function verifyOneBinary(
-  target,
-  dir,
-  pkg,
-  manifestPath,
-  verifyFn,
-  digestProvider,
-  version,
-) {
+async function verifyOneBinary(target, dir, pkg, manifestPath, verifyFn, digestProvider, version) {
   const binaryPath = path.join(dir, target.binary);
   const sigResult = verifyFn(binaryPath);
   if (!sigResult.ok) {
-    return {
-      ...describeSigMissing(sigResult, version),
-      binary: binaryPath,
-      package: pkg,
-    };
+    return { ...describeSigMissing(sigResult, version), binary: binaryPath, package: pkg };
   }
   // Prefer the digest embedded in the platform package's package.json
   // (written at release time by `npm-prep`). Falling back to the GitHub
   // release API only when no embedded digest is present preserves
   // backwards compatibility with platform packages published before #597.
-  let expectedDigest = manifestPath
-    ? readEmbeddedDigest(manifestPath, target.binary)
-    : null;
+  let expectedDigest = manifestPath ? readEmbeddedDigest(manifestPath, target.binary) : null;
   if (!expectedDigest && digestProvider) {
     try {
       expectedDigest = await digestProvider({
@@ -577,8 +527,7 @@ async function verifyInstalled(options) {
     return { ok: true, skipped: true, reason: `${SKIP_ENV} is set` };
   }
 
-  const verify =
-    typeof opts.verifyFn === "function" ? opts.verifyFn : verifyBinaryAt;
+  const verify = typeof opts.verifyFn === "function" ? opts.verifyFn : verifyBinaryAt;
   const digestProvider =
     typeof opts.digestProvider === "function"
       ? opts.digestProvider
@@ -634,10 +583,8 @@ function verifyInstalledSync(options) {
     return { ok: true, skipped: true, reason: `${SKIP_ENV} is set` };
   }
 
-  const verify =
-    typeof opts.verifyFn === "function" ? opts.verifyFn : verifyBinaryAt;
-  const digestProvider =
-    typeof opts.digestProvider === "function" ? opts.digestProvider : null;
+  const verify = typeof opts.verifyFn === "function" ? opts.verifyFn : verifyBinaryAt;
+  const digestProvider = typeof opts.digestProvider === "function" ? opts.digestProvider : null;
 
   const resolved = resolvePlatformPackageForVerify(opts);
   if (!resolved.ok) return resolved;
@@ -663,34 +610,16 @@ function verifyInstalledSync(options) {
 // actionable error pointing the user at `npm install fallow@latest` (since
 // there is no network fallback in lazy mode), and the digestProvider is
 // optional (tests inject one; production callers rely on the embedded digest).
-function verifyOneBinarySync(
-  target,
-  dir,
-  pkg,
-  manifestPath,
-  verifyFn,
-  digestProvider,
-  version,
-) {
+function verifyOneBinarySync(target, dir, pkg, manifestPath, verifyFn, digestProvider, version) {
   const binaryPath = path.join(dir, target.binary);
   const sigResult = verifyFn(binaryPath);
   if (!sigResult.ok) {
-    return {
-      ...describeSigMissing(sigResult, version),
-      binary: binaryPath,
-      package: pkg,
-    };
+    return { ...describeSigMissing(sigResult, version), binary: binaryPath, package: pkg };
   }
-  let expectedDigest = manifestPath
-    ? readEmbeddedDigest(manifestPath, target.binary)
-    : null;
+  let expectedDigest = manifestPath ? readEmbeddedDigest(manifestPath, target.binary) : null;
   if (!expectedDigest && digestProvider) {
     try {
-      expectedDigest = digestProvider({
-        assetName: target.asset,
-        binaryPath,
-        packageName: pkg,
-      });
+      expectedDigest = digestProvider({ assetName: target.asset, binaryPath, packageName: pkg });
     } catch (err) {
       return {
         ok: false,

@@ -1,6 +1,6 @@
 {
   "name": "fallow",
-  "version": "3.36.0",
+  "version": "3.39.0",
   "private": true,
   "description": "Official Fallow npm launcher, packaged without the optional Go-backed type-aware sidecar",
   "license": "MIT",
@@ -17,10 +17,10 @@
     "fallow-mcp": "bin/fallow-mcp"
   },
   "files": [
-    "bin",
-    "scripts",
     "LICENSE",
-    "schema.json"
+    "bin",
+    "schema.json",
+    "scripts"
   ],
   "dependencies": {
     "detect-libc": "2.1.2"

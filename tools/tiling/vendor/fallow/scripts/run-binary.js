@@ -79,9 +79,7 @@ function describeVerifiedStatus(result) {
 function resolvePlatformPaths() {
   const pkg = resolvePlatformPackageName();
   if (!pkg) {
-    process.stderr.write(
-      `Unsupported platform: ${process.platform}-${process.arch}\n`,
-    );
+    process.stderr.write(`Unsupported platform: ${process.platform}-${process.arch}\n`);
     process.exit(1);
   }
   try {
@@ -145,10 +143,7 @@ function resolveTypeAwareCompanion(
     const manifestPath = resolvePackage("fallow-type-aware/package.json");
     const manifest = JSON.parse(readFile(manifestPath, "utf8"));
     if (manifest.version !== fallowVersion) return undefined;
-    const companion = path.join(
-      path.dirname(manifestPath),
-      "fallow-type-aware.mjs",
-    );
+    const companion = path.join(path.dirname(manifestPath), "fallow-type-aware.mjs");
     return fs.existsSync(companion) ? companion : undefined;
   } catch {
     return undefined;
@@ -214,16 +209,13 @@ function guardBrokenStdout() {
 // the subcommand via `prependArgs`; signal, exit-code, and version-line
 // handling stay identical to a bare `fallow` invocation.
 function runBinary(binaryBaseName, options = {}) {
-  const prependArgs = Array.isArray(options.prependArgs)
-    ? options.prependArgs
-    : [];
+  const prependArgs = Array.isArray(options.prependArgs) ? options.prependArgs : [];
   // Do not read `process.stdout` or write to `process.stderr` before the child
   // exits: under Bun that makes the inherited pipes non-blocking for the child.
   const { pkg, manifestPath, platformPkgDir } = resolvePlatformPaths();
   const resolvedVersion = readResolvedVersion(manifestPath);
 
-  const binaryName =
-    process.platform === "win32" ? `${binaryBaseName}.exe` : binaryBaseName;
+  const binaryName = process.platform === "win32" ? `${binaryBaseName}.exe` : binaryBaseName;
   const binaryPath = path.join(platformPkgDir, binaryName);
   if (!fs.existsSync(binaryPath)) {
     process.stderr.write(`Binary not found at ${binaryPath}\n`);
@@ -231,11 +223,7 @@ function runBinary(binaryBaseName, options = {}) {
   }
 
   // Lazy first-run verify. Errors are user-facing.
-  const verifyResult = ensureVerified({
-    platformPkgDir,
-    packageName: pkg,
-    manifestPath,
-  });
+  const verifyResult = ensureVerified({ platformPkgDir, packageName: pkg, manifestPath });
   if (!verifyResult.ok) {
     printVerifyError(verifyResult);
     process.exit(1);
@@ -249,14 +237,11 @@ function runBinary(binaryBaseName, options = {}) {
   } catch (e) {
     if (e.status === undefined) throw e;
     if (e.status === null) {
-      process.stderr.write(
-        `fallow binary terminated by signal ${e.signal ?? "unknown"}\n`,
-      );
+      process.stderr.write(`fallow binary terminated by signal ${e.signal ?? "unknown"}\n`);
     }
     // Child has already written its --version line via inherited stdio;
     // append the verified line here only on a clean exit.
-    if (e.status === 0)
-      writeVerifiedLineIfVersionQuery(verifyResult, resolvedVersion);
+    if (e.status === 0) writeVerifiedLineIfVersionQuery(verifyResult, resolvedVersion);
     process.exit(exitCodeForChildFailure(e));
   }
 

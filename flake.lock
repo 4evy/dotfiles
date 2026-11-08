@@ -662,13 +662,13 @@
     "source-karabiner-vhid-package": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-ThFzgR9TU8sqJtpW6C7ApmSE7h4fq5NxbyOmvEnejWo=",
+        "narHash": "sha256-A5MIueeFB4JntourVDuToFaB+7zhvjzP4QXquJCVfls=",
         "type": "file",
-        "url": "https://raw.githubusercontent.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v8.7.0/dist/Karabiner-DriverKit-VirtualHIDDevice-8.7.0.pkg"
+        "url": "https://raw.githubusercontent.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v8.8.0/dist/Karabiner-DriverKit-VirtualHIDDevice-8.8.0.pkg"
       },
       "original": {
         "type": "file",
-        "url": "https://raw.githubusercontent.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v8.7.0/dist/Karabiner-DriverKit-VirtualHIDDevice-8.7.0.pkg"
+        "url": "https://raw.githubusercontent.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v8.8.0/dist/Karabiner-DriverKit-VirtualHIDDevice-8.8.0.pkg"
       }
     },
     "source-kmscon": {
@@ -727,11 +727,11 @@
       "locked": {
         "narHash": "sha256-SA8U4cHkC20QOvvwjZZ0tB3kO6eeFkIkpnxiMQnYdUQ=",
         "type": "file",
-        "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/e20cbc2bbec1926686be9f9bee7d1d2cfa1fea0e/2D/fonts/NotoColorEmoji.ttf"
+        "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/99701e07d3d1fe1bdbcdb14964547f0fd592966f/2D/fonts/NotoColorEmoji.ttf"
       },
       "original": {
         "type": "file",
-        "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/e20cbc2bbec1926686be9f9bee7d1d2cfa1fea0e/2D/fonts/NotoColorEmoji.ttf"
+        "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/99701e07d3d1fe1bdbcdb14964547f0fd592966f/2D/fonts/NotoColorEmoji.ttf"
       }
     },
     "source-oh-my-bash": {
