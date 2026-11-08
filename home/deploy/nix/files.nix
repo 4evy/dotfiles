@@ -210,6 +210,37 @@ let
       };
 in
 map file (lib.lists.filter enabled manifest.files)
+++ [
+  (normalizeFile { target = ".local/bin/rex"; } {
+    source = lib.meta.getExe pkgs.rex;
+  })
+]
+++
+  map
+    (
+      target:
+      normalizeFile { inherit target; } {
+        source = "${pkgs.rex}/share/rex/skills/rex/SKILL.md";
+      }
+    )
+    [
+      ".agents/skills/rex/SKILL.md"
+      ".claude/skills/rex/SKILL.md"
+    ]
+++
+  map
+    (
+      entry:
+      normalizeFile { target = ".terminfo/${entry}"; } {
+        source = "${pkgs.rex}/share/terminfo/${entry}";
+      }
+    )
+    [
+      "x/xterm-rex"
+      "78/xterm-rex"
+      "r/rex"
+      "72/rex"
+    ]
 ++ lib.lists.optionals (os == "darwin") [
   (homebrewPath false)
   (homebrewPath true)

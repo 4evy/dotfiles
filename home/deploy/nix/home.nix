@@ -94,6 +94,15 @@ let
     '';
   # Inline bodies use stable manifest hook names, not source file paths
   shellHooks = {
+    "rex_agents.sh" = {
+      runtimeInputs = [ pkgs.rex ];
+      text = ''
+        # Upstream merges only its own hooks and leaves managed stubs unchanged
+        export HOME="''${HJEM_HOME_DIR:-$HOME}"
+        rex skill setup --agent claude --agent codex --agent opencode --agent pi \
+          --session-naming=false
+      '';
+    };
     "antigravity_settings.sh" = {
       runtimeInputs = lib.attrsets.attrValues {
         inherit (pkgs) coreutils diffutils jq;

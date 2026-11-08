@@ -44,7 +44,8 @@ let
 in
 # nix run .#rex -- ... exposes the CLI on both platforms
 # macOS also installs Rex Beta.app and rex-app, Linux is server-only upstream
-# Native builds also install Bash, Fish, and Zsh completions
+# Native builds install shell completions and upstream-generated agent skills
+# Hjem links the CLI, skills, and terminfo, then merges hooks with skill setup
 # Snapshot is upstream's rolling prerelease channel for Rex Beta
 # Run passthru.updateScript from the repo root to refresh every snapshot pin
 stdenvNoCC.mkDerivation {
@@ -106,6 +107,12 @@ stdenvNoCC.mkDerivation {
         --bash <("$out/bin/rex" completion bash) \
         --fish <("$out/bin/rex" completion fish) \
         --zsh <("$out/bin/rex" completion zsh)
+
+      # Generate the upstream stub, not a copy of the version-specific guide
+      HOME="$TMPDIR/rex-agent-home" "$out/bin/rex" skill setup \
+        --agent codex --session-naming=false
+      install -Dm644 "$TMPDIR/rex-agent-home/.agents/skills/rex/SKILL.md" \
+        "$out/share/rex/skills/rex/SKILL.md"
     ''}
 
     runHook postInstall

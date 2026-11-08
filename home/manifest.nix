@@ -953,6 +953,10 @@
       ];
   hooks = [
     {
+      onChange = false;
+      name = "rex_agents.sh";
+    }
+    {
       # Copy is a native menu command in the installed Rex client
       command = [
         "/usr/bin/defaults"
