@@ -167,7 +167,6 @@ if OS.mac?
   brew "4evy/hide-disply-audio/hide-display-audio", args: ["HEAD"]
   brew "gettext"
   brew "hidapi"
-  brew "zig"
 end
 brew "ncdu" if OS.mac?
 brew "pass" if OS.mac?
