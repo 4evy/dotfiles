@@ -75,16 +75,29 @@ const copyFontFragments = Effect.fn(function* (target: string, fragments: string
       ? yield* fs.readFile(destination)
       : undefined;
     const content = yield* fs.readFile(source);
-    if (
-      original === undefined ||
-      original.length !== content.length ||
-      original.some((byte, index) => byte !== content[index])
-    ) {
+    if (original === undefined || Buffer.compare(original, content) !== 0) {
       yield* fs.copyFile(source, destination);
       changed = true;
     }
   }
   return changed;
+});
+
+const clearFontCache = Effect.fn(function* (directory: string) {
+  const fs = yield* FileSystem.FileSystem;
+  for (const cache of yield* children(directory)) {
+    const entry = yield* fs.lstat(cache).pipe(
+      Effect.catchIf(
+        (error) => error.reason._tag === "NotFound",
+        () => Effect.succeed(undefined),
+      ),
+    );
+    if (
+      basename(cache).includes("cache-") &&
+      (entry?.type === "File" || entry?.type === "SymbolicLink")
+    )
+      yield* fs.remove(cache, { force: true });
+  }
 });
 
 const flatpakFonts = Effect.gen(function* () {
@@ -102,19 +115,7 @@ const flatpakFonts = Effect.gen(function* () {
     if ((yield* fs.stat(app)).type !== "Directory") continue;
     if (!(yield* copyFontFragments(join(app, "config/fontconfig/conf.d"), fragments)))
       continue;
-    for (const cache of yield* children(join(app, "cache/fontconfig"))) {
-      const entry = yield* fs.lstat(cache).pipe(
-        Effect.catchIf(
-          (error) => error.reason._tag === "NotFound",
-          () => Effect.succeed(undefined),
-        ),
-      );
-      if (
-        basename(cache).includes("cache-") &&
-        (entry?.type === "File" || entry?.type === "SymbolicLink")
-      )
-        yield* fs.remove(cache, { force: true });
-    }
+    yield* clearFontCache(join(app, "cache/fontconfig"));
   }
 });
 

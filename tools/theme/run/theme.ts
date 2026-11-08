@@ -4,13 +4,27 @@ import { ReadStream } from "node:tty";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { exitCode } from "@dotfiles/runtime/process";
 import { Data, Deferred, Effect, Stream } from "effect";
-import { ChildProcess } from "effect/process";
 import type { Runtime, Theme, Variables } from "./config.ts";
+import { signalHandlers, spawn } from "./process.ts";
 
 const backgroundQuery = "\x1b]11;?\x07";
 const schemeQuery = "\x1b[?996n";
+const darkSchemeReply = "1";
 
-export function modeFromText(runtime: Runtime, text: string): Theme | undefined {
+const channelMax = 0xff;
+const channelBits = 8;
+const rgbChannelCount = 3;
+const rgbaChannelCount = 4;
+const rgbPrefix = "rgb:";
+const rgbaPrefix = "rgba:";
+const lightnessRoundingScale = 1000;
+const darkLightnessThreshold = 0.5;
+const signalExitStatusBase = 128;
+const terminalReadBytes = 4096;
+const terminalResponseLimitBytes = 8192;
+const terminalPollIntervalMs = 5;
+
+function modeFromText(runtime: Runtime, text: string): Theme | undefined {
   let normalized = text.trim();
   const lower = normalized.toLowerCase();
   for (const mode of ["dark", "light"] as const) {
@@ -33,7 +47,7 @@ export function modeFromText(runtime: Runtime, text: string): Theme | undefined 
   return undefined;
 }
 
-export function terminalQueries(runtime: Runtime, env: Variables): string[] {
+function terminalQueries(runtime: Runtime, env: Variables): string[] {
   for (const identifier of [
     env[runtime.theme_terminal_program_environment] ?? "",
     env.TERM ?? "",
@@ -59,29 +73,32 @@ function backgroundMode(value: string): Theme | undefined {
     channels = [1, 3, 5].map((offset) =>
       Number.parseInt(value.slice(offset, offset + 2), 16),
     );
-  } else if (value.startsWith("rgb:") || value.startsWith("rgba:")) {
-    const alpha = value.startsWith("rgba:");
-    const parts = value.slice(alpha ? 5 : 4).split("/");
-    if (parts.length !== (alpha ? 4 : 3)) return undefined;
+  } else if (value.startsWith(rgbPrefix) || value.startsWith(rgbaPrefix)) {
+    const alpha = value.startsWith(rgbaPrefix);
+    const parts = value.slice(alpha ? rgbaPrefix.length : rgbPrefix.length).split("/");
+    if (parts.length !== (alpha ? rgbaChannelCount : rgbChannelCount)) return undefined;
     channels = parts
       .map((part) => {
         const channel = /^[\da-f]+$/i.test(part) ? Number.parseInt(part, 16) : 0;
-        return (channel > 255 ? channel >>> 8 : channel) & 255;
+        return (channel > channelMax ? channel >>> channelBits : channel) & channelMax;
       })
-      .slice(0, 3);
+      .slice(0, rgbChannelCount);
   } else {
     return undefined;
   }
-  const lightness = (Math.max(...channels) + Math.min(...channels)) / 510;
-  return Math.round(lightness * 1000) / 1000 < 0.5 ? "dark" : "light";
+  const lightness = (Math.max(...channels) + Math.min(...channels)) / (2 * channelMax);
+  return Math.round(lightness * lightnessRoundingScale) / lightnessRoundingScale <
+    darkLightnessThreshold
+    ? "dark"
+    : "light";
 }
 
-export function modeFromTerminal(text: string): Theme | undefined {
+function modeFromTerminal(text: string): Theme | undefined {
   const events =
     // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI protocol bytes
     /(?:\x1b\[|\x9b)\?997;([12])n|(?:\x1b\]|\x9d)11;([^\x07\x1b\x9c]*)(?:\x07|\x1b\\|\x9c)/g;
   for (const match of text.matchAll(events)) {
-    if (match[1]) return match[1] === "1" ? "dark" : "light";
+    if (match[1]) return match[1] === darkSchemeReply ? "dark" : "light";
     const mode = backgroundMode(match[2] ?? "");
     if (mode) return mode;
   }
@@ -129,40 +146,22 @@ class TerminalSignal extends Data.TaggedError("TerminalSignal")<{
 function terminalSignal() {
   return Effect.gen(function* () {
     const interrupted = yield* Deferred.make<never, TerminalSignal>();
-    yield* Effect.acquireRelease(
-      Effect.sync(() => {
-        const handlers = new Map<NodeJS.Signals, () => void>();
-        for (const signal of ["SIGHUP", "SIGINT", "SIGQUIT", "SIGTERM"] as const) {
-          const handler = () => {
-            process.exitCode = 128 + osConstants.signals[signal];
-            Deferred.doneUnsafe(
-              interrupted,
-              Effect.fail(new TerminalSignal({ signal })),
-            );
-          };
-          handlers.set(signal, handler);
-          process.on(signal, handler);
-        }
-        return handlers;
-      }),
-      (handlers) =>
-        Effect.sync(() => {
-          for (const [signal, handler] of handlers)
-            process.removeListener(signal, handler);
-        }),
-    );
+    yield* signalHandlers((signal) => {
+      process.exitCode = signalExitStatusBase + osConstants.signals[signal];
+      Deferred.doneUnsafe(interrupted, Effect.fail(new TerminalSignal({ signal })));
+    });
     return Deferred.await(interrupted);
   });
 }
 
-export function probeTerminal(query: string, timeout: number) {
+function probeTerminal(query: string, timeout: number) {
   return Effect.scoped(
     Effect.gen(function* () {
       // Install handlers before entering raw mode or exposing query bytes
       const signal = yield* terminalSignal();
       const terminal = yield* Effect.acquireRelease(openTerminal(), closeTerminal);
       return yield* Effect.gen(function* () {
-        const buffer = Buffer.allocUnsafe(4096);
+        const buffer = Buffer.allocUnsafe(terminalReadBytes);
         let received = "";
         yield* Effect.try({
           try: () => writeSync(terminal.descriptor, query),
@@ -183,11 +182,13 @@ export function probeTerminal(query: string, timeout: number) {
           );
           if (length === 0) return undefined;
           if (length > 0) {
-            received = (received + buffer.toString("latin1", 0, length)).slice(-8192);
+            received = (received + buffer.toString("latin1", 0, length)).slice(
+              -terminalResponseLimitBytes,
+            );
             const mode = modeFromTerminal(received);
             if (mode) return mode;
           }
-          yield* Effect.sleep(5);
+          yield* Effect.sleep(terminalPollIntervalMs);
         }
       }).pipe(
         Effect.raceFirst(signal),
@@ -204,28 +205,20 @@ export function probeTerminal(query: string, timeout: number) {
   );
 }
 
-export function runCommandOutput(runtime: Runtime, env: Variables, argv: string[]) {
+function runCommandOutput(runtime: Runtime, env: Variables, argv: string[]) {
   return Effect.scoped(
     Effect.gen(function* () {
       const [command, ...args] = argv;
       if (!command)
         return yield* Effect.fail(new DotfilesError("empty helper command"));
-      const child = yield* ChildProcess.make(command, args, {
+      const child = yield* spawn(command, args, {
         env,
         extendEnv: false,
         stdin: "ignore",
         stdout: "pipe",
         stderr: "pipe",
         killSignal: "SIGKILL",
-      }).pipe(
-        Effect.catchDefect((cause) =>
-          Effect.fail(
-            new DotfilesError(cause instanceof Error ? cause.message : String(cause), {
-              cause,
-            }),
-          ),
-        ),
-      );
+      });
       const output: Uint8Array[] = [];
       const drain = (stream: Stream.Stream<Uint8Array, unknown>, capture: boolean) => {
         let length = 0;

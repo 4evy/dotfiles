@@ -18,6 +18,30 @@ import {
 } from "./config.ts";
 import defaults from "./defaults.json";
 
+const IPV4_VERSION = 4;
+const IPV6_VERSION = 6;
+const BITS_PER_OCTET = 8;
+const IPV4_FIRST_OCTET_SHIFT = 24;
+const IPV4_FIRST_TWO_OCTETS_SHIFT = 16;
+const IPV4_LOOPBACK_FIRST_OCTET = 127;
+const IPV4_LINK_LOCAL_PREFIX = 0xa9fe;
+const IP_ADDRESS_OUTPUT_MIN_FIELDS = 4;
+const TAILSCALE_LOOKUP_TIMEOUT_SECONDS = 8;
+const WIRELESS_DEBUGGING_PORT_RANGE = "30000-49999";
+const PORT_SCAN_HOST_TIMEOUT = "45s";
+const PORT_SCAN_COMMAND_TIMEOUT_SECONDS = 50;
+const ADB_COMMAND_TIMEOUT_SECONDS = 10;
+const ADB_DISCONNECT_TIMEOUT_SECONDS = 5;
+const ADB_START_SERVER_TIMEOUT_SECONDS = 15;
+const ADB_TCPIP_TIMEOUT_SECONDS = 15;
+const ADB_RECONNECT_ATTEMPTS = 12;
+const ADB_RECONNECT_DELAY = "250 millis";
+const GUI_ENVIRONMENT_TIMEOUT_SECONDS = 5;
+const SCRCPY_HELP_TIMEOUT_SECONDS = 5;
+const PRIVATE_CACHE_DIRECTORY_MODE = 0o700;
+const PRIVATE_CACHE_FILE_MODE = 0o600;
+const ADB_CONNECTED_STATE = "device";
+
 const command = (args: string[], options: { timeout: number }) =>
   run(args, { ...options, capture: true, check: false });
 const guiKeys: Record<string, true> = {
@@ -37,7 +61,7 @@ function detail(result: CommandResult): string {
 }
 const resolveTailscaleIP = Effect.fn("resolveTailscaleIP")(function* (name: string) {
   const result = yield* command(["tailscale", "ip", "--", name], {
-    timeout: 8,
+    timeout: TAILSCALE_LOOKUP_TIMEOUT_SECONDS,
   });
   if (result.code !== 0)
     return yield* Effect.fail(
@@ -47,7 +71,8 @@ const resolveTailscaleIP = Effect.fn("resolveTailscaleIP")(function* (name: stri
     try: () => result.stdout.trim().split(/\r?\n/).filter(Boolean).map(normalizeIP),
     catch: () => new DotfilesError("Tailscale IP lookup returned invalid data"),
   });
-  const address = addresses.find((value) => isIP(value) === 4) ?? addresses[0];
+  const address =
+    addresses.find((value) => isIP(value) === IPV4_VERSION) ?? addresses[0];
   if (!address)
     return yield* Effect.fail(
       new DotfilesError(`Tailscale did not report a valid IP for ${name}`),
@@ -70,7 +95,9 @@ const cachedIP = Effect.fn("cachedPhoneIP")(function* (path: string, name: strin
   );
 });
 function endpoint(host: string, port: number): string {
-  return isIP(host.split("%")[0] ?? "") === 6 ? `[${host}]:${port}` : `${host}:${port}`;
+  return isIP(host.split("%")[0] ?? "") === IPV6_VERSION
+    ? `[${host}]:${port}`
+    : `${host}:${port}`;
 }
 function serialHost(serial: string): string | undefined {
   const colon = serial.startsWith("[") ? serial.indexOf("]:") : serial.lastIndexOf(":");
@@ -92,7 +119,7 @@ function parseDevices(text: string): Map<string, string> {
 function ipv4Number(ip: string): number {
   return ip
     .split(".")
-    .reduce((value, octet) => ((value << 8) | Number(octet)) >>> 0, 0);
+    .reduce((value, octet) => ((value << BITS_PER_OCTET) | Number(octet)) >>> 0, 0);
 }
 function localIPv4Networks(): { network: number; mask: number }[] {
   const networks = new Map<string, { network: number; mask: number }>();
@@ -100,7 +127,11 @@ function localIPv4Networks(): { network: number; mask: number }[] {
     for (const address of addresses ?? []) {
       if (address.family !== "IPv4") continue;
       const ip = ipv4Number(address.address);
-      if (ip >>> 24 === 127 || ip >>> 16 === 0xa9fe) continue;
+      if (
+        ip >>> IPV4_FIRST_OCTET_SHIFT === IPV4_LOOPBACK_FIRST_OCTET ||
+        ip >>> IPV4_FIRST_TWO_OCTETS_SHIFT === IPV4_LINK_LOCAL_PREFIX
+      )
+        continue;
       const mask = ipv4Number(address.netmask);
       const network = (ip & mask) >>> 0;
       networks.set(`${network}/${mask}`, { network, mask });
@@ -111,10 +142,14 @@ function phoneLANAddresses(text: string): string[] {
   const addresses = new Set<string>();
   for (const line of text.split(/\r?\n/)) {
     const fields = line.trim().split(/\s+/);
-    if (fields.length < 4 || !/^(?:eth|wlan)/.test(fields[1] ?? "")) continue;
+    if (
+      fields.length < IP_ADDRESS_OUTPUT_MIN_FIELDS ||
+      !/^(?:eth|wlan)/.test(fields[1] ?? "")
+    )
+      continue;
     const inet = fields.indexOf("inet");
     const address = inet < 0 ? undefined : fields[inet + 1]?.split("/")[0];
-    if (address && isIP(address) === 4) addresses.add(address);
+    if (address && isIP(address) === IPV4_VERSION) addresses.add(address);
   }
   return [...addresses];
 }
@@ -181,14 +216,14 @@ const scanOpenPorts = Effect.fn("scanPhonePorts")(function* (host: string) {
       "--open",
       "-T4",
       "--host-timeout",
-      "45s",
+      PORT_SCAN_HOST_TIMEOUT,
       "-p",
-      "30000-49999",
+      WIRELESS_DEBUGGING_PORT_RANGE,
       "-oX",
       "-",
       host,
     ],
-    { timeout: 50 },
+    { timeout: PORT_SCAN_COMMAND_TIMEOUT_SECONDS },
   );
   if (result.code !== 0)
     return yield* Effect.fail(
@@ -197,7 +232,8 @@ const scanOpenPorts = Effect.fn("scanPhonePorts")(function* (host: string) {
   return yield* openPorts(result.stdout);
 });
 
-const adb = (args: string[], timeout = 10) => command(["adb", ...args], { timeout });
+const adb = (args: string[], timeout = ADB_COMMAND_TIMEOUT_SECONDS) =>
+  command(["adb", ...args], { timeout });
 
 const devices = Effect.fn("phoneDevices")(function* () {
   const result = yield* adb(["devices", "-l"]);
@@ -215,8 +251,8 @@ const connect = Effect.fn("connectPhoneEndpoint")(function* (
   const serial = endpoint(host, port);
   yield* Console.error(`phone-mirror: trying ${serial}`);
   yield* adb(["connect", serial]);
-  if ((yield* devices()).get(serial) === "device") return serial;
-  yield* adb(["disconnect", serial], 5);
+  if ((yield* devices()).get(serial) === ADB_CONNECTED_STATE) return serial;
+  yield* adb(["disconnect", serial], ADB_DISCONNECT_TIMEOUT_SECONDS);
   return undefined;
 });
 
@@ -228,13 +264,16 @@ const makeStable = Effect.fn("stabilizePhoneConnection")(function* (
   const stable = endpoint(host, config.port);
   if (serial === stable) return serial;
   yield* Console.error(`phone-mirror: moving ADB from ${serial} to ${stable}`);
-  const result = yield* adb(["-s", serial, "tcpip", String(config.port)], 15);
+  const result = yield* adb(
+    ["-s", serial, "tcpip", String(config.port)],
+    ADB_TCPIP_TIMEOUT_SECONDS,
+  );
   if (result.code !== 0)
     return yield* Effect.fail(
       new DotfilesError(`Could not enable stable ADB: ${detail(result)}`),
     );
-  for (let attempt = 0; attempt < 12; attempt++) {
-    yield* Effect.sleep("250 millis");
+  for (let attempt = 0; attempt < ADB_RECONNECT_ATTEMPTS; attempt++) {
+    yield* Effect.sleep(ADB_RECONNECT_DELAY);
     const connected = yield* connect(host, config.port);
     if (connected) return connected;
   }
@@ -249,7 +288,9 @@ const discover = Effect.fn("discoverPhone")(function* (
   online: number,
 ) {
   yield* requireCommands("nmap");
-  yield* Console.error("phone-mirror: probing Wireless Debugging ports 30000-49999");
+  yield* Console.error(
+    `phone-mirror: probing Wireless Debugging ports ${WIRELESS_DEBUGGING_PORT_RANGE}`,
+  );
   for (const port of yield* scanOpenPorts(host)) {
     const connected = yield* connect(host, port);
     if (connected) return yield* makeStable(config, connected, host);
@@ -267,13 +308,15 @@ const connectPhone = Effect.fn("connectPhone")(function* (
   config: PhoneConfig,
   host: string,
 ) {
-  const started = yield* adb(["start-server"], 15);
+  const started = yield* adb(["start-server"], ADB_START_SERVER_TIMEOUT_SECONDS);
   if (started.code !== 0)
     return yield* Effect.fail(
       new DotfilesError(`Could not start ADB: ${detail(started)}`),
     );
   const target = [...(yield* devices())]
-    .filter(([serial, state]) => state === "device" && serialHost(serial) === host)
+    .filter(
+      ([serial, state]) => state === ADB_CONNECTED_STATE && serialHost(serial) === host,
+    )
     .map(([serial]) => serial);
   if (target.length)
     return yield* makeStable(
@@ -287,7 +330,7 @@ const connectPhone = Effect.fn("connectPhone")(function* (
   if (connected) return connected;
   // One USB or LAN session can bootstrap the stable Tailscale endpoint
   const online = [...(yield* devices())]
-    .filter(([, state]) => state === "device")
+    .filter(([, state]) => state === ADB_CONNECTED_STATE)
     .map(([serial]) => serial);
   if (online.length === 1) return yield* makeStable(config, online[0] ?? "", host);
   return yield* discover(config, host, online.length);
@@ -351,8 +394,12 @@ const targetIP = Effect.fn("phoneTargetIP")(function* (
     ),
   );
   if (!resolved.cached) {
-    yield* ensureDirectory(dirname(cache), 0o700);
-    yield* writeJson(cache, { name: config.name, ip: resolved.host }, 0o600);
+    yield* ensureDirectory(dirname(cache), PRIVATE_CACHE_DIRECTORY_MODE);
+    yield* writeJson(
+      cache,
+      { name: config.name, ip: resolved.host },
+      PRIVATE_CACHE_FILE_MODE,
+    );
   }
   return resolved.host;
 });
@@ -370,7 +417,7 @@ const hydrateGUIEnvironment = Effect.fn("phoneGUIEnvironment")(function* (
     environment.XDG_RUNTIME_DIR = runtime;
   if (!(yield* requireCommands("systemctl").pipe(Effect.isSuccess))) return;
   const result = yield* command(["systemctl", "--user", "show-environment"], {
-    timeout: 5,
+    timeout: GUI_ENVIRONMENT_TIMEOUT_SECONDS,
   });
   if (result.code !== 0) return;
   for (const line of result.stdout.split(/\r?\n/)) {
@@ -385,7 +432,9 @@ const scrcpyArguments = Effect.fn("phoneScrcpyArguments")(function* (
   config: PhoneConfig,
   serial: string,
 ) {
-  const help = yield* command(["scrcpy", "--help"], { timeout: 5 });
+  const help = yield* command(["scrcpy", "--help"], {
+    timeout: SCRCPY_HELP_TIMEOUT_SECONDS,
+  });
   const active = (help.stdout + help.stderr).includes("--keep-active")
     ? "--keep-active"
     : "--stay-awake";

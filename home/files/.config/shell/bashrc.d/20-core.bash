@@ -58,10 +58,7 @@ _dotfiles_wrap_themed_command() {
 }
 
 _dotfiles_command_path() {
-	local command_path
-	command_path="$(type -P -- "$1")" || return 1
-	[[ -n "$command_path" ]] || return 1
-	printf '%s\n' "$command_path"
+	type -P -- "$1"
 }
 
 # 04 / dotfiles repository

@@ -10,6 +10,7 @@ import { Effect, Exit, type PlatformError } from "effect";
 import { deploy } from "./deploy.ts";
 import { writeOutput } from "./files.ts";
 import {
+  check,
   editSource,
   editWorkspace,
   layout,
@@ -17,7 +18,7 @@ import {
   unpackSource,
 } from "./source.ts";
 import { Vault } from "./vault.ts";
-import { check, packWorkspace, unpackWorkspace } from "./workspace.ts";
+import { packWorkspace, unpackWorkspace } from "./workspace.ts";
 
 type Operation = (
   vault: Vault,

@@ -3,8 +3,6 @@ import { DotfilesError } from "@dotfiles/core/errors";
 import { isExecutable } from "@dotfiles/core/files";
 import { exitCode } from "@dotfiles/runtime/process";
 import { Effect, FileSystem, Option } from "effect";
-import { SecureRandom } from "effect/crypto";
-import { ChildProcess } from "effect/process";
 import {
   errorCode,
   type Integration,
@@ -15,9 +13,20 @@ import {
   type Theme,
   type Variables,
 } from "./config.ts";
+import { replaceProcess, signalHandlers, spawn } from "./process.ts";
 import { detect } from "./theme.ts";
 
-export interface Prepared {
+const commandNotFoundStatus = 127;
+const commandNotExecutableStatus = 126;
+const fallbackSearchPath = "/usr/local/bin:/usr/bin:/bin";
+const shebangReadBytes = 512;
+const temporarySuffixLength = "XXXXXX".length;
+const sharedDirectoryMode = 0o755;
+const privateConfigMode = 0o600;
+const fallbackTemporaryDirectory = "/tmp";
+const themePlaceholder = "{theme}";
+
+interface Prepared {
   args: string[];
   environment: Variables;
   temporaryPath: string;
@@ -29,10 +38,12 @@ export interface Invocation {
 }
 
 export function executionStatus(error: unknown): number {
-  return errorCode(error) === "ENOENT" ? 127 : 126;
+  return errorCode(error) === "ENOENT"
+    ? commandNotFoundStatus
+    : commandNotExecutableStatus;
 }
 
-export function expandPath(value: string, env: Variables): string {
+function expandPath(value: string, env: Variables): string {
   return value.startsWith("~/") && env.HOME ? join(env.HOME, value.slice(2)) : value;
 }
 
@@ -58,7 +69,7 @@ function executableCandidate(path: string, skipPaths: string[]) {
   }).pipe(Effect.catch(() => Effect.succeed(undefined)));
 }
 
-export function candidate(raw: string, skipPaths: string[], env: Variables) {
+function candidate(raw: string, skipPaths: string[], env: Variables) {
   return Effect.gen(function* () {
     let value = raw;
     if (raw.startsWith("$")) {
@@ -67,9 +78,7 @@ export function candidate(raw: string, skipPaths: string[], env: Variables) {
     }
     value = expandPath(value, env);
     if (value.includes("/")) return yield* executableCandidate(value, skipPaths);
-    for (const directory of (env.PATH || "/usr/local/bin:/usr/bin:/bin").split(
-      delimiter,
-    )) {
+    for (const directory of (env.PATH || fallbackSearchPath).split(delimiter)) {
       const path = yield* executableCandidate(
         directory ? join(directory, value) : value,
         skipPaths,
@@ -109,7 +118,7 @@ function usesInterpreter(interpreter: Interpreter, path: string) {
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
       const file = yield* fs.open(path, { flag: "r" });
-      const buffer = Buffer.allocUnsafe(512);
+      const buffer = Buffer.allocUnsafe(shebangReadBytes);
       const bytesRead = yield* file.read(buffer);
       const line = buffer.toString("utf8", 0, bytesRead).split("\n", 1)[0] ?? "";
       if (!line.startsWith("#!")) return false;
@@ -124,7 +133,7 @@ function usesInterpreter(interpreter: Interpreter, path: string) {
   ).pipe(Effect.catch(() => Effect.succeed(false)));
 }
 
-export function configArguments(
+function configArguments(
   integration: Integration,
   arguments_: string[],
   env: Variables,
@@ -154,7 +163,7 @@ export function configArguments(
   ];
 }
 
-export function patchAssignment(
+function patchAssignment(
   contents: string,
   key: string,
   quote: string,
@@ -186,41 +195,27 @@ export function patchAssignment(
 function makeTemporary(integration: Integration, contents: string, env: Variables) {
   return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    const random = yield* SecureRandom.SecureRandom;
+    // The scoped platform directory owns uniqueness and cleanup, including failure
     const directory =
       integration.temporary_location === "system"
-        ? env.TMPDIR || "/tmp"
+        ? env.TMPDIR || fallbackTemporaryDirectory
         : join(
-            env.XDG_CACHE_HOME || (env.HOME ? join(env.HOME, ".cache") : "/tmp"),
+            env.XDG_CACHE_HOME ||
+              (env.HOME ? join(env.HOME, ".cache") : fallbackTemporaryDirectory),
             integration.cache_subdirectory,
           );
-    yield* fs.makeDirectory(directory, { recursive: true, mode: 0o755 });
-    const stem = integration.temporary_prefix.slice(0, -6);
-    for (;;) {
-      const path = join(
-        directory,
-        stem + Buffer.from(yield* random.randomBytes(8)).toString("hex"),
-      );
-      const temporary = yield* Effect.acquireRelease(
-        fs
-          .open(path, { flag: "wx", mode: 0o600 })
-          .pipe(Effect.map((file) => ({ path, file }))),
-        ({ path }) => fs.remove(path, { force: true }).pipe(Effect.orDie),
-      ).pipe(
-        Effect.catch((error) =>
-          errorCode(error) === "EEXIST"
-            ? Effect.succeed(undefined)
-            : Effect.fail(error),
-        ),
-      );
-      if (!temporary) continue;
-      yield* temporary.file.writeAll(Buffer.from(contents));
-      return path;
-    }
+    yield* fs.makeDirectory(directory, { recursive: true, mode: sharedDirectoryMode });
+    const temporary = yield* fs.makeTempDirectoryScoped({
+      directory,
+      prefix: integration.temporary_prefix.slice(0, -temporarySuffixLength),
+    });
+    const path = join(temporary, "config");
+    yield* fs.writeFileString(path, contents, { flag: "wx", mode: privateConfigMode });
+    return path;
   });
 }
 
-export function prepare(
+function prepare(
   integration: Integration | undefined,
   extra: string[],
   env: Variables,
@@ -238,7 +233,7 @@ export function prepare(
       case "arguments":
         result.args = [
           ...integration.arguments.map((argument) =>
-            argument.replaceAll("{theme}", theme),
+            argument.replaceAll(themePlaceholder, theme),
           ),
           ...extra,
         ];
@@ -246,7 +241,7 @@ export function prepare(
       case "environment":
         for (const [key, template] of Object.entries(integration.env)) {
           result.environment[key] = template
-            .replaceAll("{theme}", theme)
+            .replaceAll(themePlaceholder, theme)
             .replaceAll("{home}", env.HOME ?? "");
         }
         break;
@@ -318,30 +313,15 @@ export function prepareInvocation(
 }
 
 function forwardSignals(pid: number) {
-  return Effect.acquireRelease(
-    Effect.sync(() => {
-      const handlers = new Map<NodeJS.Signals, () => void>();
-      for (const signal of ["SIGHUP", "SIGINT", "SIGQUIT", "SIGTERM"] as const) {
-        const handler = () => {
-          // Signal delivery is a native callback boundary, not a process engine
-          // The child may have exited before its exit notification is observed
-          try {
-            process.kill(pid, signal);
-          } catch (cause) {
-            if ((cause as NodeJS.ErrnoException).code !== "ESRCH") throw cause;
-          }
-        };
-        handlers.set(signal, handler);
-        process.on(signal, handler);
-      }
-      return handlers;
-    }),
-    (handlers) =>
-      Effect.sync(() => {
-        for (const [signal, handler] of handlers)
-          process.removeListener(signal, handler);
-      }),
-  );
+  return signalHandlers((signal) => {
+    // Signal delivery is a native callback boundary, not a process engine
+    // The child may have exited before its exit notification is observed
+    try {
+      process.kill(pid, signal);
+    } catch (cause) {
+      if ((cause as NodeJS.ErrnoException).code !== "ESRCH") throw cause;
+    }
+  });
 }
 
 export function runInvocation(invocation: Invocation) {
@@ -350,36 +330,18 @@ export function runInvocation(invocation: Invocation) {
     if (!command) return yield* Effect.fail(new DotfilesError("empty command"));
     if (!invocation.temporaryPath) {
       // Replacement preserves the PID, job control, signals and exit status
-      return yield* Effect.try({
-        try: (): never => {
-          process.execve?.(command, invocation.argv, invocation.environment);
-          throw new Error("this Bun runtime does not implement process.execve");
-        },
-        catch: (cause) =>
-          new DotfilesError(cause instanceof Error ? cause.message : String(cause), {
-            cause,
-          }),
-      });
+      return yield* replaceProcess(command, invocation.argv, invocation.environment);
     }
     return yield* Effect.scoped(
       Effect.gen(function* () {
-        const child = yield* ChildProcess.make(command, args, {
+        const child = yield* spawn(command, args, {
           env: invocation.environment,
           extendEnv: false,
           stdin: "inherit",
           detached: false,
           stdout: "inherit",
           stderr: "inherit",
-        }).pipe(
-          Effect.catchDefect((cause) =>
-            Effect.fail(
-              new DotfilesError(
-                cause instanceof Error ? cause.message : String(cause),
-                { cause },
-              ),
-            ),
-          ),
-        );
+        });
         yield* forwardSignals(child.pid);
         const code = yield* exitCode(child);
         // Preserve the child's chosen status even if a runtime interrupt is
@@ -393,41 +355,31 @@ export function runInvocation(invocation: Invocation) {
   });
 }
 
+function lookPath(command: string, env: Variables) {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    let permissionDenied = false;
+    for (const directory of (env.PATH ?? "").split(delimiter)) {
+      const candidatePath = directory ? join(directory, command) : command;
+      const executable = yield* executableCandidate(candidatePath, []);
+      if (executable)
+        return isAbsolute(executable) ? executable : commandNotExecutableStatus;
+      const info = yield* fs
+        .stat(candidatePath)
+        .pipe(Effect.catch(() => Effect.succeed(undefined)));
+      if (info?.type === "File") permissionDenied = true;
+    }
+    return permissionDenied ? commandNotExecutableStatus : commandNotFoundStatus;
+  });
+}
+
 export function execUnknown(argv: string[], env: Variables) {
   return Effect.gen(function* () {
     const command = argv[0];
-    if (!command) return 127;
-    const fs = yield* FileSystem.FileSystem;
-    let path = command;
-    if (!command.includes("/")) {
-      // Unlike profile resolution, LookPath rejects implicit CWD execution
-      let found: string | undefined;
-      let permissionDenied = false;
-      for (const directory of (env.PATH ?? "").split(delimiter)) {
-        const candidatePath = directory ? join(directory, command) : command;
-        const executable = yield* executableCandidate(candidatePath, []);
-        if (executable) {
-          if (!isAbsolute(executable)) return 126;
-          found = executable;
-          break;
-        }
-        const info = yield* fs
-          .stat(candidatePath)
-          .pipe(Effect.catch(() => Effect.succeed(undefined)));
-        if (info?.type === "File") permissionDenied = true;
-      }
-      if (!found) return permissionDenied ? 126 : 127;
-      path = found;
-    }
-    return yield* Effect.try({
-      try: (): never => {
-        process.execve?.(path, argv, env);
-        throw new Error("this Bun runtime does not implement process.execve");
-      },
-      catch: (cause) =>
-        new DotfilesError(cause instanceof Error ? cause.message : String(cause), {
-          cause,
-        }),
-    });
+    if (!command) return commandNotFoundStatus;
+    // Unlike profile resolution, LookPath rejects implicit CWD execution
+    const path = command.includes("/") ? command : yield* lookPath(command, env);
+    if (typeof path === "number") return path;
+    return yield* replaceProcess(path, argv, env);
   }).pipe(Effect.catch((error) => Effect.succeed(executionStatus(error))));
 }

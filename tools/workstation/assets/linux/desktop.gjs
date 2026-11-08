@@ -1,4 +1,19 @@
 const { Gio, GLib } = imports.gi;
+const EXTENSION_STOP_TIMEOUT_US = 10_000_000;
+const EXTENSION_INFO_TIMEOUT_MS = 1000;
+const EXTENSION_STOP_POLL_INTERVAL_US = 50_000;
+const EXTENSION_STATE_ACTIVE = 1;
+const EXTENSION_STATE_DEACTIVATING = 7;
+const EXTENSION_STATE_ACTIVATING = 8;
+const BINDING_OWNING_EXTENSION_STATES = [
+  EXTENSION_STATE_ACTIVE,
+  EXTENSION_STATE_DEACTIVATING,
+  EXTENSION_STATE_ACTIVATING,
+];
+const GNOME_SHELL_BUS_NAME = "org.gnome.Shell";
+const GNOME_SHELL_OBJECT_PATH = "/org/gnome/Shell";
+const GNOME_EXTENSIONS_INTERFACE = "org.gnome.Shell.Extensions";
+
 const [operation, ...args] = ARGV;
 const settings = (schema) => new Gio.Settings({ schema_id: schema });
 
@@ -23,12 +38,12 @@ switch (operation) {
           Gio.BusType.SESSION,
           Gio.DBusProxyFlags.DO_NOT_AUTO_START,
           null,
-          "org.gnome.Shell",
-          "/org/gnome/Shell",
-          "org.gnome.Shell.Extensions",
+          GNOME_SHELL_BUS_NAME,
+          GNOME_SHELL_OBJECT_PATH,
+          GNOME_EXTENSIONS_INTERFACE,
           null,
         );
-        const deadline = GLib.get_monotonic_time() + 10_000_000;
+        const deadline = GLib.get_monotonic_time() + EXTENSION_STOP_TIMEOUT_US;
         while (extensions.get_name_owner()) {
           const stopped = [obsolete, replacement].every((uuid) => {
             const [info] = extensions
@@ -36,17 +51,17 @@ switch (operation) {
                 "GetExtensionInfo",
                 new GLib.Variant("(s)", [uuid]),
                 Gio.DBusCallFlags.NONE,
-                1000,
+                EXTENSION_INFO_TIMEOUT_MS,
                 null,
               )
               .deep_unpack();
             // ACTIVE, DEACTIVATING and ACTIVATING still own or may add bindings
-            return ![1, 7, 8].includes(info.state?.deep_unpack());
+            return !BINDING_OWNING_EXTENSION_STATES.includes(info.state?.deep_unpack());
           });
           if (stopped) break;
           if (GLib.get_monotonic_time() >= deadline)
             throw new Error("Timed out stopping conflicting tiling extensions");
-          GLib.usleep(50_000);
+          GLib.usleep(EXTENSION_STOP_POLL_INTERVAL_US);
         }
       }
       shell.set_strv("enabled-extensions", [

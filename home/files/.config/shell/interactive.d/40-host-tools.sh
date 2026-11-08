@@ -30,17 +30,19 @@ cx() {
 }
 
 _dotfiles_ghidra_mcp_ready() {
+	local -r readiness_timeout_seconds=2
 	local url="${GHIDRA_MCP_URL:-http://${GHIDRA_MCP_CONNECT_HOST:-127.0.0.1}:${GHIDRA_MCP_PORT:-8089}}"
 	local -a auth
 	auth=()
 	if [[ -n "${GHIDRA_MCP_AUTH_TOKEN:-}" ]]; then
 		auth=(-H "Authorization: Bearer $GHIDRA_MCP_AUTH_TOKEN")
 	fi
-	curl --fail --silent --max-time 2 --noproxy '*' "${auth[@]}" \
+	curl --fail --silent --max-time "$readiness_timeout_seconds" --noproxy '*' "${auth[@]}" \
 		"${url%/}/check_connection" >/dev/null 2>&1
 }
 
 _dotfiles_start_ghidra_mcp_for_cxg() {
+	local -r readiness_poll_seconds=1
 	local timeout="${GHIDRA_MCP_STARTUP_TIMEOUT:-120}"
 	local started_at=$SECONDS
 	if ! [[ "$timeout" =~ ^[1-9][0-9]*$ ]]; then
@@ -76,7 +78,7 @@ _dotfiles_start_ghidra_mcp_for_cxg() {
 			printf '%s\n' "Ghidra MCP backend did not become ready within ${timeout}s; check the ghidra-mcp user service" >&2
 			return 1
 		fi
-		sleep 1
+		sleep "$readiness_poll_seconds"
 	done
 }
 

@@ -4,20 +4,26 @@ import { requireCommands, run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
 import { object } from "@optique/core/constructs";
-import { runParser } from "@optique/core/facade";
-import { formatMessage, message } from "@optique/core/message";
+import { message } from "@optique/core/message";
 import { argument, flag, option } from "@optique/core/primitives";
 import { string } from "@optique/core/valueparser";
 import { Effect, FileSystem } from "effect";
+import { parseDarwinOptions } from "./cli.ts";
 
 export const DOTFILES_SIGNING_IDENTITY = "Kanata Local Code Signing";
+
+const codesign = "/usr/bin/codesign";
+const security = "/usr/bin/security";
+const systemKeychain = "/Library/Keychains/System.keychain";
+const certificateKeySpec = "rsa:3072";
+const certificateValidityDays = 3650;
 
 export const signingIdentityAvailable = Effect.fn(function* (
   identity: string,
   keychain: string,
 ) {
   const result = yield* run(
-    ["/usr/bin/security", "find-identity", "-v", "-p", "codesigning", keychain],
+    [security, "find-identity", "-v", "-p", "codesigning", keychain],
     { check: false, capture: true },
   );
   return (
@@ -32,7 +38,7 @@ export const ensureSigningIdentity = Effect.fn(function* (
   administratorTrust = false,
 ) {
   const fs = yield* FileSystem.FileSystem;
-  yield* requireCommands("/usr/bin/codesign", "/usr/bin/security", "openssl");
+  yield* requireCommands(codesign, security, "openssl");
   if (yield* signingIdentityAvailable(identity, keychain)) return false;
   if (!(yield* fs.exists(keychain)) || (yield* fs.stat(keychain)).type !== "File")
     return yield* Effect.fail(
@@ -67,14 +73,14 @@ basicConstraints = critical, CA:false
           "openssl",
           "req",
           "-newkey",
-          "rsa:3072",
+          certificateKeySpec,
           "-nodes",
           "-keyout",
           privateKey,
           "-x509",
           "-sha256",
           "-days",
-          "3650",
+          String(certificateValidityDays),
           "-out",
           certificate,
           "-config",
@@ -82,21 +88,12 @@ basicConstraints = critical, CA:false
         ],
         { capture: true },
       );
+      yield* run([security, "import", privateKey, "-k", keychain, "-T", codesign], {
+        capture: true,
+      });
       yield* run(
         [
-          "/usr/bin/security",
-          "import",
-          privateKey,
-          "-k",
-          keychain,
-          "-T",
-          "/usr/bin/codesign",
-        ],
-        { capture: true },
-      );
-      yield* run(
-        [
-          "/usr/bin/security",
+          security,
           "add-trusted-cert",
           ...(administratorTrust ? ["-d"] : []),
           "-r",
@@ -126,10 +123,10 @@ export const bundleHasSigningIdentity = Effect.fn(function* (
   if (
     !(yield* fs.exists(bundle)) ||
     (yield* fs.stat(bundle)).type !== "Directory" ||
-    !(yield* fs.exists("/usr/bin/codesign"))
+    !(yield* fs.exists(codesign))
   )
     return false;
-  const result = yield* run(["/usr/bin/codesign", "-dvv", bundle], {
+  const result = yield* run([codesign, "-dvv", bundle], {
     check: false,
     capture: true,
   });
@@ -139,7 +136,7 @@ export const bundleHasSigningIdentity = Effect.fn(function* (
   )
     return false;
   return (
-    (yield* run(["/usr/bin/codesign", "--verify", "--deep", "--strict", bundle], {
+    (yield* run([codesign, "--verify", "--deep", "--strict", bundle], {
       check: false,
       capture: true,
     })).code === 0
@@ -159,7 +156,7 @@ export const signBundle = Effect.fn(function* (
     );
   yield* run(
     [
-      "/usr/bin/codesign",
+      codesign,
       "--deep",
       "--force",
       "--keychain",
@@ -177,7 +174,7 @@ export const signBundle = Effect.fn(function* (
     ],
     { capture: true },
   );
-  yield* run(["/usr/bin/codesign", "--verify", "--deep", "--strict", bundle], {
+  yield* run([codesign, "--verify", "--deep", "--strict", bundle], {
     capture: true,
   });
   if (!(yield* bundleHasSigningIdentity(bundle, identity)))
@@ -195,7 +192,7 @@ const parser = object({
     .map((values) => values.at(-1) ?? DOTFILES_SIGNING_IDENTITY),
   keychain: option("--keychain", string({ metavar: "PATH" }))
     .multiple()
-    .map((values) => values.at(-1) ?? "/Library/Keychains/System.keychain"),
+    .map((values) => values.at(-1) ?? systemKeychain),
   administratorTrust: flag("--administrator-trust")
     .multiple()
     .map((values) => values.length > 0),
@@ -208,23 +205,13 @@ if (import.meta.main)
   runMain(
     Effect.gen(function* () {
       const values = yield* Effect.try({
-        try: () => {
-          let helpShown = false;
-          const values = runParser(parser, "bun codesign.ts", Bun.argv.slice(2), {
-            brief: message`Sign an application bundle with the local identity`,
-            help: {
-              option: { names: ["-h", "--help"] },
-              onShow: () => {
-                helpShown = true;
-              },
-            },
-            stderr: () => {},
-            onError: (_code, error) => {
-              throw new Error(formatMessage(error));
-            },
-          });
-          return helpShown ? undefined : values;
-        },
+        try: () =>
+          parseDarwinOptions(
+            parser,
+            "bun codesign.ts",
+            Bun.argv.slice(2),
+            message`Sign an application bundle with the local identity`,
+          ),
         catch: (cause) => new DotfilesError(String(cause)),
       });
       if (!values) return;

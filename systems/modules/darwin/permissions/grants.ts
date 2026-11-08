@@ -1,6 +1,11 @@
 import policy from "@dotfiles/repo/data/macos/permissions";
 import type { Client } from "./clients.ts";
-import type { access } from "./schema.ts";
+import {
+  type access,
+  tccClientTypes,
+  tccNoTargetType,
+  tccServicePrefix,
+} from "./schema.ts";
 
 export type Target = {
   identifier: string;
@@ -33,7 +38,7 @@ export function grantFor(service: string, client: Client, target?: Target): Gran
   const authorization = authorizationOverrides[service] ?? policy.authorization;
   const expirySeconds = ephemeralExpiries.get(service);
   return {
-    service: `kTCCService${service}`,
+    service: `${tccServicePrefix}${service}`,
     client,
     target,
     authValue: authorization.value,
@@ -62,7 +67,10 @@ export function plansFor(
         ...policy.services.ephemeral.map(({ service }) => grantFor(service, client)),
         ...policy.services.applicationTargets.flatMap(({ service, signedOnly }) =>
           targets
-            .filter((target) => !signedOnly || target.type === 0)
+            .filter(
+              (target) =>
+                !signedOnly || target.type === tccClientTypes.bundleIdentifier,
+            )
             .map((target) => grantFor(service, client, target)),
         ),
       ]),
@@ -74,7 +82,7 @@ export function matches(row: Access | undefined, grant: Grant): boolean {
   const equal = (actual: Uint8Array | null, expected: Uint8Array | null | undefined) =>
     expected == null
       ? actual === null
-      : actual !== null && Buffer.from(actual).equals(expected);
+      : actual !== null && Buffer.compare(actual, expected) === 0;
   return (
     row !== undefined &&
     row.authValue === grant.authValue &&
@@ -82,7 +90,8 @@ export function matches(row: Access | undefined, grant: Grant): boolean {
     row.authVersion === grant.authVersion &&
     row.policyId === null &&
     row.flags === policy.authorization.flags &&
-    row.indirectObjectIdentifierType === (grant.target ? grant.target.type : 0) &&
+    row.indirectObjectIdentifierType ===
+      (grant.target ? grant.target.type : tccNoTargetType) &&
     equal(row.csreq, grant.client.requirement) &&
     equal(row.indirectObjectCodeIdentity, grant.target?.requirement)
   );

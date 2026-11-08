@@ -3,14 +3,17 @@ import { output } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
 import { object, or } from "@optique/core/constructs";
-import { runParser } from "@optique/core/facade";
-import { formatMessage, message } from "@optique/core/message";
+import { message } from "@optique/core/message";
 import { flag, option } from "@optique/core/primitives";
 import { string } from "@optique/core/valueparser";
 import { Effect } from "effect";
+import { parseDarwinOptions } from "../cli.ts";
 import { clients } from "./clients.ts";
 import { notificationPermissions } from "./notifications/notifications.ts";
 import { applyTcc, inspectTcc, userDatabase } from "./tcc.ts";
+
+const rootUid = 0;
+const rootUsername = "root";
 
 // Grant broadly only to declared clients, never to a directory's contents
 // TCC grants do not replace entitlements, usage descriptions, or browser policy
@@ -21,7 +24,7 @@ const reconcile = Effect.fn(function* (
 ) {
   if (process.platform !== "darwin")
     return yield* Effect.fail(new DotfilesError("TCC permissions require macOS"));
-  if (process.getuid?.() !== 0)
+  if (process.getuid?.() !== rootUid)
     return yield* Effect.fail(
       new DotfilesError("Run with sudo to access both TCC databases"),
     );
@@ -30,7 +33,7 @@ const reconcile = Effect.fn(function* (
     console.log("Skipping macOS permissions: SIP is not disabled. No changes made");
     return;
   }
-  if (!/^[a-zA-Z0-9_-]+$/.test(user) || user === "root")
+  if (!/^[a-zA-Z0-9_-]+$/.test(user) || user === rootUsername)
     return yield* Effect.fail(new DotfilesError("Expected a non-root local username"));
   const account = yield* output([
     "/usr/bin/dscl",
@@ -94,23 +97,13 @@ if (import.meta.main)
   runMain(
     Effect.gen(function* () {
       const values = yield* Effect.try({
-        try: () => {
-          let helpShown = false;
-          const values = runParser(parser, "dotfiles-permissions", Bun.argv.slice(2), {
-            brief: message`Reconcile declared clients' macOS permissions`,
-            help: {
-              option: { names: ["-h", "--help"] },
-              onShow: () => {
-                helpShown = true;
-              },
-            },
-            stderr: () => {},
-            onError: (_code, error) => {
-              throw new Error(formatMessage(error));
-            },
-          });
-          return helpShown ? undefined : values;
-        },
+        try: () =>
+          parseDarwinOptions(
+            parser,
+            "dotfiles-permissions",
+            Bun.argv.slice(2),
+            message`Reconcile declared clients' macOS permissions`,
+          ),
         catch: (cause) => new DotfilesError(String(cause)),
       });
       if (!values) return;

@@ -11,6 +11,8 @@ import { object } from "@optique/core/constructs";
 import { runParser } from "@optique/core/facade";
 import { Effect, FileSystem, Schema } from "effect";
 
+const installedExecutableMode = 0o755;
+
 const releases =
   "https://antigravity-cli-auto-updater-974169037036.us-central1.run.app";
 const manifestSchema = Schema.Struct({
@@ -90,7 +92,7 @@ export const installAntigravity = Effect.fn(function* () {
         return yield* Effect.fail(
           new DotfilesError("Antigravity CLI payload is not a regular file"),
         );
-      yield* fs.chmod(binary, 0o755);
+      yield* fs.chmod(binary, installedExecutableMode);
 
       // The official bootstrapper runs `agy install`, which edits shell profiles
       // Install its verified payload directly, leaving PATH and aliases to dotfiles

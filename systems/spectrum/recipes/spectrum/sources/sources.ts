@@ -6,6 +6,7 @@ import { runMain } from "@dotfiles/core/runtime";
 import { Effect, FileSystem, Schema } from "effect";
 
 const ROOT = resolve(import.meta.dir, "../../../../..");
+const kanataHomebrewInput = "kanata-homebrew";
 const Lock = Schema.Struct({
   root: Schema.String,
   nodes: Schema.Record(
@@ -46,7 +47,7 @@ function sourcePin(
   lock: typeof Lock.Type,
   stackSources: typeof StackSources.Type,
 ): Record<string, unknown> {
-  const source = stackSources[name === "kanata-homebrew" ? "kanata" : name];
+  const source = stackSources[name === kanataHomebrewInput ? "kanata" : name];
   if (!source) return inputPin(lock, `source-${name}`);
   const parts = source.canonical.split("/");
   const repo = parts.at(-1)?.replace(/\.git$/, "");
@@ -116,7 +117,7 @@ const main = Effect.gen(function* () {
     buildData.config.dconf,
   );
   const groups = {
-    kanata: ["kanata-homebrew"],
+    kanata: [kanataHomebrewInput],
   };
   for (const [group, names] of Object.entries(groups)) {
     const pins = yield* project(() =>

@@ -9,6 +9,10 @@ import { argument } from "@optique/core/primitives";
 import { choice, string } from "@optique/core/valueparser";
 import { Config, Effect, FileSystem, Option, Schema, Stdio, Stream } from "effect";
 
+const RECORDS_VAULT_PATH = "secrets/records.yaml";
+const GIT_DIFF_CHANGED_EXIT_CODE = 1;
+const ANSI_RESET = "\u001b[0m";
+
 const recordMetadata = Schema.fromJsonString(
   Schema.Struct({ paths: Schema.NonEmptyArray(Schema.String) }),
 );
@@ -91,7 +95,7 @@ const materializeRecords = Effect.fn("jjDiff.materializeRecords")(function* (
   workspaces: string[],
 ) {
   const fs = yield* FileSystem.FileSystem;
-  const vault = join(snapshot, "secrets/records.yaml");
+  const vault = join(snapshot, RECORDS_VAULT_PATH);
   if (!(yield* regularFile(vault))) return;
   const encrypted = join(dirname(vault), ".records.yaml.encrypted");
   const encryptedExists = yield* fs.lstat(encrypted).pipe(
@@ -224,7 +228,7 @@ const gitDiff = Effect.fn("jjDiff.gitDiff")(function* (
     left,
     right,
   ]);
-  if (![0, 1].includes(result.code))
+  if (![0, GIT_DIFF_CHANGED_EXIT_CODE].includes(result.code))
     return yield* Effect.fail(
       new DotfilesError(
         `Failed to generate diff${result.stderr.trim() ? `: ${result.stderr.trim()}` : ""}`,
@@ -279,7 +283,7 @@ const diffstat = Effect.fn("jjDiff.diffstat")(function* (
       const match = /^ ([AMD]) (.*?)( \|.*)(\n?)$/.exec(line);
       if (!match) return line;
       const [, status, path, suffix, ending] = match;
-      return `${color ? styles[status ?? ""] : ""}${status} ${path}${color ? "\u001b[0m" : ""}${suffix}${ending}`;
+      return `${color ? styles[status ?? ""] : ""}${status} ${path}${color ? ANSI_RESET : ""}${suffix}${ending}`;
     })
     .join("");
 });
@@ -291,15 +295,13 @@ export const jjDiff = Effect.fn("jjDiff")(function* (args: string[]) {
     Effect.sync(() => [] as string[]),
     (workspaces) =>
       Effect.gen(function* () {
-        const leftVault = join(left, "secrets/records.yaml");
-        const rightVault = join(right, "secrets/records.yaml");
+        const leftVault = join(left, RECORDS_VAULT_PATH);
+        const rightVault = join(right, RECORDS_VAULT_PATH);
         let same = false;
         if ((yield* regularFile(leftVault)) && (yield* regularFile(rightVault))) {
           const leftBytes = yield* fs.readFile(leftVault);
           const rightBytes = yield* fs.readFile(rightVault);
-          same =
-            leftBytes.length === rightBytes.length &&
-            leftBytes.every((byte, index) => byte === rightBytes[index]);
+          same = Buffer.compare(leftBytes, rightBytes) === 0;
         }
         if (!same) {
           yield* materializeRecords(left, repository, workspaces);

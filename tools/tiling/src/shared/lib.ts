@@ -16,7 +16,7 @@ export type Size = {
 
 export type BindingName = keyof typeof bindings;
 
-type Binding = {
+export type Binding = {
   kde: { title: string; accelerator: string };
   gnome: { summary: string; accelerator: string };
 } & (
@@ -28,7 +28,7 @@ type Binding = {
 export const BINDINGS = bindings as Record<BindingName, Binding>;
 export const BINDING_NAMES = Object.keys(BINDINGS) as BindingName[];
 
-type CycleState = {
+export type CycleState = {
   bindingName: BindingName | null;
   step: number;
   lastUsed: number;

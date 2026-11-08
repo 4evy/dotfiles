@@ -12,6 +12,13 @@ import {
 import { isRecord } from "@dotfiles/runtime/validation";
 import { RAL } from "vscode-jsonrpc/node";
 
+const LF_BYTE = 0x0a;
+const CONTENT_LENGTH_HEADER = "content-length";
+const FORCE_KILL_AFTER_MS = 3000;
+const SHUTDOWN_GRACE_MS = 3000;
+const SIGINT_EXIT_STATUS = 130;
+const SIGTERM_EXIT_STATUS = 143;
+
 const JsonObject = Schema.fromJsonString(Schema.Record(Schema.String, Schema.Unknown));
 const decodeObject = Schema.decodeUnknownOption(JsonObject);
 
@@ -90,6 +97,12 @@ class LspError extends Data.TaggedError("LspError")<{
 const protocolError = (cause: unknown) =>
   new LspError({ message: String(cause), cause });
 
+function asBuffer(bytes: Uint8Array): Buffer {
+  return Buffer.isBuffer(bytes)
+    ? bytes
+    : Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+}
+
 // Only headers are normalized, body bytes stay opaque even for invalid JSON/UTF-8
 function messageParser() {
   const buffer = RAL().messageBuffer.create("utf-8");
@@ -98,64 +111,72 @@ function messageParser() {
   let normalized = false;
   let length: number | undefined;
   let remaining = 0;
+
+  function finishHeaders() {
+    buffer.append(normalized ? "\r\n" : "\r\n\r\n");
+    const value = buffer.tryReadHeaders(true)?.get(CONTENT_LENGTH_HEADER);
+    if (value === undefined) throw new Error("LSP message is missing Content-Length");
+    length = Number(value);
+    remaining = length;
+    headerLines = 0;
+    normalized = false;
+  }
+
+  function appendHeader() {
+    headerLines++;
+    const colon = line.indexOf(":");
+    // Historically unrelated malformed header lines are ignored
+    if (colon < 0) return;
+    const name = line.slice(0, colon).trim().toLowerCase();
+    const value = line.slice(colon + 1).trim();
+    if (
+      name === CONTENT_LENGTH_HEADER &&
+      (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)))
+    )
+      throw new Error("Invalid LSP Content-Length");
+    buffer.append(`${name}: ${value}\r\n`);
+    normalized = true;
+  }
+
+  function readHeader(bytes: Buffer, offset: number): number {
+    const newline = bytes.indexOf(LF_BYTE, offset);
+    if (newline < 0) {
+      line += bytes.subarray(offset).toString("ascii");
+      return bytes.length;
+    }
+    line += bytes.subarray(offset, newline).toString("ascii");
+    if (line.endsWith("\r")) line = line.slice(0, -1);
+    if (!line && headerLines) finishHeaders();
+    else appendHeader();
+    line = "";
+    return newline + 1;
+  }
+
+  function assertComplete() {
+    if (length !== undefined || line || headerLines)
+      throw new Error("LSP message ended before Content-Length bytes were read");
+  }
+
   return function* (chunk: Uint8Array | undefined): Generator<Buffer> {
     if (chunk === undefined) {
-      if (length !== undefined || line || headerLines)
-        throw new Error("LSP message ended before Content-Length bytes were read");
+      assertComplete();
       return;
     }
-    const bytes = Buffer.isBuffer(chunk)
-      ? chunk
-      : Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+    const bytes = asBuffer(chunk);
     let offset = 0;
     while (offset < bytes.length || length === 0) {
       if (length === undefined) {
-        const newline = bytes.indexOf(10, offset);
-        if (newline < 0) {
-          line += bytes.subarray(offset).toString("ascii");
-          break;
-        }
-        line += bytes.subarray(offset, newline).toString("ascii");
-        offset = newline + 1;
-        if (line.endsWith("\r")) line = line.slice(0, -1);
-        if (!line && headerLines) {
-          buffer.append(normalized ? "\r\n" : "\r\n\r\n");
-          const value = buffer.tryReadHeaders(true)?.get("content-length");
-          if (value === undefined)
-            throw new Error("LSP message is missing Content-Length");
-          length = Number(value);
-          remaining = length;
-          headerLines = 0;
-          normalized = false;
-        } else {
-          headerLines++;
-          const colon = line.indexOf(":");
-          // Historically unrelated malformed header lines are ignored
-          if (colon >= 0) {
-            const name = line.slice(0, colon).trim().toLowerCase();
-            const value = line.slice(colon + 1).trim();
-            if (
-              name === "content-length" &&
-              (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)))
-            )
-              throw new Error("Invalid LSP Content-Length");
-            buffer.append(`${name}: ${value}\r\n`);
-            normalized = true;
-          }
-        }
-        line = "";
-      } else {
-        const count = Math.min(remaining, bytes.length - offset);
-        if (count) buffer.append(bytes.subarray(offset, offset + count));
-        offset += count;
-        remaining -= count;
-        const body = buffer.tryReadBody(length);
-        if (body !== undefined) {
-          length = undefined;
-          yield Buffer.isBuffer(body)
-            ? body
-            : Buffer.from(body.buffer, body.byteOffset, body.byteLength);
-        }
+        offset = readHeader(bytes, offset);
+        continue;
+      }
+      const count = Math.min(remaining, bytes.length - offset);
+      if (count) buffer.append(bytes.subarray(offset, offset + count));
+      offset += count;
+      remaining -= count;
+      const body = buffer.tryReadBody(length);
+      if (body !== undefined) {
+        length = undefined;
+        yield asBuffer(body);
       }
     }
   };
@@ -198,10 +219,10 @@ export const proxyLspServer = Effect.fn(function* <E, R>(
   yield* Effect.acquireRelease(
     Effect.sync(() => {
       const sigint = () => {
-        process.exitCode = 130;
+        process.exitCode = SIGINT_EXIT_STATUS;
       };
       const sigterm = () => {
-        process.exitCode = 143;
+        process.exitCode = SIGTERM_EXIT_STATUS;
       };
       process.prependOnceListener("SIGINT", sigint);
       process.prependOnceListener("SIGTERM", sigterm);
@@ -218,12 +239,12 @@ export const proxyLspServer = Effect.fn(function* <E, R>(
       stdin: "pipe",
       stdout: "pipe",
       stderr: "inherit",
-      forceKillAfter: 3000,
+      forceKillAfter: FORCE_KILL_AFTER_MS,
     }),
   );
   // Observe exit without failing the concurrent stdout drain on native signals
   const exited = exitCode(server).pipe(Effect.exit);
-  const shutdown = Effect.sleep(3000).pipe(
+  const shutdown = Effect.sleep(SHUTDOWN_GRACE_MS).pipe(
     Effect.andThen(server.kill({ killSignal: "SIGKILL" })),
     Effect.ignore,
     Effect.forkScoped,

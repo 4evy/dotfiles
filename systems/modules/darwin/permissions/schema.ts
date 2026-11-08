@@ -1,5 +1,11 @@
 import { blob, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
+// TCC's on-disk identity encoding and sentinel for unscoped grants
+export const tccClientTypes = { bundleIdentifier: 0, absolutePath: 1 } as const;
+export const tccNoTargetType = 0;
+export const tccNoTarget = "UNUSED";
+export const tccServicePrefix = "kTCCService";
+
 // Describe Apple's existing table only, never create or migrate TCC databases
 export const access = sqliteTable(
   "access",

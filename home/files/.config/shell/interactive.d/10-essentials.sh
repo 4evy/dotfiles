@@ -66,7 +66,8 @@ alias glow="theme-run glow"
 unalias pfetch neofetch 2>/dev/null || true
 
 pfetch() {
-	local terminal_width="${COLUMNS:-120}"
+	local -r fallback_columns=120 logo_min_columns=100
+	local terminal_width="${COLUMNS:-$fallback_columns}"
 	local -a fetch_options=()
 
 	if ! command -v fastfetch >/dev/null 2>&1; then
@@ -76,7 +77,7 @@ pfetch() {
 
 	if [[ ! -t 1 ]]; then
 		fetch_options+=(--logo none)
-	elif [[ "$terminal_width" =~ ^[0-9]+$ ]] && ((terminal_width < 100)); then
+	elif [[ "$terminal_width" =~ ^[0-9]+$ ]] && ((terminal_width < logo_min_columns)); then
 		fetch_options+=(--logo none)
 	fi
 

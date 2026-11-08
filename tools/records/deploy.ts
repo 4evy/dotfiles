@@ -10,6 +10,7 @@ import {
   pathInfo,
   replaceTextFile,
   validate,
+  validatePathOverlaps,
 } from "./files.ts";
 import {
   type CollectionSet,
@@ -19,6 +20,12 @@ import {
   validRelativePath,
 } from "./vault.ts";
 
+const deploymentManifestVersion = 3;
+const deploymentManifestFilename = ".manifest.json";
+const privateFileMode = 0o600;
+const privateDirectoryMode = 0o700;
+const privateExecutableMode = 0o700;
+
 interface DeploymentFile {
   type: "symlink";
   source: string;
@@ -26,7 +33,7 @@ interface DeploymentFile {
 }
 
 interface DeploymentManifest {
-  version: 3;
+  version: typeof deploymentManifestVersion;
   files: DeploymentFile[];
 }
 
@@ -57,7 +64,7 @@ export function deploy(v: Vault, directory = "") {
           ? "solaris"
           : process.platform;
     const plan = yield* validate(() => planDeployment(value, root, home, system, host));
-    const manifestPath = join(root, ".manifest.json");
+    const manifestPath = join(root, deploymentManifestFilename);
     const prune = yield* validateDeployment(root, manifestPath, plan);
     yield* privateDirectory(root);
     for (const file of plan.files) {
@@ -72,25 +79,28 @@ export function deploy(v: Vault, directory = "") {
     }
     yield* validateDeploymentFile(root, manifestPath);
     // Publish the manifest only after atomically replacing file contents
-    yield* replaceTextFile(manifestPath, plan.encoded, 0o600);
+    yield* replaceTextFile(manifestPath, plan.encoded, privateFileMode);
     yield* v.stdout(plan.encoded);
   });
 }
 
-export function planDeployment(
+function planDeployment(
   value: CollectionSet,
   root: string,
   home: string,
   system: string,
   host: string,
 ): DeploymentPlan {
-  const manifest: DeploymentManifest = { version: 3, files: [] };
+  const manifest: DeploymentManifest = {
+    version: deploymentManifestVersion,
+    files: [],
+  };
   const files: DeploymentPlan["files"] = [];
-  const destinations = new Set([join(root, ".manifest.json")]);
+  const destinations = new Set([join(root, deploymentManifestFilename)]);
   for (const { record: item } of records(value)) {
     if (item.systems.length !== 0 && !item.systems.includes(system)) continue;
     const body = bodyFor(item, system, host, home);
-    const mode = item.executable ? 0o700 : 0o600;
+    const mode = item.executable ? privateExecutableMode : privateFileMode;
     for (const target of item.paths) {
       if (!validRelativePath(target)) {
         throw new DotfilesError("record target must be a safe relative path");
@@ -108,13 +118,11 @@ export function planDeployment(
       });
     }
   }
-  for (const path of destinations) {
-    for (let parent = dirname(path); parent !== root; parent = dirname(parent)) {
-      if (destinations.has(parent)) {
-        throw new DotfilesError("runtime record destinations must not overlap");
-      }
-    }
-  }
+  validatePathOverlaps(
+    root,
+    destinations,
+    "runtime record destinations must not overlap",
+  );
   return { files, manifest, encoded: `${marshalJSON(manifest)}\n` };
 }
 
@@ -122,12 +130,12 @@ function privateDirectory(path: string) {
   return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     yield* validateDeploymentDirectory(path);
-    yield* fs.makeDirectory(path, { recursive: true, mode: 0o700 });
+    yield* fs.makeDirectory(path, { recursive: true, mode: privateDirectoryMode });
     if ((yield* fs.realPath(path)) !== path)
       return yield* Effect.fail(
         new DotfilesError("runtime record directories must not contain symlinks"),
       );
-    yield* fs.chmod(path, 0o700);
+    yield* fs.chmod(path, privateDirectoryMode);
   });
 }
 
@@ -213,7 +221,7 @@ function previousSources(
     (previous.files != null && !Array.isArray(previous.files))
   )
     throw new DotfilesError("invalid previous runtime records manifest");
-  if (previous.version !== 3)
+  if (previous.version !== deploymentManifestVersion)
     throw new DotfilesError("unsupported previous runtime records manifest");
   const seen = new Set<string>();
   for (const entry of (previous.files ?? []) as unknown[]) {
@@ -242,12 +250,7 @@ function previousSources(
   return [...seen];
 }
 
-export function bodyFor(
-  item: RecordItem,
-  system: string,
-  host: string,
-  home: string,
-): string {
+function bodyFor(item: RecordItem, system: string, host: string, home: string): string {
   let body = item.body;
   for (const variant of item.variants ?? []) {
     if (variant.system === system && !variant.hostname) body = variant.body;

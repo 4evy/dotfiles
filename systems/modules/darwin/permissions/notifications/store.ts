@@ -77,7 +77,14 @@ export function run(action: Action, input: Input): void {
       return dictionary;
     }
 
-    if (action === "verify") {
+    function matchesPolicy(original: App, current: App): boolean {
+      const expected = wantedFlags(original, input.grants);
+      const expectedValue =
+        expected === original.flags ? original.value : replacement(original, expected);
+      return Boolean(cf.CFEqual(expectedValue, current.value));
+    }
+
+    function verify(): void {
       const before = apps(
         cf.CFDictionaryGetValue(
           readPropertyList(input.baseline as string, "Baseline"),
@@ -110,12 +117,7 @@ export function run(action: Action, input: Input): void {
           continue;
         }
         if (original.flags !== current.flags) managedChanges++;
-        const expected = wantedFlags(original, input.grants);
-        const expectedValue =
-          expected === original.flags
-            ? original.value
-            : replacement(original, expected);
-        if (!cf.CFEqual(expectedValue, current.value)) outOfScopeChanges++;
+        if (!matchesPolicy(original, current)) outOfScopeChanges++;
       }
       console.log(JSON.stringify({ outOfScopeChanges, managedChanges }));
       if (outOfScopeChanges !== 0) {
@@ -123,52 +125,9 @@ export function run(action: Action, input: Input): void {
           `Verification found ${outOfScopeChanges} app entries outside the policy transform`,
         );
       }
-      return;
     }
 
-    // Caller stops usernoted and awaits its old PID before synchronize or apply
-    if (
-      action === "synchronize" &&
-      !cf._CFPreferencesSynchronizeWithContainer(suite, user, host, container)
-    ) {
-      throw new Error("Cannot synchronize notification preferences before backup");
-    }
-    const copied = cf._CFPreferencesCopyValueWithContainer(
-      keys.apps,
-      suite,
-      user,
-      host,
-      container,
-    );
-    if (copied !== null) own(copied, "apps preferences");
-    const current = apps(copied, "Current");
-    const registered = new Set<string>();
-    const changes: {
-      identifier: string;
-      beforeFlags: string;
-      afterFlags: string;
-    }[] = [];
-    let updated: Pointer | null = null;
-    for (let index = 0; index < current.length; index++) {
-      const app = current[index] as App;
-      if (!selected.has(app.identifier)) continue;
-      registered.add(app.identifier);
-      const flags = wantedFlags(app, input.grants);
-      if (flags === app.flags) continue;
-      changes.push({
-        identifier: app.identifier,
-        beforeFlags: app.flags.toString(),
-        afterFlags: flags.toString(),
-      });
-      if (action === "apply") {
-        updated ??= own(
-          cf.CFArrayCreateMutableCopy(null, 0n, copied),
-          "apps array copy",
-        );
-        cf.CFArraySetValueAtIndex(updated, BigInt(index), replacement(app, flags));
-      }
-    }
-    if (updated !== null) {
+    function commit(updated: Pointer): void {
       cf._CFPreferencesSetValueWithContainer(
         keys.apps,
         updated,
@@ -181,15 +140,64 @@ export function run(action: Action, input: Input): void {
         throw new Error("Cannot synchronize notification preferences");
       }
     }
-    console.log(
-      JSON.stringify({
-        pending: changes.length,
-        registered: registered.size,
-        unregistered: input.identifiers.filter(
-          (identifier) => !registered.has(identifier),
-        ),
-        changes,
-      }),
-    );
+
+    function reconcile(): void {
+      // Caller stops usernoted and awaits its old PID before synchronize or apply
+      if (
+        action === "synchronize" &&
+        !cf._CFPreferencesSynchronizeWithContainer(suite, user, host, container)
+      ) {
+        throw new Error("Cannot synchronize notification preferences before backup");
+      }
+      const copied = cf._CFPreferencesCopyValueWithContainer(
+        keys.apps,
+        suite,
+        user,
+        host,
+        container,
+      );
+      if (copied !== null) own(copied, "apps preferences");
+      const current = apps(copied, "Current");
+      const registered = new Set<string>();
+      const changes: {
+        identifier: string;
+        beforeFlags: string;
+        afterFlags: string;
+      }[] = [];
+      let updated: Pointer | null = null;
+      for (let index = 0; index < current.length; index++) {
+        const app = current[index] as App;
+        if (!selected.has(app.identifier)) continue;
+        registered.add(app.identifier);
+        const flags = wantedFlags(app, input.grants);
+        if (flags === app.flags) continue;
+        changes.push({
+          identifier: app.identifier,
+          beforeFlags: app.flags.toString(),
+          afterFlags: flags.toString(),
+        });
+        if (action === "apply") {
+          updated ??= own(
+            cf.CFArrayCreateMutableCopy(null, 0n, copied),
+            "apps array copy",
+          );
+          cf.CFArraySetValueAtIndex(updated, BigInt(index), replacement(app, flags));
+        }
+      }
+      if (updated !== null) commit(updated);
+      console.log(
+        JSON.stringify({
+          pending: changes.length,
+          registered: registered.size,
+          unregistered: input.identifiers.filter(
+            (identifier) => !registered.has(identifier),
+          ),
+          changes,
+        }),
+      );
+    }
+
+    if (action === "verify") verify();
+    else reconcile();
   });
 }

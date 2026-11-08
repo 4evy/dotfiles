@@ -6,6 +6,12 @@ import { Effect, FileSystem, Stdio, Stream } from "effect";
 import { visit } from "jsonc-parser";
 import writeFileAtomic from "write-file-atomic";
 
+const privateFileMode = 0o600;
+const privateDirectoryMode = 0o700;
+const executableBits = 0o111;
+const permissionBits = 0o777;
+const jsonIndentSpaces = 2;
+
 export function validate<A>(calculation: () => A) {
   return Effect.try({
     try: calculation,
@@ -38,7 +44,7 @@ export function isDirectory(path: string) {
 
 export function isExecutable(path: string) {
   return pathInfo(path).pipe(
-    Effect.map((info) => info?.type === "File" && (info.mode & 0o111) !== 0),
+    Effect.map((info) => info?.type === "File" && (info.mode & executableBits) !== 0),
   );
 }
 
@@ -51,15 +57,27 @@ export function isWithin(root: string, candidate: string): boolean {
   return path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path);
 }
 
+export function validatePathOverlaps(
+  root: string,
+  paths: Set<string>,
+  message: string,
+): void {
+  for (const path of paths) {
+    for (let parent = dirname(path); parent !== root; parent = dirname(parent)) {
+      if (paths.has(parent)) throw new DotfilesError(message);
+    }
+  }
+}
+
 export function writePrivate(path: string, content: string | Uint8Array) {
   return Effect.scoped(
     Effect.gen(function* () {
       // FileSystem.File has no descriptor chmod, which must not follow symlinks
       const file = yield* Effect.acquireRelease(
-        Effect.tryPromise(() => open(path, "wx", 0o600)),
+        Effect.tryPromise(() => open(path, "wx", privateFileMode)),
         (descriptor) => Effect.promise(() => descriptor.close()),
       );
-      yield* Effect.tryPromise(() => file.chmod(0o600));
+      yield* Effect.tryPromise(() => file.chmod(privateFileMode));
       yield* Effect.tryPromise(() => file.writeFile(content));
     }),
   ).pipe(
@@ -79,9 +97,9 @@ export function replaceTextFile(
         directory: dirname(path),
         prefix: ".records-write-",
       });
-      yield* fs.chmod(directory, 0o700);
+      yield* fs.chmod(directory, privateDirectoryMode);
       const replacement = join(directory, "replacement");
-      const permission = mode & 0o777;
+      const permission = mode & permissionBits;
       // Stage privately so the atomic-write library cannot follow a symlink
       // Let the library settle before scope cleanup, even on interruption
       yield* Effect.tryPromise(() =>
@@ -194,7 +212,7 @@ export function marshalJSON(value: unknown): string {
 }
 
 export function marshalPrettyJSON(value: unknown): string {
-  const encoded = JSON.stringify(deterministic(value), null, 2);
+  const encoded = JSON.stringify(deterministic(value), null, jsonIndentSpaces);
   if (encoded === undefined) throw new DotfilesError("value cannot be encoded as JSON");
   return encoded;
 }

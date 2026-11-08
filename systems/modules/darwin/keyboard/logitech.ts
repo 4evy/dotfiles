@@ -3,11 +3,11 @@ import { CString, dlopen, ptr, read } from "bun:ffi";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
 import { object } from "@optique/core/constructs";
-import { runParser } from "@optique/core/facade";
-import { formatMessage, message } from "@optique/core/message";
+import { message } from "@optique/core/message";
 import { flag, option } from "@optique/core/primitives";
 import { choice, string, type ValueParser } from "@optique/core/valueparser";
 import { Effect } from "effect";
+import { parseDarwinOptions } from "../cli.ts";
 
 // hidapi is a synchronous native ABI, kept behind narrow typed adapters
 const native = <A>(f: () => A) =>
@@ -19,6 +19,69 @@ const native = <A>(f: () => A) =>
 
 const SOFTWARE_ID = 0x0b;
 const MULTIPLATFORM = 0x4531;
+const LOGITECH_VENDOR_ID = 0x046d;
+const HID_IDENTIFIER_MAX = 0xffff;
+const PLATFORM_INDEX_MAX = 0xff;
+const DARWIN_WCHAR_BYTES = 4;
+// hid_device_info field offsets in the 64-bit Darwin C ABI
+// The appended bus_type field in hidapi 0.13 does not change them
+const HID_DEVICE_INFO = {
+  pathOffset: 0,
+  productStringOffset: 40,
+  usagePageOffset: 48,
+  nextOffset: 56,
+} as const;
+const HID_USAGE_PAGE = {
+  logitechHidpp: 0xff43,
+  logitechVendor: 0xff0c,
+  genericDesktop: 0x0001,
+  consumer: 0x000c,
+} as const;
+const UNKNOWN_USAGE_PAGE_PRIORITY = 9;
+const HID_READ_BUFFER_BYTES = 32;
+const REQUEST_TIMEOUT_MS = 4000;
+const HID_OPEN_SHARED = 0;
+const READ_POLL_MAX_MS = 50;
+const READ_POLL_MIN_MS = 1;
+const NONBLOCKING_READ_TIMEOUT_MS = 0;
+const HIDPP = {
+  longReportId: 0x11,
+  longReportBytes: 20,
+  reportIdOffset: 0,
+  deviceOffset: 1,
+  requestOffset: 2,
+  parametersOffset: 4,
+  parametersBytes: 16,
+  targetDeviceIndex: 0xff,
+  alternateReplyDeviceIndex: 0,
+  functionMask: 0xfff0,
+  featureShift: 8,
+  rootGetFeature: 0,
+  featureIdBytes: 2,
+  featureIndexOffset: 0,
+  errorTagOffset: 0,
+  errorTag: 0xff,
+  errorRequestOffset: 1,
+  errorCodeOffset: 3,
+  replyRequestOffset: 0,
+  replyParametersOffset: 2,
+} as const;
+const MULTIPLATFORM_INFO = {
+  minimumBytes: 7,
+  capabilitiesOffset: 0,
+  writableMask: 0x02,
+  descriptorCountOffset: 2,
+  currentPlatformOffset: 6,
+  getInfo: 0,
+  getDescriptor: 0x10,
+  setPlatform: 0x30,
+  currentHost: 0xff,
+} as const;
+const PLATFORM_DESCRIPTOR = {
+  minimumBytes: 8,
+  platformOffset: 0,
+  osFlagsOffset: 2,
+} as const;
 const OS_BITS = {
   windows: 0x0100,
   linux: 0x0400,
@@ -47,7 +110,7 @@ function wideString(pointer: number | bigint | null): string {
   if (!pointer) return "";
   // Darwin wchar_t is UTF-32, unlike JavaScript's UTF-16 strings
   let result = "";
-  for (let offset = 0; ; offset += 4) {
+  for (let offset = 0; ; offset += DARWIN_WCHAR_BYTES) {
     const codePoint = read.u32(pointer, offset);
     if (codePoint === 0) return result;
     result += String.fromCodePoint(codePoint);
@@ -84,37 +147,35 @@ function loadHidapi() {
   throw new Error("could not load libhidapi; install Homebrew package 'hidapi'");
 }
 
-export function choosePath(
-  devices: Device[],
-  productName?: string,
-): string | undefined {
-  const priority = new Map([
-    [0xff43, 0],
-    [0xff0c, 1],
-    [0x0001, 2],
-    [0x000c, 3],
+function choosePath(devices: Device[], productName?: string): string | undefined {
+  const priority = new Map<number, number>([
+    [HID_USAGE_PAGE.logitechHidpp, 0],
+    [HID_USAGE_PAGE.logitechVendor, 1],
+    [HID_USAGE_PAGE.genericDesktop, 2],
+    [HID_USAGE_PAGE.consumer, 3],
   ]);
   return devices
     .filter((device) => !productName || device.product === productName)
     .sort(
       (left, right) =>
-        (priority.get(left.usagePage) ?? 9) - (priority.get(right.usagePage) ?? 9),
+        (priority.get(left.usagePage) ?? UNKNOWN_USAGE_PAGE_PRIORITY) -
+        (priority.get(right.usagePage) ?? UNKNOWN_USAGE_PAGE_PRIORITY),
     )[0]?.path;
 }
 
-export const request = Effect.fn(function* (
+const request = Effect.fn(function* (
   transport: Transport,
   requestId: number,
   params = Buffer.alloc(0),
-  timeoutMs = 4000,
+  timeoutMs = REQUEST_TIMEOUT_MS,
 ) {
-  requestId = (requestId & 0xfff0) | SOFTWARE_ID;
-  const frame = Buffer.alloc(20);
-  frame[0] = 0x11;
-  frame[1] = 0xff;
-  frame.writeUInt16BE(requestId, 2);
-  params.copy(frame, 4, 0, 16);
-  while ((yield* transport.read(0)).length) {
+  requestId = (requestId & HIDPP.functionMask) | SOFTWARE_ID;
+  const frame = Buffer.alloc(HIDPP.longReportBytes);
+  frame[HIDPP.reportIdOffset] = HIDPP.longReportId;
+  frame[HIDPP.deviceOffset] = HIDPP.targetDeviceIndex;
+  frame.writeUInt16BE(requestId, HIDPP.requestOffset);
+  params.copy(frame, HIDPP.parametersOffset, 0, HIDPP.parametersBytes);
+  while ((yield* transport.read(NONBLOCKING_READ_TIMEOUT_MS)).length) {
     /* Discard stale replies before sending */
   }
   yield* transport.write(frame);
@@ -122,19 +183,33 @@ export const request = Effect.fn(function* (
   while (performance.now() < deadline) {
     // Bound native blocking so cancellation is observed between reads
     const data = yield* transport.read(
-      Math.floor(Math.min(50, Math.max(1, deadline - performance.now()))),
+      Math.floor(
+        Math.min(
+          READ_POLL_MAX_MS,
+          Math.max(READ_POLL_MIN_MS, deadline - performance.now()),
+        ),
+      ),
     );
-    if (data.length !== 20 || data[0] !== 0x11 || (data[1] !== 0xff && data[1] !== 0))
+    if (
+      data.length !== HIDPP.longReportBytes ||
+      data[HIDPP.reportIdOffset] !== HIDPP.longReportId ||
+      (data[HIDPP.deviceOffset] !== HIDPP.targetDeviceIndex &&
+        data[HIDPP.deviceOffset] !== HIDPP.alternateReplyDeviceIndex)
+    )
       continue;
-    const payload = data.subarray(2);
-    if (payload[0] === 0xff && payload.readUInt16BE(1) === requestId) {
+    const payload = data.subarray(HIDPP.requestOffset);
+    if (
+      payload[HIDPP.errorTagOffset] === HIDPP.errorTag &&
+      payload.readUInt16BE(HIDPP.errorRequestOffset) === requestId
+    ) {
       return yield* Effect.fail(
         new DotfilesError(
-          `HID++ feature request 0x${requestId.toString(16).padStart(4, "0")} failed with error 0x${payload[3]?.toString(16).padStart(2, "0")}`,
+          `HID++ feature request 0x${requestId.toString(16).padStart(4, "0")} failed with error 0x${payload[HIDPP.errorCodeOffset]?.toString(16).padStart(2, "0")}`,
         ),
       );
     }
-    if (payload.readUInt16BE(0) === requestId) return payload.subarray(2);
+    if (payload.readUInt16BE(HIDPP.replyRequestOffset) === requestId)
+      return payload.subarray(HIDPP.replyParametersOffset);
   }
   return yield* Effect.fail(
     new DotfilesError(
@@ -144,12 +219,16 @@ export const request = Effect.fn(function* (
 });
 
 const featureIndex = Effect.fn(function* (transport: Transport, feature: number) {
-  const parameter = Buffer.alloc(2);
+  const parameter = Buffer.alloc(HIDPP.featureIdBytes);
   parameter.writeUInt16BE(feature);
-  return (yield* request(transport, 0, parameter))[0] || undefined;
+  return (
+    (yield* request(transport, HIDPP.rootGetFeature, parameter))[
+      HIDPP.featureIndexOffset
+    ] || undefined
+  );
 });
 
-export function choosePlatform(
+function choosePlatform(
   descriptors: Descriptor[],
   platform?: number,
   os?: OsName,
@@ -172,28 +251,38 @@ const setMultiplatform = Effect.fn(function* (
     console.log("logitech-platform: MULTIPLATFORM feature is not available");
     return false;
   }
-  const info = yield* request(transport, index << 8);
-  if (info.length < 7)
+  const indexRequest = index << HIDPP.featureShift;
+  const info = yield* request(transport, indexRequest | MULTIPLATFORM_INFO.getInfo);
+  if (info.length < MULTIPLATFORM_INFO.minimumBytes)
     return yield* Effect.fail(
       new DotfilesError(
         `unexpected MULTIPLATFORM info payload: ${info.toString("hex")}`,
       ),
     );
-  if (!((info[0] ?? 0) & 0x02)) {
+  if (
+    !(
+      (info[MULTIPLATFORM_INFO.capabilitiesOffset] ?? 0) &
+      MULTIPLATFORM_INFO.writableMask
+    )
+  ) {
     console.log("logitech-platform: keyboard reports MULTIPLATFORM as read-only");
     return false;
   }
   const descriptors: Descriptor[] = [];
-  for (let descriptor = 0; descriptor < (info[2] ?? 0); descriptor++) {
+  for (
+    let descriptor = 0;
+    descriptor < (info[MULTIPLATFORM_INFO.descriptorCountOffset] ?? 0);
+    descriptor++
+  ) {
     const reply = yield* request(
       transport,
-      (index << 8) | 0x10,
+      indexRequest | MULTIPLATFORM_INFO.getDescriptor,
       Buffer.from([descriptor]),
     );
-    if (reply.length >= 8)
+    if (reply.length >= PLATFORM_DESCRIPTOR.minimumBytes)
       descriptors.push({
-        platform: reply.readUInt8(0),
-        osFlags: reply.readUInt16BE(2),
+        platform: reply.readUInt8(PLATFORM_DESCRIPTOR.platformOffset),
+        osFlags: reply.readUInt16BE(PLATFORM_DESCRIPTOR.osFlagsOffset),
       });
   }
   const desired = yield* native(() => choosePlatform(descriptors, platform, os));
@@ -206,15 +295,22 @@ const setMultiplatform = Effect.fn(function* (
     })
     .join(", ");
   console.log(
-    `logitech-platform: current=${info[6]} desired=${desired} descriptors=[${description}]`,
+    `logitech-platform: current=${info[MULTIPLATFORM_INFO.currentPlatformOffset]} desired=${desired} descriptors=[${description}]`,
   );
-  if (info[6] === desired) {
+  if (info[MULTIPLATFORM_INFO.currentPlatformOffset] === desired) {
     console.log("logitech-platform: already configured");
     return false;
   }
-  yield* request(transport, (index << 8) | 0x30, Buffer.from([0xff, desired]));
-  const updated = yield* request(transport, index << 8);
-  if (updated.length < 7 || updated[6] !== desired)
+  yield* request(
+    transport,
+    indexRequest | MULTIPLATFORM_INFO.setPlatform,
+    Buffer.from([MULTIPLATFORM_INFO.currentHost, desired]),
+  );
+  const updated = yield* request(transport, indexRequest | MULTIPLATFORM_INFO.getInfo);
+  if (
+    updated.length < MULTIPLATFORM_INFO.minimumBytes ||
+    updated[MULTIPLATFORM_INFO.currentPlatformOffset] !== desired
+  )
     return yield* Effect.fail(
       new DotfilesError(
         `MULTIPLATFORM write did not stick: ${updated.toString("hex")}`,
@@ -246,10 +342,10 @@ function integer(option: string, max: number): ValueParser<"sync", number> {
 }
 
 const parser = object({
-  vendor: option("--vendor-id", integer("--vendor-id", 0xffff))
+  vendor: option("--vendor-id", integer("--vendor-id", HID_IDENTIFIER_MAX))
     .multiple()
-    .map((values) => values.at(-1) ?? 0x046d),
-  product: option("--product-id", integer("--product-id", 0xffff))
+    .map((values) => values.at(-1) ?? LOGITECH_VENDOR_ID),
+  product: option("--product-id", integer("--product-id", HID_IDENTIFIER_MAX))
     .multiple({ min: 1 })
     .map((values) => {
       const product = values.at(-1);
@@ -259,7 +355,7 @@ const parser = object({
   productName: option("--product-name", string({ metavar: "NAME" }))
     .multiple()
     .map((values) => values.at(-1)),
-  platform: option("--platform", integer("--platform", 0xff))
+  platform: option("--platform", integer("--platform", PLATFORM_INDEX_MAX))
     .multiple()
     .map((values) => values.at(-1)),
   os: option(
@@ -274,21 +370,12 @@ const parser = object({
 });
 
 function parseOptions() {
-  let helpShown = false;
-  const options = runParser(parser, "bun logitech.ts", Bun.argv.slice(2), {
-    brief: message`Set a Logitech keyboard's MULTIPLATFORM host mode`,
-    help: {
-      option: { names: ["-h", "--help"] },
-      onShow: () => {
-        helpShown = true;
-      },
-    },
-    stderr: () => {},
-    onError: (_code, error) => {
-      throw new Error(formatMessage(error));
-    },
-  });
-  return helpShown ? undefined : options;
+  return parseDarwinOptions(
+    parser,
+    "bun logitech.ts",
+    Bun.argv.slice(2),
+    message`Set a Logitech keyboard's MULTIPLATFORM host mode`,
+  );
 }
 
 type HidApi = ReturnType<typeof loadHidapi>["symbols"];
@@ -310,19 +397,19 @@ const enumerateDevices = Effect.fn(function* (
       );
       return yield* native(() => {
         const devices: Device[] = [];
-        // hid_device_info's pointer offsets follow the 64-bit Darwin C ABI
-        // The appended bus_type field in hidapi 0.13 does not change them
         for (
           let current: number | bigint | null = head;
           current;
-          current = read.ptr(current, 56)
+          current = read.ptr(current, HID_DEVICE_INFO.nextOffset)
         ) {
-          const path = read.ptr(current, 0);
+          const path = read.ptr(current, HID_DEVICE_INFO.pathOffset);
           if (path)
             devices.push({
               path: new CString(path).toString(),
-              product: wideString(read.ptr(current, 40)),
-              usagePage: read.u16(current, 48),
+              product: wideString(
+                read.ptr(current, HID_DEVICE_INFO.productStringOffset),
+              ),
+              usagePage: read.u16(current, HID_DEVICE_INFO.usagePageOffset),
             });
         }
         return devices;
@@ -347,7 +434,7 @@ function nativeTransport(api: HidApi, handle: Handle): Transport {
   return {
     read(timeoutMs) {
       return native(() => {
-        const buffer = Buffer.alloc(32);
+        const buffer = Buffer.alloc(HID_READ_BUFFER_BYTES);
         const size = api.hid_read_timeout(
           handle,
           ptr(buffer),
@@ -385,7 +472,7 @@ export const main = Effect.fn(function* () {
   yield* native(() => {
     if (api.hid_init() !== 0) throw new Error("hid_init failed");
   });
-  yield* native(() => api.hid_darwin_set_open_exclusive(0));
+  yield* native(() => api.hid_darwin_set_open_exclusive(HID_OPEN_SHARED));
   const devices = yield* enumerateDevices(api, options.vendor, options.product);
   const path = choosePath(devices, options.productName);
   if (!path) {

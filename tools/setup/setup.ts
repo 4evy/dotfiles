@@ -30,30 +30,40 @@ const homebrewRevision = "85d1a3fc80d8a63932f632aca8f787de11d14a64";
 const homebrewURL = `https://raw.githubusercontent.com/Homebrew/install/${homebrewRevision}/install.sh`;
 const homebrewSHA256 =
   "5f333bbe53bc490e51e7ccb1df8779b3dd6ee73a1a7379efda216edb08ccb148";
+const sudoPasswordAttempts = 3;
+const sudoRefreshInterval = "45 seconds";
+const privateExecutableMode = 0o700;
+const installerDownloadRetries = 3;
+const installerRetryInterval = "1 second";
 
 const log = (message: string) => Effect.sync(() => console.log(`\n==> ${message}`));
 
-const workstation = Effect.gen(function* () {
+const workstationBrewPrefix = Effect.fn(function* (nixos: boolean) {
   const fs = yield* FileSystem.FileSystem;
-  const nixos = process.platform === "linux" && (yield* fs.exists("/etc/NIXOS"));
-  const userBin = join(homedir(), ".local/bin");
-  let brewPrefix: string;
   if (process.platform === "darwin") {
     if (process.arch !== "arm64")
       return yield* Effect.fail(
         new DotfilesError("Use a native Apple Silicon terminal, not Rosetta"),
       );
-    brewPrefix = "/opt/homebrew";
-  } else if (process.platform === "linux") {
+    return "/opt/homebrew";
+  }
+  if (process.platform === "linux") {
     if (!nixos && !(yield* fs.exists("/usr/bin/bootc")))
       return yield* Effect.fail(
         new DotfilesError("Linux workstation setup supports only BlueBuild and NixOS"),
       );
-    brewPrefix = "/home/linuxbrew/.linuxbrew";
-  } else
-    return yield* Effect.fail(
-      new DotfilesError(`Unsupported platform: ${process.platform}`),
-    );
+    return "/home/linuxbrew/.linuxbrew";
+  }
+  return yield* Effect.fail(
+    new DotfilesError(`Unsupported platform: ${process.platform}`),
+  );
+});
+
+const workstation = Effect.gen(function* () {
+  const fs = yield* FileSystem.FileSystem;
+  const nixos = process.platform === "linux" && (yield* fs.exists("/etc/NIXOS"));
+  const userBin = join(homedir(), ".local/bin");
+  const brewPrefix = yield* workstationBrewPrefix(nixos);
   const paths: string[] = [];
   if (process.platform === "linux" && !nixos)
     paths.push(
@@ -155,7 +165,7 @@ const workstation = Effect.gen(function* () {
       return yield* Effect.fail(
         new DotfilesError("Sudo authentication is required; run interactively"),
       );
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < sudoPasswordAttempts; attempt++) {
       value = yield* promptPassword;
       if (yield* validate(value)) return value;
       yield* Effect.sync(() => console.error("Sorry, try again"));
@@ -174,7 +184,7 @@ const workstation = Effect.gen(function* () {
       yield* fs.writeFileString(
         helper,
         `#!/bin/sh\nprintf "%s\\n" "\${DOTFILES_SUDO_PASSWORD:?}"\n`,
-        { mode: 0o700 },
+        { mode: privateExecutableMode },
       );
       const sudo = env.DOTFILES_REAL_SUDO ?? (yield* which("sudo"));
       if (!sudo)
@@ -183,7 +193,7 @@ const workstation = Effect.gen(function* () {
       yield* fs.writeFileString(
         join(directory, "sudo"),
         '#!/bin/sh\n"$DOTFILES_REAL_SUDO" -A -v || exit "$?"\n"$DOTFILES_REAL_SUDO" "$@"\nexit "$?"\n',
-        { mode: 0o700 },
+        { mode: privateExecutableMode },
       );
       env = {
         ...env,
@@ -195,7 +205,7 @@ const workstation = Effect.gen(function* () {
       yield* command([sudo, "-A", "-v"], { quiet: true });
       // A scoped fiber serializes refreshes and stops before removing the helpers
       yield* Effect.gen(function* () {
-        yield* Effect.sleep("45 seconds");
+        yield* Effect.sleep(sudoRefreshInterval);
         yield* command([sudo, "-A", "-v"], { quiet: true, check: false }).pipe(
           Effect.ignore,
         );
@@ -228,7 +238,10 @@ const workstation = Effect.gen(function* () {
             );
           yield* log("Downloading the Homebrew installer");
           const content = yield* download(url, (response) => response.arrayBuffer).pipe(
-            Effect.retry({ times: 3, schedule: Schedule.spaced("1 second") }),
+            Effect.retry({
+              times: installerDownloadRetries,
+              schedule: Schedule.spaced(installerRetryInterval),
+            }),
             Effect.map((buffer) => new Uint8Array(buffer)),
           );
           if (createHash("sha256").update(content).digest("hex") !== checksum)

@@ -8,6 +8,8 @@ import {
   runMain,
 } from "@dotfiles/runtime/runtime";
 
+const FORCE_KILL_AFTER_MS = 3000;
+
 runMain(
   Effect.gen(function* () {
     const server = yield* Effect.sync(() => Bun.which("just-lsp"));
@@ -23,7 +25,7 @@ runMain(
           stdin: "inherit",
           stdout: "inherit",
           stderr: "inherit",
-          forceKillAfter: 3000,
+          forceKillAfter: FORCE_KILL_AFTER_MS,
         }),
       );
       process.exitCode = yield* exitCode(child);

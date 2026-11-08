@@ -15,9 +15,24 @@ import {
   type Entry,
   GeneratorsSchema,
   HooksSchema,
+  type Manifest,
   ManifestSchema,
   PreparedAiManifestSchema,
 } from "./schema.ts";
+
+const PRIVATE_DIRECTORY_MODE = 0o700;
+const PRIVATE_FILE_MODE = 0o600;
+const PUBLIC_FILE_MODE = 0o644;
+const EXECUTABLE_BITS = 0o111;
+const ACCESS_PERMISSION_BITS = 0o777;
+const AI_FILE_PERMISSIONS = {
+  private: { executable: "0700", regular: "0600" },
+  public: { executable: "0755", regular: "0644" },
+} as const;
+const MANIFEST_FILE = "manifest.json";
+const HOOKS_FILE = "hooks.json";
+const GENERATORS_FILE = "generators.json";
+const FINGERPRINT_IGNORED_DIRECTORIES = ["node_modules", "__pycache__", ".git", ".jj"];
 
 const repository = resolve(import.meta.dir, "../..");
 const home = homedir();
@@ -137,22 +152,25 @@ const publicFiles = Effect.fn("publicFiles")(function* (output: string) {
     return yield* Effect.fail(
       new DotfilesError("Nix did not return a Hjem home output"),
     );
-  yield* fs.copyFile(join(built, "hooks.json"), join(output, "hooks.json"));
+  yield* fs.copyFile(join(built, HOOKS_FILE), join(output, HOOKS_FILE));
   const manifest = yield* Schema.decodeUnknownEffect(ManifestSchema)(
-    yield* readJson(join(built, "manifest.json")),
+    yield* readJson(join(built, MANIFEST_FILE)),
   );
   manifest.files = manifest.files.filter(
     (entry) => !entry.requireCommand || Bun.which(entry.requireCommand),
   );
   for (const entry of manifest.files) delete entry.requireCommand;
   const generators = yield* Schema.decodeUnknownEffect(GeneratorsSchema)(
-    yield* readJson(join(built, "generators.json")),
+    yield* readJson(join(built, GENERATORS_FILE)),
   );
   for (const generator of generators) {
     if (generator.systems && !generator.systems.includes(process.platform)) continue;
     const target = yield* homeTarget(generator.target);
     const source = join(output, "files", relative(home, target));
-    yield* fs.makeDirectory(dirname(source), { recursive: true, mode: 0o700 });
+    yield* fs.makeDirectory(dirname(source), {
+      recursive: true,
+      mode: PRIVATE_DIRECTORY_MODE,
+    });
     let contents = "";
     if (!generator.requireCommand || Bun.which(generator.requireCommand)) {
       const command = generator.command.map((value) => expand(value, output));
@@ -172,12 +190,56 @@ const publicFiles = Effect.fn("publicFiles")(function* (output: string) {
         );
       else console.error(`Could not generate optional ${generator.target}`);
     }
-    yield* fs.writeFileString(source, contents, { mode: 0o644 });
+    yield* fs.writeFileString(source, contents, { mode: PUBLIC_FILE_MODE });
     // Keep managed permissions independent of the invoking shell's umask
-    yield* fs.chmod(source, 0o644);
+    yield* fs.chmod(source, PUBLIC_FILE_MODE);
     manifest.files.push({ type: "symlink", source, target, clobber: true });
   }
   return manifest;
+});
+
+type PreparedAiEntry = (typeof PreparedAiManifestSchema.Type)["files"][number];
+
+function preparedAiPermissions(privateFile: boolean | undefined, executable: boolean) {
+  const permissions = privateFile
+    ? AI_FILE_PERMISSIONS.private
+    : AI_FILE_PERMISSIONS.public;
+  return executable ? permissions.executable : permissions.regular;
+}
+
+const prepareAiEntry = Effect.fn("prepareAiEntry")(function* (
+  entry: PreparedAiEntry,
+  directory: string,
+  output: string,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const target = yield* homeTarget(entry.path);
+  const original = join(directory, relative(home, target));
+  if (entry.type === "symlink") {
+    const link = yield* fs.readLink(original);
+    return {
+      type: "symlink",
+      source: resolve(dirname(original), link),
+      target,
+      clobber: true,
+    } satisfies Entry;
+  }
+  const source = join(output, "ai", relative(home, target));
+  yield* fs.makeDirectory(dirname(source), {
+    recursive: true,
+    mode: PRIVATE_DIRECTORY_MODE,
+  });
+  yield* fs.copyFile(original, source);
+  const executable = ((yield* fs.stat(original)).mode & EXECUTABLE_BITS) !== 0;
+  const permissions = preparedAiPermissions(entry.private, executable);
+  yield* fs.chmod(source, Number.parseInt(permissions, 8));
+  return {
+    type: entry.private ? "copy" : "symlink",
+    source,
+    target,
+    clobber: true,
+    ...(entry.private ? { permissions } : {}),
+  } satisfies Entry;
 });
 
 const preparedAi = Effect.fn("preparedAi")(function* (
@@ -185,48 +247,17 @@ const preparedAi = Effect.fn("preparedAi")(function* (
   managesAi: boolean,
 ) {
   if (!managesAi) return [] as Entry[];
-  const fs = yield* FileSystem.FileSystem;
   const directory = join(repository, ".generated/ai-configs");
   const metadata = yield* Schema.decodeUnknownEffect(PreparedAiManifestSchema)(
-    yield* readJson(join(directory, "manifest.json")),
+    yield* readJson(join(directory, MANIFEST_FILE)),
   );
   if (metadata.platform && metadata.platform !== process.platform)
     return yield* Effect.fail(
       new DotfilesError("Prepared AI configuration belongs to another platform"),
     );
   const files: Entry[] = [];
-  for (const entry of metadata.files) {
-    const target = yield* homeTarget(entry.path);
-    const original = join(directory, relative(home, target));
-    if (entry.type === "symlink") {
-      const link = yield* fs.readLink(original);
-      files.push({
-        type: "symlink",
-        source: resolve(dirname(original), link),
-        target,
-        clobber: true,
-      });
-    } else {
-      const source = join(output, "ai", relative(home, target));
-      yield* fs.makeDirectory(dirname(source), {
-        recursive: true,
-        mode: 0o700,
-      });
-      yield* fs.copyFile(original, source);
-      const executable = ((yield* fs.stat(original)).mode & 0o111) !== 0;
-      yield* fs.chmod(
-        source,
-        entry.private ? (executable ? 0o700 : 0o600) : executable ? 0o755 : 0o644,
-      );
-      files.push({
-        type: entry.private ? "copy" : "symlink",
-        source,
-        target,
-        clobber: true,
-        ...(entry.private ? { permissions: executable ? "0700" : "0600" } : {}),
-      });
-    }
-  }
+  for (const entry of metadata.files)
+    files.push(yield* prepareAiEntry(entry, directory, output));
   return files;
 });
 
@@ -238,7 +269,7 @@ function selected(target: string) {
 }
 
 const activeManifest = Effect.fn("activeManifest")(function* () {
-  const path = join(state, "dotfiles/current/manifest.json");
+  const path = join(state, "dotfiles/current", MANIFEST_FILE);
   return (yield* exists(path))
     ? yield* Schema.decodeUnknownEffect(ManifestSchema)(yield* readJson(path))
     : undefined;
@@ -288,15 +319,14 @@ const same = Effect.fn("same")(function* (entry: Entry) {
       return (yield* fs.readLink(entry.target)) === entry.source;
     const expectedMode = entry.permissions
       ? Number.parseInt(entry.permissions, 8)
-      : source.mode & 0o777;
-    if (((yield* fs.stat(entry.target)).mode & 0o777) !== expectedMode) return false;
+      : source.mode & ACCESS_PERMISSION_BITS;
+    if (((yield* fs.stat(entry.target)).mode & ACCESS_PERMISSION_BITS) !== expectedMode)
+      return false;
     const [left, right] = yield* Effect.all([
       fs.readFile(entry.source),
       fs.readFile(entry.target),
     ]);
-    return (
-      left.length === right.length && left.every((byte, index) => byte === right[index])
-    );
+    return Buffer.compare(left, right) === 0;
   }).pipe(
     Effect.catch((error) => {
       const cause = error.reason.cause as NodeJS.ErrnoException | undefined;
@@ -323,7 +353,7 @@ function fingerprintInput(
     const link = yield* fs.lstat(path);
     if (link.type === "SymbolicLink") fingerprint.update(yield* fs.readLink(path));
     const info = yield* fs.stat(path);
-    fingerprint.update(String(info.mode & 0o777));
+    fingerprint.update(String(info.mode & ACCESS_PERMISSION_BITS));
     if (info.type !== "Directory") {
       fingerprint.update(yield* fs.readFile(path));
       return;
@@ -332,7 +362,7 @@ function fingerprintInput(
     if (visited.has(identity)) return;
     visited.add(identity);
     for (const name of (yield* fs.readDirectory(path)).sort()) {
-      if (["node_modules", "__pycache__", ".git", ".jj"].includes(name)) continue;
+      if (FINGERPRINT_IGNORED_DIRECTORIES.includes(name)) continue;
       yield* fingerprintInput(fingerprint, join(path, name), visited);
     }
   });
@@ -341,10 +371,10 @@ function fingerprintInput(
 const hooks = Effect.fn("hooks")(function* (output: string) {
   const fs = yield* FileSystem.FileSystem;
   const entries = yield* Schema.decodeUnknownEffect(HooksSchema)(
-    yield* readJson(join(output, "hooks.json")),
+    yield* readJson(join(output, HOOKS_FILE)),
   );
   const hashes = join(state, "hook-state");
-  yield* fs.makeDirectory(hashes, { recursive: true, mode: 0o700 });
+  yield* fs.makeDirectory(hashes, { recursive: true, mode: PRIVATE_DIRECTORY_MODE });
   for (const hook of entries.sort((a, b) => a.name.localeCompare(b.name))) {
     const marker = join(hashes, createHash("sha256").update(hook.name).digest("hex"));
     const previous = (yield* exists(marker)) ? yield* fs.readFileString(marker) : "";
@@ -360,13 +390,148 @@ const hooks = Effect.fn("hooks")(function* (output: string) {
     }
     console.error(`Applying ${hook.name}`);
     yield* run(hook.command);
-    yield* fs.writeFileString(marker, hash, { mode: 0o600 });
+    yield* fs.writeFileString(marker, hash, { mode: PRIVATE_FILE_MODE });
   }
+});
+
+const prepareManifest = Effect.fn("prepareManifest")(function* (
+  output: string,
+  managesAi: boolean,
+) {
+  if (managesAi && process.env.DOTFILES_AI_PREPARED !== "1")
+    yield* run(["bun", "tools/setup/ai/ai.ts", "generate"]);
+  const manifest = yield* publicFiles(output);
+  const privateText = yield* run(
+    ["bun", "tools/records/main.ts", "deploy", "--directory", join(output, "records")],
+    true,
+  );
+  const privateJson = yield* Effect.try({
+    try: () => JSON.parse(privateText) as unknown,
+    catch: (error) => new DotfilesError(`Invalid private manifest: ${error}`),
+  });
+  const privateManifest =
+    yield* Schema.decodeUnknownEffect(ManifestSchema)(privateJson);
+  manifest.files.push(
+    ...privateManifest.files,
+    ...(yield* preparedAi(output, managesAi)),
+  );
+  return manifest;
+});
+
+const resolveAliases = Effect.fn("resolveAliases")(function* (files: Entry[]) {
+  // Resolve aliases to prepared sources so activation order cannot break links
+  const byTarget = new Map(files.map((entry) => [entry.target, entry]));
+  for (const entry of files) {
+    if (entry.type !== "symlink") continue;
+    entry.source = resolve(entry.source);
+    const visited = new Set([entry.target]);
+    while (byTarget.has(entry.source)) {
+      if (visited.has(entry.source))
+        return yield* Effect.fail(
+          new DotfilesError(`Circular Hjem alias: ${entry.target}`),
+        );
+      visited.add(entry.source);
+      const source = byTarget.get(entry.source);
+      if (!source) break;
+      entry.source = source.source;
+    }
+  }
+});
+
+const prepareTargets = Effect.fn("prepareTargets")(function* (files: Entry[]) {
+  const targets = new Set<string>();
+  for (const entry of files) {
+    if (targets.has(entry.target))
+      return yield* Effect.fail(
+        new DotfilesError(`Duplicate Hjem target: ${entry.target}`),
+      );
+    targets.add(entry.target);
+    entry.clobber = true;
+  }
+  yield* resolveAliases(files);
+  return targets;
+});
+
+const showFileDiff = Effect.fn("showFileDiff")(function* (
+  entry: Entry,
+  output: string,
+) {
+  if (
+    action !== "diff" ||
+    entry.source.startsWith(join(output, "records")) ||
+    entry.source.startsWith(join(output, "ai"))
+  )
+    return;
+  yield* runCommand(
+    [
+      "diff",
+      "-u",
+      "--label",
+      entry.target,
+      "--label",
+      entry.target,
+      (yield* exists(entry.target)) ? entry.target : "/dev/null",
+      entry.source,
+    ],
+    { check: false, stdin: "inherit", stderr: "inherit" },
+  );
+});
+
+const showChanges = Effect.fn("showChanges")(function* (
+  manifest: Manifest,
+  targets: Set<string>,
+  output: string,
+) {
+  let changed = 0;
+  for (const entry of manifest.files) {
+    if (!selected(entry.target) || (yield* same(entry))) continue;
+    console.log(relative(home, entry.target));
+    changed++;
+    yield* showFileDiff(entry, output);
+  }
+  for (const entry of (yield* activeManifest())?.files || []) {
+    if (targets.has(entry.target) || !selected(entry.target)) continue;
+    console.log(`removed ${relative(home, entry.target)}`);
+    changed++;
+  }
+  console.error(`${changed} managed files differ`);
+});
+
+const hjemExecutable = Effect.fn("hjemExecutable")(function* () {
+  const installed = Bun.which("hjem");
+  if (installed) return installed;
+  const fs = yield* FileSystem.FileSystem;
+  yield* fs.makeDirectory(join(state, "bootstrap"), {
+    recursive: true,
+    mode: PRIVATE_DIRECTORY_MODE,
+  });
+  const result = yield* run(
+    [
+      "nix",
+      "build",
+      `${repository}#hjem`,
+      "--out-link",
+      join(state, "bootstrap/hjem"),
+      "--print-out-paths",
+    ],
+    true,
+  );
+  return join(result.split("\n").at(-1) || "", "bin/hjem");
+});
+
+const completeActivation = Effect.fn("completeActivation")(function* (
+  output: string,
+  managesAi: boolean,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  yield* fs.remove(join(state, "dotfiles-manifest.json"), { force: true });
+  if (managesAi) yield* run(["bun", "tools/setup/ai/ai.ts", "activate"]);
+  yield* hooks(output);
 });
 
 const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
   const fs = yield* FileSystem.FileSystem;
-  yield* fs.makeDirectory(state, { recursive: true, mode: 0o700 });
+  yield* fs.makeDirectory(state, { recursive: true, mode: PRIVATE_DIRECTORY_MODE });
   const lock = join(state, "dotfiles.lock");
   let generated: string | undefined;
   let activationStarted = false;
@@ -374,7 +539,7 @@ const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
     Effect.gen(function* () {
       yield* Effect.acquireRelease(
         fs
-          .makeDirectory(lock, { mode: 0o700 })
+          .makeDirectory(lock, { mode: PRIVATE_DIRECTORY_MODE })
           .pipe(
             Effect.mapError((error) =>
               error.reason._tag === "AlreadyExists"
@@ -396,117 +561,26 @@ const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
         }).pipe(Effect.orDie),
       );
       const rendered = join(state, "rendered");
-      yield* fs.makeDirectory(rendered, { recursive: true, mode: 0o700 });
+      yield* fs.makeDirectory(rendered, {
+        recursive: true,
+        mode: PRIVATE_DIRECTORY_MODE,
+      });
       const output = yield* fs.makeTempDirectory({
         directory: rendered,
         prefix: "generation-",
       });
       generated = output;
-      if (managesAi && process.env.DOTFILES_AI_PREPARED !== "1")
-        yield* run(["bun", "tools/setup/ai/ai.ts", "generate"]);
-      const manifest = yield* publicFiles(output);
-      const privateText = yield* run(
-        [
-          "bun",
-          "tools/records/main.ts",
-          "deploy",
-          "--directory",
-          join(output, "records"),
-        ],
-        true,
-      );
-      const privateJson = yield* Effect.try({
-        try: () => JSON.parse(privateText) as unknown,
-        catch: (error) => new DotfilesError(`Invalid private manifest: ${error}`),
-      });
-      const privateManifest =
-        yield* Schema.decodeUnknownEffect(ManifestSchema)(privateJson);
-      manifest.files.push(
-        ...privateManifest.files,
-        ...(yield* preparedAi(output, managesAi)),
-      );
-      const targets = new Set<string>();
-      for (const entry of manifest.files) {
-        if (targets.has(entry.target))
-          return yield* Effect.fail(
-            new DotfilesError(`Duplicate Hjem target: ${entry.target}`),
-          );
-        targets.add(entry.target);
-        entry.clobber = true;
-      }
-      // Resolve aliases to prepared sources so activation order cannot break links
-      const byTarget = new Map(manifest.files.map((entry) => [entry.target, entry]));
-      for (const entry of manifest.files) {
-        if (entry.type !== "symlink") continue;
-        entry.source = resolve(entry.source);
-        const visited = new Set([entry.target]);
-        while (byTarget.has(entry.source)) {
-          if (visited.has(entry.source))
-            return yield* Effect.fail(
-              new DotfilesError(`Circular Hjem alias: ${entry.target}`),
-            );
-          visited.add(entry.source);
-          const source = byTarget.get(entry.source);
-          if (!source) break;
-          entry.source = source.source;
-        }
-      }
-      const manifestPath = join(output, "manifest.json");
+      const manifest = yield* prepareManifest(output, managesAi);
+      const targets = yield* prepareTargets(manifest.files);
+      const manifestPath = join(output, MANIFEST_FILE);
       yield* fs.writeFileString(manifestPath, JSON.stringify(manifest, null, 2), {
-        mode: 0o600,
+        mode: PRIVATE_FILE_MODE,
       });
       if (action === "diff" || action === "status") {
-        let changed = 0;
-        for (const entry of manifest.files) {
-          if (!selected(entry.target) || (yield* same(entry))) continue;
-          console.log(relative(home, entry.target));
-          changed++;
-          if (
-            action === "diff" &&
-            !entry.source.startsWith(join(output, "records")) &&
-            !entry.source.startsWith(join(output, "ai"))
-          )
-            yield* runCommand(
-              [
-                "diff",
-                "-u",
-                "--label",
-                entry.target,
-                "--label",
-                entry.target,
-                (yield* exists(entry.target)) ? entry.target : "/dev/null",
-                entry.source,
-              ],
-              { check: false, stdin: "inherit", stderr: "inherit" },
-            );
-        }
-        for (const entry of (yield* activeManifest())?.files || []) {
-          if (targets.has(entry.target) || !selected(entry.target)) continue;
-          console.log(`removed ${relative(home, entry.target)}`);
-          changed++;
-        }
-        console.error(`${changed} managed files differ`);
+        yield* showChanges(manifest, targets, output);
         return;
       }
-      let hjem = Bun.which("hjem");
-      if (!hjem) {
-        yield* fs.makeDirectory(join(state, "bootstrap"), {
-          recursive: true,
-          mode: 0o700,
-        });
-        const result = yield* run(
-          [
-            "nix",
-            "build",
-            `${repository}#hjem`,
-            "--out-link",
-            join(state, "bootstrap/hjem"),
-            "--print-out-paths",
-          ],
-          true,
-        );
-        hjem = join(result.split("\n").at(-1) || "", "bin/hjem");
-      }
+      const hjem = yield* hjemExecutable();
       activationStarted = action === "apply";
       yield* run([
         hjem,
@@ -518,13 +592,7 @@ const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
         join(state, "dotfiles"),
         "--impure",
       ]);
-      if (action === "apply") {
-        yield* fs.remove(join(state, "dotfiles-manifest.json"), {
-          force: true,
-        });
-        if (managesAi) yield* run(["bun", "tools/setup/ai/ai.ts", "activate"]);
-        yield* hooks(output);
-      }
+      if (action === "apply") yield* completeActivation(output, managesAi);
     }),
   );
 });

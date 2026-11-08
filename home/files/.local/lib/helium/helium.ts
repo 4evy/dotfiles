@@ -22,6 +22,13 @@ import { flag } from "@optique/core/primitives";
 
 const START_TIMEOUT_MS = 15_000;
 const POLL_INTERVAL_MS = 25;
+const FORCE_KILL_AFTER_MS = 3000;
+const PRIVATE_FILE_MODE = 0o600;
+const MAX_TCP_PORT = 65_535;
+const MS_PER_SECOND = 1000;
+const HTTP_SUCCESS_MIN = 200;
+const HTTP_SUCCESS_LIMIT = 300;
+const DEVTOOLS_PORT_FILE = "DevToolsActivePort";
 const CACHE_FILE_NAME = "helium-user-agent.json";
 const CacheEntry = Schema.fromJsonString(
   Schema.Struct({
@@ -43,7 +50,7 @@ const readBrowserVersion = Effect.fn(function* (launcher: string) {
           stdin: "ignore",
           stderr: "pipe",
           stdout: "pipe",
-          forceKillAfter: 3000,
+          forceKillAfter: FORCE_KILL_AFTER_MS,
         }),
       );
       const [code, stderr, stdout] = yield* Effect.all(
@@ -105,7 +112,7 @@ const writeCachedUserAgent = Effect.fn(function* (
       yield* fs.writeFileString(
         temporaryPath,
         `${JSON.stringify({ browserVersion, userAgent })}\n`,
-        { mode: 0o600 },
+        { mode: PRIVATE_FILE_MODE },
       );
       yield* fs.rename(temporaryPath, path);
     }),
@@ -134,22 +141,20 @@ const probeUserAgent = Effect.fn(function* (launcher: string) {
             stdin: "ignore",
             stderr: "ignore",
             stdout: "ignore",
-            forceKillAfter: 3000,
+            forceKillAfter: FORCE_KILL_AFTER_MS,
           },
         ),
       );
       const port = yield* Effect.gen(function* () {
         while (true) {
-          const text = yield* fs
-            .readFileString(join(profile, "DevToolsActivePort"))
-            .pipe(
-              Effect.catchIf(
-                (error) => error.reason._tag === "NotFound",
-                () => Effect.succeed(undefined),
-              ),
-            );
+          const text = yield* fs.readFileString(join(profile, DEVTOOLS_PORT_FILE)).pipe(
+            Effect.catchIf(
+              (error) => error.reason._tag === "NotFound",
+              () => Effect.succeed(undefined),
+            ),
+          );
           const candidate = Number(text?.split("\n", 1)[0]);
-          if (Number.isInteger(candidate) && candidate > 0 && candidate <= 65_535)
+          if (Number.isInteger(candidate) && candidate > 0 && candidate <= MAX_TCP_PORT)
             return candidate;
           yield* Effect.sleep(POLL_INTERVAL_MS);
         }
@@ -168,14 +173,14 @@ const probeUserAgent = Effect.fn(function* (launcher: string) {
           orElse: () =>
             Effect.fail(
               new HeliumError({
-                message: `Helium did not expose a DevTools port within ${START_TIMEOUT_MS / 1000} seconds`,
+                message: `Helium did not expose a DevTools port within ${START_TIMEOUT_MS / MS_PER_SECOND} seconds`,
               }),
             ),
         }),
       );
       return yield* Effect.gen(function* () {
         const response = yield* client.get(`http://127.0.0.1:${port}/json/version`);
-        if (response.status < 200 || response.status >= 300)
+        if (response.status < HTTP_SUCCESS_MIN || response.status >= HTTP_SUCCESS_LIMIT)
           return yield* Effect.fail(
             new HeliumError({
               message: `Helium DevTools returned HTTP ${response.status}`,

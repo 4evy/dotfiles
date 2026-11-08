@@ -13,6 +13,14 @@ import { Effect, FileSystem, Schema } from "effect";
 
 type Configuration = Record<string, unknown>;
 
+const privateDirectoryMode = 0o700;
+const privateFileMode = 0o600;
+const publicFileMode = 0o644;
+const jsonIndentSpaces = 2;
+const manifestFilename = "manifest.json";
+const ghidraRestartDelaySeconds = 5;
+const privateServiceUmask = "0077";
+
 const ConfigurationSchema = Schema.Record(Schema.String, Schema.Unknown);
 const ExportManifestSchema = Schema.Struct({
   files: Schema.Array(
@@ -34,7 +42,8 @@ const formats = {
   },
   json: {
     parse: JSON.parse,
-    stringify: (value: Configuration) => `${JSON.stringify(value, null, 2)}\n`,
+    stringify: (value: Configuration) =>
+      `${JSON.stringify(value, null, jsonIndentSpaces)}\n`,
   },
 };
 
@@ -104,6 +113,91 @@ const configRules: Record<string, ConfigRule> = {
   },
 };
 
+const readConfiguration = Effect.fn("readAiConfiguration")(function* (
+  path: string,
+  format: keyof typeof formats,
+  emptyIfNull = false,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const text = yield* fs.readFileString(path);
+  const value = yield* Effect.try({
+    try: () => formats[format].parse(text) as unknown,
+    catch: (error) => new DotfilesError(`Invalid AI configuration ${path}: ${error}`),
+  });
+  return yield* Schema.decodeUnknownEffect(ConfigurationSchema)(
+    emptyIfNull && value == null ? {} : value,
+  );
+});
+
+const renderConfiguration = Effect.fn("renderAiConfiguration")(function* (
+  rule: ConfigRule,
+  currentPath: string,
+  currentExists: boolean,
+  exported: string,
+  path: string,
+) {
+  const current =
+    rule.preserveCurrent && currentExists
+      ? yield* readConfiguration(currentPath, rule.format, true)
+      : {};
+  const managed = yield* readConfiguration(join(exported, path), rule.format);
+  const config = rule.preserveCurrent
+    ? merge(
+        current,
+        rule.managedOverrides ? { ...managed, ...rule.managedOverrides } : managed,
+      )
+    : managed;
+  const overrides =
+    typeof rule.overrides === "function" ? rule.overrides(managed) : rule.overrides;
+  return yield* Effect.try({
+    try: () =>
+      formats[rule.format].stringify(overrides ? merge(config, overrides) : config),
+    catch: (error) =>
+      new DotfilesError(`Could not render AI configuration ${path}: ${error}`),
+  });
+});
+
+const prepareExportedFile = Effect.fn("prepareExportedAiFile")(function* (
+  file: (typeof ExportManifestSchema.Type)["files"][number],
+  exported: string,
+  destination: string,
+  home: string,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  if (
+    isAbsolute(file.path) ||
+    file.path.split("/").some((part) => ["", ".", ".."].includes(part))
+  )
+    return yield* Effect.fail(
+      new DotfilesError("The AI config export contains an invalid destination"),
+    );
+  const target = join(destination, file.path);
+  yield* fs.makeDirectory(dirname(target), {
+    recursive: true,
+    mode: privateDirectoryMode,
+  });
+  const rule = Object.hasOwn(configRules, file.path)
+    ? configRules[file.path]
+    : undefined;
+  const currentPath = join(home, file.path);
+  const currentExists =
+    rule && (rule.onlyIfCurrentExists || rule.preserveCurrent)
+      ? yield* fs.exists(currentPath)
+      : false;
+  if (rule && (!rule.onlyIfCurrentExists || currentExists)) {
+    const contents = yield* renderConfiguration(
+      rule,
+      currentPath,
+      currentExists,
+      exported,
+      file.path,
+    );
+    yield* fs.writeFileString(target, contents, { mode: privateFileMode });
+  } else yield* fs.copyFile(join(exported, file.path), target);
+  yield* fs.chmod(target, file.private ? privateFileMode : publicFileMode);
+  return { path: file.path, private: Boolean(file.private) };
+});
+
 export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
   source: string,
   exported: string,
@@ -114,7 +208,7 @@ export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
 ) {
   const fs = yield* FileSystem.FileSystem;
   const home = homedir();
-  const manifestText = yield* fs.readFileString(join(exported, "manifest.json"));
+  const manifestText = yield* fs.readFileString(join(exported, manifestFilename));
   const manifestJson = yield* Effect.try({
     try: () => JSON.parse(manifestText) as unknown,
     catch: (error) => new DotfilesError(`Invalid AI export manifest: ${error}`),
@@ -127,66 +221,15 @@ export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
     contents: string,
   ) {
     const target = join(destination, path);
-    yield* fs.makeDirectory(dirname(target), { recursive: true, mode: 0o700 });
-    yield* fs.writeFileString(target, contents, { mode: 0o600 });
+    yield* fs.makeDirectory(dirname(target), {
+      recursive: true,
+      mode: privateDirectoryMode,
+    });
+    yield* fs.writeFileString(target, contents, { mode: privateFileMode });
     files.push({ path, private: true });
   });
-  const readConfiguration = Effect.fn("readAiConfiguration")(function* (
-    path: string,
-    format: keyof typeof formats,
-    emptyIfNull = false,
-  ) {
-    const text = yield* fs.readFileString(path);
-    const value = yield* Effect.try({
-      try: () => formats[format].parse(text) as unknown,
-      catch: (error) => new DotfilesError(`Invalid AI configuration ${path}: ${error}`),
-    });
-    return yield* Schema.decodeUnknownEffect(ConfigurationSchema)(
-      emptyIfNull && value == null ? {} : value,
-    );
-  });
   for (const file of manifest.files) {
-    if (
-      isAbsolute(file.path) ||
-      file.path.split("/").some((part) => ["", ".", ".."].includes(part))
-    )
-      return yield* Effect.fail(
-        new DotfilesError("The AI config export contains an invalid destination"),
-      );
-    const target = join(destination, file.path);
-    yield* fs.makeDirectory(dirname(target), { recursive: true, mode: 0o700 });
-    const rule = Object.hasOwn(configRules, file.path)
-      ? configRules[file.path]
-      : undefined;
-    const currentPath = join(home, file.path);
-    const currentExists =
-      rule && (rule.onlyIfCurrentExists || rule.preserveCurrent)
-        ? yield* fs.exists(currentPath)
-        : false;
-    if (rule && (!rule.onlyIfCurrentExists || currentExists)) {
-      const current =
-        rule.preserveCurrent && currentExists
-          ? yield* readConfiguration(currentPath, rule.format, true)
-          : {};
-      const managed = yield* readConfiguration(join(exported, file.path), rule.format);
-      const config = rule.preserveCurrent
-        ? merge(
-            current,
-            rule.managedOverrides ? { ...managed, ...rule.managedOverrides } : managed,
-          )
-        : managed;
-      const overrides =
-        typeof rule.overrides === "function" ? rule.overrides(managed) : rule.overrides;
-      const contents = yield* Effect.try({
-        try: () =>
-          formats[rule.format].stringify(overrides ? merge(config, overrides) : config),
-        catch: (error) =>
-          new DotfilesError(`Could not render AI configuration ${file.path}: ${error}`),
-      });
-      yield* fs.writeFileString(target, contents, { mode: 0o600 });
-    } else yield* fs.copyFile(join(exported, file.path), target);
-    yield* fs.chmod(target, file.private ? 0o600 : 0o644);
-    files.push({ path: file.path, private: Boolean(file.private) });
+    files.push(yield* prepareExportedFile(file, exported, destination, home));
   }
   const links = {
     ".local/bin/ai": "tools/scripts/cli/ai.sh",
@@ -204,7 +247,10 @@ export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
   };
   for (const [path, relative] of Object.entries(links)) {
     const target = join(destination, path);
-    yield* fs.makeDirectory(dirname(target), { recursive: true, mode: 0o700 });
+    yield* fs.makeDirectory(dirname(target), {
+      recursive: true,
+      mode: privateDirectoryMode,
+    });
     yield* fs.symlink(isAbsolute(relative) ? relative : join(source, relative), target);
     files.push({ path, private: false, type: "symlink" });
   }
@@ -215,7 +261,7 @@ export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
     );
     yield* write(
       ".config/systemd/user/ghidra-mcp.service",
-      `[Unit]\nDescription=Ghidra MCP headless backend\n\n[Service]\nExecStart=${JSON.stringify(join(home, ".local/bin/ai"))} ghidra mcp httpd\nUMask=0077\nRestart=on-failure\nRestartSec=5\n\n[Install]\nWantedBy=default.target\n`,
+      `[Unit]\nDescription=Ghidra MCP headless backend\n\n[Service]\nExecStart=${JSON.stringify(join(home, ".local/bin/ai"))} ghidra mcp httpd\nUMask=${privateServiceUmask}\nRestart=on-failure\nRestartSec=${ghidraRestartDelaySeconds}\n\n[Install]\nWantedBy=default.target\n`,
     );
   }
   const prepared = yield* Schema.decodeUnknownEffect(PreparedAiManifestSchema)({
@@ -224,8 +270,8 @@ export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
     files,
   });
   yield* fs.writeFileString(
-    join(destination, "manifest.json"),
+    join(destination, manifestFilename),
     `${JSON.stringify(prepared)}\n`,
-    { mode: 0o600 },
+    { mode: privateFileMode },
   );
 });

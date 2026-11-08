@@ -34,20 +34,21 @@ generate output:
     generated={{ quote(output) }}
     bluebuild=${BLUEBUILD:-bluebuild}
     validator=${CHECK_JSONSCHEMA:-check-jsonschema}
+    readonly schema_base_uri=https://schema.blue-build.org/
     bun systems/spectrum/recipes/spectrum/sources/sources.ts
     # Include nested stage and module files in schema validation
     shopt -s globstar
     "$validator" \
-      --base-uri https://schema.blue-build.org/ \
-      --schemafile https://schema.blue-build.org/recipe-v2.json \
+      --base-uri "$schema_base_uri" \
+      --schemafile "${schema_base_uri}recipe-v2.json" \
       systems/spectrum/recipes/spectrum.yml
     "$validator" \
-      --base-uri https://schema.blue-build.org/ \
-      --schemafile https://schema.blue-build.org/stage-v1.json \
+      --base-uri "$schema_base_uri" \
+      --schemafile "${schema_base_uri}stage-v1.json" \
       systems/spectrum/recipes/spectrum/stages/**/*.yml
     "$validator" \
-      --base-uri https://schema.blue-build.org/ \
-      --schemafile https://schema.blue-build.org/module-list-v1.json \
+      --base-uri "$schema_base_uri" \
+      --schemafile "${schema_base_uri}module-list-v1.json" \
       systems/spectrum/recipes/spectrum/modules/**/*.yml
     # Compare recipe data with the lock, independent of generated shell syntax
     bun -e '

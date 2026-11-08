@@ -94,20 +94,21 @@ modules:
     source: ghcr.io/blue-build/modules/script:v2@sha256:d6076360da9195e2a6d781043a1b049bede3d2389757912a828a957bc78929b8
     snippets:
       - |
+        readonly onepassword_gid=1500 onepassword_cli_gid=1600 onepassword_mcp_gid=1700
         rm -rf /tmp/spectrum-config
-        groupmod --gid 1500 onepassword
-        groupmod --gid 1600 onepassword-cli
-        groupmod --gid 1700 onepassword-mcp
+        groupmod --gid "$onepassword_gid" onepassword
+        groupmod --gid "$onepassword_cli_gid" onepassword-cli
+        groupmod --gid "$onepassword_mcp_gid" onepassword-mcp
         chmod 4755 /opt/1Password/chrome-sandbox
-        chgrp 1500 /opt/1Password/1Password-BrowserSupport
+        chgrp "$onepassword_gid" /opt/1Password/1Password-BrowserSupport
         chmod g+s /opt/1Password/1Password-BrowserSupport
-        chgrp 1600 /usr/bin/op
+        chgrp "$onepassword_cli_gid" /usr/bin/op
         chmod g+s /usr/bin/op
-        chgrp 1700 /opt/1Password/1password-mcp
+        chgrp "$onepassword_mcp_gid" /opt/1Password/1password-mcp
         chmod g+s /opt/1Password/1password-mcp
-        printf 'g onepassword 1500\n' > /usr/lib/sysusers.d/onepassword.conf
-        printf 'g onepassword-cli 1600\n' > /usr/lib/sysusers.d/onepassword-cli.conf
-        printf 'g onepassword-mcp 1700\n' > /usr/lib/sysusers.d/onepassword-mcp.conf
+        printf 'g onepassword %s\n' "$onepassword_gid" > /usr/lib/sysusers.d/onepassword.conf
+        printf 'g onepassword-cli %s\n' "$onepassword_cli_gid" > /usr/lib/sysusers.d/onepassword-cli.conf
+        printf 'g onepassword-mcp %s\n' "$onepassword_mcp_gid" > /usr/lib/sysusers.d/onepassword-mcp.conf
         rm -f /usr/lib/sysusers.d/30-rpmostree-pkg-group-onepassword.conf
         rm -f /usr/lib/sysusers.d/30-rpmostree-pkg-group-onepassword-cli.conf
         rm -f /usr/lib/sysusers.d/30-rpmostree-pkg-group-onepassword-mcp.conf

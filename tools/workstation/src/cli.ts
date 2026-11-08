@@ -7,15 +7,17 @@ import { formatMessage } from "@optique/core/message";
 import { map, multiple } from "@optique/core/modifiers";
 import { parseSync } from "@optique/core/parser";
 import {
-  argument,
   constant,
   flag,
   passThrough,
   command as subcommand,
 } from "@optique/core/primitives";
-import { string } from "@optique/core/valueparser";
 import { Cause, Console, Effect } from "effect";
+import { forwardedArguments } from "./lib/arguments.ts";
 import { type CommandName, commandNames, commands } from "./registry.ts";
+
+const USAGE_ERROR_EXIT_CODE = 64;
+const JJ_DIFF_ERROR_EXIT_CODE = 2;
 
 function help(command?: CommandName) {
   return Effect.gen(function* () {
@@ -71,12 +73,7 @@ if (import.meta.main) {
       const meta = parseSync(
         object({
           help: map(multiple(flag("-h", "--help")), (values) => values.length > 0),
-          arguments: multiple(
-            or(
-              map(argument(string()), (value) => [value]),
-              passThrough({ format: "nextToken" }),
-            ),
-          ),
+          arguments: forwardedArguments,
         }),
         forwarded,
       );
@@ -99,7 +96,11 @@ if (import.meta.main) {
           );
           yield* Effect.sync(() => {
             process.exitCode =
-              error instanceof UsageError ? 64 : command === "jj-diff" ? 2 : 1;
+              error instanceof UsageError
+                ? USAGE_ERROR_EXIT_CODE
+                : command === "jj-diff"
+                  ? JJ_DIFF_ERROR_EXIT_CODE
+                  : 1;
           });
         });
       }),

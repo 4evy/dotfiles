@@ -1,6 +1,6 @@
 require "json"
 
-JSON.parse(File.read(File.join(__dir__, "data/homebrew/tools.json"))).each do |tool|
+JSON.load_file(File.join(__dir__, "data/homebrew/tools.json")).each do |tool|
   platform = OS.mac? ? "darwin" : "linux"
   brew tool.fetch("formula") if tool.fetch("platforms").include?(platform)
 end

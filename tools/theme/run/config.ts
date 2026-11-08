@@ -7,7 +7,11 @@ import defaults from "./defaults.toml" with { type: "text" };
 
 export const name = "theme-run";
 export const version = "0.1.0";
-export const maxFileBytes = 1024 * 1024;
+const maxFileBytes = 1024 * 1024;
+const maxTimeoutMs = 60_000;
+const temporarySuffix = "XXXXXX";
+const themePlaceholder = "{theme}";
+const configFilename = "config.toml";
 export type Theme = "dark" | "light";
 export type Variables = Record<string, string>;
 export interface Platform {
@@ -76,7 +80,7 @@ const environment = v.optional(v.record(text, text), () => ({}));
 const optionalText = v.optional(text, "");
 const integer = v.pipe(v.number(), v.integer());
 const theme = v.picklist(["dark", "light"]);
-const timeout = v.pipe(integer, v.minValue(1), v.maxValue(60_000));
+const timeout = v.pipe(integer, v.minValue(1), v.maxValue(maxTimeoutMs));
 
 const platformEntries = {
   commands: v.optional(v.array(v.array(text)), () => []),
@@ -240,16 +244,27 @@ const fragmentSchema = v.strictObject({
   ),
 }) satisfies v.GenericSchema<unknown, Fragment>;
 
+function systemErrorCode(reason: object): string | undefined {
+  if ("_tag" in reason) {
+    switch (reason._tag) {
+      case "NotFound":
+        return "ENOENT";
+      case "AlreadyExists":
+        return "EEXIST";
+      case "PermissionDenied":
+        return "EACCES";
+    }
+  }
+  return undefined;
+}
+
 export function errorCode(error: unknown): string | undefined {
   if (!error || typeof error !== "object") return undefined;
   if ("code" in error) return String(error.code);
   if ("reason" in error && error.reason && typeof error.reason === "object") {
     const reason = error.reason;
-    if ("_tag" in reason) {
-      if (reason._tag === "NotFound") return "ENOENT";
-      if (reason._tag === "AlreadyExists") return "EEXIST";
-      if (reason._tag === "PermissionDenied") return "EACCES";
-    }
+    const code = systemErrorCode(reason);
+    if (code !== undefined) return code;
     if ("cause" in reason) return errorCode(reason.cause);
   }
   return "cause" in error ? errorCode(error.cause) : undefined;
@@ -276,12 +291,53 @@ export function readFile(path: string) {
   );
 }
 
-export function configPaths(env: Variables): string[] {
+function configPaths(env: Variables): string[] {
   if (env.THEME_RUN_CONFIG !== undefined)
     return env.THEME_RUN_CONFIG.split(delimiter).filter(Boolean);
-  if (env.XDG_CONFIG_HOME) return [join(env.XDG_CONFIG_HOME, name, "config.toml")];
-  if (env.HOME) return [join(env.HOME, ".config", name, "config.toml")];
+  if (env.XDG_CONFIG_HOME) return [join(env.XDG_CONFIG_HOME, name, configFilename)];
+  if (env.HOME) return [join(env.HOME, ".config", name, configFilename)];
   return [];
+}
+
+function validateConfigIntegration(item: Integration): void {
+  for (const key of [
+    "default_config",
+    "assignment",
+    "config_output_flag",
+    "temporary_prefix",
+  ] as const) {
+    if (!item[key])
+      throw new Error(`integration ${JSON.stringify(item.name)}: ${key} is required`);
+  }
+  if (!item.config_flags.length) throw new Error("config_flags is required");
+  if (!["system", "cache"].includes(item.temporary_location))
+    throw new Error("invalid temporary_location");
+  if (item.temporary_location === "cache" && !item.cache_subdirectory)
+    throw new Error("cache_subdirectory is required");
+  if (!["'", '"'].includes(item.quote))
+    throw new Error("quote must be a single or double quote");
+  if (
+    !item.temporary_prefix.endsWith(temporarySuffix) ||
+    basename(item.temporary_prefix) !== item.temporary_prefix
+  ) {
+    throw new Error("temporary prefix must be a basename ending in XXXXXX");
+  }
+}
+
+function validateIntegration(item: Integration): void {
+  if (
+    item.strategy === "arguments" &&
+    !item.arguments.some((arg) => arg.includes(themePlaceholder))
+  ) {
+    throw new Error("argument strategy must use {theme}");
+  }
+  if (
+    item.strategy === "environment" &&
+    !Object.values(item.env).some((value) => value.includes(themePlaceholder))
+  ) {
+    throw new Error("environment strategy must use {theme}");
+  }
+  if (item.strategy === "config") validateConfigIntegration(item);
 }
 
 export class Manifest {
@@ -351,6 +407,26 @@ export class Manifest {
     return this.runners.get(key) ?? this.runners.get(this.aliases.get(key) ?? "");
   }
 
+  private validateRunner(key: string, item: Runner): void {
+    for (const alias of item.aliases) {
+      if (this.runners.has(alias))
+        throw new Error(`runner alias ${JSON.stringify(alias)} collides with a runner`);
+      if (this.aliases.has(alias))
+        throw new Error(`duplicate runner alias ${JSON.stringify(alias)}`);
+      this.aliases.set(alias, key);
+    }
+    if (item.integration && !this.integrations.has(item.integration)) {
+      throw new Error(
+        `runner ${JSON.stringify(key)} references missing integration ${JSON.stringify(item.integration)}`,
+      );
+    }
+    if (item.interpreter && !this.interpreters.has(item.interpreter)) {
+      throw new Error(
+        `runner ${JSON.stringify(key)} references missing interpreter ${JSON.stringify(item.interpreter)}`,
+      );
+    }
+  }
+
   private validate(): void {
     const value = {
       runtime: this.runtime,
@@ -359,66 +435,7 @@ export class Manifest {
       integration: [...this.integrations.values()],
     };
     v.parse(fragmentSchema, value);
-    for (const item of this.integrations.values()) {
-      if (
-        item.strategy === "arguments" &&
-        !item.arguments.some((arg) => arg.includes("{theme}"))
-      ) {
-        throw new Error("argument strategy must use {theme}");
-      }
-      if (
-        item.strategy === "environment" &&
-        !Object.values(item.env).some((value) => value.includes("{theme}"))
-      ) {
-        throw new Error("environment strategy must use {theme}");
-      }
-      if (item.strategy === "config") {
-        for (const key of [
-          "default_config",
-          "assignment",
-          "config_output_flag",
-          "temporary_prefix",
-        ] as const) {
-          if (!item[key])
-            throw new Error(
-              `integration ${JSON.stringify(item.name)}: ${key} is required`,
-            );
-        }
-        if (!item.config_flags.length) throw new Error("config_flags is required");
-        if (!["system", "cache"].includes(item.temporary_location))
-          throw new Error("invalid temporary_location");
-        if (item.temporary_location === "cache" && !item.cache_subdirectory)
-          throw new Error("cache_subdirectory is required");
-        if (!["'", '"'].includes(item.quote))
-          throw new Error("quote must be a single or double quote");
-        if (
-          !item.temporary_prefix.endsWith("XXXXXX") ||
-          basename(item.temporary_prefix) !== item.temporary_prefix
-        ) {
-          throw new Error("temporary prefix must be a basename ending in XXXXXX");
-        }
-      }
-    }
-    for (const [key, item] of this.runners) {
-      for (const alias of item.aliases) {
-        if (this.runners.has(alias))
-          throw new Error(
-            `runner alias ${JSON.stringify(alias)} collides with a runner`,
-          );
-        if (this.aliases.has(alias))
-          throw new Error(`duplicate runner alias ${JSON.stringify(alias)}`);
-        this.aliases.set(alias, key);
-      }
-      if (item.integration && !this.integrations.has(item.integration)) {
-        throw new Error(
-          `runner ${JSON.stringify(key)} references missing integration ${JSON.stringify(item.integration)}`,
-        );
-      }
-      if (item.interpreter && !this.interpreters.has(item.interpreter)) {
-        throw new Error(
-          `runner ${JSON.stringify(key)} references missing interpreter ${JSON.stringify(item.interpreter)}`,
-        );
-      }
-    }
+    for (const item of this.integrations.values()) validateIntegration(item);
+    for (const [key, item] of this.runners) this.validateRunner(key, item);
   }
 }

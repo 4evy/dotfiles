@@ -11,6 +11,8 @@ import { choice } from "@optique/core/valueparser";
 import { Effect, FileSystem, Schema } from "effect";
 
 const macOS = process.platform === "darwin";
+const permissionAndSpecialBits = 0o7777;
+const privateConfigMode = 0o600;
 const object = Schema.Record(Schema.String, Schema.Unknown);
 
 // RustDesk options are strings, including numeric ports and empty flags
@@ -32,7 +34,9 @@ export const updateTomlOptions = Effect.fn(function* (
       ? {}
       : yield* Schema.decodeUnknownEffect(object)(config.options);
   if (Object.entries(values).every(([key, value]) => options[key] === value)) return;
-  const mode = exists ? (yield* fs.stat(path)).mode & 0o7777 : 0o600;
+  const mode = exists
+    ? (yield* fs.stat(path)).mode & permissionAndSpecialBits
+    : privateConfigMode;
   const content = yield* Effect.try({
     try: () =>
       Bun.TOML.stringify({

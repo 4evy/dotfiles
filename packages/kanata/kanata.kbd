@@ -18,13 +18,19 @@
   esc caps lsft rsft my_side_button my_extra_button w a s d ret \
 )
 
+(defvar
+  tap-hold-ms 200
+  shift-double-tap-ms 240
+  volume-mute-hold-ms 1000
+)
+
 (defalias
-  caps-hyper (tap-hold-press 200 200 esc (multi lmet lctl lalt lsft (layer-while-held hyper)))
+  caps-hyper (tap-hold-press $tap-hold-ms $tap-hold-ms esc (multi lmet lctl lalt lsft (layer-while-held hyper)))
   vicinae-toggle (multi lmet lctl lalt lsft f24)
-  left-shift (tap-dance 240 (lsft @vicinae-toggle))
-  right-shift (tap-dance 240 (rsft @vicinae-toggle))
-  volume-down-mute (tap-hold 200 1000 vold mute)
-  volume-up-mute (tap-hold 200 1000 volu mute)
+  left-shift (tap-dance $shift-double-tap-ms (lsft @vicinae-toggle))
+  right-shift (tap-dance $shift-double-tap-ms (rsft @vicinae-toggle))
+  volume-down-mute (tap-hold $tap-hold-ms $volume-mute-hold-ms vold mute)
+  volume-up-mute (tap-hold $tap-hold-ms $volume-mute-hold-ms volu mute)
 )
 
 (deflayer base

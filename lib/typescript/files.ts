@@ -5,8 +5,16 @@ import { Effect, FileSystem } from "effect";
 import { SecureRandom } from "effect/crypto";
 import { DotfilesError } from "./errors.ts";
 
+const DEFAULT_FILE_MODE = 0o644;
+// Include setuid, setgid, and sticky bits when validating and preserving modes
+const PERMISSION_BITS = 0o7777;
+
 // Write JSON atomically and report whether content or permissions changed
-export function writeJson(path: string, value: unknown, mode: number | string = 0o644) {
+export function writeJson(
+  path: string,
+  value: unknown,
+  mode: number | string = DEFAULT_FILE_MODE,
+) {
   return writeIfChanged(path, `${JSON.stringify(value, null, 2)}\n`, mode);
 }
 
@@ -25,7 +33,7 @@ function octalMode(value: number | string): number {
   if (typeof value === "string" && !/^[0-7]+$/.test(value))
     throw new DotfilesError(`Mode must be octal: ${value}`);
   const mode = typeof value === "number" ? value : Number.parseInt(value, 8);
-  if (!Number.isInteger(mode) || mode < 0 || mode > 0o7777)
+  if (!Number.isInteger(mode) || mode < 0 || mode > PERMISSION_BITS)
     throw new DotfilesError(`Mode must be a permission mode: ${value}`);
   return mode;
 }
@@ -61,7 +69,7 @@ export function ensureDirectory(path: string, mode?: number | string) {
 export function writeIfChanged(
   path: string,
   content: string | Uint8Array,
-  mode: number | string = 0o644,
+  mode: number | string = DEFAULT_FILE_MODE,
 ) {
   return Effect.scoped(
     Effect.gen(function* () {
@@ -79,7 +87,7 @@ export function writeIfChanged(
         status?.type === "File" &&
         Buffer.compare(yield* fs.readFile(destination), data) === 0
       ) {
-        if ((status.mode & 0o7777) === permission) return false;
+        if ((status.mode & PERMISSION_BITS) === permission) return false;
         yield* fs.chmod(destination, permission);
         return true;
       }

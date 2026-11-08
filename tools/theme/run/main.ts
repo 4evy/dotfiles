@@ -15,6 +15,8 @@ import {
 } from "./launch.ts";
 import { detect } from "./theme.ts";
 
+const usageErrorStatus = 2;
+
 function write(text: string, error = false) {
   return Effect.gen(function* () {
     const stdio = yield* Stdio.Stdio;
@@ -66,7 +68,7 @@ export function run(args: string[]) {
         },
       },
       onError: () => {
-        status = 2;
+        status = usageErrorStatus;
       },
       stdout: (text) => {
         output.push({ text: `${text}\n`, error: false });

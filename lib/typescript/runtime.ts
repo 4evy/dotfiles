@@ -1,5 +1,6 @@
-import { BunRuntime, BunServices } from "@effect/platform-bun";
-import { Cause, Console, Effect, Layer, type Runtime, type Scope } from "effect";
+import { runMainWith } from "@dotfiles/runtime/runtime";
+import { BunServices } from "@effect/platform-bun";
+import { Effect, Layer, type Runtime, type Scope } from "effect";
 import { SecureRandom } from "effect/crypto";
 import { FetchHttpClient, type HttpClient } from "effect/http";
 
@@ -20,18 +21,5 @@ export function runMain<E>(
   program: Effect.Effect<unknown, E, RuntimeServices | Scope.Scope>,
   options?: { readonly teardown?: Runtime.Teardown },
 ): void {
-  BunRuntime.runMain(
-    program.pipe(
-      Effect.scoped,
-      Effect.provide(layer),
-      // Stdio borrows stdin, the CLI owner closes any pending native read
-      Effect.ensuring(Effect.sync(() => process.stdin.destroy())),
-      Effect.tapCause((cause) =>
-        Cause.hasInterruptsOnly(cause)
-          ? Effect.void
-          : Console.error(Cause.pretty(cause)),
-      ),
-    ),
-    { ...options, disableErrorReporting: true },
-  );
+  runMainWith(program.pipe(Effect.scoped, Effect.provide(layer)), options);
 }

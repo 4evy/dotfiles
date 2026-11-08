@@ -11,13 +11,16 @@ if TYPE_CHECKING:
     )
 
 
+_ND_UNFILTERED_DEVICE_VALUES = frozenset({"all", "auto", "none"})
+
+
 def _nd_env_list(name: str, default: Sequence[str] = ()) -> list[str]:
     value = os.environ.get(name)
     if value is None:
         return list(default)
 
     value = value.strip()
-    if not value or value.casefold() in {"all", "auto", "none"}:
+    if not value or value.casefold() in _ND_UNFILTERED_DEVICE_VALUES:
         return []
 
     if value.startswith("["):

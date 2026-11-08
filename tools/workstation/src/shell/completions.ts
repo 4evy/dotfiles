@@ -6,15 +6,21 @@ import generatorData from "@dotfiles/home/generators";
 import { GeneratorsSchema } from "@dotfiles/home/schema";
 import { Console, Effect, FileSystem, Schema } from "effect";
 
+const HOME_PLACEHOLDER = "@HOME@";
+const CACHE_HOME_RELATIVE_PATH = ".cache/";
+const DATA_HOME_RELATIVE_PATH = ".local/share/";
+const ZSH_COMPLETION_PATH = `${CACHE_HOME_RELATIVE_PATH}zsh/completions/`;
+const BASH_COMPLETION_PATH = `${DATA_HOME_RELATIVE_PATH}bash-completion/completions/`;
+
 function completionTarget(
   target: string,
   cache: string,
   data: string,
 ): string | undefined {
-  if (target.startsWith(".cache/zsh/completions/"))
-    return join(cache, target.slice(".cache/".length));
-  if (target.startsWith(".local/share/bash-completion/completions/"))
-    return join(data, target.slice(".local/share/".length));
+  if (target.startsWith(ZSH_COMPLETION_PATH))
+    return join(cache, target.slice(CACHE_HOME_RELATIVE_PATH.length));
+  if (target.startsWith(BASH_COMPLETION_PATH))
+    return join(data, target.slice(DATA_HOME_RELATIVE_PATH.length));
   return undefined;
 }
 
@@ -38,7 +44,7 @@ const generateCompletion = Effect.fn("generateCompletion")(function* (
   }
   yield* ensureDirectory(dirname(target));
   const result = yield* run(
-    generator.command.map((part) => part.replaceAll("@HOME@", home)),
+    generator.command.map((part) => part.replaceAll(HOME_PLACEHOLDER, home)),
     { check: false, capture: true },
   );
   if (result.code !== 0)

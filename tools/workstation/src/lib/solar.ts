@@ -1,6 +1,8 @@
 import { getPosition, getTimes } from "suncalc";
 
 const day = 86_400_000;
+// Keep SunCalc away from its singularity at the geographic poles
+const MAX_SOLAR_LATITUDE_DEGREES = 89.8;
 
 function eventOnDay(event: Date | null, start: number, end: number): Date | undefined {
   if (!event) return undefined;
@@ -13,7 +15,10 @@ export function solarDay(
   latitude: number,
   longitude: number,
 ): { sunrise?: Date; sunset?: Date; elevation: number } {
-  const lat = Math.max(-89.8, Math.min(89.8, latitude));
+  const lat = Math.max(
+    -MAX_SOLAR_LATITUDE_DEGREES,
+    Math.min(MAX_SOLAR_LATITUDE_DEGREES, latitude),
+  );
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
   const times = getTimes(new Date((start + end) / 2), lat, longitude);

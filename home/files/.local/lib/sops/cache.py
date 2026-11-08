@@ -18,6 +18,19 @@ from pathlib import Path
 
 CACHE_TTL = 600
 MAX_IDENTITY_BYTES = 16 * 1024
+PRIVATE_DIRECTORY_MODE = 0o700
+PRIVATE_FILE_MODE = 0o600
+GROUP_OTHER_PERMISSION_MASK = 0o077
+CLIENT_TIMEOUT_SECONDS = 2
+SERVER_CLIENT_TIMEOUT_SECONDS = 1
+PASSWORD_READ_ATTEMPTS = 3
+PASSWORD_RETRY_DELAY_SECONDS = 2
+MAX_REQUEST_BYTES = 32
+START_TIMEOUT_SECONDS = 3
+START_POLL_INTERVAL_SECONDS = 0.05
+COMMAND_NOT_FOUND_EXIT = 127
+USAGE_ERROR_EXIT = 64
+AGE_IDENTITY_PREFIX = b"AGE-SECRET-KEY-"
 ITEM_REFERENCE = "op://Personal/SOPS-age-identity/password"
 RUNTIME_DIR = Path(tempfile.gettempdir()) / f"sops-records-key-{os.getuid()}"
 SOCKET_PATH = RUNTIME_DIR / "cache.sock"
@@ -26,17 +39,17 @@ LOCK_PATH = RUNTIME_DIR / "cache.lock"
 
 def valid_identity(identity: bytes | bytearray) -> bool:
     return 0 < len(identity) <= MAX_IDENTITY_BYTES and any(
-        line.startswith(b"AGE-SECRET-KEY-") for line in identity.splitlines()
+        line.startswith(AGE_IDENTITY_PREFIX) for line in identity.splitlines()
     )
 
 
 def ensure_runtime_dir() -> None:
-    RUNTIME_DIR.mkdir(mode=0o700, exist_ok=True)
+    RUNTIME_DIR.mkdir(mode=PRIVATE_DIRECTORY_MODE, exist_ok=True)
     info = RUNTIME_DIR.lstat()
     if not (
         stat.S_ISDIR(info.st_mode)
         and info.st_uid == os.getuid()
-        and info.st_mode & 0o077 == 0
+        and info.st_mode & GROUP_OTHER_PERMISSION_MASK == 0
     ):
         raise RuntimeError(f"unsafe records key cache directory: {RUNTIME_DIR}")
 
@@ -49,7 +62,7 @@ def secure_socket() -> bool:
     if not (
         stat.S_ISSOCK(info.st_mode)
         and info.st_uid == os.getuid()
-        and info.st_mode & 0o077 == 0
+        and info.st_mode & GROUP_OTHER_PERMISSION_MASK == 0
     ):
         raise RuntimeError(f"unsafe records key cache socket: {SOCKET_PATH}")
     return True
@@ -60,7 +73,7 @@ def request_cache(request: str) -> bytes:
         return b""
     try:
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
-            client.settimeout(2)
+            client.settimeout(CLIENT_TIMEOUT_SECONDS)
             client.connect(str(SOCKET_PATH))
             client.sendall(f"{request}\n".encode())
             response = bytearray()
@@ -85,25 +98,25 @@ def remove_stale_socket() -> None:
 
 
 def read_from_1password() -> bytes:
-    for attempt in range(3):
+    for attempt in range(PASSWORD_READ_ATTEMPTS):
         try:
             result = subprocess.run(
                 ["op", "read", ITEM_REFERENCE], stdout=subprocess.PIPE, check=False
             )
         except FileNotFoundError:
             print("sops-age-key-cache: 1Password CLI is not installed", file=sys.stderr)
-            raise SystemExit(127) from None
+            raise SystemExit(COMMAND_NOT_FOUND_EXIT) from None
         if result.returncode == 0 and valid_identity(result.stdout):
             return result.stdout.rstrip(b"\n") + b"\n"
-        if attempt < 2:
-            time.sleep(2)
+        if attempt < PASSWORD_READ_ATTEMPTS - 1:
+            time.sleep(PASSWORD_RETRY_DELAY_SECONDS)
     raise RuntimeError("could not read the SOPS age identity from 1Password")
 
 
 def respond(client: socket.socket, identity: bytearray, deadline: float) -> bool:
     request = bytearray()
-    while b"\n" not in request and len(request) < 32:
-        chunk = client.recv(32 - len(request))
+    while b"\n" not in request and len(request) < MAX_REQUEST_BYTES:
+        chunk = client.recv(MAX_REQUEST_BYTES - len(request))
         if not chunk:
             return False
         request.extend(chunk)
@@ -121,7 +134,7 @@ def respond(client: socket.socket, identity: bytearray, deadline: float) -> bool
 
 def serve_client(client: socket.socket, identity: bytearray, deadline: float) -> bool:
     with client:
-        client.settimeout(1)
+        client.settimeout(SERVER_CLIENT_TIMEOUT_SECONDS)
         try:
             return respond(client, identity, deadline)
         except TimeoutError, ConnectionError:
@@ -152,7 +165,7 @@ def run_server() -> None:
         ensure_runtime_dir()
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as server:
             server.bind(str(SOCKET_PATH))
-            SOCKET_PATH.chmod(0o600)
+            SOCKET_PATH.chmod(PRIVATE_FILE_MODE)
             socket_inode = SOCKET_PATH.lstat().st_ino
             server.listen()
             deadline = time.monotonic() + CACHE_TTL
@@ -182,13 +195,13 @@ def start_server(identity: bytes) -> None:
         raise RuntimeError("records key cache input pipe is unavailable")
     child.stdin.write(identity)
     child.stdin.close()
-    deadline = time.monotonic() + 3
+    deadline = time.monotonic() + START_TIMEOUT_SECONDS
     while time.monotonic() < deadline:
         if request_cache("status").strip().isdigit():
             return
         if child.poll() is not None:
             break
-        time.sleep(0.05)
+        time.sleep(START_POLL_INTERVAL_SECONDS)
     raise RuntimeError("records key cache failed to start")
 
 
@@ -198,12 +211,14 @@ def cached_identity() -> bytes:
     if valid_identity(identity):
         return identity
 
-    descriptor = os.open(LOCK_PATH, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    descriptor = os.open(
+        LOCK_PATH, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, PRIVATE_FILE_MODE
+    )
     with os.fdopen(descriptor, "rb+") as lock:
         info = os.fstat(lock.fileno())
         if not (stat.S_ISREG(info.st_mode) and info.st_uid == os.getuid()):
             raise RuntimeError(f"unsafe records key cache lock: {LOCK_PATH}")
-        os.fchmod(lock.fileno(), 0o600)
+        os.fchmod(lock.fileno(), PRIVATE_FILE_MODE)
         fcntl.flock(lock, fcntl.LOCK_EX)
         identity = request_cache("read")
         if valid_identity(identity):
@@ -231,7 +246,7 @@ def main() -> None:
             print("records key cache cleared")
         case _:
             print("usage: sops-age-key-1password [--status|--clear]", file=sys.stderr)
-            raise SystemExit(64)
+            raise SystemExit(USAGE_ERROR_EXIT)
 
 
 if __name__ == "__main__":

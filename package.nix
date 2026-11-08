@@ -24,10 +24,12 @@ stdenvNoCC.mkDerivation {
         ./lib/typescript
         ./home/files/.local/lib/package.json
         ./home/files/.local/lib/typescript/process.ts
+        ./home/files/.local/lib/typescript/runtime.ts
         ./Brewfile
         ./data/homebrew/tools.json
         ./data/rustdesk/options.json
         ./data/macos/permissions.json
+        ./systems/modules/darwin/cli.ts
         ./systems/modules/darwin/permissions
       ]
       ++ map (path: root + "/${path}") (lib.attrsets.attrValues entrypoints)

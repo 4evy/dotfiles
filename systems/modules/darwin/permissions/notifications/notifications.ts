@@ -4,6 +4,13 @@ import { DotfilesError } from "@dotfiles/core/errors";
 import policy from "@dotfiles/repo/data/macos/permissions";
 import { Effect, FileSystem, Schema } from "effect";
 
+const daemonExitTimeoutMs = 10_000;
+const daemonExitPollMs = 50;
+const helperTimeoutSeconds = 30;
+const backupDirectoryMode = 0o700;
+const backupFileMode = 0o600;
+const launchctl = "/bin/launchctl";
+
 const reportSchema = Schema.Struct({
   pending: Schema.Number,
   registered: Schema.Number,
@@ -30,7 +37,7 @@ const parse = Effect.fn(function* (text: string) {
 });
 
 const waitForExit = Effect.fn(function* (pid: number) {
-  const deadline = Date.now() + 10_000;
+  const deadline = Date.now() + daemonExitTimeoutMs;
   while (true) {
     const exited = yield* Effect.try({
       try: () => {
@@ -51,7 +58,7 @@ const waitForExit = Effect.fn(function* (pid: number) {
       return yield* Effect.fail(
         new DotfilesError("Old notification daemon did not exit"),
       );
-    yield* Effect.sleep(50);
+    yield* Effect.sleep(daemonExitPollMs);
   }
 });
 
@@ -85,20 +92,11 @@ export const notificationPermissions = Effect.fn(function* (
     identifiers: [...new Set(identifiers)].sort(),
     grants: Object.values(settings.grants),
   };
-  const command = [
-    "/bin/launchctl",
-    "asuser",
-    uid,
-    "/usr/bin/sudo",
-    "-H",
-    "-u",
-    user,
-    helper,
-  ];
+  const command = [launchctl, "asuser", uid, "/usr/bin/sudo", "-H", "-u", user, helper];
   const inspect = Effect.fn(function* (action: "inspect" | "synchronize" | "apply") {
     const text = yield* output([...command, action], {
       input: JSON.stringify(request),
-      timeout: 30,
+      timeout: helperTimeoutSeconds,
     });
     return yield* Schema.decodeUnknownEffect(reportSchema)(yield* parse(text));
   });
@@ -127,7 +125,7 @@ export const notificationPermissions = Effect.fn(function* (
     Effect.void,
     () =>
       Effect.gen(function* () {
-        yield* run(["/bin/launchctl", "bootout", service], { capture: true });
+        yield* run([launchctl, "bootout", service], { capture: true });
         const remaining = yield* run(
           ["/usr/bin/pgrep", "-u", uid, "-x", settings.processName],
           { capture: true, check: false },
@@ -144,13 +142,16 @@ export const notificationPermissions = Effect.fn(function* (
           settings.backups,
           new Date().toISOString().replaceAll(":", "-"),
         );
-        yield* fs.makeDirectory(backup, { recursive: true, mode: 0o700 });
+        yield* fs.makeDirectory(backup, {
+          recursive: true,
+          mode: backupDirectoryMode,
+        });
         const baseline = join(backup, "settings.plist");
         yield* fs.copyFile(
           join(container, "Library", "Preferences", `${settings.suite}.plist`),
           baseline,
         );
-        yield* fs.chmod(baseline, 0o600);
+        yield* fs.chmod(baseline, backupFileMode);
         console.log(`Notification settings backup: ${backup}`);
         yield* inspect("apply");
         const persisted = yield* inspect("inspect");
@@ -160,7 +161,7 @@ export const notificationPermissions = Effect.fn(function* (
           );
         const text = yield* output([helper, "verify"], {
           input: JSON.stringify({ ...request, baseline }),
-          timeout: 30,
+          timeout: helperTimeoutSeconds,
         });
         const verified = yield* Schema.decodeUnknownEffect(verificationSchema)(
           yield* parse(text),
@@ -173,15 +174,15 @@ export const notificationPermissions = Effect.fn(function* (
       }),
     () =>
       Effect.gen(function* () {
-        const loaded = yield* run(["/bin/launchctl", "print", service], {
+        const loaded = yield* run([launchctl, "print", service], {
           capture: true,
           check: false,
         });
         if (loaded.code !== 0)
-          yield* run(["/bin/launchctl", "bootstrap", `gui/${uid}`, settings.agent], {
+          yield* run([launchctl, "bootstrap", `gui/${uid}`, settings.agent], {
             capture: true,
           });
-        yield* run(["/bin/launchctl", "kickstart", service], { capture: true });
+        yield* run([launchctl, "kickstart", service], { capture: true });
       }),
   );
   const restarted = yield* inspect("inspect");

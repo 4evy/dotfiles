@@ -49,15 +49,18 @@ temporary=$(mktemp -d)
 trap 'rm -rf "$temporary"' 0
 trap 'exit 130' INT
 trap 'exit 143' TERM
-curl -fsSL --retry 3 --retry-delay 1 \
+readonly download_retries=3
+readonly download_retry_delay_seconds=1
+curl -fsSL --retry "$download_retries" --retry-delay "$download_retry_delay_seconds" \
 	"https://github.com/oven-sh/bun/releases/download/bun-v1.4.4/$archive.zip" \
 	-o "$temporary/bun.zip"
-if command -v sha256sum >/dev/null 2>&1; then
-	actual=$(sha256sum "$temporary/bun.zip" | awk '{print $1}')
-else
-	actual=$(shasum -a 256 "$temporary/bun.zip" | awk '{print $1}')
-fi
-if [ "$actual" != "$expected" ]; then
+if ! {
+	if command -v sha256sum >/dev/null 2>&1; then
+		printf '%s  %s\n' "$expected" "$temporary/bun.zip" | sha256sum -c -
+	else
+		printf '%s  %s\n' "$expected" "$temporary/bun.zip" | shasum -a 256 -c -
+	fi
+} >/dev/null; then
 	echo 'Bun bootstrap checksum mismatch' >&2
 	exit 1
 fi

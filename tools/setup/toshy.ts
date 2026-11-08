@@ -9,6 +9,12 @@ import { runParser } from "@optique/core/facade";
 import { Effect, FileSystem, type PlatformError } from "effect";
 
 const root = resolve(import.meta.dir, "../..");
+const mutableDirectoryMode = 0o755;
+const permissionAndSpecialBits = 0o7777;
+const ownerWriteBit = 0o200;
+const desktopEntryHeader = "[Desktop Entry]";
+const hiddenDesktopProperty = "NoDisplay=true";
+const toshyConfigService = "toshy-config.service";
 
 const sliceMarker =
   /^(?<start>### {2}SLICE_MARK_START: (?<name>\w+) {2}###[^\n]*\n)(?<body>.*?)(?<end>^### {2}SLICE_MARK_END: \k<name> {2}###[^\n]*$)/gms;
@@ -138,8 +144,11 @@ function installNeeded(options: {
 }
 
 function hiddenDesktopEntry(text: string): string {
-  if (text.includes("NoDisplay=true")) return text;
-  return text.replaceAll("[Desktop Entry]", "[Desktop Entry]\nNoDisplay=true");
+  if (text.includes(hiddenDesktopProperty)) return text;
+  return text.replaceAll(
+    desktopEntryHeader,
+    `${desktopEntryHeader}\n${hiddenDesktopProperty}`,
+  );
 }
 
 const copyMutableTree: (
@@ -148,7 +157,7 @@ const copyMutableTree: (
 ) => Effect.Effect<void, PlatformError.PlatformError, FileSystem.FileSystem> =
   Effect.fn(function* (source: string, destination: string) {
     const fs = yield* FileSystem.FileSystem;
-    yield* fs.makeDirectory(destination, { mode: 0o755 });
+    yield* fs.makeDirectory(destination, { mode: mutableDirectoryMode });
     for (const name of yield* fs.readDirectory(source)) {
       const entry = join(source, name);
       const target = join(destination, name);
@@ -159,7 +168,7 @@ const copyMutableTree: (
         yield* copyMutableTree(entry, target);
       } else {
         yield* fs.copyFile(entry, target);
-        yield* fs.chmod(target, (info.mode & 0o7777) | 0o200);
+        yield* fs.chmod(target, (info.mode & permissionAndSpecialBits) | ownerWriteBit);
       }
     }
   });
@@ -215,7 +224,7 @@ const configurationUpdate = Effect.fn(function* (options: {
   const encoded = Buffer.from(merged, "utf-8");
   return {
     encoded,
-    restartNeeded: Buffer.compare(Buffer.from(options.current), encoded) !== 0,
+    restartNeeded: Buffer.compare(options.current, encoded) !== 0,
   };
 });
 
@@ -289,7 +298,7 @@ export const provisionToshy = Effect.fn(function* () {
   });
   if (restartNeeded) {
     yield* fs.writeFile(config, encoded);
-    yield* run(["systemctl", "--user", "restart", "toshy-config.service"]);
+    yield* run(["systemctl", "--user", "restart", toshyConfigService]);
   }
   yield* run(["systemctl", "--user", "disable", "--now", "toshy-tray.service"], {
     check: false,
@@ -301,12 +310,12 @@ export const provisionToshy = Effect.fn(function* () {
     "systemctl",
     "--user",
     "start",
-    "toshy-config.service",
+    toshyConfigService,
     "toshy-kanata-device.path",
   ]);
   yield* hideDesktopSurfaces(home);
   yield* run(["systemctl", "is-active", "--quiet", "kanata-main.service"]);
-  yield* run(["systemctl", "--user", "is-active", "--quiet", "toshy-config.service"]);
+  yield* run(["systemctl", "--user", "is-active", "--quiet", toshyConfigService]);
 
   const device = "/run/kanata-main/main";
   const deviceInfo = yield* fs.lstat(device).pipe(

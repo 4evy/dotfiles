@@ -12,7 +12,8 @@ export type Input = {
   baseline: string | undefined;
 };
 
-const uint64Max = (1n << 64n) - 1n;
+const flagBits = 64;
+const uint64Max = (1n << BigInt(flagBits)) - 1n;
 
 function object(value: unknown, label: string): Record<string, unknown> {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
@@ -77,7 +78,7 @@ export function wantedFlags(
   let flags = app.flags;
   for (const grant of grants) {
     if ((app.auth & grant.requiresAuth) === grant.requiresAuth) {
-      flags = (flags | grant.setFlags) & ~grant.clearFlags & uint64Max;
+      flags = BigInt.asUintN(flagBits, (flags | grant.setFlags) & ~grant.clearFlags);
     }
   }
   return flags;

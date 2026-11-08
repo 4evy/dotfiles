@@ -12,6 +12,9 @@ import { Effect, FileSystem, Schema } from "effect";
 import { validateXML } from "./xml.ts";
 
 const repository = resolve(import.meta.dir, "../../..");
+const SHEBANG_PREFIX = "#!";
+const HJEM_SOURCE_NAME = /^[a-z0-9]{32}-hjem-/;
+const HJEM_HOOK_PREFIX = "hjem-hook-";
 type Validator = (
   contents: string,
   path: string,
@@ -59,6 +62,57 @@ const validators: Record<string, Validator> = {
 };
 const shells: Record<string, Validator> = { bash, sh: bash, zsh };
 
+function shebangValidator(contents: string) {
+  if (!contents.startsWith(SHEBANG_PREFIX)) return undefined;
+  const [interpreter, ...args] =
+    contents.slice(SHEBANG_PREFIX.length).split("\n", 1)[0]?.trim().split(/\s+/) ?? [];
+  const program = basename(interpreter ?? "");
+  // env -S splits the remaining shebang into a command and its arguments
+  const command = program === "env" ? args[args[0] === "-S" ? 1 : 0] : program;
+  const shell = basename(command ?? "");
+  return Object.hasOwn(shells, shell) ? shells[shell] : undefined;
+}
+
+function targetValidator(contents: string, target: string) {
+  // A store source can lose its extension, and dotfiles have no extname
+  const extension = extname(target) || basename(target);
+  const validate = Object.hasOwn(validators, extension)
+    ? validators[extension]
+    : undefined;
+  return validate ?? shebangValidator(contents);
+}
+
+const checkGeneratedFile = Effect.fn("checkGeneratedFile")(function* (
+  source: string,
+  target: string,
+  platform: string,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const info = yield* fs
+    .stat(source)
+    .pipe(
+      Effect.catch((error) =>
+        error.reason._tag === "NotFound"
+          ? Effect.succeed(undefined)
+          : Effect.fail(error),
+      ),
+    );
+  if (info?.type !== "File") return false;
+  const contents = yield* fs.readFileString(source);
+  const validate = targetValidator(contents, target);
+  if (!validate) return false;
+  yield* validate(contents, source).pipe(
+    Effect.mapError(
+      (cause) =>
+        new DotfilesError(
+          `Generated Hjem target: ${target} from ${source} (${platform})`,
+          { cause },
+        ),
+    ),
+  );
+  return true;
+});
+
 runMain(
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
@@ -91,58 +145,20 @@ runMain(
     );
     const paths = [
       // Only Nix-generated home sources need this check, not external packages
-      ...manifest.files.filter(({ source }) =>
-        /^[a-z0-9]{32}-hjem-/.test(basename(source)),
-      ),
+      ...manifest.files.filter(({ source }) => HJEM_SOURCE_NAME.test(basename(source))),
       ...hooks.flatMap(({ command }) =>
         command
           .filter(
             (path) =>
               isAbsolute(path) &&
-              (basename(path).startsWith("hjem-hook-") || scripts[extname(path)]),
+              (basename(path).startsWith(HJEM_HOOK_PREFIX) || scripts[extname(path)]),
           )
           .map((source) => ({ source, target: source })),
       ),
     ];
     let checked = 0;
-    for (const { source, target } of paths) {
-      const info = yield* fs
-        .stat(source)
-        .pipe(
-          Effect.catch((error) =>
-            error.reason._tag === "NotFound"
-              ? Effect.succeed(undefined)
-              : Effect.fail(error),
-          ),
-        );
-      if (info?.type !== "File") continue;
-      const contents = yield* fs.readFileString(source);
-      // A store source can lose its extension, and dotfiles have no extname
-      const extension = extname(target) || basename(target);
-      let validate = Object.hasOwn(validators, extension)
-        ? validators[extension]
-        : undefined;
-      if (!validate && contents.startsWith("#!")) {
-        const [interpreter, ...args] =
-          contents.slice(2).split("\n", 1)[0]?.trim().split(/\s+/) ?? [];
-        const program = basename(interpreter ?? "");
-        // env -S splits the remaining shebang into a command and its arguments
-        const command = program === "env" ? args[args[0] === "-S" ? 1 : 0] : program;
-        const shell = basename(command ?? "");
-        if (Object.hasOwn(shells, shell)) validate = shells[shell];
-      }
-      if (!validate) continue;
-      yield* validate(contents, source).pipe(
-        Effect.mapError(
-          (cause) =>
-            new DotfilesError(
-              `Generated Hjem target: ${target} from ${source} (${platform})`,
-              { cause },
-            ),
-        ),
-      );
-      checked++;
-    }
+    for (const { source, target } of paths)
+      if (yield* checkGeneratedFile(source, target, platform)) checked++;
     console.log(`${platform}: checked ${checked} generated home files and hooks`);
   }),
 );

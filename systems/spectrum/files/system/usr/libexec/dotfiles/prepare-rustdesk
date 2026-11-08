@@ -1,12 +1,13 @@
 #!/usr/bin/bash
 set -euo pipefail
 
+readonly runtime_dir=/var/lib/rustdesk/dotfiles
 source=$(readlink -f /usr/bin/rustdesk)
-install -d -m 0755 /var/lib/rustdesk/dotfiles /root/.config/rustdesk
-if ! cmp -s "$source" /var/lib/rustdesk/dotfiles/rustdesk; then
-  install -m 0755 "$source" /var/lib/rustdesk/dotfiles/rustdesk
+install -d -m 0755 "$runtime_dir" /root/.config/rustdesk
+if ! cmp -s "$source" "$runtime_dir/rustdesk"; then
+  install -m 0755 "$source" "$runtime_dir/rustdesk"
 fi
-ln -sfn "$(dirname "$source")/lib" /var/lib/rustdesk/dotfiles/lib
+ln -sfn "$(dirname "$source")/lib" "$runtime_dir/lib"
 
 /usr/bin/python3.15 - <<'PY'
 import json

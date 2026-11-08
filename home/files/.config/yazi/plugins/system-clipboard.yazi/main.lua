@@ -186,7 +186,8 @@ function run(argv) {
 	}
 	// NSURL provides its data lazily. Give the pasteboard server time to request
 	// that promised data before this short-lived osascript process exits.
-	$.NSThread.sleepForTimeInterval(0.1)
+	const pasteboardRequestGraceSeconds = 0.1
+	$.NSThread.sleepForTimeInterval(pasteboardRequestGraceSeconds)
 	return argv.length
 }
 ]]

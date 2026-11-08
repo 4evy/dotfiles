@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { Buffer } from "node:buffer";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { run } from "@dotfiles/core/commands";
@@ -10,6 +11,8 @@ import { constant } from "@optique/core/primitives";
 import { Effect, FileSystem, Schema } from "effect";
 
 const macOS = process.platform === "darwin";
+const AVATAR_SIZE_PX = 256;
+const AVATAR_GEOMETRY = `${AVATAR_SIZE_PX}x${AVATAR_SIZE_PX}`;
 
 // Validate only the fields consumed here, leaving Tweezle's schema upstream
 const WrapperConfigSchema = Schema.Struct({
@@ -34,7 +37,7 @@ const avatar = Effect.fn("heliumAvatar")(function* (profile: string, cache: stri
       const original = join(temporary, "avatar");
       const png = join(temporary, "avatar.png");
       const bytes = yield* download(
-        "https://github.com/4evy.png?size=256",
+        `https://github.com/4evy.png?size=${AVATAR_SIZE_PX}`,
         (response) => response.arrayBuffer,
       );
       yield* fs.writeFile(original, new Uint8Array(bytes));
@@ -45,11 +48,11 @@ const avatar = Effect.fn("heliumAvatar")(function* (profile: string, cache: stri
           "-auto-orient",
           "-strip",
           "-resize",
-          "256x256^",
+          `${AVATAR_GEOMETRY}^`,
           "-gravity",
           "center",
           "-extent",
-          "256x256",
+          AVATAR_GEOMETRY,
           `PNG:${png}`,
         ],
         { stderr: "inherit" },
@@ -59,11 +62,7 @@ const avatar = Effect.fn("heliumAvatar")(function* (profile: string, cache: stri
       const current = (yield* fs.exists(target))
         ? yield* fs.readFile(target)
         : undefined;
-      if (
-        !current ||
-        current.length !== generated.length ||
-        !current.every((byte, index) => byte === generated[index])
-      )
+      if (!current || Buffer.compare(current, generated) !== 0)
         yield* fs.copyFile(png, target);
     }),
   );
@@ -96,25 +95,18 @@ const privatePayload = Effect.fn("heliumPrivatePayload")(function* (root: string
   return payload;
 });
 
-export const helium = Effect.fn("helium")(function* () {
+const wrapperConfig = Effect.fn("heliumWrapperConfig")(function* (path: string) {
   const fs = yield* FileSystem.FileSystem;
-  const root = resolve(import.meta.dir, "../../..");
-  const configPath = join(import.meta.dir, "config.toml");
-  const contents = yield* fs.readFileString(configPath);
+  const contents = yield* fs.readFileString(path);
   const parsed = yield* Effect.try({
     try: () => Bun.TOML.parse(contents),
     catch: (error) =>
       new DotfilesError(`Invalid Helium wrapper configuration: ${error}`),
   });
-  const config = (yield* Schema.decodeUnknownEffect(WrapperConfigSchema)(parsed))
-    .browser;
-  const platform = macOS ? "macos" : "linux";
-  const home = homedir();
-  const variables = {
-    home,
-    config_home: process.env.XDG_CONFIG_HOME || join(home, ".config"),
-    data_home: process.env.XDG_DATA_HOME || join(home, ".local/share"),
-  };
+  return (yield* Schema.decodeUnknownEffect(WrapperConfigSchema)(parsed)).browser;
+});
+
+const profileAvailable = Effect.fn("heliumProfileAvailable")(function* () {
   const pattern = macOS
     ? "^/Applications/(Nix Apps/)?Helium[.]app/Contents/MacOS/Helium([[:space:]]|$)"
     : "helium";
@@ -126,22 +118,47 @@ export const helium = Effect.fn("helium")(function* () {
   });
   if (running.code !== 0 && running.code !== 1)
     return yield* Effect.fail(new DotfilesError("Could not inspect Helium processes"));
-  const applyProfile = running.code === 1;
+  return running.code === 1;
+});
+
+const prepareProfile = Effect.fn("heliumPrepareProfile")(function* (
+  config: (typeof WrapperConfigSchema.Type)["browser"],
+  platform: string,
+  variables: Record<string, string>,
+  cache: string,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  let profile = config.paths[platform]?.profile_dir;
+  if (!profile)
+    return yield* Effect.fail(
+      new DotfilesError(`Missing Helium ${platform} profile path`),
+    );
+  for (const [key, value] of Object.entries(variables))
+    profile = profile.replaceAll(`\${${key}}`, value);
+  yield* fs.makeDirectory(profile, { recursive: true });
+  yield* avatar(profile, cache);
+});
+
+export const helium = Effect.fn("helium")(function* () {
+  const fs = yield* FileSystem.FileSystem;
+  const root = resolve(import.meta.dir, "../../..");
+  const configPath = join(import.meta.dir, "config.toml");
+  const config = yield* wrapperConfig(configPath);
+  const platform = macOS ? "macos" : "linux";
+  const home = homedir();
+  const variables = {
+    home,
+    config_home: process.env.XDG_CONFIG_HOME || join(home, ".config"),
+    data_home: process.env.XDG_DATA_HOME || join(home, ".local/share"),
+  };
+  const applyProfile = yield* profileAvailable();
   const cache = join(
     process.env.XDG_CACHE_HOME ?? join(home, ".cache"),
     "dotfiles/helium",
   );
   yield* fs.makeDirectory(cache, { recursive: true });
   if (applyProfile) {
-    let profile = config.paths[platform]?.profile_dir;
-    if (!profile)
-      return yield* Effect.fail(
-        new DotfilesError(`Missing Helium ${platform} profile path`),
-      );
-    for (const [key, value] of Object.entries(variables))
-      profile = profile.replaceAll(`\${${key}}`, value);
-    yield* fs.makeDirectory(profile, { recursive: true });
-    yield* avatar(profile, cache);
+    yield* prepareProfile(config, platform, variables, cache);
   } else {
     // Launcher updates are safe while Chromium owns its profile
     console.log("Helium is running, refreshing launchers without profile changes");

@@ -48,6 +48,9 @@ interface RexTheme {
 // Bun erases the types before toString passes its JavaScript to osascript
 function syncThemes() {
   ObjC.import("Foundation");
+  const HEX_RADIX = 16;
+  const RGB_CHANNEL_BITS = 8;
+  const RGB_CHANNEL_MAX = 255;
   const home = ObjC.unwrap($.NSHomeDirectory());
   const defaults = $.NSUserDefaults.alloc.initWithSuiteName("com.superlogical.rex");
   const key = "Workspace.customThemes";
@@ -68,11 +71,11 @@ function syncThemes() {
     if (!hex || !/^#[0-9a-f]{6}$/i.test(hex)) {
       throw new Error(`Invalid Rex theme color: ${hex}`);
     }
-    const value = parseInt(hex.slice(1), 16);
+    const value = parseInt(hex.slice(1), HEX_RADIX);
     return {
-      red: (value >> 16) / 255,
-      green: ((value >> 8) & 255) / 255,
-      blue: (value & 255) / 255,
+      red: (value >> (RGB_CHANNEL_BITS * 2)) / RGB_CHANNEL_MAX,
+      green: ((value >> RGB_CHANNEL_BITS) & RGB_CHANNEL_MAX) / RGB_CHANNEL_MAX,
+      blue: (value & RGB_CHANNEL_MAX) / RGB_CHANNEL_MAX,
       alpha: 1,
       colorSpace: "srgb",
     };

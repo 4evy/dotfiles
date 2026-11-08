@@ -9,15 +9,20 @@ import { string } from "@optique/core/valueparser";
 import { Effect, Schema, SchemaTransformation } from "effect";
 import defaults from "./defaults.json";
 
+const IPV4_VERSION = 4;
+const IPV6_VERSION = 6;
+const MAX_TCP_PORT = 65535;
+
 export function normalizeIP(value: string): string {
   const [address = "", scope] = value.split("%");
   const version = isIP(address);
   if (
     !version ||
-    (scope !== undefined && (version !== 6 || !scope || value.split("%").length !== 2))
+    (scope !== undefined &&
+      (version !== IPV6_VERSION || !scope || value.split("%").length !== 2))
   )
     throw new UsageError("Invalid IP address");
-  if (version === 4) return address;
+  if (version === IPV4_VERSION) return address;
   const canonical = new URL(`http://[${address}]`).hostname.slice(1, -1);
   return `${canonical}${scope === undefined ? "" : `%${scope}`}`;
 }
@@ -87,7 +92,7 @@ const boolean = Schema.Union([Schema.Boolean, Schema.String])
 export const portNumberSchema = Schema.Union([
   Schema.Number,
   Schema.NumberFromString,
-]).check(Schema.isInt(), Schema.isBetween({ minimum: 1, maximum: 65535 }));
+]).check(Schema.isInt(), Schema.isBetween({ minimum: 1, maximum: MAX_TCP_PORT }));
 const phoneOptions = {
   name: {
     field: "name",

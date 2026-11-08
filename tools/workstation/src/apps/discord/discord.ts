@@ -5,13 +5,15 @@ import { DotfilesError, UsageError } from "@dotfiles/core/errors";
 import { isExecutable, writeJson } from "@dotfiles/core/files";
 import { configHome } from "@dotfiles/core/paths";
 import { shellWords } from "@dotfiles/core/shell";
-import { object, or } from "@optique/core/constructs";
+import { object } from "@optique/core/constructs";
 import { formatMessage } from "@optique/core/message";
 import { map, multiple } from "@optique/core/modifiers";
 import { parseSync } from "@optique/core/parser";
-import { argument, flag, passThrough } from "@optique/core/primitives";
-import { string } from "@optique/core/valueparser";
+import { flag } from "@optique/core/primitives";
 import { Effect, FileSystem, Option, Schema, SchemaTransformation } from "effect";
+import { forwardedArguments } from "../../lib/arguments.ts";
+
+const PRIVATE_SETTINGS_MODE = 0o600;
 
 const truthy = [true, 1, "1", "on", "true", "yes", "t", "y"] as const;
 const falsy = [false, 0, "0", "off", "false", "no", "f", "n"] as const;
@@ -83,7 +85,7 @@ export const configureGPU = Effect.fn("configureGPU")(function* (directory: stri
         force_high_performance_gpu: true,
       },
     },
-    0o600,
+    PRIVATE_SETTINGS_MODE,
   );
 });
 
@@ -94,12 +96,7 @@ export const discord = Effect.fn("discord")(function* (args: string[]) {
         multiple(flag("--configure-only")),
         (values) => values.length > 0,
       ),
-      arguments: multiple(
-        or(
-          map(argument(string()), (value) => [value]),
-          passThrough({ format: "nextToken" }),
-        ),
-      ),
+      arguments: forwardedArguments,
     }),
     args,
   );

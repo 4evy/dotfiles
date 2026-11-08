@@ -19,6 +19,12 @@ export const formatVersion = 1;
 export const layoutVersion = 2;
 export const collectionNames: readonly string[] = ["t0"];
 const collectionNameSet = new Set(collectionNames);
+const recordIndexDigits = 3;
+const privateDirectoryMode = 0o700;
+const permissionBits = 0o777;
+const vaultRelativePath = "secrets/records.yaml";
+const sopsConfigFilename = ".sops.yaml";
+const sopsItemsPath = '["items"]';
 
 export interface RecordVariant {
   system: string;
@@ -95,7 +101,7 @@ const collectionSchemas: Record<string, v.GenericSchema<unknown, RecordItem>> = 
 };
 
 function recordLabel(collection: string, index: number): string {
-  return `${collection} record ${String(index).padStart(3, "0")}`;
+  return `${collection} record ${String(index).padStart(recordIndexDigits, "0")}`;
 }
 
 export function decodeRecord(
@@ -120,6 +126,19 @@ export function decodeRecord(
   return result.output;
 }
 
+function validateVariants(record: RecordItem, collection: string, index: number): void {
+  const selectors = new Set<string>();
+  for (const variant of record.variants ?? []) {
+    const selector = `${variant.system}\0${variant.hostname ?? ""}`;
+    if (selectors.has(selector)) {
+      throw new DotfilesError(
+        `${recordLabel(collection, index)} has duplicate platform variants`,
+      );
+    }
+    selectors.add(selector);
+  }
+}
+
 export function validateCollections(value: CollectionSet): void {
   const keys = Object.keys(value);
   if (
@@ -137,16 +156,7 @@ export function validateCollections(value: CollectionSet): void {
     const targets = new Set<string>();
     for (const [index, item] of items.entries()) {
       const record = decodeRecord(item, collection, index);
-      const selectors = new Set<string>();
-      for (const variant of record.variants ?? []) {
-        const selector = `${variant.system}\0${variant.hostname ?? ""}`;
-        if (selectors.has(selector)) {
-          throw new DotfilesError(
-            `${recordLabel(collection, index)} has duplicate platform variants`,
-          );
-        }
-        selectors.add(selector);
-      }
+      validateVariants(record, collection, index);
       for (const target of record.paths) {
         if (targets.has(target))
           throw new DotfilesError(`${collection} destinations must be unique`);
@@ -202,7 +212,7 @@ export function recordCount(value: CollectionSet): number {
   return Object.values(value).reduce((count, items) => count + items.length, 0);
 }
 
-interface VaultOptions {
+export interface VaultOptions {
   repository: string;
   file: string;
   marker: string;
@@ -248,9 +258,7 @@ export class Vault {
         );
       return new Vault({
         repository,
-        file: resolve(
-          process.env.RECORDS_FILE ?? join(repository, "secrets", "records.yaml"),
-        ),
+        file: resolve(process.env.RECORDS_FILE ?? join(repository, vaultRelativePath)),
         marker: resolve(
           process.env.RECORDS_MARKER ?? join(repository, ".records-unpacked"),
         ),
@@ -275,7 +283,7 @@ export class Vault {
         "--output-type",
         "json",
         "--extract",
-        '["items"]',
+        sopsItemsPath,
         file,
       );
       return yield* validate(() => {
@@ -335,7 +343,7 @@ export class Vault {
           directory: dirname(this.file),
           prefix: `${basename(this.file)}.sops.`,
         });
-        yield* fs.chmod(directory, 0o700);
+        yield* fs.chmod(directory, privateDirectoryMode);
         const scratch = join(directory, "vault.yaml");
         yield* writePrivate(scratch, yield* fs.readFile(this.file));
         yield* this.runSOPS(
@@ -350,7 +358,7 @@ export class Vault {
           "--idempotent",
           "--value-stdin",
           scratch,
-          '["items"]',
+          sopsItemsPath,
         );
         const roundTrip = yield* this.decryptCollections(scratch);
         if (!equalCollections(roundTrip, expected))
@@ -360,7 +368,7 @@ export class Vault {
         yield* replaceTextFile(
           this.file,
           yield* fs.readFile(scratch),
-          info.mode & 0o777,
+          info.mode & permissionBits,
         );
       }),
     );
@@ -370,7 +378,7 @@ export class Vault {
     return Effect.scoped(
       Effect.gen({ self: this }, function* () {
         const env = { ...process.env };
-        const config = join(this.repository, ".sops.yaml");
+        const config = join(this.repository, sopsConfigFilename);
         if (
           !env.SOPS_CONFIG &&
           (yield* isRegular(config).pipe(Effect.orElseSucceed(() => false)))
@@ -433,10 +441,10 @@ function defaultRepository() {
       let current = resolve(candidate);
       while (true) {
         if (
-          (yield* isRegular(join(current, "secrets", "records.yaml")).pipe(
+          (yield* isRegular(join(current, vaultRelativePath)).pipe(
             Effect.orElseSucceed(() => false),
           )) &&
-          (yield* isRegular(join(current, ".sops.yaml")).pipe(
+          (yield* isRegular(join(current, sopsConfigFilename)).pipe(
             Effect.orElseSucceed(() => false),
           ))
         )

@@ -2,6 +2,8 @@ import { constants } from "node:os";
 import { Effect } from "effect";
 import type { ChildProcessSpawner } from "effect/process";
 
+const SIGNAL_EXIT_STATUS_BASE = 128;
+
 export function exitCode(
   child: Pick<ChildProcessSpawner.ChildProcessHandle, "exitCode">,
 ) {
@@ -20,7 +22,9 @@ export function exitCode(
         signal && Object.hasOwn(constants.signals, signal)
           ? constants.signals[signal as keyof typeof constants.signals]
           : undefined;
-      return number === undefined ? Effect.fail(error) : Effect.succeed(128 + number);
+      return number === undefined
+        ? Effect.fail(error)
+        : Effect.succeed(SIGNAL_EXIT_STATUS_BASE + number);
     }),
   );
 }

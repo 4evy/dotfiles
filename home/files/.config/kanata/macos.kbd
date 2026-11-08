@@ -6,10 +6,15 @@
   esc caps lctl lalt lmet rmet ralt rctl w    p           a    s    d         ret             bksl     nubs     nuhs     ro       mbck mfwd
 )
 
+(defvar
+  tap-hold-ms 200
+  volume-mute-hold-ms 1000
+)
+
 (defalias
-  caps-hyper (tap-hold-press 200 200 esc (multi lmet lctl lalt lsft (layer-while-held hyper)))
-  volume-down-mute (tap-hold 200 1000 vold mute)
-  volume-up-mute (tap-hold 200 1000 volu mute)
+  caps-hyper (tap-hold-press $tap-hold-ms $tap-hold-ms esc (multi lmet lctl lalt lsft (layer-while-held hyper)))
+  volume-down-mute (tap-hold $tap-hold-ms $volume-mute-hold-ms vold mute)
+  volume-up-mute (tap-hold $tap-hold-ms $volume-mute-hold-ms volu mute)
   win-up (macos-window top-half top-two-thirds top-third)
   win-left (macos-window left-half left-two-thirds first-third)
   win-down (macos-window bottom-half bottom-two-thirds bottom-third)

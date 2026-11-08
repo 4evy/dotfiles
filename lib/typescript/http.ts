@@ -1,6 +1,8 @@
-import { Effect, type Scope } from "effect";
+import { Duration, Effect, type Scope } from "effect";
 import { HttpClient, type HttpClientResponse } from "effect/http";
 import { DotfilesError } from "./errors.ts";
+
+const DOWNLOAD_TIMEOUT_SECONDS = 120;
 
 // Consume inside the request scope so failures and interruption release the body
 export function download<A, E, R>(
@@ -29,9 +31,13 @@ export function download<A, E, R>(
     }),
   ).pipe(
     Effect.timeoutOrElse({
-      duration: "120 seconds",
+      duration: Duration.seconds(DOWNLOAD_TIMEOUT_SECONDS),
       orElse: () =>
-        Effect.fail(new DotfilesError(`Download timed out after 120 seconds: ${url}`)),
+        Effect.fail(
+          new DotfilesError(
+            `Download timed out after ${DOWNLOAD_TIMEOUT_SECONDS} seconds: ${url}`,
+          ),
+        ),
     }),
   );
 }

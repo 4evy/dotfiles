@@ -12,7 +12,6 @@ import {
   validate,
   writePrivate,
 } from "./files.ts";
-import { checkMaterialized } from "./source.ts";
 import {
   type CollectionSet,
   collectionNames,
@@ -25,6 +24,15 @@ import {
   validateCollections,
 } from "./vault.ts";
 
+const privateDirectoryMode = 0o700;
+const groupAndOtherPermissionBits = 0o077;
+const formatFilename = "format.json";
+const metadataFilename = "metadata.json";
+const bodyFilename = "body";
+const recordIndexDigits = 3;
+// Match the signed 64-bit index bound accepted by the records command
+const maxRecordIndex = (1n << 63n) - 1n;
+
 export function unpackWorkspace(v: Vault, destination: string) {
   return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
@@ -33,7 +41,7 @@ export function unpackWorkspace(v: Vault, destination: string) {
     const plan = yield* validate(() => planWorkspace(root, value));
     yield* Effect.uninterruptibleMask((restore) =>
       Effect.gen(function* () {
-        if (created) yield* fs.makeDirectory(root, { mode: 0o700 });
+        if (created) yield* fs.makeDirectory(root, { mode: privateDirectoryMode });
         yield* restore(
           Effect.gen(function* () {
             yield* writeWorkspacePlan(plan);
@@ -70,19 +78,7 @@ export function packWorkspace(v: Vault, source: string) {
   });
 }
 
-export function check(v: Vault, source = "") {
-  return Effect.gen(function* () {
-    const value =
-      source === ""
-        ? yield* v.decryptCollections()
-        : yield* readWorkspace(yield* existingWorkspace(v, source));
-    if (source === "" && (yield* pathExists(v.marker)))
-      yield* checkMaterialized(v, value);
-    yield* v.stdout(`validated ${recordCount(value)} records\n`);
-  });
-}
-
-export function prepareDestination(v: Vault, destination: string) {
+function prepareDestination(v: Vault, destination: string) {
   return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const path = resolve(destination);
@@ -135,7 +131,7 @@ export function existingWorkspace(v: Vault, source: string) {
         new DotfilesError("plaintext workspaces must be outside the repository"),
       );
     const resolvedInfo = yield* fs.lstat(path);
-    if ((resolvedInfo.mode & 0o077) !== 0)
+    if ((resolvedInfo.mode & groupAndOtherPermissionBits) !== 0)
       return yield* Effect.fail(
         new DotfilesError("workspace permissions must not grant group or other access"),
       );
@@ -149,7 +145,7 @@ function planWorkspace(root: string, value: CollectionSet): WorkspaceEntry[] {
   validateCollections(value);
   const plan: WorkspaceEntry[] = [
     {
-      path: join(root, "format.json"),
+      path: join(root, formatFilename),
       body: `${marshalPrettyJSON({ collections: collectionNames, version: formatVersion })}\n`,
     },
   ];
@@ -171,10 +167,10 @@ function planWorkspace(root: string, value: CollectionSet): WorkspaceEntry[] {
       plan.push(
         { path: recordRoot },
         {
-          path: join(recordRoot, "metadata.json"),
+          path: join(recordRoot, metadataFilename),
           body: `${marshalPrettyJSON(metadata)}\n`,
         },
-        { path: join(recordRoot, "body"), body: item.body },
+        { path: join(recordRoot, bodyFilename), body: item.body },
       );
     }
   }
@@ -186,7 +182,7 @@ function writeWorkspacePlan(plan: WorkspaceEntry[]) {
     const fs = yield* FileSystem.FileSystem;
     for (const entry of plan) {
       if (entry.body === undefined)
-        yield* fs.makeDirectory(entry.path, { mode: 0o700 });
+        yield* fs.makeDirectory(entry.path, { mode: privateDirectoryMode });
       else yield* writePrivate(entry.path, entry.body);
     }
   });
@@ -201,8 +197,8 @@ export function writeWorkspace(root: string, value: CollectionSet) {
 export function readWorkspace(root: string) {
   return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    yield* assertEntries(root, ["format.json", ...collectionNames]);
-    const formatPath = join(root, "format.json");
+    yield* assertEntries(root, [formatFilename, ...collectionNames]);
+    const formatPath = join(root, formatFilename);
     if (!(yield* isRegular(formatPath)))
       return yield* Effect.fail(new DotfilesError("missing workspace format"));
     const format = yield* parseJSONObject(formatPath, "workspace format");
@@ -245,13 +241,13 @@ export function readWorkspace(root: string) {
 
 function readWorkspaceRecord(root: string, collection: string, index: number) {
   return Effect.gen(function* () {
-    yield* assertEntries(root, ["body", "metadata.json"]);
+    yield* assertEntries(root, [bodyFilename, metadataFilename]);
     const label = `${collection} record ${indexName(index)}`;
     const metadata = yield* parseJSONObject(
-      join(root, "metadata.json"),
+      join(root, metadataFilename),
       `${label} metadata`,
     );
-    const bodyPath = join(root, "body");
+    const bodyPath = join(root, bodyFilename);
     if (!(yield* isRegular(bodyPath)))
       return yield* Effect.fail(
         new DotfilesError(`${label} body must be a regular file`),
@@ -289,14 +285,10 @@ export function validateEditTarget(collection: string, index: string): void {
   if (collection !== "" && !collectionNames.some((name) => name === collection))
     throw new DotfilesError(`unknown collection: ${collection}`);
   if (index === "") return;
-  if (
-    !/^[+-]?\d+$/.test(index) ||
-    BigInt(index) < 0n ||
-    BigInt(index) > 9223372036854775807n
-  )
+  if (!/^[+-]?\d+$/.test(index) || BigInt(index) < 0n || BigInt(index) > maxRecordIndex)
     throw new DotfilesError("record index must be a non-negative integer");
 }
 
 function indexName(index: number): string {
-  return String(index).padStart(3, "0");
+  return String(index).padStart(recordIndexDigits, "0");
 }

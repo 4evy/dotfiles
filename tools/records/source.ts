@@ -16,6 +16,7 @@ import {
   removeEmptyDirectory,
   replaceTextFile,
   validate,
+  validatePathOverlaps,
   writePrivate,
 } from "./files.ts";
 import {
@@ -23,6 +24,7 @@ import {
   equalCollections,
   layoutVersion,
   type RecordRef,
+  recordCount,
   records,
   type Vault,
   validateCollections,
@@ -30,13 +32,35 @@ import {
 } from "./vault.ts";
 import {
   directoryEmpty,
+  existingWorkspace,
   packWorkspace,
+  readWorkspace,
   validateEditTarget,
   writeWorkspace,
 } from "./workspace.ts";
 
 type SourceFile = { path: string; body: string; mode: number };
-const pad = (value: number) => String(value).padStart(3, "0");
+const privateFileMode = 0o600;
+const privateDirectoryMode = 0o700;
+const privateExecutableMode = 0o700;
+const permissionBits = 0o777;
+const recordIndexDigits = 3;
+const layoutPaddedColumns = 4;
+const layoutColumnGap = 2;
+// The base body precedes the zero-indexed platform variants
+const baseVariantIndex = -1;
+export function check(v: Vault, source = "") {
+  return Effect.gen(function* () {
+    const value =
+      source === ""
+        ? yield* v.decryptCollections()
+        : yield* readWorkspace(yield* existingWorkspace(v, source));
+    if (source === "" && (yield* pathExists(v.marker)))
+      yield* checkMaterialized(v, value);
+    yield* v.stdout(`validated ${recordCount(value)} records\n`);
+  });
+}
+const pad = (value: number) => String(value).padStart(recordIndexDigits, "0");
 
 function delimitedBlock(begin: string, end: string) {
   const pattern = new RegExp(`^${begin}\\n.*?^${end}\\n?`, "ms");
@@ -81,35 +105,45 @@ function variantSourcePath(
       );
 }
 
-export function sourceFiles(v: Vault, value: CollectionSet): SourceFile[] {
+function* recordSourceFiles(v: Vault, current: RecordRef): Generator<SourceFile> {
+  const item = current.record;
+  for (
+    let variant = baseVariantIndex;
+    variant < (item.variants?.length ?? 0);
+    variant++
+  ) {
+    const body = variant < 0 ? item.body : item.variants?.[variant]?.body;
+    if (body === undefined) throw new DotfilesError("missing record variant");
+    for (const target of item.paths) {
+      yield {
+        path: variantSourcePath(v, current, target, variant),
+        body,
+        mode: item.executable ? privateExecutableMode : privateFileMode,
+      };
+    }
+  }
+}
+
+function sourceFiles(v: Vault, value: CollectionSet): SourceFile[] {
   const seen = new Set<string>();
   const result: SourceFile[] = [];
   for (const current of records(value)) {
-    const item = current.record;
-    for (let variant = -1; variant < (item.variants?.length ?? 0); variant++) {
-      const body = variant < 0 ? item.body : item.variants?.[variant]?.body;
-      if (body === undefined) throw new DotfilesError("missing record variant");
-      for (const target of item.paths) {
-        const path = variantSourcePath(v, current, target, variant);
-        if (seen.has(path))
-          throw new DotfilesError(
-            `${current.collection} record ${pad(current.index)} has a duplicate source path`,
-          );
-        if (path === v.marker || path === v.searchIgnore)
-          throw new DotfilesError(
-            "plaintext records must not overlap records metadata",
-          );
-        seen.add(path);
-        result.push({ path, body, mode: item.executable ? 0o700 : 0o600 });
-      }
+    for (const source of recordSourceFiles(v, current)) {
+      if (seen.has(source.path))
+        throw new DotfilesError(
+          `${current.collection} record ${pad(current.index)} has a duplicate source path`,
+        );
+      if (source.path === v.marker || source.path === v.searchIgnore)
+        throw new DotfilesError("plaintext records must not overlap records metadata");
+      seen.add(source.path);
+      result.push(source);
     }
   }
-  for (const path of seen) {
-    for (let parent = dirname(path); parent !== v.source; parent = dirname(parent)) {
-      if (seen.has(parent))
-        throw new DotfilesError("plaintext record destinations must not overlap");
-    }
-  }
+  validatePathOverlaps(
+    v.source,
+    seen,
+    "plaintext record destinations must not overlap",
+  );
   return result;
 }
 
@@ -173,7 +207,7 @@ export function unpackSource(v: Vault) {
         if (!(yield* pathExists(source.path))) {
           yield* fs.makeDirectory(dirname(source.path), {
             recursive: true,
-            mode: 0o700,
+            mode: privateDirectoryMode,
           });
           yield* writePrivate(source.path, source.body).pipe(
             Effect.tap(() =>
@@ -187,7 +221,7 @@ export function unpackSource(v: Vault) {
         yield* fs.chmod(source.path, source.mode);
       }
       yield* replaceTextFile(v.searchIgnore, overlay.body, overlay.mode);
-      yield* fs.chmod(v.searchIgnore, 0o600);
+      yield* fs.chmod(v.searchIgnore, privateFileMode);
       yield* writeMarker(v);
     }).pipe(
       Effect.onError(() =>
@@ -227,46 +261,48 @@ export function layout(v: Vault) {
     const value = yield* v.decryptCollections();
     const output = yield* validate(() => {
       const rows: string[][] = [];
-      for (const current of records(value)) {
-        const item = current.record;
-        const flags =
-          [
-            item.private && "private",
-            item.executable && "executable",
-            item.render && "render",
-          ]
-            .filter(Boolean)
-            .join(",") || "-";
-        for (const target of item.paths)
-          rows.push([
-            `${current.collection}/${pad(current.index)}`,
-            item.systems.join(",") || "all",
-            flags,
-            target,
-            relative(v.repository, sourcePathFor(v, target)),
-          ]);
-        for (const [index, variant] of (item.variants ?? []).entries())
-          for (const target of item.paths)
-            rows.push([
-              `${current.collection}/${pad(current.index)}.${pad(index)}`,
-              variant.system,
-              `variant${variant.hostname ? ",host-specific" : ""}`,
-              target,
-              relative(v.repository, variantSourcePath(v, current, target, index)),
-            ]);
-      }
-      const widths = Array.from({ length: 4 }, (_, column) =>
+      for (const current of records(value)) appendRecordLayoutRows(v, current, rows);
+      const widths = Array.from({ length: layoutPaddedColumns }, (_, column) =>
         Math.max(0, ...rows.map((row) => row[column]?.length ?? 0)),
       );
       return rows
         .map(
           (row) =>
-            `${row.map((cell, column) => (column < 4 ? cell.padEnd((widths[column] ?? 0) + 2) : cell)).join("")}\n`,
+            `${row.map((cell, column) => (column < layoutPaddedColumns ? cell.padEnd((widths[column] ?? 0) + layoutColumnGap) : cell)).join("")}\n`,
         )
         .join("");
     });
     yield* v.stdout(output);
   });
+}
+
+function appendRecordLayoutRows(v: Vault, current: RecordRef, rows: string[][]) {
+  const item = current.record;
+  const flags =
+    [
+      item.private && "private",
+      item.executable && "executable",
+      item.render && "render",
+    ]
+      .filter(Boolean)
+      .join(",") || "-";
+  for (const target of item.paths)
+    rows.push([
+      `${current.collection}/${pad(current.index)}`,
+      item.systems.join(",") || "all",
+      flags,
+      target,
+      relative(v.repository, sourcePathFor(v, target)),
+    ]);
+  for (const [index, variant] of (item.variants ?? []).entries())
+    for (const target of item.paths)
+      rows.push([
+        `${current.collection}/${pad(current.index)}.${pad(index)}`,
+        variant.system,
+        `variant${variant.hostname ? ",host-specific" : ""}`,
+        target,
+        relative(v.repository, variantSourcePath(v, current, target, index)),
+      ]);
 }
 
 export function editSource(v: Vault, target = "") {
@@ -297,7 +333,7 @@ export function editWorkspace(v: Vault, collection = "", index = "") {
       fs.makeTempDirectory({ prefix: "dotfiles-records-" }),
       (root) =>
         Effect.gen(function* () {
-          yield* fs.chmod(root, 0o700);
+          yield* fs.chmod(root, privateDirectoryMode);
           yield* writeWorkspace(root, yield* v.decryptCollections());
           const target = collection
             ? join(root, collection, ...(index ? [pad(Number(index))] : []))
@@ -335,7 +371,11 @@ function collectionsWithSourceBodies(v: Vault, value: CollectionSet) {
     const updated = structuredClone(value);
     for (const current of records(updated)) {
       const item = current.record;
-      for (let variant = -1; variant < (item.variants?.length ?? 0); variant++) {
+      for (
+        let variant = baseVariantIndex;
+        variant < (item.variants?.length ?? 0);
+        variant++
+      ) {
         const bodies: string[] = [];
         for (const target of item.paths) {
           const path = yield* validate(() =>
@@ -370,7 +410,7 @@ function collectionsWithSourceBodies(v: Vault, value: CollectionSet) {
   });
 }
 
-export function checkMaterialized(v: Vault, value: CollectionSet) {
+function checkMaterialized(v: Vault, value: CollectionSet) {
   return Effect.gen(function* () {
     yield* requireUnpackedMarker(v);
     const sources = yield* validate(() => sourceFiles(v, value));
@@ -408,14 +448,7 @@ function concealSourceFiles(v: Vault, sources: SourceFile[]) {
     yield* clearSearchIgnore(v);
     const removable = [...sources.map((source) => source.path), v.marker];
     for (const path of removable) yield* fs.remove(path);
-    for (const directory of new Set(removable.map(dirname))) {
-      let current = directory;
-      while (current !== v.source && isWithin(v.source, current)) {
-        if (!(yield* isDirectory(current)) || !(yield* directoryEmpty(current))) break;
-        yield* removeEmptyDirectory(current);
-        current = dirname(current);
-      }
-    }
+    yield* pruneSourceDirectories(v, removable);
     const exclude = yield* localExcludePath(v);
     if (yield* isRegular(exclude)) {
       const [content, mode] = yield* readOptionalTextFile(exclude);
@@ -425,6 +458,19 @@ function concealSourceFiles(v: Vault, sources: SourceFile[]) {
     yield* v.stdout(
       `concealed ${sources.length} plaintext files in the encrypted vault\n`,
     );
+  });
+}
+
+function pruneSourceDirectories(v: Vault, paths: string[]) {
+  return Effect.gen(function* () {
+    for (const directory of new Set(paths.map(dirname))) {
+      let current = directory;
+      while (current !== v.source && isWithin(v.source, current)) {
+        if (!(yield* isDirectory(current)) || !(yield* directoryEmpty(current))) break;
+        yield* removeEmptyDirectory(current);
+        current = dirname(current);
+      }
+    }
   });
 }
 
@@ -581,8 +627,8 @@ function writeMarker(v: Vault) {
       return yield* Effect.fail(
         new DotfilesError(`records marker must be a regular file: ${v.marker}`),
       );
-    yield* replaceTextFile(v.marker, content, 0o600);
-    yield* fs.chmod(v.marker, 0o600);
+    yield* replaceTextFile(v.marker, content, privateFileMode);
+    yield* fs.chmod(v.marker, privateFileMode);
   });
 }
 
@@ -631,10 +677,10 @@ function resolveEditorTarget(
 function readOptionalTextFile(path: string) {
   return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    if (!(yield* isRegular(path))) return ["", 0o600] as const;
+    if (!(yield* isRegular(path))) return ["", privateFileMode] as const;
     return [
       yield* fs.readFileString(path),
-      (yield* fs.stat(path)).mode & 0o777,
+      (yield* fs.stat(path)).mode & permissionBits,
     ] as const;
   });
 }

@@ -113,6 +113,7 @@ clean:
     }
 
     clean_journal() {
+      local -r kib_per_gib=1048576 journal_vacuum_target=500M
       journal_size_kib=0
       for journal_dir in /var/log/journal /run/log/journal; do
         if [[ -d $journal_dir ]]; then
@@ -120,11 +121,11 @@ clean:
           journal_size_kib=$((journal_size_kib + directory_size_kib))
         fi
       done
-      journal_threshold_kib=$((1024 * 1024))
+      journal_threshold_kib=$kib_per_gib
 
       if ((journal_size_kib > journal_threshold_kib)); then
         sudo journalctl --rotate
-        sudo journalctl --vacuum-size=500M
+        sudo journalctl --vacuum-size="$journal_vacuum_target"
       else
         printf 'Journal uses at most 1 GiB; skipping cleanup.\n'
       fi

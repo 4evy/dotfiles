@@ -17,6 +17,10 @@ import { Clock, Config, Effect, FileSystem, Schema } from "effect";
 
 import defaults from "./defaults.json";
 
+const MAX_LATITUDE_DEGREES = 90;
+const MAX_LONGITUDE_DEGREES = 180;
+const RGB_CHANNEL_MAX = 0xff;
+
 const coordinate = Effect.fn("kmscon.coordinate")(function* (
   name: string,
   minimum: number,
@@ -60,8 +64,16 @@ const theme = Effect.fn("kmscon.theme")(function* (now: Date) {
     );
     return { name, source: "DOTFILES_KMSCON_THEME" };
   }
-  let latitude = yield* coordinate("DOTFILES_KMSCON_LATITUDE", -90, 90);
-  let longitude = yield* coordinate("DOTFILES_KMSCON_LONGITUDE", -180, 180);
+  let latitude = yield* coordinate(
+    "DOTFILES_KMSCON_LATITUDE",
+    -MAX_LATITUDE_DEGREES,
+    MAX_LATITUDE_DEGREES,
+  );
+  let longitude = yield* coordinate(
+    "DOTFILES_KMSCON_LONGITUDE",
+    -MAX_LONGITUDE_DEGREES,
+    MAX_LONGITUDE_DEGREES,
+  );
   const location =
     latitude === undefined && longitude === undefined ? defaults.location.name : "env";
   if (location === defaults.location.name) {
@@ -108,7 +120,7 @@ function renderKmscon(
   for (const [option, role] of Object.entries(mapping))
     lines.push(
       `palette-${option}=${rgbComponents(color(palettes[choice.name], role))
-        .map((component) => Math.round(component * 255))
+        .map((component) => Math.round(component * RGB_CHANNEL_MAX))
         .join(",")}`,
     );
   return `${lines.join("\n")}\n`;

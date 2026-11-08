@@ -3,6 +3,11 @@ import { output, run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import policy from "@dotfiles/repo/data/macos/permissions";
 import { Effect, FileSystem, Schema } from "effect";
+import { tccClientTypes } from "./schema.ts";
+
+const codesign = "/usr/bin/codesign";
+const plistBuddy = "/usr/libexec/PlistBuddy";
+const bundleInfoPlist = "Contents/Info.plist";
 
 export type Client = {
   path: string;
@@ -40,17 +45,12 @@ const identity = Effect.fn(function* (
 ) {
   const info = bundle
     ? yield* run(
-        [
-          "/usr/libexec/PlistBuddy",
-          "-c",
-          "Print :CFBundleIdentifier",
-          join(path, "Contents/Info.plist"),
-        ],
+        [plistBuddy, "-c", "Print :CFBundleIdentifier", join(path, bundleInfoPlist)],
         { capture: true, check: false },
       )
     : undefined;
   const bundleIdentifier = info?.code === 0 ? info.stdout.trim() : undefined;
-  const requirement = yield* run(["/usr/bin/codesign", "-d", "-r-", path], {
+  const requirement = yield* run([codesign, "-d", "-r-", path], {
     capture: true,
     check: false,
   });
@@ -64,10 +64,10 @@ const identity = Effect.fn(function* (
           path,
           "Contents/MacOS",
           (yield* output([
-            "/usr/libexec/PlistBuddy",
+            plistBuddy,
             "-c",
             "Print :CFBundleExecutable",
-            join(path, "Contents/Info.plist"),
+            join(path, bundleInfoPlist),
           ])).trim(),
         )
       : path;
@@ -75,7 +75,7 @@ const identity = Effect.fn(function* (
     return {
       path: executable,
       identifier: executable,
-      type: 1,
+      type: tccClientTypes.absolutePath,
       requirement: null,
       grantPermissions,
       expression: undefined,
@@ -84,7 +84,7 @@ const identity = Effect.fn(function* (
     } satisfies Client;
   }
   // Check executable code, not mutable resources in patched app bundles
-  yield* run(["/usr/bin/codesign", "--verify", "--ignore-resources", path], {
+  yield* run([codesign, "--verify", "--ignore-resources", path], {
     capture: true,
   });
   // Some system daemon bundles have no CFBundleIdentifier
@@ -97,7 +97,9 @@ const identity = Effect.fn(function* (
   return {
     path,
     identifier,
-    type: bundleIdentifier ? 0 : 1,
+    type: bundleIdentifier
+      ? tccClientTypes.bundleIdentifier
+      : tccClientTypes.absolutePath,
     expression,
     bundle,
     bundleIdentifier,
@@ -106,15 +108,10 @@ const identity = Effect.fn(function* (
   } satisfies Client;
 });
 
-export const clients = Effect.fn(function* (home: string, uid: string, user: string) {
+type ExpandPath = (path: string) => string;
+
+const homebrewCasks = Effect.fn(function* (expand: ExpandPath, user: string) {
   const fs = yield* FileSystem.FileSystem;
-  const repo = process.env.DOTFILES_REPO ?? resolve(import.meta.dir, "../../../..");
-  const expand = (path: string) =>
-    path.replaceAll("{home}", home).replaceAll("{uid}", uid).replaceAll("{repo}", repo);
-  const apps = new Map<string, boolean>(
-    policy.applications.targets.map((path) => [expand(path), false]),
-  );
-  for (const path of policy.applications.bundles) apps.set(expand(path), true);
   const brew = [
     "/usr/bin/sudo",
     "-H",
@@ -155,33 +152,51 @@ export const clients = Effect.fn(function* (home: string, uid: string, user: str
       ),
     }),
   )(yield* attempt(() => JSON.parse(text)));
+  return { installed, declared };
+});
+
+function applicationArtifact(app: readonly unknown[]): string | undefined {
+  const [source, options] = app;
+  if (typeof source !== "string") return undefined;
+  const target =
+    options !== null &&
+    typeof options === "object" &&
+    "target" in options &&
+    typeof options.target === "string"
+      ? options.target
+      : basename(source);
+  if (!target.endsWith(".app")) return undefined;
+  return isAbsolute(target)
+    ? target
+    : join(policy.applications.homebrew.appDirectory, target);
+}
+
+const addHomebrewApplications = Effect.fn(function* (
+  apps: Map<string, boolean>,
+  expand: ExpandPath,
+  user: string,
+) {
+  const { installed, declared } = yield* homebrewCasks(expand, user);
   for (const cask of installed.casks) {
     if (!declared.has(cask.token) && !declared.has(cask.full_token)) continue;
     for (const artifact of cask.artifacts) {
-      const [source, options] = artifact.app ?? [];
-      if (typeof source !== "string") continue;
-      const target =
-        options !== null &&
-        typeof options === "object" &&
-        "target" in options &&
-        typeof options.target === "string"
-          ? options.target
-          : basename(source);
-      if (!target.endsWith(".app")) continue;
-      apps.set(
-        isAbsolute(target)
-          ? target
-          : join(policy.applications.homebrew.appDirectory, target),
-        true,
-      );
+      const target = applicationArtifact(artifact.app ?? []);
+      if (target !== undefined) apps.set(target, true);
     }
   }
+});
+
+const farstepResources = Effect.fn(function* (
+  apps: Map<string, boolean>,
+  expand: ExpandPath,
+) {
+  const fs = yield* FileSystem.FileSystem;
   const packages = new Set(policy.farstep.packages.map(expand));
   for (const path of policy.farstep.launchAgents) {
     const plist = expand(path);
     if (!(yield* fs.exists(plist))) continue;
     const executable = (yield* output([
-      "/usr/libexec/PlistBuddy",
+      plistBuddy,
       "-c",
       "Print :ProgramArguments:0",
       plist,
@@ -203,11 +218,24 @@ export const clients = Effect.fn(function* (home: string, uid: string, user: str
     )(yield* attempt(() => JSON.parse(text)));
     resources.add(join(sky, metadata.artifact.resources));
   }
-  const executables = new Set(policy.executables.map(expand));
-  for (const root of resources) {
-    for (const name of policy.sky.apps) apps.set(join(root, name), true);
-    for (const name of policy.sky.executables) executables.add(join(root, name));
+  return resources;
+});
+
+const mergeIdentity = Effect.fn(function* (existing: Client, client: Client) {
+  existing.grantPermissions ||= client.grantPermissions;
+  if (
+    client.expression &&
+    existing.expression &&
+    client.requirement !== null &&
+    !existing.requirement?.equals(client.requirement)
+  ) {
+    existing.expression = `(${existing.expression}) or (${client.expression})`;
+    existing.requirement = yield* compileRequirement(existing.expression);
   }
+});
+
+const bundleClients = Effect.fn(function* (apps: Map<string, boolean>) {
+  const fs = yield* FileSystem.FileSystem;
   const result: Client[] = [];
   const identifiers = new Map<string, Client>();
   for (const [path, grantPermissions] of [...apps].sort(([left], [right]) =>
@@ -225,21 +253,20 @@ export const clients = Effect.fn(function* (home: string, uid: string, user: str
     if (!client) continue;
     const existing = identifiers.get(client.identifier);
     if (existing) {
-      existing.grantPermissions ||= client.grantPermissions;
-      if (
-        client.expression &&
-        existing.expression &&
-        client.requirement !== null &&
-        !existing.requirement?.equals(client.requirement)
-      ) {
-        existing.expression = `(${existing.expression}) or (${client.expression})`;
-        existing.requirement = yield* compileRequirement(existing.expression);
-      }
-      continue;
+      yield* mergeIdentity(existing, client);
+    } else {
+      identifiers.set(client.identifier, client);
+      result.push(client);
     }
-    identifiers.set(client.identifier, client);
-    result.push(client);
   }
+  return result;
+});
+
+const addExecutableClients = Effect.fn(function* (
+  result: Client[],
+  executables: Set<string>,
+) {
+  const fs = yield* FileSystem.FileSystem;
   // Path clients need both their stable entry point and current resolved binary
   // Do not trust generic shells/interpreters outside their responsible app
   for (const path of [...executables]) {
@@ -251,5 +278,24 @@ export const clients = Effect.fn(function* (home: string, uid: string, user: str
     if (!(yield* fs.exists(path))) continue;
     result.push(yield* identity(path, false));
   }
+});
+
+export const clients = Effect.fn(function* (home: string, uid: string, user: string) {
+  const repo = process.env.DOTFILES_REPO ?? resolve(import.meta.dir, "../../../..");
+  const expand: ExpandPath = (path) =>
+    path.replaceAll("{home}", home).replaceAll("{uid}", uid).replaceAll("{repo}", repo);
+  const apps = new Map<string, boolean>(
+    policy.applications.targets.map((path) => [expand(path), false]),
+  );
+  for (const path of policy.applications.bundles) apps.set(expand(path), true);
+  yield* addHomebrewApplications(apps, expand, user);
+  const resources = yield* farstepResources(apps, expand);
+  const executables = new Set(policy.executables.map(expand));
+  for (const root of resources) {
+    for (const name of policy.sky.apps) apps.set(join(root, name), true);
+    for (const name of policy.sky.executables) executables.add(join(root, name));
+  }
+  const result = yield* bundleClients(apps);
+  yield* addExecutableClients(result, executables);
   return result;
 });

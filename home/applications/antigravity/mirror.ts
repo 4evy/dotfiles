@@ -5,6 +5,13 @@ import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
 import { Effect, FileSystem, Schema } from "effect";
 
+const MS_PER_SECOND = 1000;
+const DEFAULT_CATALOG_TIMEOUT_SECONDS = 30;
+const DEFAULT_EXECUTION_TIMEOUT_SECONDS = 120;
+const PRIVATE_DIRECTORY_MODE = 0o700;
+const PRIVATE_FILE_MODE = 0o600;
+const MCP_CONFIG_FILE = "mcp_config.json";
+
 const ServerSchema = Schema.Struct({
   type: Schema.Literal("local"),
   command: Schema.Array(Schema.String).check(Schema.isMinLength(1)),
@@ -69,8 +76,12 @@ runMain(
           type: "local",
           command: [password.command, ...(password.args ?? [])],
           timeout: {
-            catalog: (password.startup_timeout_sec ?? 30) * 1000,
-            execution: (password.tool_timeout_sec ?? 120) * 1000,
+            catalog:
+              (password.startup_timeout_sec ?? DEFAULT_CATALOG_TIMEOUT_SECONDS) *
+              MS_PER_SECOND,
+            execution:
+              (password.tool_timeout_sec ?? DEFAULT_EXECUTION_TIMEOUT_SECONDS) *
+              MS_PER_SECOND,
           },
         };
     }
@@ -106,14 +117,19 @@ runMain(
             args,
             ...(server.environment && { env: server.environment }),
             ...(server.disabled !== undefined && { disabled: server.disabled }),
-            ...(timeout > 0 && { timeoutSeconds: Math.ceil(timeout / 1000) }),
+            ...(timeout > 0 && {
+              timeoutSeconds: Math.ceil(timeout / MS_PER_SECOND),
+            }),
           },
         ];
       }),
     );
     const directory = join(home, ".gemini/config");
-    const target = join(directory, "mcp_config.json");
-    yield* fs.makeDirectory(directory, { recursive: true, mode: 0o700 });
+    const target = join(directory, MCP_CONFIG_FILE);
+    yield* fs.makeDirectory(directory, {
+      recursive: true,
+      mode: PRIVATE_DIRECTORY_MODE,
+    });
     const original = yield* fs
       .readFileString(target)
       .pipe(
@@ -137,8 +153,8 @@ runMain(
             directory,
             prefix: ".dotfiles-mcp-",
           });
-          const staging = join(temporary, "mcp_config.json");
-          yield* fs.writeFileString(staging, contents, { mode: 0o600 });
+          const staging = join(temporary, MCP_CONFIG_FILE);
+          yield* fs.writeFileString(staging, contents, { mode: PRIVATE_FILE_MODE });
           const latest = (yield* fs.exists(target))
             ? yield* fs.readFileString(target)
             : "";
@@ -151,6 +167,6 @@ runMain(
           yield* fs.rename(staging, target);
         }),
       );
-    yield* fs.chmod(target, 0o600);
+    yield* fs.chmod(target, PRIVATE_FILE_MODE);
   }),
 );

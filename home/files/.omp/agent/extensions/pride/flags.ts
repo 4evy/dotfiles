@@ -3,6 +3,7 @@ import type { Theme, ThemeColor } from "@oh-my-pi/pi-tui/theme";
 import { bgAnsi, fgAnsi } from "@oh-my-pi/pi-tui/theme/color";
 
 type Rows = readonly [string, string, string, string];
+type WaveRows = readonly [string[], string[], string[], string[]];
 type Pixels = readonly [Rows, Rows, Rows];
 export const FULL_TURN = 2 * Math.PI;
 export const FLAG_PHASE_SPACING = 1.2;
@@ -18,6 +19,15 @@ export const WIDGET_COLUMNS = 26;
 const FLAG_COLUMNS = 6;
 const WIDGET_ROWS = 5;
 const STAR_FADE_COLUMNS = 3;
+const FLAG_START_COLUMN = 3;
+const FLAG_COLUMN_SPACING = 10;
+const RGB_CHANNEL_MASK = 255;
+const RGB_CHANNEL_SHIFTS = [16, 8, 0] as const;
+const HEX_RADIX = 16;
+const STAR_BRIGHT_THRESHOLD = 0.8;
+const STAR_MID_THRESHOLD = 0.4;
+const ANSI_RESET = "\x1b[0m";
+const ANSI_FOREGROUND_RESET = "\x1b[39m";
 
 const FIRST_MODE_ROOT = 1.875104068711961;
 const SECOND_MODE_ROOT = 4.694091132974175;
@@ -57,9 +67,9 @@ function flagPixels(stripes: readonly string[]): Pixels {
   const pixel = (offset: number, row: number) => {
     const top = colors[row * 2 - offset];
     const bottom = colors[row * 2 + 1 - offset];
-    if (top && bottom) return `${top.foreground}${bottom.background}▀\x1b[0m`;
-    if (top) return `${top.foreground}▀\x1b[0m`;
-    if (bottom) return `${bottom.foreground}▄\x1b[0m`;
+    if (top && bottom) return `${top.foreground}${bottom.background}▀${ANSI_RESET}`;
+    if (top) return `${top.foreground}▀${ANSI_RESET}`;
+    if (bottom) return `${bottom.foreground}▄${ANSI_RESET}`;
     return " ";
   };
   const rows = (offset: number): Rows => [
@@ -71,11 +81,7 @@ function flagPixels(stripes: readonly string[]): Pixels {
   return [rows(0), rows(1), rows(2)];
 }
 
-function wave(
-  pixels: Pixels,
-  phase: number,
-  strength: number,
-): readonly [string[], string[], string[], string[]] {
+function wave(pixels: Pixels, phase: number, strength: number): WaveRows {
   const rows: [string[], string[], string[], string[]] = [[], [], [], []];
   const bend = Math.sin(phase) * strength;
   const ripple = Math.cos(phase) * strength;
@@ -109,7 +115,7 @@ export const FLAG_NAMES = new Intl.ListFormat("en", {
 }).format(FLAGS.map(({ name }) => name));
 
 const PATCHES = FLAGS.map(({ stripes }, index) => ({
-  column: 3 + index * 10,
+  column: FLAG_START_COLUMN + index * FLAG_COLUMN_SPACING,
   pixels: flagPixels(stripes),
 }));
 
@@ -172,11 +178,13 @@ function fadeAnsi(
   const hex = theme.getColorHex(color).slice(1);
   const foreground = Number.parseInt(
     hex.length === 3 ? [...hex].map((digit) => digit + digit).join("") : hex,
-    16,
+    HEX_RADIX,
   );
-  const channels = [16, 8, 0].map((shift) => {
-    const base = (background >>> shift) & 255;
-    return Math.round(base + (((foreground >>> shift) & 255) - base) * opacity);
+  const channels = RGB_CHANNEL_SHIFTS.map((shift) => {
+    const base = (background >>> shift) & RGB_CHANNEL_MASK;
+    return Math.round(
+      base + (((foreground >>> shift) & RGB_CHANNEL_MASK) - base) * opacity,
+    );
   });
   return `\x1b[38;2;${channels.join(";")}m`;
 }
@@ -206,6 +214,33 @@ function prepareStarfield(theme: Theme, background: number): StarRow[] {
   }));
 }
 
+function starCells(stars: StarRow["stars"], phase: number): string[] {
+  const cells = Array<string>(WIDGET_COLUMNS).fill(" ");
+  for (const { column, glyph, offset, dim, colors } of stars) {
+    const brightness = dim ? 0 : (1 + Math.sin(phase + offset)) / 2;
+    const level =
+      brightness > STAR_BRIGHT_THRESHOLD ? 2 : brightness > STAR_MID_THRESHOLD ? 1 : 0;
+    const shape = dim || level === 2 ? glyph : level === 1 ? "⋆" : "·";
+    cells[column] = `${colors[level]}${shape}${ANSI_FOREGROUND_RESET}`;
+  }
+  return cells;
+}
+
+function overlayFlagRow(
+  cells: string[],
+  flagRows: readonly WaveRows[],
+  row: number,
+): void {
+  for (const [index, patch] of PATCHES.entries()) {
+    const pixels = flagRows[index]?.[row];
+    if (!pixels) continue;
+    // Transparent cells reveal stardust below or beside a lifted flag
+    for (const [column, pixel] of pixels.entries()) {
+      if (pixel !== " ") cells[patch.column + column] = pixel;
+    }
+  }
+}
+
 const STAR_FIELDS = new WeakMap<Theme, { background: number; rows: StarRow[] }>();
 
 export function renderBanner(
@@ -225,23 +260,8 @@ export function renderBanner(
   );
   return field.rows
     .map(({ row, stars }) => {
-      const cells = Array<string>(WIDGET_COLUMNS).fill(" ");
-      for (const { column, glyph, offset, dim, colors } of stars) {
-        const brightness = dim ? 0 : (1 + Math.sin(starPhase + offset)) / 2;
-        const level = brightness > 0.8 ? 2 : brightness > 0.4 ? 1 : 0;
-        const shape = dim || level === 2 ? glyph : level === 1 ? "⋆" : "·";
-        cells[column] = `${colors[level]}${shape}\x1b[39m`;
-      }
-      if (row > 0) {
-        for (const [index, patch] of PATCHES.entries()) {
-          const pixels = flagRows[index]?.[row - 1];
-          if (!pixels) continue;
-          // Transparent cells reveal stardust below or beside a lifted flag
-          for (const [column, pixel] of pixels.entries()) {
-            if (pixel !== " ") cells[patch.column + column] = pixel;
-          }
-        }
-      }
+      const cells = starCells(stars, starPhase);
+      if (row > 0) overlayFlagRow(cells, flagRows, row - 1);
       return cells.join("");
     })
     .join("\n");

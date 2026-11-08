@@ -40,6 +40,9 @@ const rolesSchema = Schema.Struct({
   common: roleReferencesSchema.check(Schema.isMinProperties(1)),
   modes: Schema.Struct({ light: modeSchema, dark: modeSchema }),
 });
+// WCAG contrast spans identical colors through black against white
+const MIN_WCAG_CONTRAST = 1;
+const MAX_WCAG_CONTRAST = 21;
 const parametersSchema = Schema.Struct({
   hueConcentration: Schema.Number.check(
     Schema.isFinite(),
@@ -47,7 +50,7 @@ const parametersSchema = Schema.Struct({
   ),
   minimumTextContrast: Schema.Number.check(
     Schema.isFinite(),
-    Schema.isBetween({ minimum: 1, maximum: 21 }),
+    Schema.isBetween({ minimum: MIN_WCAG_CONTRAST, maximum: MAX_WCAG_CONTRAST }),
   ),
   contrastSurfaces: Schema.NonEmptyArray(identifierSchema),
   fillFlavor: flavorSchema,

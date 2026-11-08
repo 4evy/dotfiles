@@ -3,6 +3,12 @@ import { output, run } from "@dotfiles/core/commands";
 import { flatpakRefs } from "@dotfiles/workstation/desktop";
 import { Config, Console, Effect, FileSystem } from "effect";
 
+const PERCENT_SCALE = 100;
+const DESKTOP_WARNING_LINE_LIMIT = 80;
+const CHROMIUM_PROCESS_LINE_LIMIT = 40;
+const KERNEL_GPU_LOG_LINE_LIMIT = 120;
+const HOT_PROCESS_LINE_LIMIT = 30;
+
 function section(name: string) {
   return Console.log(`\n== ${name} ==`);
 }
@@ -99,9 +105,10 @@ const memoryPercent = Effect.fn("desktopAudit.memoryPercent")(function* () {
     const info = yield* fs.readFileString("/proc/meminfo");
     const total = Number(/^MemTotal:\s+(\d+)/m.exec(info)?.[1]);
     const available = Number(/^MemAvailable:\s+(\d+)/m.exec(info)?.[1]);
-    if (total > 0 && Number.isFinite(available)) return (1 - available / total) * 100;
+    if (total > 0 && Number.isFinite(available))
+      return (1 - available / total) * PERCENT_SCALE;
   }
-  return yield* Effect.sync(() => (1 - freemem() / totalmem()) * 100);
+  return yield* Effect.sync(() => (1 - freemem() / totalmem()) * PERCENT_SCALE);
 });
 const auditPowerAndDesktop = Effect.fn("desktopAudit.powerAndDesktop")(function* () {
   const fs = yield* FileSystem.FileSystem;
@@ -135,7 +142,7 @@ const auditPowerAndDesktop = Effect.fn("desktopAudit.powerAndDesktop")(function*
           { check: false },
         ),
         /gnome-shell|mutter|extension|clutter|st_widget|g_closure|gpu|egl|vulkan|wayland/i,
-        80,
+        DESKTOP_WARNING_LINE_LIMIT,
         true,
       ),
     );
@@ -149,7 +156,7 @@ const auditProcessesAndLogs = Effect.fn("desktopAudit.processesAndLogs")(functio
           check: false,
         }),
         /helium|chrom|electron|discord/i,
-        40,
+        CHROMIUM_PROCESS_LINE_LIMIT,
       ),
     );
   yield* section("kernel-gpu");
@@ -160,7 +167,7 @@ const auditProcessesAndLogs = Effect.fn("desktopAudit.processesAndLogs")(functio
           check: false,
         }),
         /nouveau|nvidia|amdgpu|i915|drm|gpu|xid|timeout|hang|stall|firmware/i,
-        120,
+        KERNEL_GPU_LOG_LINE_LIMIT,
         true,
       ),
     );
@@ -172,7 +179,7 @@ const auditProcessesAndLogs = Effect.fn("desktopAudit.processesAndLogs")(functio
         { check: false },
       ))
         .split("\n")
-        .slice(0, 30)
+        .slice(0, HOT_PROCESS_LINE_LIMIT)
         .join("\n"),
     );
 });

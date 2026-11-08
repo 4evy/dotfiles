@@ -10,7 +10,13 @@ import { argument, option } from "@optique/core/primitives";
 import { string } from "@optique/core/valueparser";
 import { Effect, FileSystem, Schema } from "effect";
 
-const ttys = new Set(Array.from({ length: 6 }, (_, index) => `tty${index + 1}`));
+const MANAGED_VIRTUAL_CONSOLE_COUNT = 6;
+const ttys = new Set(
+  Array.from(
+    { length: MANAGED_VIRTUAL_CONSOLE_COUNT },
+    (_, index) => `tty${index + 1}`,
+  ),
+);
 const stateSchema = Schema.fromJsonString(
   Schema.Struct({
     config_sha256: Schema.String,

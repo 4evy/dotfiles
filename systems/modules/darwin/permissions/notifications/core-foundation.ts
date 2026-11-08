@@ -65,6 +65,11 @@ type SystemLibrary = {
 };
 
 const framework = "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation";
+const integerBits = 64;
+const rtldLazy = 1;
+const fileUrlIsDirectory = 0;
+const readStreamToEnd = 0n;
+const propertyListImmutable = 0n;
 
 function openCoreFoundation(): CoreFoundation {
   if (process.platform !== "darwin") {
@@ -200,11 +205,11 @@ function openCoreFoundation(): CoreFoundation {
         throw new Error(`${label} must be a signed 64-bit integer bit pattern`);
       }
       // Read and box signed int64 storage while preserving all unsigned flags bits
-      return BigInt.asUintN(64, numberStorage[0] as bigint);
+      return BigInt.asUintN(integerBits, numberStorage[0] as bigint);
     }
 
     function createNumber(value: bigint): Pointer {
-      numberStorage[0] = BigInt.asIntN(64, value);
+      numberStorage[0] = BigInt.asIntN(integerBits, value);
       return own(cf.CFNumberCreate(null, sint64, numberStorage), "flags number");
     }
 
@@ -215,7 +220,7 @@ function openCoreFoundation(): CoreFoundation {
     });
     const loader = system;
     // Resolve the exported CFString globals, not strings resembling their names
-    frameworkHandle = system.symbols.dlopen(framework, 1);
+    frameworkHandle = system.symbols.dlopen(framework, rtldLazy);
     if (frameworkHandle === null) throw new Error("Cannot open CoreFoundation globals");
     function global(name: string): Pointer {
       const symbol = loader.symbols.dlsym(frameworkHandle, name);
@@ -237,7 +242,7 @@ function openCoreFoundation(): CoreFoundation {
           null,
           bytes,
           BigInt(bytes.length),
-          0,
+          fileUrlIsDirectory,
         ),
         `${source} file URL`,
       );
@@ -252,8 +257,8 @@ function openCoreFoundation(): CoreFoundation {
         const root = cf.CFPropertyListCreateWithStream(
           null,
           stream,
-          0n,
-          0n,
+          readStreamToEnd,
+          propertyListImmutable,
           null,
           error,
         );

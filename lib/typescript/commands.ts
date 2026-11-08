@@ -1,5 +1,5 @@
 import { exitCode } from "@dotfiles/runtime/process";
-import { Effect, Stdio, Stream } from "effect";
+import { Duration, Effect, Stdio, Stream } from "effect";
 import { ChildProcess } from "effect/process";
 import { DotfilesError } from "./errors.ts";
 
@@ -34,6 +34,31 @@ function commandFailure(argv: readonly string[], result: CommandResult): Dotfile
   );
 }
 
+function processOptions(
+  options: RunOptions,
+  stderr: "inherit" | "pipe" | "ignore",
+  redirect: boolean,
+): ChildProcess.CommandOptions {
+  return {
+    cwd: options.cwd,
+    env: options.env,
+    extendEnv: true,
+    // Keep the controlling terminal even when standard streams are redirected
+    detached: false,
+    stdin:
+      options.input === undefined
+        ? (options.stdin ?? "inherit")
+        : Stream.make(encoder.encode(options.input)),
+    stdout:
+      options.capture || redirect
+        ? "pipe"
+        : options.outputMode === "discard"
+          ? "ignore"
+          : "inherit",
+    stderr,
+  };
+}
+
 export function run(argv: readonly string[], options: RunOptions = {}) {
   const program = Effect.scoped(
     Effect.gen(function* () {
@@ -42,24 +67,11 @@ export function run(argv: readonly string[], options: RunOptions = {}) {
         return yield* Effect.fail(new DotfilesError("run requires a command"));
       const stderr = options.stderr ?? (options.capture ? "pipe" : "inherit");
       const redirect = !options.capture && options.outputMode === "stderr";
-      const child = yield* ChildProcess.make(command, args, {
-        cwd: options.cwd,
-        env: options.env,
-        extendEnv: true,
-        // Keep the controlling terminal even when standard streams are redirected
-        detached: false,
-        stdin:
-          options.input === undefined
-            ? (options.stdin ?? "inherit")
-            : Stream.make(encoder.encode(options.input)),
-        stdout:
-          options.capture || redirect
-            ? "pipe"
-            : options.outputMode === "discard"
-              ? "ignore"
-              : "inherit",
-        stderr,
-      }).pipe(
+      const child = yield* ChildProcess.make(
+        command,
+        args,
+        processOptions(options, stderr, redirect),
+      ).pipe(
         // Bun can throw before the platform establishes its native error channel
         Effect.catchDefect((cause) =>
           Effect.fail(new DotfilesError(`Could not run ${command}`, { cause })),
@@ -92,7 +104,7 @@ export function run(argv: readonly string[], options: RunOptions = {}) {
       ? program
       : program.pipe(
           Effect.timeoutOrElse({
-            duration: options.timeout * 1000,
+            duration: Duration.seconds(options.timeout),
             orElse: () =>
               Effect.fail(
                 new DotfilesError(

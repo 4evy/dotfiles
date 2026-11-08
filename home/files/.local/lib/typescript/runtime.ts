@@ -20,18 +20,13 @@ export { exitCode } from "./process.ts";
 
 export const layer = Layer.mergeAll(BunServices.layer, FetchHttpClient.layer);
 
-export function runMain<E>(
-  program: Effect.Effect<
-    unknown,
-    E,
-    BunServices.BunServices | HttpClient.HttpClient | Scope.Scope
-  >,
+// Share process cleanup and diagnostics without coupling callers' service layers
+export function runMainWith<E>(
+  program: Effect.Effect<unknown, E>,
+  options?: { readonly teardown?: Runtime.Teardown },
 ): void {
-  // Protocol entrypoints must never send runtime diagnostics to stdout
   BunRuntime.runMain(
     program.pipe(
-      Effect.scoped,
-      Effect.provide(layer),
       // Stdio borrows stdin, the CLI owner closes any pending native read
       Effect.ensuring(Effect.sync(() => process.stdin.destroy())),
       Effect.tapCause((cause) =>
@@ -40,14 +35,24 @@ export function runMain<E>(
           : Console.error(Cause.pretty(cause)),
       ),
     ),
-    {
-      disableErrorReporting: true,
-      teardown: (exit, onExit) =>
-        Runtime.defaultTeardown(exit, (code) => {
-          const preserveStatus =
-            Exit.isSuccess(exit) || Cause.hasInterruptsOnly(exit.cause);
-          onExit(preserveStatus ? Number(process.exitCode ?? code) : code);
-        }),
-    },
+    { ...options, disableErrorReporting: true },
   );
+}
+
+export function runMain<E>(
+  program: Effect.Effect<
+    unknown,
+    E,
+    BunServices.BunServices | HttpClient.HttpClient | Scope.Scope
+  >,
+): void {
+  // Protocol entrypoints must never send runtime diagnostics to stdout
+  runMainWith(program.pipe(Effect.scoped, Effect.provide(layer)), {
+    teardown: (exit, onExit) =>
+      Runtime.defaultTeardown(exit, (code) => {
+        const preserveStatus =
+          Exit.isSuccess(exit) || Cause.hasInterruptsOnly(exit.cause);
+        onExit(preserveStatus ? Number(process.exitCode ?? code) : code);
+      }),
+  });
 }

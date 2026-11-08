@@ -51,9 +51,14 @@ export function nativeTerminal(
   policy: typeof terminalPolicy,
   write = true,
 ): string {
+  const terminalDomain = "com.apple.Terminal";
+  const hexRadix = 16;
+  const rgbChannelMax = 0xff;
+  const redChannelShift = 16;
+  const greenChannelShift = 8;
   ObjC.import("AppKit");
   const defaults = $.NSUserDefaults.standardUserDefaults;
-  const existing = defaults.persistentDomainForName("com.apple.Terminal");
+  const existing = defaults.persistentDomainForName(terminalDomain);
   const domain = ObjC.unwrap(existing)
     ? existing.mutableCopy
     : $.NSMutableDictionary.dictionary;
@@ -68,11 +73,11 @@ export function nativeTerminal(
   function archiveColor(palette: Palette, role: string): NativeObject {
     const hex = palette[role];
     if (!hex) throw new Error(`Missing Terminal palette color: ${role}`);
-    const number = Number.parseInt(hex.replace(/^#/, ""), 16);
+    const number = Number.parseInt(hex.replace(/^#/, ""), hexRadix);
     const color = $.NSColor.colorWithSRGBRedGreenBlueAlpha(
-      (number >> 16) / 255,
-      ((number >> 8) & 255) / 255,
-      (number & 255) / 255,
+      (number >> redChannelShift) / rgbChannelMax,
+      ((number >> greenChannelShift) & rgbChannelMax) / rgbChannelMax,
+      (number & rgbChannelMax) / rgbChannelMax,
       1,
     );
     return $.NSKeyedArchiver.archivedDataWithRootObject(color);
@@ -118,6 +123,6 @@ export function nativeTerminal(
     $(policy.profile.ProfileCurrentVersion),
     "ProfileCurrentVersion",
   );
-  if (write) defaults.setPersistentDomainForName(domain, "com.apple.Terminal");
+  if (write) defaults.setPersistentDomainForName(domain, terminalDomain);
   return "Native Terminal light and dark profiles contain archived colors and font";
 }

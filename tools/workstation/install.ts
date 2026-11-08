@@ -16,6 +16,7 @@ import { buildWorkstation } from "./build.ts";
 
 const root = resolve(import.meta.dir, "../..");
 const packageRoot = join(root, "tools/workstation");
+const SOURCE_HASH_FIELD_SEPARATOR = "\0";
 
 const run = (args: string[], capture = false) =>
   runCommand(args, {
@@ -56,14 +57,14 @@ const sourceHash = Effect.fn("workstation.sourceHash")(function* () {
   const hash = createHash("sha256");
   const add = (path: string): Effect.Effect<void, PlatformError.PlatformError> =>
     Effect.gen(function* () {
-      hash.update(relative(root, path)).update("\0");
+      hash.update(relative(root, path)).update(SOURCE_HASH_FIELD_SEPARATOR);
       if ((yield* fs.lstat(path)).type === "Directory") {
         for (const name of (yield* fs.readDirectory(path)).sort()) {
           if (name === "node_modules") continue;
           yield* add(join(path, name));
         }
       } else hash.update(yield* fs.readFile(path));
-      hash.update("\0");
+      hash.update(SOURCE_HASH_FIELD_SEPARATOR);
     });
   for (const name of ["src", "assets", "package.json", "build.ts", "tsconfig.json"])
     yield* add(join(packageRoot, name));
