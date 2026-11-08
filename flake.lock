@@ -19,11 +19,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794137700,
-        "narHash": "sha256-D4jYon5iLsox5pauR6BXSgS4RjhuXQsXRND9F75Nbtw=",
+        "lastModified": 1794160200,
+        "narHash": "sha256-XZeqY2pl/baYtGvugoerNkwMqDhKZifau3q/y5Nelvs=",
         "owner": "4evy",
         "repo": "ai",
-        "rev": "625fe3a23bed33fef8eadad7a414d3cf79fe1e1e",
+        "rev": "328ec841f7b99ab029556626f5419a01be844d1a",
         "type": "github"
       },
       "original": {
@@ -318,11 +318,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794141094,
-        "narHash": "sha256-35sQQC4+cscfgFBQZ06ZUg6zcMfJeQPf7t2MuwYxD1Q=",
+        "lastModified": 1794159897,
+        "narHash": "sha256-M+35oe7+cLLqj28tBwlxG5s1vji8IZb/1p1GzkRy6O4=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "0533f06c66ca9a4491292a04fed7f55cc16b1931",
+        "rev": "93699d1aa4829372a3eb5550f3a19ddc52aad8a5",
         "type": "github"
       },
       "original": {
@@ -422,11 +422,11 @@
     },
     "nixpkgs_3": {
       "locked": {
-        "lastModified": 1793876309,
-        "narHash": "sha256-Q62pssAT9r01POiSyXW0IPXBWhntiKqMhzlsp3bsl5I=",
-        "rev": "f9a75f41be3a74eab55d3a7679d34ad6cc0da977",
+        "lastModified": 1794042290,
+        "narHash": "sha256-VZ8WvA9m3XN36juXyg/GwbDRU2OezOHJlXpJCXkccv0=",
+        "rev": "f4a03c008967841f2a0b3cb7c436fc6fc31671f6",
         "type": "tarball",
-        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1108983.f9a75f41be3a/nixexprs.tar.zst"
+        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1113206.f4a03c008967/nixexprs.tar.zst"
       },
       "original": {
         "type": "tarball",
@@ -919,11 +919,11 @@
         "systems": "systems_2"
       },
       "locked": {
-        "lastModified": 1794098920,
-        "narHash": "sha256-U/TSuPcac1oVyrUPFzJtkfJouqVY/KuK4RMCYfgKK94=",
+        "lastModified": 1794153382,
+        "narHash": "sha256-GyN4K/lOaRRO2RkFJS5dVmpNX7xsrVbclzBfxd3mxtU=",
         "owner": "vicinaehq",
         "repo": "vicinae",
-        "rev": "bb7986781cba7bc9db05ae8d3218d59889c5cc0a",
+        "rev": "84a0086f0e589576c3c55a211579e63c20d83e59",
         "type": "github"
       },
       "original": {
