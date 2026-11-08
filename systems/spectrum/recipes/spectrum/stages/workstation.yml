@@ -78,9 +78,14 @@ modules:
     src: home/deploy/schema.ts
     dest: /src/home/deploy/schema.ts
 
+  # Keep the runtime source closure aligned with install.ts's source fingerprint
   - type: copy@v1
     src: home/files/.local/lib/typescript/process.ts
     dest: /src/home/files/.local/lib/typescript/process.ts
+
+  - type: copy@v1
+    src: home/files/.local/lib/typescript/runtime.ts
+    dest: /src/home/files/.local/lib/typescript/runtime.ts
 
   - type: copy@v1
     src: tools/workstation/install.ts

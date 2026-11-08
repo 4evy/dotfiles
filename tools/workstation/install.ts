@@ -77,7 +77,9 @@ const sourceHash = Effect.fn("workstation.sourceHash")(function* () {
   yield* add(join(root, "home/generators.json"));
   yield* add(join(root, "home/deploy/schema.ts"));
   yield* add(join(root, "home/files/.local/lib/package.json"));
+  // Match the runtime source closure copied by Spectrum's workstation stage
   yield* add(join(root, "home/files/.local/lib/typescript/process.ts"));
+  yield* add(join(root, "home/files/.local/lib/typescript/runtime.ts"));
   hash.update(`${Bun.version}:${Bun.revision}:${process.platform}:${process.arch}`);
   return hash.digest("hex");
 });
