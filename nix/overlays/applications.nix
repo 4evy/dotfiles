@@ -37,13 +37,13 @@ let
       symlinkJoin {
         name = "${package.name}-host-graphics";
         paths = [ package ];
-        postBuild = lib.concatMapStringsSep "\n" (command: ''
+        postBuild = lib.strings.concatMapStringsSep "\n" (command: ''
           rm "$out/bin/${command}"
           ln -s ${writeShellScript command ''
             if [ -e /etc/NIXOS ]; then
               exec ${package}/bin/${command} "$@"
             fi
-            exec ${lib.getExe nix-gl-host} --driver-directory /usr/lib64 \
+            exec ${lib.meta.getExe nix-gl-host} --driver-directory /usr/lib64 \
               ${package}/bin/${command} "$@"
           ''} "$out/bin/${command}"
         '') commands;
@@ -68,7 +68,7 @@ in
         if [ -x "$launcher" ]; then
           exec "$launcher" "$@"
         fi
-        exec ${lib.getExe helium-browser} "$@"
+        exec ${lib.meta.getExe helium-browser} "$@"
       '';
     in
     runCommand "helium-configured" { } ''
@@ -77,7 +77,7 @@ in
       ln -s ${launcher} "$out/bin/helium-browser"
       substitute ${helium-browser}/share/applications/helium.desktop \
         "$out/share/applications/helium.desktop" \
-        --replace-fail 'Exec=${lib.getExe upstreamHelium}' 'Exec=helium'
+        --replace-fail 'Exec=${lib.meta.getExe upstreamHelium}' 'Exec=helium'
       ln -s helium.desktop "$out/share/applications/helium-browser.desktop"
     '';
   helix = callPackage (inputs.source-helix + "/default.nix") {
@@ -95,7 +95,7 @@ in
         });
       })
     ]
-    ++ lib.optionals stdenv.hostPlatform.isLinux [
+    ++ lib.lists.optionals stdenv.hostPlatform.isLinux [
       # Match Nixpkgs' strict-aliasing workaround for the Haskell grammar on GCC 16
       (
         _grammarFinal: grammarPrev:
@@ -114,7 +114,7 @@ in
     # These GitLab grammar repositories reject anonymous fetches
     includeGrammarIf =
       grammar:
-      !(lib.elem grammar.name [
+      !(lib.lists.elem grammar.name [
         "lpf"
         "blueprint"
         "t32"
@@ -127,8 +127,8 @@ in
     withEquicord = true;
     inherit equicord;
     withKrisp = true;
-    commandLineArgs = lib.optionals stdenv.hostPlatform.isLinux (
-      lib.importJSON ../../home/applications/discord/flags.json
+    commandLineArgs = lib.lists.optionals stdenv.hostPlatform.isLinux (
+      lib.trivial.importJSON ../../home/applications/discord/flags.json
     );
   }) [ "Discord" ];
   jj-patched = jj;

@@ -1,13 +1,13 @@
 { inputs, lib }:
 let
-  lock = lib.importJSON ../../flake.lock;
+  lock = lib.trivial.importJSON ../../flake.lock;
   lockInputs = lock.nodes.${lock.root}.inputs;
-  sourceInputs = lib.filterAttrs (name: _: lib.hasPrefix "source-" name) inputs;
+  sourceInputs = lib.attrsets.filterAttrs (name: _: lib.strings.hasPrefix "source-" name) inputs;
   version =
     name: lock.nodes.${lockInputs.${name}}.original.ref or inputs.${name}.shortRev or "unknown";
   taggedUpdater =
     final: name:
-    lib.getExe (
+    lib.meta.getExe (
       final.writeShellApplication {
         name = "update-${name}";
         runtimeInputs = with final; [
@@ -20,7 +20,7 @@ let
         # Run from the checkout root, updating the owning input rather than a
         # second package pin, and stage both files before touching the checkout
         text = ''
-          input=${lib.escapeShellArg name}
+          input=${lib.strings.escapeShellArg name}
           original=$(jq -ce --arg input "$input" \
             '.nodes[.nodes[.root].inputs[$input]].original' flake.lock)
           ref=$(jq -er '.ref' <<< "$original")
@@ -79,16 +79,16 @@ let
     );
 in
 final: _prev: {
-  dotfilesSourcePins = lib.mapAttrs' (
+  dotfilesSourcePins = lib.attrsets.mapAttrs' (
     name: source:
-    lib.nameValuePair (lib.removePrefix "source-" name) (
+    lib.attrsets.nameValuePair (lib.strings.removePrefix "source-" name) (
       source
       // {
         revision = source.rev or "";
         version = version name;
       }
       //
-        lib.optionalAttrs
+        lib.attrsets.optionalAttrs
           (builtins.elem name [
             "source-bluebuild-cli"
             "source-toshy"

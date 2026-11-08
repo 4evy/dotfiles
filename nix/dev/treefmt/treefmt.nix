@@ -70,7 +70,7 @@
           formatter = {
 
             shfmt = {
-              includes = lib.mkAfter [
+              includes = lib.modules.mkAfter [
                 "home/files/.local/bin/*"
                 "systems/spectrum/files/system/usr/bin/*"
               ];
@@ -80,8 +80,8 @@
               ];
             };
 
-            stylua.includes = lib.mkAfter [ ".luacheckrc" ];
-            yamlfmt.includes = lib.mkAfter [ ".yamlfmt" ];
+            stylua.includes = lib.modules.mkAfter [ ".luacheckrc" ];
+            yamlfmt.includes = lib.modules.mkAfter [ ".yamlfmt" ];
 
             template = {
               command = templateFormatter;
@@ -91,7 +91,7 @@
               ];
             };
 
-            xmllint.includes = lib.mkAfter [
+            xmllint.includes = lib.modules.mkAfter [
               "*.plist"
               "*.plist.in"
               "home/files/.config/fontconfig/conf.d/45-interface-fonts.conf"
@@ -99,7 +99,7 @@
             ];
 
             zig = {
-              command = lib.getExe zig;
+              command = lib.meta.getExe zig;
               includes = [ "*.zig" ];
               options = [ "fmt" ];
             };

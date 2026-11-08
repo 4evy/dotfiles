@@ -1,13 +1,13 @@
 { lib }:
 let
   inherit (lib.gvariant) mkEmptyArray type;
-  workspaceNumbers = map toString (lib.range 1 9);
+  workspaceNumbers = map toString (lib.lists.range 1 9);
   workspaceBindings =
     prefix: modifiers:
-    lib.genAttrs' workspaceNumbers (
-      number: lib.nameValuePair "${prefix}-${number}" [ "<Super>${modifiers}${number}" ]
+    lib.attrsets.genAttrs' workspaceNumbers (
+      number: lib.attrsets.nameValuePair "${prefix}-${number}" [ "<Super>${modifiers}${number}" ]
     );
-  bindings = lib.importJSON ../../../tools/tiling/bindings.json;
+  bindings = lib.trivial.importJSON ../../../tools/tiling/bindings.json;
 in
 {
   "org/gnome/desktop/interface" = {
@@ -34,15 +34,15 @@ in
   // workspaceBindings "switch-to-workspace" ""
   // workspaceBindings "move-to-workspace" "<Shift>";
   # Workspace shortcuts must not also activate GNOME's application shortcuts
-  "org/gnome/shell/keybindings" = lib.genAttrs (map (
-    number: "switch-to-application-${number}"
-  ) workspaceNumbers) (_: mkEmptyArray type.string);
+  "org/gnome/shell/keybindings" = lib.attrsets.genAttrs' workspaceNumbers (
+    number: lib.attrsets.nameValuePair "switch-to-application-${number}" (mkEmptyArray type.string)
+  );
   "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/vicinae" = {
     name = "Vicinae";
     command = "vicinae toggle";
     binding = "<Super><Control><Alt><Shift>F24";
   };
-  "org/gnome/shell/extensions/hyper-window-tiling" = lib.mapAttrs (_: binding: [
+  "org/gnome/shell/extensions/hyper-window-tiling" = lib.attrsets.mapAttrs (_: binding: [
     binding.gnome.accelerator
   ]) bindings;
   "org/gnome/shell/extensions/blur-my-shell/popup".blur = false;

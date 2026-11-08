@@ -7,8 +7,8 @@
 }:
 let
   inherit (pkgs) dotfiles-typescript-tools formats stdenv;
-  homebrewHelper = lib.getExe' dotfiles-typescript-tools "dotfiles-homebrew";
-  codesignHelper = lib.getExe' dotfiles-typescript-tools "dotfiles-codesign";
+  homebrewHelper = lib.meta.getExe' dotfiles-typescript-tools "dotfiles-homebrew";
+  codesignHelper = lib.meta.getExe' dotfiles-typescript-tools "dotfiles-codesign";
   # Keep relative Brewfile imports inside the same public source closure
   homebrewSource = lib.fileset.toSource {
     root = ../../..;
@@ -17,7 +17,7 @@ let
       ../../../data/homebrew/tools.json
     ];
   };
-  homebrewPath = lib.concatStringsSep ":" [
+  homebrewPath = lib.strings.concatStringsSep ":" [
     "/opt/homebrew/bin"
     "/opt/homebrew/sbin"
     "${config.users.users.${config.system.primary.user}.home}/.local/bin"
@@ -27,7 +27,7 @@ let
   };
 in
 {
-  environment.system.packages = lib.attrValues {
+  environment.system.packages = lib.attrsets.attrValues {
     inherit (inputs.self.packages.${stdenv.hostPlatform.system}) dotfiles-apps;
   };
 
@@ -45,8 +45,8 @@ in
 
   system.activation.steps = {
     homebrew = {
-      deps = lib.mkForce [ "users" ];
-      text = lib.mkForce ''
+      deps = lib.modules.mkForce [ "users" ];
+      text = lib.modules.mkForce ''
         (
           set -e
           trap '/usr/bin/sudo -H -u ${config.system.primary.user} ${homebrewHelper} restore' EXIT
@@ -55,7 +55,7 @@ in
           /bin/launchctl asuser "$(/usr/bin/id -u ${config.system.primary.user})" \
             /usr/bin/sudo --preserve-env=PATH,SUDO_ASKPASS,DOTFILES_SUDO_PASSWORD -H -u ${config.system.primary.user} \
             /usr/bin/env -u SUDO_USER -u HOMEBREW_SUDO_USER -u SSH_TTY -u HOMEBREW_SSH_TTY \
-            PATH=${lib.escapeShellArg homebrewPath}:"$PATH" HOMEBREW_NO_AUTO_UPDATE=1 \
+            PATH=${lib.strings.escapeShellArg homebrewPath}:"$PATH" HOMEBREW_NO_AUTO_UPDATE=1 \
             /opt/homebrew/bin/brew bundle install --no-upgrade --file ${config.system.build.brewfile}
         )
       '';
@@ -84,12 +84,12 @@ in
             -f "$source"
           /usr/bin/mdimport -i "$source"
         done
-        private_bundle=${lib.escapeShellArg "${config.users.users.${config.system.primary.user}.home}/.config/homebrew/Brewfile.private"}
+        private_bundle=${lib.strings.escapeShellArg "${config.users.users.${config.system.primary.user}.home}/.config/homebrew/Brewfile.private"}
         if [ -f "$private_bundle" ]; then
           /bin/launchctl asuser "$(/usr/bin/id -u ${config.system.primary.user})" \
             /usr/bin/sudo --preserve-env=PATH,SUDO_ASKPASS,DOTFILES_SUDO_PASSWORD -H -u ${config.system.primary.user} \
             /usr/bin/env -u SUDO_USER -u HOMEBREW_SUDO_USER -u SSH_TTY -u HOMEBREW_SSH_TTY \
-            PATH=${lib.escapeShellArg homebrewPath}:"$PATH" HOMEBREW_NO_AUTO_UPDATE=1 \
+            PATH=${lib.strings.escapeShellArg homebrewPath}:"$PATH" HOMEBREW_NO_AUTO_UPDATE=1 \
             /opt/homebrew/bin/brew bundle install --no-upgrade --file "$private_bundle"
         fi
       '';

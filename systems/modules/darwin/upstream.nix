@@ -5,7 +5,9 @@
   ...
 }:
 let
-  alias = from: to: lib.mkAliasOptionModule (lib.splitString "." from) (lib.splitString "." to);
+  alias =
+    from: to:
+    lib.modules.mkAliasOptionModule (lib.strings.splitString "." from) (lib.strings.splitString "." to);
 in
 {
   # Bridge the contracts used by the pinned AI and Nixcord modules
@@ -16,20 +18,20 @@ in
   ];
 
   options = {
-    meta = lib.mkOption {
+    meta = lib.options.mkOption {
       type = lib.types.attrsOf lib.types.anything;
       default = { };
       internal = true;
     };
-    system.requiresPrimaryUser = lib.mkOption {
+    system.requiresPrimaryUser = lib.options.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
       internal = true;
     };
-    launchd.user.agents = lib.mkOption {
+    launchd.user.agents = lib.options.mkOption {
       type = lib.types.attrsOf (
         lib.types.submodule {
-          options.serviceConfig = lib.mkOption {
+          options.serviceConfig = lib.options.mkOption {
             type = lib.types.attrsOf lib.types.anything;
             default = { };
           };
@@ -38,7 +40,7 @@ in
       default = { };
       internal = true;
     };
-    environment.extraInit = lib.mkOption {
+    environment.extraInit = lib.options.mkOption {
       type = lib.types.lines;
       default = "";
       internal = true;
@@ -52,22 +54,22 @@ in
         message = "The imported modules require system.primary.user";
       }
     ];
-    launchd.agents = lib.mapAttrs (_: agent: {
+    launchd.agents = lib.attrsets.mapAttrs (_: agent: {
       enable = true;
       config = agent.serviceConfig;
     }) config.launchd.user.agents;
     # Preserve upstream mkDefault/mkForce priorities across this bridge
-    programs.zsh.env.extra = lib.modules.mkAliasAndWrapDefsWithPriority lib.id options.environment.extraInit;
-    programs.bash.bashrc.extra = lib.modules.mkAliasAndWrapDefsWithPriority lib.id options.environment.extraInit;
+    programs.zsh.env.extra = lib.modules.mkAliasAndWrapDefsWithPriority lib.trivial.id options.environment.extraInit;
+    programs.bash.bashrc.extra = lib.modules.mkAliasAndWrapDefsWithPriority lib.trivial.id options.environment.extraInit;
     system.activation.steps = {
       upstream-users = {
         deps = [ "users" ];
         # Reject AI file conflicts before any system activation steps run
-        checks = lib.mkIf config.programs.ai.user.enable (
+        checks = lib.modules.mkIf config.programs.ai.user.enable (
           lib.darwin.shell.asUser config.system.primary.user [
             "/usr/bin/env"
             "DRY_RUN=1"
-            (lib.getExe config.programs.ai.user.activationPackage)
+            (lib.meta.getExe config.programs.ai.user.activationPackage)
           ]
         );
       };

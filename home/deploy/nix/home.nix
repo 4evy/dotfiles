@@ -26,17 +26,17 @@ let
     if os == "darwin" then "/opt/homebrew" else "/home/linuxbrew/.linuxbrew"
   );
   metadata = import ../../manifest.nix;
-  enabled = entry: !(entry ? systems) || lib.elem os entry.systems;
+  enabled = entry: !(entry ? systems) || lib.lists.elem os entry.systems;
   commandAvailable =
     name:
-    lib.any (directory: lib.pathExists "${directory}/${name}") (
-      lib.splitString ":" (environment.PATH or "")
+    lib.lists.any (directory: lib.trivial.pathExists "${directory}/${name}") (
+      lib.strings.splitString ":" (environment.PATH or "")
     );
   substitute =
-    lib.replaceStrings
+    lib.strings.replaceStrings
       [ "@HOME@" "@REPOSITORY@" "@OS@" "@HOMEBREW_PREFIX@" ]
       [ home repository os brewPrefix ];
-  sourceText = entry: substitute (lib.readFile (../../files + "/${entry.source}"));
+  sourceText = entry: substitute (lib.trivial.readFile (../../files + "/${entry.source}"));
   normalizeFile = import ./file/entry.nix { inherit lib; };
   fileEntry =
     entry:
@@ -47,18 +47,18 @@ let
             let
               destination = lib.strings.trim (sourceText entry);
             in
-            if lib.hasPrefix "/" destination then
+            if lib.strings.hasPrefix "/" destination then
               destination
             else
               "${dirOf "${home}/${entry.target}"}/${destination}";
         }
-      else if lib.pathIsDirectory (../../files + "/${entry.source}") then
+      else if lib.filesystem.pathIsDirectory (../../files + "/${entry.source}") then
         # Keep module siblings together when runtimes resolve symlink targets
         { source = ../../files + "/${entry.source}"; }
       else
         { text = sourceText entry; }
     );
-  static = lib.filter (
+  static = lib.lists.filter (
     entry:
     enabled entry
     && !(entry.nixGenerated or false)
@@ -83,7 +83,7 @@ let
       preferHome ? true,
     }:
     ''
-      ${lib.toShellVar "command" name}
+      ${lib.strings.toShellVar "command" name}
       if [ -x "$HJEM_HOME_DIR/.local/bin/$command" ]; then
         ${if preferHome then ''"$HJEM_HOME_DIR/.local/bin/$command"'' else ''"$command"''}
       elif command -v "$command" >/dev/null 2>&1; then
@@ -95,7 +95,7 @@ let
   # Inline bodies use stable manifest hook names, not source file paths
   shellHooks = {
     "antigravity_settings.sh" = {
-      runtimeInputs = lib.attrValues {
+      runtimeInputs = lib.attrsets.attrValues {
         inherit (pkgs) coreutils diffutils jq;
       };
       text = ''
@@ -103,7 +103,7 @@ let
         umask 077
         # Native clients own mutable settings, authentication and workspace state
         # Apply with App and CLI closed to avoid stale in-memory saves
-        for kind in app cli ${lib.optionalString (os == "darwin") "storage"}; do
+        for kind in app cli ${lib.strings.optionalString (os == "darwin") "storage"}; do
           case "$kind" in
             app)
               settings="$home/.gemini/config/config.json"
@@ -173,7 +173,7 @@ let
       fi
     '';
     "discord_equicord.sh".text = optionalHomeCommand { name = "sync-equicord-settings"; };
-    "gnome_catppuccin_custom_accent.sh".text = lib.concatLines [
+    "gnome_catppuccin_custom_accent.sh".text = lib.strings.concatLines [
       (optionalHomeCommand { name = "gnome-catppuccin-custom-accent"; })
       ''
         if command -v systemctl >/dev/null 2>&1 &&
@@ -228,7 +228,7 @@ let
     "raycast.sh" = {
       runtimeInputs = [ pkgs.coreutils ];
       text = ''
-        ${lib.toShellVars {
+        ${lib.strings.toShellVars {
           source = "/Applications/Nix Apps/Raycast.app";
           manager = "/run/current-system/sw/bin/raycast-manager";
           target = "/Applications/Raycast.app";
@@ -276,7 +276,7 @@ let
       '';
     };
     "super_engineering_settings.sh" = {
-      runtimeInputs = lib.attrValues {
+      runtimeInputs = lib.attrsets.attrValues {
         inherit (pkgs) coreutils diffutils jq;
       };
       text = ''
@@ -357,9 +357,11 @@ let
     '';
   };
   # Include every platform so disabled hooks are not mistaken for dead code
-  shellHookNames = map (entry: entry.name) (lib.filter (entry: !(entry ? command)) metadata.hooks);
-  missingShellHooks = lib.subtractLists (lib.attrNames shellHooks) shellHookNames;
-  unusedShellHooks = lib.subtractLists shellHookNames (lib.attrNames shellHooks);
+  shellHookNames = map (entry: entry.name) (
+    lib.lists.filter (entry: !(entry ? command)) metadata.hooks
+  );
+  missingShellHooks = lib.lists.subtractLists (lib.attrsets.attrNames shellHooks) shellHookNames;
+  unusedShellHooks = lib.lists.subtractLists shellHookNames (lib.attrsets.attrNames shellHooks);
   # The runner in home/deploy/apply.ts executes these after Hjem switches
   hooks = map (
     entry:
@@ -370,7 +372,7 @@ let
           map substitute entry.command
         else
           [
-            (lib.getExe (
+            (lib.meta.getExe (
               writeShellApplication (
                 {
                   name = "hjem-hook-${name}";
@@ -391,10 +393,10 @@ let
       onchange = entry.onChange or false;
       inputs = map substitute (entry.inputs or [ ]);
     }
-  ) (lib.filter enabled metadata.hooks);
-  generators = lib.importJSON ../../generators.json;
+  ) (lib.lists.filter enabled metadata.hooks);
+  generators = lib.trivial.importJSON ../../generators.json;
   manifest = writeText "hjem-manifest.json" (
-    lib.toJSON (
+    builtins.toJSON (
       import ./manifest.nix {
         inherit pkgs inputs home;
         files =
@@ -406,20 +408,19 @@ let
       }
     )
   );
-  hookMetadata = writeText "hjem-hooks.json" (lib.toJSON hooks);
-  generatorMetadata = writeText "hjem-generators.json" (lib.toJSON generators);
+  hookMetadata = writeText "hjem-hooks.json" (builtins.toJSON hooks);
+  generatorMetadata = writeText "hjem-generators.json" (builtins.toJSON generators);
 in
-assert lib.assertMsg (
-  home != "" && lib.hasPrefix "/" home
+assert lib.asserts.assertMsg (
+  home != "" && lib.strings.hasPrefix "/" home
 ) "Hjem requires an absolute home directory";
-assert lib.assertMsg (
-  repository != "" && lib.hasPrefix "/" repository
+assert lib.asserts.assertMsg (
+  repository != "" && lib.strings.hasPrefix "/" repository
 ) "Hjem requires an absolute checkout path";
-assert lib.assertMsg (
-  missingShellHooks == [ ]
-) "Hjem hooks have no command or shellHooks entry: ${lib.concatStringsSep ", " missingShellHooks}";
-assert lib.assertMsg (unusedShellHooks == [ ])
-  "Hjem shellHooks entries have no matching commandless manifest hook: ${lib.concatStringsSep ", " unusedShellHooks}";
+assert lib.asserts.assertMsg (missingShellHooks == [ ])
+  "Hjem hooks have no command or shellHooks entry: ${lib.strings.concatStringsSep ", " missingShellHooks}";
+assert lib.asserts.assertMsg (unusedShellHooks == [ ])
+  "Hjem shellHooks entries have no matching commandless manifest hook: ${lib.strings.concatStringsSep ", " unusedShellHooks}";
 linkFarm "hjem-home" {
   "manifest.json" = manifest;
   "hooks.json" = hookMetadata;

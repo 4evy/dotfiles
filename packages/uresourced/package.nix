@@ -14,7 +14,7 @@ let
 in
 stdenv.mkDerivation {
   pname = "uresourced";
-  version = lib.removePrefix "v" (lib.removePrefix "refs/tags/" sourcePin.version);
+  version = lib.strings.removePrefix "v" (lib.strings.removePrefix "refs/tags/" sourcePin.version);
   strictDeps = true;
 
   src = sourcePin.outPath;
@@ -33,9 +33,9 @@ stdenv.mkDerivation {
   ];
 
   mesonFlags = [
-    "-Dappmanagement=true"
-    "-Dsystemdsystemunitdir=${placeholder "out"}/lib/systemd/system"
-    "-Dsystemduserunitdir=${placeholder "out"}/lib/systemd/user"
+    (lib.strings.mesonBool "appmanagement" true)
+    (lib.strings.mesonOption "systemdsystemunitdir" "${placeholder "out"}/lib/systemd/system")
+    (lib.strings.mesonOption "systemduserunitdir" "${placeholder "out"}/lib/systemd/user")
   ];
 
   doCheck = false;
@@ -47,6 +47,6 @@ stdenv.mkDerivation {
     description = "Dynamically allocate resources to the active graphical user";
     homepage = "https://gitlab.freedesktop.org/benzea/uresourced";
     license = lib.licenses.lgpl21Plus;
-    platforms = lib.platforms.linux;
+    platforms = lib.systems.doubles.linux;
   };
 }

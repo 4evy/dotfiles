@@ -19,7 +19,7 @@
 }:
 let
   inherit (stdenvNoCC.hostPlatform) isDarwin isLinux system;
-  pins = lib.importJSON ./sources.json;
+  pins = lib.trivial.importJSON ./sources.json;
   serverVersion = pins.server.version;
   serverRev = pins.server.rev;
   appVersion = pins.app.version;
@@ -33,7 +33,7 @@ let
       url = "https://blob.superlogical.com/public/rex-app/snapshot-arm64/Rex-${appVersion}-${appBuild}.dmg";
     };
   }
-  // lib.mapAttrs (_: filename: {
+  // lib.attrsets.mapAttrs (_: filename: {
     url = "https://blob.superlogical.com/download/rex/snapshot/${serverRev}/${filename}";
   }) linuxArtifacts;
   # The binary archives omit terminfo and the SSH guard shipped by upstream Nix
@@ -57,11 +57,11 @@ stdenvNoCC.mkDerivation {
   nativeBuildInputs = [
     installShellFiles
   ]
-  ++ lib.optionals isDarwin [
+  ++ lib.lists.optionals isDarwin [
     _7zz
     makeBinaryWrapper
   ]
-  ++ lib.optional isLinux patchelf;
+  ++ lib.lists.optional isLinux patchelf;
 
   dontConfigure = true;
   dontBuild = true;
@@ -87,7 +87,7 @@ stdenvNoCC.mkDerivation {
           # patchelf 0.19 corrupts this Go binary if the interpreter is set first
           # PAM is loaded by name, so retain it even though it is not DT_NEEDED
           patchelf --set-rpath "${
-            lib.makeLibraryPath [
+            lib.strings.makeLibraryPath [
               glibc
               pam
             ]
@@ -101,7 +101,7 @@ stdenvNoCC.mkDerivation {
     done
     install -Dm644 "${support}/50-rex.conf" "$out/share/rex/ssh_config.d/50-rex.conf"
 
-    ${lib.optionalString (stdenvNoCC.buildPlatform.canExecute stdenvNoCC.hostPlatform) ''
+    ${lib.strings.optionalString (stdenvNoCC.buildPlatform.canExecute stdenvNoCC.hostPlatform) ''
       installShellCompletion --cmd rex \
         --bash <("$out/bin/rex" completion bash) \
         --fish <("$out/bin/rex" completion fish) \
@@ -122,7 +122,7 @@ stdenvNoCC.mkDerivation {
 
   passthru = {
     inherit serverVersion appBuild support;
-    updateScript = lib.getExe (writeShellApplication {
+    updateScript = lib.meta.getExe (writeShellApplication {
       name = "update-rex";
       runtimeInputs = [
         coreutils
@@ -157,14 +157,14 @@ stdenvNoCC.mkDerivation {
           "https://pkgs.superlogical.com/rex/nix/snapshot/$version.tar.gz" | jq -er '.hash')
         hashes=$(jq -n --arg hash "$app_hash" '{"aarch64-darwin": $hash}')
 
-        ${lib.concatMapStringsSep "\n" (target: ''
-          url=$(jq -er --arg filename ${lib.escapeShellArg linuxArtifacts.${target}} \
+        ${lib.strings.concatMapAttrsStringSep "\n" (target: filename: ''
+          url=$(jq -er --arg filename ${lib.strings.escapeShellArg filename} \
             '.artifacts[] | select(.filename == $filename) | .downloadUrl' <<< "$release")
           hash=$(nix --extra-experimental-features nix-command store prefetch-file --json "$url" \
             | jq -er '.hash')
-          hashes=$(jq --arg system ${lib.escapeShellArg target} --arg hash "$hash" \
+          hashes=$(jq --arg system ${lib.strings.escapeShellArg target} --arg hash "$hash" \
             '. + {($system): $hash}' <<< "$hashes")
-        '') (builtins.attrNames linuxArtifacts)}
+        '') linuxArtifacts}
 
         # Publish one complete pin set only after every prefetch succeeds
         staged=$(mktemp "$file.XXXXXX")

@@ -28,7 +28,7 @@ stdenvNoCC.mkDerivation {
     runHook preInstall
     install -Dm755 src/nixglhost.py "$out/bin/nixglhost"
     substituteInPlace "$out/bin/nixglhost" \
-      --replace-fail '@patchelf-bin@' '${lib.getExe patchelf}' \
+      --replace-fail '@patchelf-bin@' '${lib.meta.getExe patchelf}' \
       --replace-fail 'IN_NIX_STORE = False' 'IN_NIX_STORE = True'
     runHook postInstall
   '';
@@ -44,6 +44,6 @@ stdenvNoCC.mkDerivation {
     homepage = "https://github.com/numtide/nix-gl-host";
     license = lib.licenses.asl20;
     mainProgram = "nixglhost";
-    platforms = lib.platforms.linux;
+    platforms = lib.systems.doubles.linux;
   };
 }

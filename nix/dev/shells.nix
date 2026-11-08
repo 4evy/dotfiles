@@ -14,7 +14,7 @@
       inherit (stdenv.hostPlatform) isLinux;
 
       javascriptShell = mkShell {
-        packages = lib.attrValues {
+        packages = lib.attrsets.attrValues {
           inherit (unstable) bun nodejs;
           inherit (self'.packages) bun2nix;
         };
@@ -22,7 +22,7 @@
 
       operationsShell = mkShell {
         packages =
-          lib.attrValues {
+          lib.attrsets.attrValues {
             inherit (pkgs)
               actionlint
               check-jsonschema
@@ -39,7 +39,7 @@
             inherit (unstable) uv;
           }
           # Use the host container engine with its matching storage and helpers
-          ++ lib.optionals isLinux [ self'.packages.bluebuild-v2 ];
+          ++ lib.lists.optionals isLinux [ self'.packages.bluebuild-v2 ];
       };
 
     in
@@ -53,7 +53,7 @@
             javascriptShell
             operationsShell
           ];
-          packages = lib.attrValues {
+          packages = lib.attrsets.attrValues {
             inherit (config.treefmt.build) wrapper;
             inherit (pkgs) git just;
           };

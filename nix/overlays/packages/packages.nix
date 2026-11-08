@@ -72,7 +72,9 @@ let
     };
   };
 
-  packages = lib.mapAttrs (name: file: callPackage file (packageArgs.${name} or { })) packageFiles;
+  packages = lib.attrsets.mapAttrs (
+    name: file: callPackage file (packageArgs.${name} or { })
+  ) packageFiles;
 in
 packages
 // {
@@ -90,13 +92,20 @@ packages
   };
   bun2nix = inputs.bun2nix.packages.${stdenv.hostPlatform.system}.default;
   # Upstream schema downloads have no deadline, including recursive $ref fetches
-  check-jsonschema = prev.check-jsonschema.overridePythonAttrs (old: {
-    postPatch = (old.postPatch or "") + ''
-      substituteInPlace src/check_jsonschema/cachedownloader.py \
-        --replace-fail 'requests.get(file_url, stream=True)' \
-          'requests.get(file_url, stream=True, timeout=(10, 30))'
-    '';
-  });
+  check-jsonschema = prev.check-jsonschema.overridePythonAttrs (
+    old:
+    let
+      connectTimeoutSeconds = 10;
+      readTimeoutSeconds = 30;
+    in
+    {
+      postPatch = (old.postPatch or "") + ''
+        substituteInPlace src/check_jsonschema/cachedownloader.py \
+          --replace-fail 'requests.get(file_url, stream=True)' \
+            'requests.get(file_url, stream=True, timeout=(${toString connectTimeoutSeconds}, ${toString readTimeoutSeconds}))'
+      '';
+    }
+  );
   inherit (unstable) gh;
   hyper-window-tiling-gnome = gnome;
   hyper-window-tiling-kde = kde;

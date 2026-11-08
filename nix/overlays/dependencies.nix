@@ -11,10 +11,10 @@ let
   # Give eupkgs its own recursive callPackage scope on top of unstable. This
   # lets eupkgs packages see one another without adding the entire overlay to
   # the top-level package set or recomputing the nixpkgs fixed point.
-  eupkgsScope = lib.makeScope newScope (
+  eupkgsScope = lib.customisation.makeScope newScope (
     scopeFinal: inputs.eupkgs.overlays.default scopeFinal unstable
   );
-  eupkgs = lib.removeAttrs eupkgsScope [
+  eupkgs = lib.attrsets.removeAttrs eupkgsScope [
     "_internalCallByNamePackageFile"
     "callPackage"
     "newScope"

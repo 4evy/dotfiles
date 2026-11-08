@@ -1,13 +1,9 @@
 { lib, parseRules }:
 let
-  inherit (lib)
-    mapAttrs'
-    nameValuePair
-    removeAttrs
-    substring
-    toUpper
-    ;
+  inherit (lib.attrsets) mapAttrs' nameValuePair removeAttrs;
+  inherit (lib.strings) substring toUpper;
 
+  # Keep camelCase plugin suffixes intact, unlike strings.toSentenceCase
   capitalize = string: toUpper (substring 0 1 string) + substring 1 (-1) string;
 
   pluginJsonName = name: parseRules.pluginRenames.${name} or (capitalize name);
@@ -20,7 +16,7 @@ let
     };
 
   enabledPlugins =
-    lib.genAttrs
+    lib.attrsets.genAttrs
       [
         "alwaysExpandRoles"
         "betterGifPicker"

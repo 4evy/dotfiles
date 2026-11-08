@@ -8,9 +8,9 @@
 let
   inherit (bun2nix) hook;
   packageRoot = ./.;
-  packageMetadata = lib.importJSON (packageRoot + /package.json);
-  gnomeMetadata = lib.importJSON (packageRoot + /gnome/metadata.json);
-  kdeMetadata = lib.importJSON (packageRoot + /kde/metadata.json);
+  packageMetadata = lib.trivial.importJSON (packageRoot + /package.json);
+  gnomeMetadata = lib.trivial.importJSON (packageRoot + /gnome/metadata.json);
+  kdeMetadata = lib.trivial.importJSON (packageRoot + /kde/metadata.json);
   inherit (packageMetadata) version;
   extensionUuid = gnomeMetadata.uuid;
   pluginId = kdeMetadata.KPlugin.Id;
@@ -45,7 +45,7 @@ let
     runHook postBuild
   '';
 
-  mkTilingExtension = lib.extendMkDerivation {
+  mkTilingExtension = lib.customisation.extendMkDerivation {
     # Both desktop extensions bundle JavaScript without a native compiler
     constructDrv = stdenvNoCC.mkDerivation;
     extendDrvArgs = _: args: {
@@ -58,7 +58,7 @@ let
       ];
 
       nativeBuildInputs =
-        lib.attrValues {
+        lib.attrsets.attrValues {
           inherit bun hook;
         }
         ++ (args.nativeBuildInputs or [ ]);
@@ -69,7 +69,7 @@ let
         homepage = "https://github.com/4evy/dotfiles";
         license = lib.licenses.mit;
         maintainers = [ lib.maintainers._4evy ];
-        platforms = lib.platforms.linux;
+        platforms = lib.systems.doubles.linux;
       }
       // (args.meta or { });
     };
@@ -79,7 +79,7 @@ in
 {
   gnome = mkTilingExtension {
     pname = "gnome-shell-extension-hyper-window-tiling";
-    nativeBuildInputs = lib.attrValues { inherit glib; };
+    nativeBuildInputs = lib.attrsets.attrValues { inherit glib; };
 
     buildPhase = buildPhaseFor "build:gnome";
 

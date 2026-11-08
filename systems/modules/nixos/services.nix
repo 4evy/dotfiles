@@ -11,7 +11,7 @@ let
     nerd-fonts
     rustdesk-flutter
     ;
-  applicationsHelper = lib.getExe' dotfiles-typescript-tools "dotfiles-applications";
+  applicationsHelper = lib.meta.getExe' dotfiles-typescript-tools "dotfiles-applications";
   # Import the rootfs once so shared policy files remain in one store tree
   rootfs = lib.sources.cleanSourceWith {
     src = ../../spectrum/files/system;
@@ -42,7 +42,7 @@ in
   environment.etc = {
     # BlueZ's NixOS module normally generates an empty input.conf. Spectrum's
     # source file intentionally replaces that default.
-    "bluetooth/input.conf".source = lib.mkForce (rootfs + "/etc/bluetooth/input.conf");
+    "bluetooth/input.conf".source = lib.modules.mkForce (rootfs + "/etc/bluetooth/input.conf");
     "modprobe.d/60-spectrum-bluetooth.conf".source =
       rootfs + "/usr/lib/modprobe.d/60-spectrum-bluetooth.conf";
     "systemd/system.conf.d/60-spectrum-resource-accounting.conf".source =
@@ -101,7 +101,7 @@ in
       '';
       environment.HOME = "/root";
       serviceConfig = {
-        ExecStart = "${lib.getExe rustdesk-flutter} --service";
+        ExecStart = "${lib.meta.getExe rustdesk-flutter} --service";
         Restart = "on-failure";
         KillMode = "mixed";
       };

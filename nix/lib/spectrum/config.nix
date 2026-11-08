@@ -11,8 +11,8 @@ in
     # Spectrum overrides for the installer-managed Determinate Nix daemon
     builders-use-substitutes = true
     extra-experimental-features = parallel-eval
-    extra-substituters = ${lib.concatStringsSep " " cacheSettings.extra-substituters}
-    extra-trusted-public-keys = ${lib.concatStringsSep " " cacheSettings.extra-trusted-public-keys}
+    extra-substituters = ${lib.strings.concatStringsSep " " cacheSettings.extra-substituters}
+    extra-trusted-public-keys = ${lib.strings.concatStringsSep " " cacheSettings.extra-trusted-public-keys}
   '';
   dconf = lib.generators.toDconfINI (
     defaults

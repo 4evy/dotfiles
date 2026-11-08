@@ -6,7 +6,7 @@
 }:
 {
   # General hardware configuration
-  environment.systemPackages = lib.attrValues { inherit (pkgs) libva-utils; };
+  environment.systemPackages = lib.attrsets.attrValues { inherit (pkgs) libva-utils; };
   environment.sessionVariables = {
     # It tells supported apps to use the Ozone/Wayland backend
     NIXOS_OZONE_WL = "1";

@@ -8,7 +8,7 @@ let
   inherit (lib.attrsets) attrValues;
   inherit (lib.modules) mkIf;
   inherit (lib.strings) concatStringsSep;
-  inherit (lib) getExe;
+  inherit (lib.meta) getExe;
   inherit (pkgs)
     linkFarm
     unstable
@@ -44,8 +44,8 @@ let
     "--wayland-text-input-version=3"
   ];
 
-  heliumConfigSource = lib.importTOML ../../../../home/applications/helium/config.toml;
-  heliumConfig = lib.recursiveUpdate heliumConfigSource {
+  heliumConfigSource = lib.trivial.importTOML ../../../../home/applications/helium/config.toml;
+  heliumConfig = lib.attrsets.recursiveUpdate heliumConfigSource {
     browser.linux = {
       app_dir = toString heliumAppDir;
       wrapper_flags = commandLineArgs;

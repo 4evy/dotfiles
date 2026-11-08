@@ -19,7 +19,7 @@ in
       passthru = previous.passthru // {
         # Reuse upstream's version-aware URLs with our per-platform hashes
         sources =
-          lib.mapAttrs
+          lib.attrsets.mapAttrs
             (
               platform: hash:
               previous.passthru.sources.${platform}.overrideAttrs {
@@ -48,8 +48,10 @@ in
       });
 
   libtsm = libtsm.overrideAttrs {
-    version = lib.head (
-      lib.match ".*version: '([^']+)'.*" (lib.readFile "${dotfilesSourcePins.libtsm.outPath}/meson.build")
+    version = lib.lists.head (
+      lib.strings.match ".*version: '([^']+)'.*" (
+        lib.trivial.readFile "${dotfilesSourcePins.libtsm.outPath}/meson.build"
+      )
     );
     src = dotfilesSourcePins.libtsm.outPath;
   };
@@ -57,18 +59,18 @@ in
   kmscon = (kmscon.override { inherit (final) libtsm; }).overrideAttrs (
     _finalAttrs: previousAttrs: {
       version =
-        lib.head (
-          lib.match ".*project\\([[:space:]]*'kmscon',[[:space:]]*'c',[[:space:]]*version: '([^']+)'.*" (
-            lib.readFile "${dotfilesSourcePins.kmscon.outPath}/meson.build"
+        lib.lists.head (
+          lib.strings.match ".*project\\([[:space:]]*'kmscon',[[:space:]]*'c',[[:space:]]*version: '([^']+)'.*" (
+            lib.trivial.readFile "${dotfilesSourcePins.kmscon.outPath}/meson.build"
           )
         )
-        + "-unstable-${lib.substring 0 8 dotfilesSourcePins.kmscon.revision}";
+        + "-unstable-${lib.strings.substring 0 8 dotfilesSourcePins.kmscon.revision}";
       src = dotfilesSourcePins.kmscon.outPath;
       # The pinned source already includes Nixpkgs' libseat logging fix
-      patches = lib.filter (
-        patch: !(lib.hasInfix "153db63d679df719a99dd36505f9c2f55d9c59f6" (patch.url or ""))
+      patches = lib.lists.filter (
+        patch: !(lib.strings.hasInfix "153db63d679df719a99dd36505f9c2f55d9c59f6" (patch.url or ""))
       ) (previousAttrs.patches or [ ]);
-      buildInputs = previousAttrs.buildInputs ++ lib.attrValues { inherit dbus; };
+      buildInputs = previousAttrs.buildInputs ++ lib.attrsets.attrValues { inherit dbus; };
       mesonFlags = (previousAttrs.mesonFlags or [ ]) ++ [ "-Dtests=false" ];
       doCheck = false;
       doInstallCheck = false;
@@ -76,7 +78,7 @@ in
       # launcher script contains a command path that needs rewriting
       postFixup = ''
         substituteInPlace $out/bin/kmscon-launch-gui \
-          --replace-fail "inotifywait" "${lib.getExe' inotify-tools "inotifywait"}"
+          --replace-fail "inotifywait" "${lib.meta.getExe' inotify-tools "inotifywait"}"
       '';
     }
   );

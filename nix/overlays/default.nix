@@ -7,7 +7,7 @@ let
   localPackages = import ./packages/packages.nix { inherit inputs lib; };
   upstreamOverrides = import ./upstream/upstream.nix { inherit lib; };
 
-  packages = lib.composeManyExtensions [
+  packages = lib.fixedPoints.composeManyExtensions [
     dependencies
     sources
     localPackages

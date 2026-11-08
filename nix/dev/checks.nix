@@ -23,11 +23,11 @@
           theme-run
           ;
       }
-      // lib.optionalAttrs isLinux {
+      // lib.attrsets.optionalAttrs isLinux {
         hyper-window-tiling = self'.packages.hyper-window-tiling-gnome;
         toshy-runtime = self'.packages.toshy-runtime;
       }
-      // lib.optionalAttrs (system == "x86_64-linux") {
+      // lib.attrsets.optionalAttrs (system == "x86_64-linux") {
         nixos = self.nixosConfigurations.nixos.config.system.build.toplevel;
       };
     };

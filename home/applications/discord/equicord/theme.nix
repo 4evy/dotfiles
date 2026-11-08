@@ -4,21 +4,19 @@
   exceptions,
 }:
 let
-  inherit (lib)
+  inherit (builtins) toString;
+  inherit (lib.lists)
     all
-    concatMapAttrsStringSep
-    concatMapStringsSep
-    div
     findFirst
     head
     last
     map
     range
     tail
-    throwIfNot
-    toString
     zipListsWith
     ;
+  inherit (lib.strings) concatMapAttrsStringSep concatMapStringsSep;
+  inherit (lib.trivial) div throwIfNot;
 
   modernSteps = range 1 100;
   legacySteps = [

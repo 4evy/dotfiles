@@ -8,7 +8,7 @@
 let
   sourcePin = dotfilesSourcePins.toshy;
   source = sourcePin.outPath;
-  version = lib.removePrefix "Toshy_v" sourcePin.version;
+  version = lib.strings.removePrefix "Toshy_v" sourcePin.version;
   # Use Python 3.14 while upstream dependencies catch up with Python 3.15
   upstreamRuntime =
     (callPackage "${source}/nix/toshy-runtime.nix" {

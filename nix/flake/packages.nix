@@ -39,7 +39,7 @@
         dotfiles-apps = buildEnv {
           name = "dotfiles-apps";
           paths =
-            lib.attrValues {
+            lib.attrsets.attrValues {
               inherit (pkgs)
                 helium-browser
                 helix
@@ -50,9 +50,9 @@
                 yt-dlp-script
                 ;
             }
-            ++ lib.optionals isLinux (
-              lib.attrValues {
-                helium-configured = lib.hiPrio helium-configured;
+            ++ lib.lists.optionals isLinux (
+              lib.attrsets.attrValues {
+                helium-configured = lib.meta.hiPrio helium-configured;
                 inherit (pkgs) nixcord-discord;
               }
             );
@@ -70,7 +70,7 @@
         dotfiles-nix-tools = buildEnv {
           name = "dotfiles-nix-tools";
           paths =
-            lib.attrValues {
+            lib.attrsets.attrValues {
               inherit (pkgs)
                 deadnix
                 nh
@@ -82,8 +82,8 @@
                 statix
                 ;
             }
-            ++ lib.optionals isDarwin (
-              lib.attrValues {
+            ++ lib.lists.optionals isDarwin (
+              lib.attrsets.attrValues {
                 inherit (inputs.raycast.packages.${system}) raycast raycast-manager;
               }
             );
@@ -93,7 +93,7 @@
           settings = equicord.settings.jsonConfig;
         };
       }
-      // lib.optionalAttrs isLinux {
+      // lib.attrsets.optionalAttrs isLinux {
         dotfiles-user-tools = buildEnv {
           name = "dotfiles-user-tools";
           paths = import ../../home/deploy/nix/packages.nix { inherit pkgs; };

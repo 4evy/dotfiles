@@ -8,37 +8,51 @@
 }:
 let
   inherit (pkgs) lib stdenv;
-  palette = (lib.importJSON ../../theme/palette/palette.json).catppuccin_custom;
+  palette = (lib.trivial.importJSON ../../theme/palette/palette.json).catppuccin_custom;
   ompDependencies =
-    (lib.importJSON "${inputs.ai}/apps/omp/runtime/upstream/package.json").dependencies;
+    (lib.trivial.importJSON "${inputs.ai}/apps/omp/runtime/upstream/package.json").dependencies;
   manifest = import ../../manifest.nix;
   normalizeFile = import ./file/entry.nix { inherit lib; };
+  hexDigitsPerByte = 2;
+  surfaceBackgroundPercent = 85;
+  surfaceForegroundPercent = 15;
+  percentScale = 100;
+  nearestByteRounding = lib.trivial.div percentScale 2;
   components =
     color:
-    map (offset: lib.fromHexString (lib.substring offset 2 color)) [
+    map (offset: lib.trivial.fromHexString (lib.strings.substring offset hexDigitsPerByte color)) [
       1
       3
       5
     ];
-  rgb = color: "rgb(${lib.concatMapStringsSep ", " toString (components color)})";
-  byteHex = value: lib.toLower (lib.fixedWidthString 2 "0" (lib.toHexString value));
-  # Mix 85% background and 15% foreground with nearest-byte rounding
+  rgb = color: "rgb(${lib.strings.concatMapStringsSep ", " toString (components color)})";
+  byteHex =
+    value:
+    lib.strings.toLower (
+      lib.strings.fixedWidthString hexDigitsPerByte "0" (lib.trivial.toHexString value)
+    );
+  # Round the weighted channel average to the nearest byte
   surfaceMix =
     colors: color:
     let
-      channels = lib.zipListsWith (
-        background: foreground: byteHex (lib.div (background * 85 + foreground * 15 + 50) 100)
+      channels = lib.lists.zipListsWith (
+        background: foreground:
+        byteHex (
+          lib.trivial.div (
+            background * surfaceBackgroundPercent + foreground * surfaceForegroundPercent + nearestByteRounding
+          ) percentScale
+        )
       ) (components colors.terminalBackground) (components color);
     in
-    "#${lib.concatStrings channels}";
+    "#${lib.strings.concatStrings channels}";
   colorMarkers =
-    lib.concatMap
+    lib.lists.concatMap
       (
         variant:
-        lib.concatMap (
+        lib.lists.concatMap (
           key:
           let
-            label = "${lib.toUpper variant}_${lib.toUpper key}";
+            label = "${lib.strings.toUpper variant}_${lib.strings.toUpper key}";
             color = palette.${variant}.${key};
           in
           [
@@ -51,11 +65,11 @@ let
               value = rgb color;
             }
           ]
-        ) (lib.attrNames palette.${variant})
+        ) (lib.attrsets.attrNames palette.${variant})
         ++
           map
             (role: {
-              name = "@MIX_${lib.toUpper variant}_${lib.toUpper role}@";
+              name = "@MIX_${lib.strings.toUpper variant}_${lib.strings.toUpper role}@";
               value = surfaceMix palette.${variant} palette.${variant}.${role};
             })
             [
@@ -69,18 +83,14 @@ let
       ];
   commandPath =
     name:
-    lib.findFirst lib.pathExists null (
+    lib.lists.findFirst lib.trivial.pathExists null (
       map (directory: "${directory}/${name}") (
-        lib.filter (directory: directory != "") (lib.splitString ":" (environment.PATH or ""))
+        lib.lists.filter (directory: directory != "") (lib.strings.splitString ":" (environment.PATH or ""))
       )
     );
-  findCommand =
-    name:
-    let
-      path = commandPath name;
-    in
-    if path == null then name else path;
-  firstCommand = names: fallback: lib.findFirst (path: path != null) fallback (map commandPath names);
+  findCommand = name: lib.trivial.defaultTo name (commandPath name);
+  firstCommand =
+    names: fallback: lib.lists.findFirst (path: path != null) fallback (map commandPath names);
   markers = colorMarkers ++ [
     {
       # Inherit the deployed extension dependency from the locked AI runtime
@@ -94,7 +104,7 @@ let
     {
       name = "@CLANG_TIDY@";
       value = firstCommand [ "clang-tidy" ] (
-        if lib.pathExists "/opt/homebrew/opt/llvm/bin/clang-tidy" then
+        if lib.trivial.pathExists "/opt/homebrew/opt/llvm/bin/clang-tidy" then
           "/opt/homebrew/opt/llvm/bin/clang-tidy"
         else
           "clang-tidy"
@@ -118,7 +128,7 @@ let
     }
     {
       name = "@OMP_CLI@";
-      value = lib.getExe' pkgs.aiTools.ai-tools "omp";
+      value = lib.meta.getExe' pkgs.aiTools.ai-tools "omp";
     }
     {
       name = "@CODEX_NATIVE_CLI@";
@@ -133,56 +143,64 @@ let
     }
     {
       name = "@GLAMOUR_TEXT@";
-      value = lib.concatStrings [
+      value = lib.strings.concatStrings [
         "{"
         "{.text}"
         "}"
       ];
     }
   ];
-  replace = lib.replaceStrings (map (item: item.name) markers) (map (item: item.value) markers);
+  replace = lib.strings.replaceStrings (lib.attrsets.catAttrs "name" markers) (
+    lib.attrsets.catAttrs "value" markers
+  );
   enabled =
-    entry: (entry.nixGenerated or false) && (entry.systems or [ ] == [ ] || lib.elem os entry.systems);
+    entry:
+    (entry.nixGenerated or false) && (entry.systems or [ ] == [ ] || lib.lists.elem os entry.systems);
   file =
     entry:
     let
       source = (entry.sourceByOS or { }).${os} or entry.source;
-      templateText = lib.readFile (../../files + "/${source}");
+      templateText = lib.trivial.readFile (../../files + "/${source}");
       variant = entry.variant or "dark";
       variantText =
-        lib.replaceStrings
+        lib.strings.replaceStrings
           [ "_VARIANT_" "catppuccin_custom_variant" ]
-          [ "_${lib.toUpper variant}_" "catppuccin_custom_${variant}" ]
+          [ "_${lib.strings.toUpper variant}_" "catppuccin_custom_${variant}" ]
           templateText;
       text = replace (
         if source == ".config/eza/theme.yml" then
-          lib.replaceStrings [ "_DARK_" ] [ "_${lib.toUpper variant}_" ] variantText
+          lib.strings.replaceString "_DARK_" "_${lib.strings.toUpper variant}_" variantText
         else
           variantText
       );
     in
     normalizeFile entry (
-      if entry.symlink or false then { source = lib.removeSuffix "\n" text; } else { inherit text; }
+      if entry.symlink or false then
+        { source = lib.strings.removeSuffix "\n" text; }
+      else
+        { inherit text; }
     );
   homebrewPath =
     append:
-    normalizeFile { target = ".config/shell/homebrew-path${lib.optionalString append "-tail"}.sh"; } {
-      text =
-        lib.concatMapStrings
-          (tool: ''_dotfiles_path_append_once "$HOMEBREW_PREFIX/opt/${tool.formula}/${tool.path}"'' + "\n")
-          (
-            lib.filter (tool: lib.elem "darwin" tool.platforms && (tool.append or false) == append) (
-              lib.importJSON ../../../data/homebrew/tools.json
-            )
-          );
-    };
+    normalizeFile
+      { target = ".config/shell/homebrew-path${lib.strings.optionalString append "-tail"}.sh"; }
+      {
+        text =
+          lib.strings.concatMapStrings
+            (tool: ''_dotfiles_path_append_once "$HOMEBREW_PREFIX/opt/${tool.formula}/${tool.path}"'' + "\n")
+            (
+              lib.lists.filter (
+                tool: lib.lists.elem "darwin" tool.platforms && (tool.append or false) == append
+              ) (lib.trivial.importJSON ../../../data/homebrew/tools.json)
+            );
+      };
 in
-map file (lib.filter enabled manifest.files)
-++ lib.optionals (os == "darwin") [
+map file (lib.lists.filter enabled manifest.files)
+++ lib.lists.optionals (os == "darwin") [
   (homebrewPath false)
   (homebrewPath true)
   (normalizeFile { target = ".config/rex/palette.json"; } {
-    text = lib.toJSON {
+    text = builtins.toJSON {
       inherit (palette) light dark;
     };
   })

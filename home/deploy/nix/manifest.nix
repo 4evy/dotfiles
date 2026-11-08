@@ -10,10 +10,10 @@
 let
   inherit (pkgs) lib stdenv;
   hjem = inputs.hjem.hjem-lib.${stdenv.hostPlatform.system};
-  evaluated = lib.evalModules {
+  evaluated = lib.modules.evalModules {
     modules = [
       {
-        options.files = lib.mkOption {
+        options.files = lib.options.mkOption {
           type = lib.types.attrsOf (
             hjem.fileTypeRelativeTo {
               rootDir = home;
@@ -23,8 +23,8 @@ let
           );
         };
         # Option names stay stable when other targets are added or removed
-        config.files = lib.genAttrs' files (file: {
-          name = lib.strings.sanitizeDerivationName "hjem-${lib.hashString "sha256" file.target}-${baseNameOf file.target}";
+        config.files = lib.attrsets.genAttrs' files (file: {
+          name = lib.strings.sanitizeDerivationName "hjem-${builtins.hashString "sha256" file.target}-${baseNameOf file.target}";
           value = file;
         });
       }
@@ -33,14 +33,14 @@ let
   targets = map (file: file.target) files;
 in
 # Discard context only for validation, not for the deployed file targets
-assert lib.assertMsg (
-  lib.length targets
-  == lib.length (lib.uniqueStrings (map builtins.unsafeDiscardStringContext targets))
+assert lib.asserts.assertMsg (
+  lib.lists.length targets
+  == lib.lists.length (lib.lists.uniqueStrings (map builtins.unsafeDiscardStringContext targets))
 ) "Duplicate public Hjem target";
 {
   version = 3;
   # Compare copy contents so activation replaces pre-existing app settings
   files = map hjem.fileToJson (
-    lib.filter (file: file.enable) (lib.attrValues evaluated.config.files)
+    lib.lists.filter (file: file.enable) (lib.attrsets.attrValues evaluated.config.files)
   );
 }

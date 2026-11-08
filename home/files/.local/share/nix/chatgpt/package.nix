@@ -47,7 +47,7 @@ let
       hash = "sha256-pdfvEe6u5aEunePDUEIEs6eAYCsUOxQkescZaSuUD78=";
     };
 
-    nativeBuildInputs = lib.attrValues {
+    nativeBuildInputs = lib.attrsets.attrValues {
       inherit autoPatchelfHook rpmextract wrapGAppsHook3;
     };
 
@@ -119,7 +119,7 @@ let
       license = lib.licenses.unfree;
       mainProgram = "chatgpt";
       platforms = [ "x86_64-linux" ];
-      sourceProvenance = lib.attrValues { inherit (lib.sourceTypes) binaryNativeCode; };
+      sourceProvenance = lib.attrsets.attrValues { inherit (lib.sourceTypes) binaryNativeCode; };
     };
   });
 in

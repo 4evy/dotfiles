@@ -23,7 +23,7 @@ writeShellApplication {
   text = ''
     # Renovate has already selected a version, only its hash needs refreshing
     if [ "$#" = 1 ] && [ "$1" = "--version=skip" ]; then
-      exec ${lib.escapeShellArgs updateScript}
+      exec ${lib.strings.escapeShellArgs updateScript}
     fi
 
     check_only=false
@@ -75,9 +75,9 @@ writeShellApplication {
       exit 1
     fi
 
-    if [ "$version" = ${lib.escapeShellArg unwrapped.version} ] && \
-      [ "$url" = ${lib.escapeShellArg unwrapped.src.url} ] && \
-      [ "$hash" = ${lib.escapeShellArg unwrapped.src.outputHash} ]; then
+    if [ "$version" = ${lib.strings.escapeShellArg unwrapped.version} ] && \
+      [ "$url" = ${lib.strings.escapeShellArg unwrapped.src.url} ] && \
+      [ "$hash" = ${lib.strings.escapeShellArg unwrapped.src.outputHash} ]; then
       echo "ChatGPT is up to date at $version"
       exit 0
     fi
@@ -88,9 +88,9 @@ writeShellApplication {
     fi
 
     # nix-update skips hashing an unchanged explicit version
-    if [ "$version" = ${lib.escapeShellArg unwrapped.version} ]; then
+    if [ "$version" = ${lib.strings.escapeShellArg unwrapped.version} ]; then
       version=skip
     fi
-    ${lib.escapeShellArgs updateScript} --version="$version"
+    ${lib.strings.escapeShellArgs updateScript} --version="$version"
   '';
 }

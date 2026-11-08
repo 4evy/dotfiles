@@ -22,7 +22,7 @@
       (
         set -euo pipefail
         shopt -s nullglob
-        runtime="$(${lib.getExe pkgs.jaq} --from toml '
+        runtime="$(${lib.meta.getExe pkgs.jaq} --from toml '
           .mcp_servers.node_repl |
           {
             CUA_REPL_NODE_REPL_PATH: .command,
@@ -36,7 +36,7 @@
           (
             candidate="$(${pkgs.coreutils}/bin/mktemp "$manifest.XXXXXX")"
             trap 'rm -f -- "$candidate"' EXIT
-            ${lib.getExe pkgs.jaq} --argjson runtime "$runtime" \
+            ${lib.meta.getExe pkgs.jaq} --argjson runtime "$runtime" \
               '.mcpServers.cua_repl.env += $runtime' "$manifest" > "$candidate"
             ${pkgs.coreutils}/bin/chmod --reference="$manifest" "$candidate"
             ${pkgs.coreutils}/bin/mv -fT -- "$candidate" "$manifest"
@@ -50,8 +50,8 @@
     enable = true;
     user.enable = true;
     farstep.desktop.enable = true;
-    omp.keybindings = lib.importJSON ../../../home/data/omp/keybindings.json;
-    omp.settings = lib.importJSON ../../../home/data/omp/config.json;
+    omp.keybindings = lib.trivial.importJSON ../../../home/data/omp/keybindings.json;
+    omp.settings = lib.trivial.importJSON ../../../home/data/omp/config.json;
     chatgpt = {
       enable = true;
       package = null;

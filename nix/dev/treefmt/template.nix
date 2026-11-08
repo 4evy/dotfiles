@@ -1,7 +1,7 @@
 { lib, pkgs }:
 pkgs.writeShellApplication {
   name = "template-format";
-  runtimeInputs = lib.attrValues {
+  runtimeInputs = lib.attrsets.attrValues {
     inherit (pkgs) coreutils diffutils;
   };
   text = ''
@@ -16,7 +16,7 @@ pkgs.writeShellApplication {
       output_name=$(basename "$file" .in)
       temporary_file="$temporary_directory/$output_name"
       cp "$file" "$temporary_file"
-      if ${lib.getExe pkgs.biome} format --write --no-errors-on-unmatched \
+      if ${lib.meta.getExe pkgs.biome} format --write --no-errors-on-unmatched \
         "$temporary_file" >/dev/null 2>&1; then
         if ! cmp -s "$file" "$temporary_file"; then
           cp "$temporary_file" "$file"

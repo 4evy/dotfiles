@@ -23,7 +23,7 @@ let
   stateHome = xdg "XDG_STATE_HOME" ".local/state";
   profile = "${stateHome}/hjem/standalone/current-profile";
   heliumAppDir = linkFarm "helium-browser-app" {
-    "helium-wrapper" = lib.getExe helium-browser;
+    "helium-wrapper" = lib.meta.getExe helium-browser;
     # Tweezle matches desktop_exec against the configured launcher name
     "helium.desktop" = "${helium-configured}/share/applications/helium.desktop";
     "product_logo_256.png" = "${helium-browser}/share/icons/hicolor/256x256/apps/helium.png";
@@ -39,12 +39,12 @@ let
     <?xml version="1.0"?>
     <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
     <fontconfig>
-      <dir>${lib.escapeXML "${profile}/share/fonts"}</dir>
+      <dir>${lib.strings.escapeXML "${profile}/share/fonts"}</dir>
     </fontconfig>
   '';
 in
-assert lib.assertMsg (
-  home != "" && lib.hasPrefix "/" home
+assert lib.asserts.assertMsg (
+  home != "" && lib.strings.hasPrefix "/" home
 ) "Hjem requires an absolute HOME in its runtime environment";
 {
   packages = map toString packages;

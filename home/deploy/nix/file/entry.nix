@@ -12,7 +12,7 @@ in
   type = if private || mutable then "copy" else "symlink";
 }
 // contents
-// lib.optionalAttrs (private || mutable) {
+// lib.attrsets.optionalAttrs (private || mutable) {
   permissions =
     if private then
       if executable then "0700" else "0600"

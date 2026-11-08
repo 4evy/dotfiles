@@ -2,7 +2,7 @@
 let
   inherit (pkgs) lib nerd-fonts unstable;
 in
-lib.attrValues {
+lib.attrsets.attrValues {
   # Bootstrap tools also remain available before the first Hjem activation
   inherit (pkgs)
     bash

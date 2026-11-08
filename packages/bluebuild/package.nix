@@ -6,7 +6,7 @@
 let
   sourcePin = dotfilesSourcePins.bluebuild-cli;
   src = sourcePin.outPath;
-  manifest = lib.importTOML (src + "/Cargo.toml");
+  manifest = lib.trivial.importTOML (src + "/Cargo.toml");
   version = manifest.workspace.package.version;
 in
 rustPlatform.buildRustPackage {
@@ -40,6 +40,6 @@ rustPlatform.buildRustPackage {
     homepage = "https://github.com/blue-build/cli";
     license = lib.licenses.asl20;
     mainProgram = "bluebuild";
-    platforms = lib.platforms.linux;
+    platforms = lib.systems.doubles.linux;
   };
 }

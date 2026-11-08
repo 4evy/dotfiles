@@ -29,7 +29,8 @@
 }:
 
 let
-  pins = lib.importJSON ./sources.json;
+  pins = lib.trivial.importJSON ./sources.json;
+  artifactRevisionPrefixLength = 8;
 
   sources = {
     aarch64-darwin = {
@@ -86,9 +87,9 @@ let
     if [ ! -e /etc/NIXOS ]; then
       driver_files="''${VK_ADD_DRIVER_FILES:+$VK_ADD_DRIVER_FILES:}${mesa}/share/vulkan/icd.d"
       if [ -d /sys/module/nvidia ]; then
-        host_driver_path=$(${lib.getExe nix-gl-host} --print-ld-library-path) || exit "$?"
+        host_driver_path=$(${lib.meta.getExe nix-gl-host} --print-ld-library-path) || exit "$?"
         export LD_LIBRARY_PATH="$host_driver_path''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-        nvidia_icd=$(${lib.getExe nvidiaIcd}) || exit "$?"
+        nvidia_icd=$(${lib.meta.getExe nvidiaIcd}) || exit "$?"
         driver_files="$driver_files''${nvidia_icd:+:$nvidia_icd}"
       fi
       if [ -z "''${VK_DRIVER_FILES:-}" ] && [ -z "''${VK_ICD_FILENAMES:-}" ]; then
@@ -171,7 +172,7 @@ let
               zenity
             ]
           }" \
-          --run ${lib.escapeShellArg graphicsEnvironment}
+          --run ${lib.strings.escapeShellArg graphicsEnvironment}
         makeBinaryWrapper "$out/lib/super-engineering/bin/sc" "$out/bin/sc"
       '';
       passthru = {
@@ -193,7 +194,7 @@ let
     };
 
   # Run from the repository root to refresh every platform, including same-day builds
-  updateScript = lib.getExe (writeShellApplication {
+  updateScript = lib.meta.getExe (writeShellApplication {
     name = "update-super-engineering";
     runtimeInputs = [
       coreutils
@@ -213,21 +214,21 @@ let
       darwin_version="0-unstable-$(jq -er '.date' <<< "$darwin_payload")"
       hashes='{}'
 
-      ${lib.concatMapStringsSep "\n" (
-        system:
+      ${lib.strings.concatMapAttrsStringSep "\n" (
+        system: source:
         let
-          isDarwin = lib.hasSuffix "-darwin" system;
-          target = if isDarwin then "aarch64-apple-darwin" else "${sources.${system}.arch}-unknown-linux-gnu";
+          isDarwin = lib.strings.hasSuffix "-darwin" system;
+          target = if isDarwin then "aarch64-apple-darwin" else "${source.arch}-unknown-linux-gnu";
         in
         ''
-          url=$(jq -er --arg target ${lib.escapeShellArg target} '.artifacts[$target].url' \
+          url=$(jq -er --arg target ${lib.strings.escapeShellArg target} '.artifacts[$target].url' \
             <<< "${if isDarwin then "$darwin_payload" else "$payload"}")
           hash=$(nix --extra-experimental-features nix-command store prefetch-file --json "$url" \
             | jq -er '.hash')
-          hashes=$(jq --arg system ${lib.escapeShellArg system} --arg hash "$hash" \
+          hashes=$(jq --arg system ${lib.strings.escapeShellArg system} --arg hash "$hash" \
             '. + {($system): $hash}' <<< "$hashes")
         ''
-      ) (builtins.attrNames sources)}
+      ) sources}
 
       staged=$(mktemp "$file.XXXXXX")
       trap 'rm -f "$staged"' EXIT
@@ -251,7 +252,7 @@ let
 
     src = fetchurl {
       url = "https://releases.super.engineering/linux/nightly/${finalAttrs.passthru.rev}/super-engineering-nightly-${
-        builtins.substring 0 8 finalAttrs.passthru.rev
+        builtins.substring 0 artifactRevisionPrefixLength finalAttrs.passthru.rev
       }-linux-${source.arch}.tar.gz";
       hash = sourceHash;
     };
@@ -311,7 +312,7 @@ let
 
     src = fetchurl {
       url = "https://releases.super.engineering/nightly/super.engineering-nightly-${
-        builtins.substring 0 8 finalAttrs.passthru.rev
+        builtins.substring 0 artifactRevisionPrefixLength finalAttrs.passthru.rev
       }-${source.arch}.dmg";
       hash = sourceHash;
     };

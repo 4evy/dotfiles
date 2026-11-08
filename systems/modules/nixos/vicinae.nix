@@ -12,7 +12,7 @@ in
 {
   boot.kernelModules = [ "uinput" ];
 
-  environment.systemPackages = lib.attrValues { inherit vicinaePackage; };
+  environment.systemPackages = lib.attrsets.attrValues { inherit vicinaePackage; };
 
   programs.vicinae.input-server = {
     enable = true;
@@ -28,7 +28,7 @@ in
     unitConfig.ConditionUser = config.local.user.name;
     serviceConfig = {
       Type = "simple";
-      ExecStart = "${lib.getExe vicinaePackage} server --replace";
+      ExecStart = "${lib.meta.getExe vicinaePackage} server --replace";
       Restart = "always";
       RestartSec = 60;
       KillMode = "process";

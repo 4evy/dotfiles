@@ -49,7 +49,7 @@ in
       type = passwdEntry path;
       readOnly = true;
       default = user.home;
-      defaultText = lib.literalExpression "config.users.users.\${config.local.user.name}.home";
+      defaultText = lib.options.literalExpression "config.users.users.\${config.local.user.name}.home";
       apply = toString;
       description = "Home directory of the primary interactive user.";
     };
@@ -58,7 +58,7 @@ in
       type = passwdEntry nonEmptyStr;
       readOnly = true;
       default = user.group;
-      defaultText = lib.literalExpression "config.users.users.\${config.local.user.name}.group";
+      defaultText = lib.options.literalExpression "config.users.users.\${config.local.user.name}.group";
       description = "Primary group of the primary interactive user.";
     };
   };
@@ -66,7 +66,7 @@ in
   config = {
     assertions = [
       {
-        assertion = lib.hasAttr cfg.name config.users.users;
+        assertion = lib.attrsets.hasAttr cfg.name config.users.users;
         message = "local.user.name must identify an account declared in users.users.";
       }
       {

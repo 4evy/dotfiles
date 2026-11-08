@@ -1,7 +1,7 @@
 { lib, platform }:
 let
   caches = builtins.filter (cache: !(cache ? platforms) || builtins.elem platform cache.platforms) (
-    lib.importJSON ../../../data/nix/caches.json
+    lib.trivial.importJSON ../../../data/nix/caches.json
   );
 in
 {

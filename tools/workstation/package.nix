@@ -10,22 +10,22 @@
   aiTools,
 }:
 let
-  metadata = lib.importJSON ./package.json;
+  metadata = lib.trivial.importJSON ./package.json;
   inherit (aiTools) farstep-desktop;
   inherit (bun2nix) hook;
-  wrapperArgs = lib.optionals stdenvNoCC.hostPlatform.isLinux [
+  wrapperArgs = lib.lists.optionals stdenvNoCC.hostPlatform.isLinux [
     "--prefix"
     "PATH"
     ":"
-    (lib.makeBinPath [
+    (lib.strings.makeBinPath [
       gjs
       farstep-desktop
     ])
     "--prefix"
     "GI_TYPELIB_PATH"
     ":"
-    (lib.makeSearchPath "lib/girepository-1.0" [
-      (lib.getLib glib)
+    (lib.strings.makeSearchPath "lib/girepository-1.0" [
+      (lib.attrsets.getLib glib)
       flatpak
     ])
   ];
@@ -59,7 +59,7 @@ stdenvNoCC.mkDerivation {
     ];
   };
   bunDeps = import ../../nix/lib/bun/dependencies.nix { inherit lib bun2nix; };
-  nativeBuildInputs = lib.attrValues {
+  nativeBuildInputs = lib.attrsets.attrValues {
     inherit bun hook makeBinaryWrapper;
   };
   strictDeps = true;
@@ -87,7 +87,7 @@ stdenvNoCC.mkDerivation {
   installPhase = ''
     runHook preInstall
     install -Dm755 tools/workstation/dist/workstation "$out/libexec/workstation"
-    makeWrapper "$out/libexec/workstation" "$out/bin/workstation" --inherit-argv0 ${lib.escapeShellArgs wrapperArgs}
+    makeWrapper "$out/libexec/workstation" "$out/bin/workstation" --inherit-argv0 ${lib.strings.escapeShellArgs wrapperArgs}
     while IFS= read -r command; do
       ln -s workstation "$out/bin/$command"
     done < commands

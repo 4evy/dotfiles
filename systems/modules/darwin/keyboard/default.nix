@@ -13,16 +13,16 @@ let
     rsync
     writeText
     ;
-  codesignHelper = lib.getExe' dotfiles-typescript-tools "dotfiles-codesign";
-  logitechHelper = lib.getExe' dotfiles-typescript-tools "dotfiles-logitech";
+  codesignHelper = lib.meta.getExe' dotfiles-typescript-tools "dotfiles-codesign";
+  logitechHelper = lib.meta.getExe' dotfiles-typescript-tools "dotfiles-logitech";
   app = "/Applications/Kanata.app";
   executable = "${app}/Contents/MacOS/kanata";
   configFile = ../../../../home/files/.config/kanata/macos.kbd;
   driverRoot = "/Library/Application Support/org.pqrs/Karabiner-DriverKit-VirtualHIDDevice";
   driver = "Karabiner-VirtualHIDDevice-Daemon";
   manager = "/Applications/.Karabiner-VirtualHIDDevice-Manager.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Manager";
-  driverVersion = lib.head (
-    lib.match ".*Device-([0-9.]+)[.]pkg" (lib.importJSON ../../../../flake.lock)
+  driverVersion = lib.lists.head (
+    lib.strings.match ".*Device-([0-9.]+)[.]pkg" (lib.trivial.importJSON ../../../../flake.lock)
     .nodes.source-karabiner-vhid-package.locked.url
   );
   # installer requires a .pkg filename, unlike the flake's raw source path
@@ -47,7 +47,7 @@ let
   };
   bundle = linkFarm "kanata-app" {
     "Contents/Info.plist" = info;
-    "Contents/MacOS/kanata" = lib.getExe kanata-with-cmd;
+    "Contents/MacOS/kanata" = lib.meta.getExe kanata-with-cmd;
   };
   launcher = writeText "kanata-start" ''
     set -eu
@@ -55,13 +55,13 @@ let
       | /usr/bin/grep -Fq '"Product" = "Pebble K380s"'; do
       /bin/sleep 1
     done
-    /bin/wait4path ${lib.escapeShellArg executable}
+    /bin/wait4path ${lib.strings.escapeShellArg executable}
     # Configure the keyboard before Kanata opens it exclusively
     PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin \
       ${logitechHelper} \
       --product-id 0xB377 --product-name 'Pebble K380s' --platform 0 || true
     exec ${
-      lib.escapeShellArgs [
+      lib.strings.escapeShellArgs [
         executable
         "--no-wait"
         "--cfg"
@@ -117,10 +117,10 @@ in
             | /usr/bin/awk '/^version:/ { print $2 }'); then
             installed=
           fi
-          if [ "$installed" != ${lib.escapeShellArg driverVersion} ]; then
+          if [ "$installed" != ${lib.strings.escapeShellArg driverVersion} ]; then
             /usr/sbin/installer -pkg ${driverPackage} -target /
           fi
-          ${lib.escapeShellArg manager} forceActivate
+          ${lib.strings.escapeShellArg manager} forceActivate
           /bin/mkdir -p /var/log/karabiner
         '';
       };
@@ -130,16 +130,16 @@ in
       keyboard-app = {
         deps = [ "keyboard-driver" ];
         text = ''
-          /bin/mkdir -p ${lib.escapeShellArg app}
-          kanata_changes=$(${lib.getExe rsync} --recursive --checksum --perms --links \
+          /bin/mkdir -p ${lib.strings.escapeShellArg app}
+          kanata_changes=$(${lib.meta.getExe rsync} --recursive --checksum --perms --links \
             --copy-unsafe-links --chmod=u+w --itemize-changes \
-            ${bundle}/ ${lib.escapeShellArg "${app}/"})
+            ${bundle}/ ${lib.strings.escapeShellArg "${app}/"})
           PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin \
             ${codesignHelper} \
-            ${lib.escapeShellArg app} --administrator-trust --entitlements ${entitlements}
+            ${lib.strings.escapeShellArg app} --administrator-trust --entitlements ${entitlements}
           if [ -n "$kanata_changes" ]; then
             /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
-              -f ${lib.escapeShellArg app}
+              -f ${lib.strings.escapeShellArg app}
             /bin/launchctl kill SIGTERM system/dev.4evy.kanata 2>/dev/null || true
           fi
         '';

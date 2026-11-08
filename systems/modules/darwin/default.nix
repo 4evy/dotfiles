@@ -55,7 +55,7 @@ in
     };
   };
   environment = {
-    system.packages = lib.attrValues {
+    system.packages = lib.attrsets.attrValues {
       inherit (inputs.hjem.packages.${stdenv.hostPlatform.system}) hjem;
       inherit (inputs.self.packages.aarch64-darwin) dotfiles-nix-tools dotfiles-workstation;
     };

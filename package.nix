@@ -7,7 +7,7 @@
 }:
 let
   root = ./.;
-  entrypoints = (lib.importJSON ./package.json).bin;
+  entrypoints = (lib.trivial.importJSON ./package.json).bin;
 in
 stdenvNoCC.mkDerivation {
   name = "dotfiles-typescript-tools";
@@ -30,7 +30,7 @@ stdenvNoCC.mkDerivation {
         ./data/macos/permissions.json
         ./systems/modules/darwin/permissions
       ]
-      ++ map (path: root + "/${path}") (lib.attrValues entrypoints)
+      ++ map (path: root + "/${path}") (lib.attrsets.attrValues entrypoints)
     );
   };
   bunDeps = import ./nix/lib/bun/dependencies.nix { inherit lib bun2nix; };
@@ -55,15 +55,13 @@ stdenvNoCC.mkDerivation {
   buildPhase = ''
     runHook preBuild
     mkdir -p "$out/libexec" "$out/bin"
-    ${lib.concatStringsSep "\n" (
-      lib.mapAttrsToList (name: source: ''
-        bun build --target=bun --format=esm --minify \
-          --outfile="$out/libexec/${name}.js" ${lib.escapeShellArg source}
-        makeWrapper ${lib.getExe bun} "$out/bin/${name}" \
-          --add-flag "$out/libexec/${name}.js" \
-          --set-default DOTFILES_REPO "$out/share/dotfiles"
-      '') entrypoints
-    )}
+    ${lib.strings.concatMapAttrsStringSep "\n" (name: source: ''
+      bun build --target=bun --format=esm --minify \
+        --outfile="$out/libexec/${name}.js" ${lib.strings.escapeShellArg source}
+      makeWrapper ${lib.meta.getExe bun} "$out/bin/${name}" \
+        --add-flag "$out/libexec/${name}.js" \
+        --set-default DOTFILES_REPO "$out/share/dotfiles"
+    '') entrypoints}
     runHook postBuild
   '';
 
@@ -77,7 +75,9 @@ stdenvNoCC.mkDerivation {
   doInstallCheck = true;
   installCheckPhase = ''
     runHook preInstallCheck
-    ${lib.concatMapStringsSep "\n" (name: ''"$out/bin/${name}" --help'') (lib.attrNames entrypoints)}
+    ${lib.strings.concatMapStringsSep "\n" (name: ''"$out/bin/${name}" --help'') (
+      lib.attrsets.attrNames entrypoints
+    )}
     runHook postInstallCheck
   '';
 

@@ -12,7 +12,7 @@
     hjemHome =
       runtimeJSON:
       let
-        runtime = lib.fromJSON runtimeJSON;
+        runtime = builtins.fromJSON runtimeJSON;
       in
       withSystem runtime.system (
         { pkgs, ... }:
@@ -28,11 +28,11 @@
         { pkgs, self', ... }:
         let
           inherit (pkgs) callPackage writeText;
-          runtime = lib.fromJSON runtimeJSON;
+          runtime = builtins.fromJSON runtimeJSON;
           configuration = import ../../home/deploy/nix {
             inherit pkgs;
             inherit (runtime) environment;
-            packages = lib.attrValues {
+            packages = lib.attrsets.attrValues {
               inherit (inputs.hjem.packages.x86_64-linux) hjem;
               inherit (self'.packages) dotfiles-nix-tools dotfiles-apps dotfiles-user-tools;
               chatgpt = callPackage ../../home/files/.local/share/nix/chatgpt/package.nix { };

@@ -6,7 +6,7 @@
 }:
 let
   inherit (pkgs) dotfiles-typescript-tools;
-  permissionsHelper = lib.getExe' dotfiles-typescript-tools "dotfiles-permissions";
+  permissionsHelper = lib.meta.getExe' dotfiles-typescript-tools "dotfiles-permissions";
 in
 {
   environment.system.packages = [ dotfiles-typescript-tools ];
@@ -19,7 +19,7 @@ in
       ];
       text = ''
         PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin \
-          ${permissionsHelper} --user ${lib.escapeShellArg config.system.primary.user}
+          ${permissionsHelper} --user ${lib.strings.escapeShellArg config.system.primary.user}
       '';
     };
     launchd.deps = [ "dotfiles-permissions" ];

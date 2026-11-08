@@ -21,7 +21,7 @@ in
       homepage = "https://github.com/4evy/dotfiles";
       license = lib.licenses.mit;
       maintainers = [ lib.maintainers._4evy ];
-      platforms = lib.platforms.all;
+      platforms = lib.systems.doubles.all;
     };
     strictDeps = true;
   }

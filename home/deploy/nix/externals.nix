@@ -35,7 +35,7 @@ let
     source: target:
     map (path: {
       source = path;
-      target = "${target}/${lib.removePrefix "${toString source}/" (toString path)}";
+      target = "${target}/${lib.strings.removePrefix "${toString source}/" (toString path)}";
     }) (lib.filesystem.listFilesRecursive source);
   font = {
     type = "symlink";
@@ -43,5 +43,5 @@ let
     target = ".local/share/fonts/NotoColorEmoji/NotoColorEmoji.ttf";
   };
 in
-lib.concatMap (framework: files framework.source framework.target) frameworks
-++ lib.optional (os == "darwin") font
+lib.lists.concatMap (framework: files framework.source framework.target) frameworks
+++ lib.lists.optional (os == "darwin") font

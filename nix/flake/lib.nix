@@ -10,7 +10,7 @@ in
 {
   _class = "flake";
 
-  options.flake.lib = lib.mkOption {
+  options.flake.lib = lib.options.mkOption {
     type = lib.types.lazyAttrsOf lib.types.raw;
     default = { };
     description = "Repository library functions and metadata";
@@ -25,14 +25,16 @@ in
         aiConfigs =
           runtimeJSON:
           let
-            runtime = lib.fromJSON runtimeJSON;
+            runtime = builtins.fromJSON runtimeJSON;
           in
           inputs.ai.lib.mkConfigs {
             inherit (runtime) system;
-            host = lib.importJSON runtime.hostFile;
+            host = lib.trivial.importJSON runtime.hostFile;
           };
         patchesSource = inputs.patches.outPath;
-        checkNames = lib.genAttrs config.systems (system: lib.attrNames inputs.self.checks.${system});
+        checkNames = lib.attrsets.genAttrs config.systems (
+          system: lib.attrsets.attrNames inputs.self.checks.${system}
+        );
         equicordQuickCss = equicord.quickCss;
         equicordSettingsJson = equicord.settings.jsonConfig;
         patchStackSources = inputs.patches.stackSources;
