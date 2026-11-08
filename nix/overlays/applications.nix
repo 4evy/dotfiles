@@ -19,10 +19,10 @@ let
   inherit (inputs.nixcord.packages.${system}) discord equicord;
   heliumDarwin = helium-browser.overrideAttrs (
     finalAttrs: old: {
-      version = "0.20.1.1";
+      version = "0.21.1.1";
       src = fetchurl {
         url = "https://github.com/imputnet/helium-macos/releases/download/${finalAttrs.version}/helium_${finalAttrs.version}_arm64-macos.dmg";
-        hash = "sha256-WhFxjqIjeh5Z8shPrPIWar24B3M5kIXWzXhF1z8dc5o=";
+        hash = "sha256-4L441LObjOEgt8fu2hKOz7oOZhHV0j8vurLjUQwnYzE=";
       };
       passthru = (old.passthru or { }) // {
         upstreamVersion = finalAttrs.version;

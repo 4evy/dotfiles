@@ -269,7 +269,7 @@
     {
       "description": "Keep Biome aligned with the formatter in the pinned Nixpkgs inputs",
       "matchPackageNames": ["@biomejs/biome"],
-      "allowedVersions": "2.5.15"
+      "allowedVersions": "2.6.4"
     },
     {
       "description": "Module images must retain the recipe module API major",

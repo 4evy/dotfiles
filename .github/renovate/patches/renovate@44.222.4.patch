@@ -11,10 +11,10 @@ index e59101d..b228b55 100644
      autoMergeAllowed
      mergeCommitAllowed
 diff --git a/dist/modules/platform/github/index.js b/dist/modules/platform/github/index.js
-index 6008998..80cfb42 100644
+index 03ffdce..7f7d85c 100644
 --- a/dist/modules/platform/github/index.js
 +++ b/dist/modules/platform/github/index.js
-@@ -397,7 +397,10 @@ async function initRepo({ repository, forkCreation, forkOrg, forkToken, gitUrl,
+@@ -407,7 +407,10 @@ async function initRepo({ repository, forkCreation, forkOrg, forkToken, gitUrl,
  		else if (repo.rebaseMergeAllowed) config.mergeMethod = "rebase";
  		else logger.debug("Could not find allowed merge methods for repo");
  		config.autoMergeAllowed = repo.autoMergeAllowed;
@@ -26,7 +26,7 @@ index 6008998..80cfb42 100644
  		config.hasVulnerabilityAlertsEnabled = repo.hasVulnerabilityAlertsEnabled;
  		config.mergeQueueEnabled[config.defaultBranch] = isNonEmptyObject(repo.mergeQueue);
  		const recentIssues = GithubIssue.array().catch([]).parse(res?.data?.repository?.issues?.nodes);
-@@ -583,6 +586,7 @@ async function fetchPr(prNo) {
+@@ -593,6 +596,7 @@ async function fetchPr(prNo) {
  	}
  }
  async function getPr(prNo, refreshCache = false) {
@@ -34,7 +34,7 @@ index 6008998..80cfb42 100644
  	if (!prNo) return null;
  	if (refreshCache) return fetchPr(prNo);
  	let pr = (await getPrList()).find(({ number }) => number === prNo) ?? null;
-@@ -596,6 +600,8 @@ function matchesState(state, desiredState) {
+@@ -606,6 +610,8 @@ function matchesState(state, desiredState) {
  	return state === desiredState;
  }
  async function getPrList() {
@@ -43,7 +43,7 @@ index 6008998..80cfb42 100644
  	if (!config.prList) {
  		const repo = config.parentRepo ?? config.repository;
  		let username = config.renovateUsername;
-@@ -606,6 +612,7 @@ async function getPrList() {
+@@ -616,6 +622,7 @@ async function getPrList() {
  	return config.prList;
  }
  async function findPr({ branchName, prTitle, state = "all", includeOtherAuthors }) {
@@ -51,7 +51,7 @@ index 6008998..80cfb42 100644
  	logger.debug(`findPr(${branchName}, ${prTitle}, ${state})`);
  	if (includeOtherAuthors) {
  		const repo = config.parentRepo ?? config.repository;
-@@ -910,6 +917,8 @@ async function closeIssue(issueNumber) {
+@@ -919,6 +926,8 @@ async function closeIssue(issueNumber) {
  	}
  }
  async function ensureIssue({ title, reuseTitle, body: rawBody, labels, once = false, shouldReOpen = true }) {
@@ -60,7 +60,7 @@ index 6008998..80cfb42 100644
  	logger.debug(`ensureIssue(${title})`);
  	/* v8 ignore next -- specs initialize repos with issues enabled */
  	if (config.hasIssuesEnabled === false) {
-@@ -1217,6 +1226,9 @@ async function tryPrAutomerge(prNumber, prNodeId, platformPrOptions) {
+@@ -1226,6 +1235,9 @@ async function tryPrAutomerge(prNumber, prNodeId, platformPrOptions) {
  	}
  }
  async function createPr({ sourceBranch, targetBranch, prTitle: title, prBody: rawBody, labels, draftPR = false, platformPrOptions, milestone }) {
@@ -71,7 +71,7 @@ index 6008998..80cfb42 100644
  	const base = targetBranch;
  	const head = `${config.repository.split("/")[0]}:${sourceBranch}`;
 diff --git a/dist/util/git/index.js b/dist/util/git/index.js
-index cc11676..bfa48ba 100644
+index a087a75..21f8957 100644
 --- a/dist/util/git/index.js
 +++ b/dist/util/git/index.js
 @@ -619,6 +619,8 @@ async function resetHardFromRemote(remoteAndBranch) {
@@ -92,7 +92,7 @@ index cc11676..bfa48ba 100644
  	await syncGit();
  	if (isVirtualBranch(branchName)) {
  		const ref = remoteBranchRef(branchName);
-@@ -884,6 +888,8 @@ async function mergeToLocal(branchName) {
+@@ -887,6 +891,8 @@ async function mergeToLocal(branchName, { localBranch = false } = {}) {
  	}
  }
  async function mergeBranch(branchName) {
@@ -101,7 +101,7 @@ index cc11676..bfa48ba 100644
  	let status;
  	try {
  		await syncGit();
-@@ -904,6 +910,9 @@ async function mergeBranch(branchName) {
+@@ -907,6 +913,9 @@ async function mergeBranch(branchName) {
  		await gitRetry(() => git.push("origin", config.currentBranch));
  		incLimitedValue("Commits");
  	} catch (err) {
@@ -111,7 +111,7 @@ index cc11676..bfa48ba 100644
  		logger.debug({
  			baseBranch: config.currentBranch,
  			baseSha: config.currentBranchSha,
-@@ -1095,7 +1104,13 @@ async function prepareCommit({ branchName, files, message, trailers, force = fal
+@@ -1098,7 +1107,13 @@ async function prepareCommit({ branchName, files, message, trailers, force = fal
  	}
  }
  async function pushCommit({ sourceRef, targetRef, files, pushOptions }) {
@@ -125,7 +125,7 @@ index cc11676..bfa48ba 100644
  	logger.debug(`Pushing refSpec ${sourceRef}:${targetRef ?? sourceRef}`);
  	let result = false;
  	try {
-@@ -1176,6 +1191,8 @@ let remoteRefsExist = false;
+@@ -1179,6 +1194,8 @@ let remoteRefsExist = false;
  *
  */
  async function pushCommitToRenovateRef(commitSha, refName) {
@@ -135,10 +135,10 @@ index cc11676..bfa48ba 100644
  	await git.raw([
  		"update-ref",
 diff --git a/dist/workers/repository/update/pr/index.js b/dist/workers/repository/update/pr/index.js
-index 16082a3..6119a3b 100644
+index a41ae1d..2d8955e 100644
 --- a/dist/workers/repository/update/pr/index.js
 +++ b/dist/workers/repository/update/pr/index.js
-@@ -69,6 +69,16 @@ function addPullRequestNoteIfAttestationHasBeenLost(upgrade, currentReleaseHasAt
+@@ -71,6 +71,16 @@ function addPullRequestNoteIfAttestationHasBeenLost(upgrade, currentReleaseHasAt
  	}
  }
  async function ensurePr(prConfig) {
@@ -155,16 +155,3 @@ index 16082a3..6119a3b 100644
  	const config = { ...prConfig };
  	const filteredPrConfig = generatePrBodyFingerprintConfig(config);
  	const prBodyFingerprint = fingerprint(filteredPrConfig);
-diff --git a/package.json b/package.json
-index e453d5d..7124da1 100644
---- a/package.json
-+++ b/package.json
-@@ -83,7 +83,7 @@
-   },
-   "homepage": "https://renovatebot.com",
-   "engines": {
--    "node": "^24.11.0",
-+    "node": "^24.11.0 || ^26.0.0",
-     "pnpm": "^11.0.0"
-   },
-   "dependencies": {
