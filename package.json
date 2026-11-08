@@ -40,8 +40,8 @@
   "devDependencies": {
     "@biomejs/biome": "2.6.4",
     "@catppuccin/palette": "1.8.0",
-    "@oh-my-pi/pi-coding-agent": "18.16.0",
-    "@oh-my-pi/pi-tui": "18.16.0",
+    "@oh-my-pi/pi-coding-agent": "18.18.1",
+    "@oh-my-pi/pi-tui": "18.18.1",
     "@types/bun": "catalog:",
     "@types/culori": "4.0.1",
     "@types/write-file-atomic": "4.0.3",
