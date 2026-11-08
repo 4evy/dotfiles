@@ -199,31 +199,63 @@ function rewritePaths(patch: string, left: string, right: string): string {
     })
     .join("");
 }
+// Node Readable.pipe initializes Bun's process.stderr and makes its inherited
+// pipe nonblocking, breaking jj's concurrent writes to the same pager pipe
+const captureDiffCommand = Effect.fn("jjDiff.captureCommand")(function* (
+  argv: string[],
+  input?: string,
+) {
+  return yield* Effect.acquireUseRelease(
+    Effect.try({
+      try: () =>
+        Bun.spawn(argv, {
+          stdin: input === undefined ? "ignore" : new Blob([input]),
+          stdout: "pipe",
+          stderr: "pipe",
+        }),
+      catch: (cause) => new DotfilesError(`Could not run ${argv[0]}`, { cause }),
+    }),
+    (child) =>
+      Effect.tryPromise({
+        try: async () => {
+          const [code, stdout, stderr] = await Promise.all([
+            child.exited,
+            new Response(child.stdout).text(),
+            new Response(child.stderr).text(),
+          ]);
+          return { code, stdout, stderr };
+        },
+        catch: (cause) => new DotfilesError(`Could not run ${argv[0]}`, { cause }),
+      }),
+    (child) =>
+      Effect.promise(async () => {
+        if (child.exitCode === null && child.signalCode === null) child.kill();
+        await child.exited;
+      }),
+  );
+});
 const gitDiff = Effect.fn("jjDiff.gitDiff")(function* (
   left: string,
   right: string,
   color: boolean,
 ) {
-  const result = yield* run(
-    [
-      "git",
-      "--no-pager",
-      "-c",
-      "color.diff.meta=normal",
-      "diff",
-      "--no-index",
-      "--no-ext-diff",
-      "--no-textconv",
-      "--no-renames",
-      `--color=${color ? "always" : "never"}`,
-      "--src-prefix=a/",
-      "--dst-prefix=b/",
-      "--",
-      left,
-      right,
-    ],
-    { capture: true, check: false },
-  );
+  const result = yield* captureDiffCommand([
+    "git",
+    "--no-pager",
+    "-c",
+    "color.diff.meta=normal",
+    "diff",
+    "--no-index",
+    "--no-ext-diff",
+    "--no-textconv",
+    "--no-renames",
+    `--color=${color ? "always" : "never"}`,
+    "--src-prefix=a/",
+    "--dst-prefix=b/",
+    "--",
+    left,
+    right,
+  ]);
   if (![0, 1].includes(result.code))
     return yield* Effect.fail(
       new DotfilesError(
@@ -256,7 +288,7 @@ const diffstat = Effect.fn("jjDiff.diffstat")(function* (
   width: number,
   color: boolean,
 ) {
-  const result = yield* run(
+  const result = yield* captureDiffCommand(
     [
       "diffstat",
       "-E",
@@ -268,7 +300,7 @@ const diffstat = Effect.fn("jjDiff.diffstat")(function* (
       String(width),
       ...(color ? ["-C"] : []),
     ],
-    { capture: true, check: false, input: annotateStatuses(patch) },
+    annotateStatuses(patch),
   );
   if (result.code !== 0)
     return yield* Effect.fail(
