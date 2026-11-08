@@ -31,8 +31,7 @@ export const updateTomlOptions = Effect.fn(function* (
     config.options === undefined
       ? {}
       : yield* Schema.decodeUnknownEffect(object)(config.options);
-  if (Object.entries(values).every(([key, value]) => options[key] === value))
-    return;
+  if (Object.entries(values).every(([key, value]) => options[key] === value)) return;
   const mode = exists ? (yield* fs.stat(path)).mode & 0o7777 : 0o600;
   const content = yield* Effect.try({
     try: () =>
@@ -40,8 +39,7 @@ export const updateTomlOptions = Effect.fn(function* (
         ...config,
         options: { ...options, ...values },
       }),
-    catch: (error) =>
-      new DotfilesError(`Cannot serialize application TOML: ${error}`),
+    catch: (error) => new DotfilesError(`Cannot serialize application TOML: ${error}`),
   });
   yield* writeIfChanged(path, content, mode);
 });
@@ -57,8 +55,7 @@ const linkRustdesk = Effect.fn(function* (home: string) {
       () => Effect.succeed(undefined),
     ),
   );
-  if (state?.type === "SymbolicLink" && (yield* fs.readLink(link)) === target)
-    return;
+  if (state?.type === "SymbolicLink" && (yield* fs.readLink(link)) === target) return;
   yield* fs.makeDirectory(dirname(link), { recursive: true });
   yield* fs.remove(link, { force: true });
   yield* fs.symlink(target, link);
@@ -80,14 +77,9 @@ export const rustdesk = Effect.fn(function* () {
 });
 
 if (import.meta.main) {
-  runParser(
-    argument(choice(["rustdesk"])),
-    "applications.ts",
-    Bun.argv.slice(2),
-    {
-      help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
-      onError: process.exit,
-    },
-  );
+  runParser(argument(choice(["rustdesk"])), "applications.ts", Bun.argv.slice(2), {
+    help: { option: { names: ["-h", "--help"] }, onShow: process.exit },
+    onError: process.exit,
+  });
   runMain(rustdesk());
 }

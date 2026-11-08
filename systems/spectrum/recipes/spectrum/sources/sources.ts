@@ -29,19 +29,13 @@ const StackSources = Schema.Record(
   Schema.Struct({ canonical: Schema.String, revision: Schema.String }),
 );
 
-function inputPin(
-  lock: typeof Lock.Type,
-  name: string,
-): Record<string, unknown> {
+function inputPin(lock: typeof Lock.Type, name: string): Record<string, unknown> {
   const rootInputs = lock.nodes[lock.root]?.inputs;
   const dependencies = rootInputs?.dependencies;
   const inputs =
-    typeof dependencies === "string"
-      ? lock.nodes[dependencies]?.inputs
-      : rootInputs;
+    typeof dependencies === "string" ? lock.nodes[dependencies]?.inputs : rootInputs;
   const nodeName = inputs?.[name];
-  if (typeof nodeName !== "string")
-    throw new Error(`Unresolved source input: ${name}`);
+  if (typeof nodeName !== "string") throw new Error(`Unresolved source input: ${name}`);
   const node = lock.nodes[nodeName];
   if (!node?.locked) throw new Error(`Unlocked source input: ${name}`);
   return { ...node.locked, ref: node.original?.ref ?? null };
@@ -91,13 +85,7 @@ const main = Effect.gen(function* () {
     yield* fs.readFileString(join(ROOT, "flake.lock")),
   );
   const evaluation = yield* output(
-    [
-      "nix",
-      "eval",
-      ".#lib.spectrumBuildData",
-      "--json",
-      "--no-write-lock-file",
-    ],
+    ["nix", "eval", ".#lib.spectrumBuildData", "--json", "--no-write-lock-file"],
     { cwd: ROOT, stderr: "inherit" },
   );
   const buildData = yield* Schema.decodeUnknownEffect(
@@ -136,10 +124,7 @@ const main = Effect.gen(function* () {
         names.map((name) => [name, sourcePin(name, lock, stackSources)]),
       ),
     );
-    yield* fs.writeFileString(
-      join(directory, `${group}.json`),
-      stableJson({ pins }),
-    );
+    yield* fs.writeFileString(join(directory, `${group}.json`), stableJson({ pins }));
   }
   const patches = yield* Schema.decodeUnknownEffect(
     Schema.Struct({

@@ -49,9 +49,7 @@ interface RexTheme {
 function syncThemes() {
   ObjC.import("Foundation");
   const home = ObjC.unwrap($.NSHomeDirectory());
-  const defaults = $.NSUserDefaults.alloc.initWithSuiteName(
-    "com.superlogical.rex",
-  );
+  const defaults = $.NSUserDefaults.alloc.initWithSuiteName("com.superlogical.rex");
   const key = "Workspace.customThemes";
   const data = defaults.dataForKey(key);
   const current: RexTheme[] = ObjC.unwrap(data)
@@ -139,10 +137,7 @@ function syncThemes() {
   updated.push(...managed);
   const json = JSON.stringify(updated);
   if (JSON.stringify(current) !== json) {
-    defaults.setObjectForKey(
-      $(json).dataUsingEncoding($.NSUTF8StringEncoding),
-      key,
-    );
+    defaults.setObjectForKey($(json).dataUsingEncoding($.NSUTF8StringEncoding), key);
   }
   for (const appearance of ["light", "dark"] as const) {
     const selection = `Workspace.${appearance}ThemeID`;
@@ -155,12 +150,6 @@ function syncThemes() {
 }
 
 process.exitCode = await Bun.spawn(
-  [
-    "/usr/bin/osascript",
-    "-l",
-    "JavaScript",
-    "-e",
-    `(${syncThemes.toString()})()`,
-  ],
+  ["/usr/bin/osascript", "-l", "JavaScript", "-e", `(${syncThemes.toString()})()`],
   { stdout: "inherit", stderr: "inherit" },
 ).exited;

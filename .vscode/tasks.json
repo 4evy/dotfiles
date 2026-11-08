@@ -185,14 +185,7 @@
       "detail": "Type-check the current file with ty.",
       "type": "process",
       "command": "ty",
-      "args": [
-        "check",
-        "--python-version",
-        "3.15",
-        "--error",
-        "all",
-        "${file}"
-      ],
+      "args": ["check", "--python-version", "3.15", "--error", "all", "${file}"],
       "options": {
         "cwd": "${workspaceFolder}"
       },

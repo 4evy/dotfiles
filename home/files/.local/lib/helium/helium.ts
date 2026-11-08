@@ -72,10 +72,7 @@ const readBrowserVersion = Effect.fn(function* (launcher: string) {
   );
 });
 
-const readCachedUserAgent = Effect.fn(function* (
-  path: string,
-  browserVersion: string,
-) {
+const readCachedUserAgent = Effect.fn(function* (path: string, browserVersion: string) {
   const fs = yield* FileSystem.FileSystem;
   const text = yield* fs.readFileString(path).pipe(
     Effect.catchIf(
@@ -84,9 +81,7 @@ const readCachedUserAgent = Effect.fn(function* (
     ),
   );
   if (text === undefined) return undefined;
-  const entry = yield* Schema.decodeUnknownEffect(CacheEntry)(text).pipe(
-    Effect.option,
-  );
+  const entry = yield* Schema.decodeUnknownEffect(CacheEntry)(text).pipe(Effect.option);
   return entry._tag === "Some" && entry.value.browserVersion === browserVersion
     ? entry.value.userAgent
     : undefined;
@@ -154,11 +149,7 @@ const probeUserAgent = Effect.fn(function* (launcher: string) {
               ),
             );
           const candidate = Number(text?.split("\n", 1)[0]);
-          if (
-            Number.isInteger(candidate) &&
-            candidate > 0 &&
-            candidate <= 65_535
-          )
+          if (Number.isInteger(candidate) && candidate > 0 && candidate <= 65_535)
             return candidate;
           yield* Effect.sleep(POLL_INTERVAL_MS);
         }
@@ -183,9 +174,7 @@ const probeUserAgent = Effect.fn(function* (launcher: string) {
         }),
       );
       return yield* Effect.gen(function* () {
-        const response = yield* client.get(
-          `http://127.0.0.1:${port}/json/version`,
-        );
+        const response = yield* client.get(`http://127.0.0.1:${port}/json/version`);
         if (response.status < 200 || response.status >= 300)
           return yield* Effect.fail(
             new HeliumError({
@@ -230,10 +219,7 @@ runMain(
     const cacheHome = yield* Config.String("XDG_CACHE_HOME").pipe(
       Config.withDefault(join(homedir(), ".cache")),
     );
-    const cachePath = join(
-      cacheHome || join(homedir(), ".cache"),
-      CACHE_FILE_NAME,
-    );
+    const cachePath = join(cacheHome || join(homedir(), ".cache"), CACHE_FILE_NAME);
     const cached = options.refresh
       ? undefined
       : yield* readCachedUserAgent(cachePath, browserVersion);

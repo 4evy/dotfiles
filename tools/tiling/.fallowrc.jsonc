@@ -3,7 +3,7 @@
   "entry": [
     "src/gnome/extension.ts",
     "src/kde/main.ts",
-    "scripts/gnome/schema/generate.ts",
+    "scripts/gnome/schema/generate.ts"
   ],
-  "ignorePatterns": ["extension.js", "vendor/**"],
+  "ignorePatterns": ["extension.js", "vendor/**"]
 }

@@ -22,8 +22,7 @@ runs:
         # Trust only the version file, not arbitrary repository mise configuration
         MISE_TRUSTED_CONFIG_PATHS: ${{ env.MISE_TRUSTED_CONFIG_PATHS || format('{0}/.tool-versions', github.workspace) }}
         MISE_GITHUB_TOKEN: ${{ github.token }}
-      run:
-        |- # zizmor: ignore[github-env] export the verified bootstrap and pinned tool paths only
+      run: |- # zizmor: ignore[github-env] export the verified bootstrap and pinned tool paths only
         set -euo pipefail
         case "$RUNNER_OS-$RUNNER_ARCH" in
           Linux-X64) platform=linux-x64; checksum=$LINUX_X64_SHA256 ;;

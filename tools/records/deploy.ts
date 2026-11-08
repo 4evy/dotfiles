@@ -56,9 +56,7 @@ export function deploy(v: Vault, directory = "") {
         : process.platform === "sunos"
           ? "solaris"
           : process.platform;
-    const plan = yield* validate(() =>
-      planDeployment(value, root, home, system, host),
-    );
+    const plan = yield* validate(() => planDeployment(value, root, home, system, host));
     const manifestPath = join(root, ".manifest.json");
     const prune = yield* validateDeployment(root, manifestPath, plan);
     yield* privateDirectory(root);
@@ -111,11 +109,7 @@ export function planDeployment(
     }
   }
   for (const path of destinations) {
-    for (
-      let parent = dirname(path);
-      parent !== root;
-      parent = dirname(parent)
-    ) {
+    for (let parent = dirname(path); parent !== root; parent = dirname(parent)) {
       if (destinations.has(parent)) {
         throw new DotfilesError("runtime record destinations must not overlap");
       }
@@ -131,9 +125,7 @@ function privateDirectory(path: string) {
     yield* fs.makeDirectory(path, { recursive: true, mode: 0o700 });
     if ((yield* fs.realPath(path)) !== path)
       return yield* Effect.fail(
-        new DotfilesError(
-          "runtime record directories must not contain symlinks",
-        ),
+        new DotfilesError("runtime record directories must not contain symlinks"),
       );
     yield* fs.chmod(path, 0o700);
   });
@@ -148,8 +140,7 @@ function privateSubdirectories(root: string, path: string) {
     const directories: string[] = [];
     for (let current = path; current !== root; current = dirname(current))
       directories.push(current);
-    for (const directory of directories.reverse())
-      yield* privateDirectory(directory);
+    for (const directory of directories.reverse()) yield* privateDirectory(directory);
   });
 }
 
@@ -182,18 +173,12 @@ function validateDeploymentFile(root: string, path: string) {
     const info = yield* pathInfo(path);
     if (info !== undefined && info.type !== "File")
       return yield* Effect.fail(
-        new DotfilesError(
-          `runtime record destination must be a regular file: ${path}`,
-        ),
+        new DotfilesError(`runtime record destination must be a regular file: ${path}`),
       );
   });
 }
 
-function validateDeployment(
-  root: string,
-  manifestPath: string,
-  plan: DeploymentPlan,
-) {
+function validateDeployment(root: string, manifestPath: string, plan: DeploymentPlan) {
   return Effect.gen(function* () {
     yield* validateDeploymentFile(root, manifestPath);
     const retained = new Set<string>();
@@ -212,9 +197,7 @@ function validateDeployment(
           : error,
       ),
     );
-    const sources = yield* validate(() =>
-      previousSources(previous, manifestPath),
-    );
+    const sources = yield* validate(() => previousSources(previous, manifestPath));
     for (const source of sources) yield* validateDeploymentFile(root, source);
     return sources.filter((source) => !retained.has(source));
   });

@@ -55,10 +55,7 @@ function wideString(pointer: number | bigint | null): string {
 }
 
 function loadHidapi() {
-  if (
-    process.platform !== "darwin" ||
-    !["arm64", "x64"].includes(process.arch)
-  ) {
+  if (process.platform !== "darwin" || !["arm64", "x64"].includes(process.arch)) {
     throw new Error("This helper requires 64-bit macOS");
   }
   const symbols = {
@@ -84,9 +81,7 @@ function loadHidapi() {
       /* Try the next library location */
     }
   }
-  throw new Error(
-    "could not load libhidapi; install Homebrew package 'hidapi'",
-  );
+  throw new Error("could not load libhidapi; install Homebrew package 'hidapi'");
 }
 
 export function choosePath(
@@ -103,8 +98,7 @@ export function choosePath(
     .filter((device) => !productName || device.product === productName)
     .sort(
       (left, right) =>
-        (priority.get(left.usagePage) ?? 9) -
-        (priority.get(right.usagePage) ?? 9),
+        (priority.get(left.usagePage) ?? 9) - (priority.get(right.usagePage) ?? 9),
     )[0]?.path;
 }
 
@@ -130,11 +124,7 @@ export const request = Effect.fn(function* (
     const data = yield* transport.read(
       Math.floor(Math.min(50, Math.max(1, deadline - performance.now()))),
     );
-    if (
-      data.length !== 20 ||
-      data[0] !== 0x11 ||
-      (data[1] !== 0xff && data[1] !== 0)
-    )
+    if (data.length !== 20 || data[0] !== 0x11 || (data[1] !== 0xff && data[1] !== 0))
       continue;
     const payload = data.subarray(2);
     if (payload[0] === 0xff && payload.readUInt16BE(1) === requestId) {
@@ -153,10 +143,7 @@ export const request = Effect.fn(function* (
   );
 });
 
-const featureIndex = Effect.fn(function* (
-  transport: Transport,
-  feature: number,
-) {
+const featureIndex = Effect.fn(function* (transport: Transport, feature: number) {
   const parameter = Buffer.alloc(2);
   parameter.writeUInt16BE(feature);
   return (yield* request(transport, 0, parameter))[0] || undefined;
@@ -193,9 +180,7 @@ const setMultiplatform = Effect.fn(function* (
       ),
     );
   if (!((info[0] ?? 0) & 0x02)) {
-    console.log(
-      "logitech-platform: keyboard reports MULTIPLATFORM as read-only",
-    );
+    console.log("logitech-platform: keyboard reports MULTIPLATFORM as read-only");
     return false;
   }
   const descriptors: Descriptor[] = [];
@@ -211,9 +196,7 @@ const setMultiplatform = Effect.fn(function* (
         osFlags: reply.readUInt16BE(2),
       });
   }
-  const desired = yield* native(() =>
-    choosePlatform(descriptors, platform, os),
-  );
+  const desired = yield* native(() => choosePlatform(descriptors, platform, os));
   const description = descriptors
     .map(({ platform, osFlags }) => {
       const names = Object.entries(OS_BITS)
@@ -354,8 +337,7 @@ function openDevice(api: HidApi, path: string): Handle {
   if (handle) return handle;
   let message = wideString(api.hid_error(null)) || "unknown hidapi error";
   if (message.includes("not permitted"))
-    message +=
-      "; grant Input Monitoring to the terminal running dotfiles setup";
+    message += "; grant Input Monitoring to the terminal running dotfiles setup";
   else if (message.includes("exclusive access"))
     message += "; stop Kanata before changing Logitech platform mode";
   throw new Error(message);
@@ -373,9 +355,7 @@ function nativeTransport(api: HidApi, handle: Handle): Transport {
           timeoutMs,
         );
         if (size < 0)
-          throw new Error(
-            wideString(api.hid_error(handle)) || "unknown hidapi error",
-          );
+          throw new Error(wideString(api.hid_error(handle)) || "unknown hidapi error");
         return buffer.subarray(0, size);
       });
     },
@@ -383,9 +363,7 @@ function nativeTransport(api: HidApi, handle: Handle): Transport {
       return native(() => {
         const written = api.hid_write(handle, ptr(data), data.length);
         if (written < 0)
-          throw new Error(
-            wideString(api.hid_error(handle)) || "unknown hidapi error",
-          );
+          throw new Error(wideString(api.hid_error(handle)) || "unknown hidapi error");
         if (written !== data.length)
           throw new Error(`Incomplete HID write: ${written}/${data.length}`);
       });
@@ -399,12 +377,10 @@ export const main = Effect.fn(function* () {
   const library = yield* Effect.acquireRelease(native(loadHidapi), (library) =>
     Effect.sync(() => library.close()),
   );
-  const api = yield* Effect.acquireRelease(
-    Effect.succeed(library.symbols),
-    (api) =>
-      Effect.sync(() => {
-        api.hid_exit();
-      }),
+  const api = yield* Effect.acquireRelease(Effect.succeed(library.symbols), (api) =>
+    Effect.sync(() => {
+      api.hid_exit();
+    }),
   );
   yield* native(() => {
     if (api.hid_init() !== 0) throw new Error("hid_init failed");
@@ -422,11 +398,7 @@ export const main = Effect.fn(function* () {
     native(() => openDevice(api, path)),
     (handle) => Effect.sync(() => api.hid_close(handle)),
   );
-  yield* setMultiplatform(
-    nativeTransport(api, handle),
-    options.platform,
-    options.os,
-  );
+  yield* setMultiplatform(nativeTransport(api, handle), options.platform, options.os);
   return 0;
 });
 

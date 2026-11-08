@@ -6,11 +6,7 @@ import { SecureRandom } from "effect/crypto";
 import { DotfilesError } from "./errors.ts";
 
 // Write JSON atomically and report whether content or permissions changed
-export function writeJson(
-  path: string,
-  value: unknown,
-  mode: number | string = 0o644,
-) {
+export function writeJson(path: string, value: unknown, mode: number | string = 0o644) {
   return writeIfChanged(path, `${JSON.stringify(value, null, 2)}\n`, mode);
 }
 

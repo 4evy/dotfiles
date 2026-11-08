@@ -67,7 +67,9 @@
 "ui.selection" = { bg = "highlightMed" }
 "ui.statusline" = { fg = "text", bg = "surface" }
 "ui.statusline.inactive" = { fg = "muted", bg = "surface" }
-"ui.statusline.insert" = { fg = "accentForeground", bg = "accentBlue", modifiers = ["bold"] }
+"ui.statusline.insert" = { fg = "accentForeground", bg = "accentBlue", modifiers = [
+  "bold",
+] }
 "ui.statusline.normal" = { fg = "accentForeground", bg = "accent", modifiers = [
   "bold",
 ] }

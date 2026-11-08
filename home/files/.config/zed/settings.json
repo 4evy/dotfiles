@@ -151,12 +151,7 @@
       }
     },
     "JavaScript": {
-      "language_servers": [
-        "biome",
-        "typescript-language-server",
-        "!vtsls",
-        "..."
-      ],
+      "language_servers": ["biome", "typescript-language-server", "!vtsls", "..."],
       "format_on_save": "on",
       "formatter": {
         "language_server": {
@@ -172,12 +167,7 @@
       }
     },
     "TypeScript": {
-      "language_servers": [
-        "biome",
-        "typescript-language-server",
-        "!vtsls",
-        "..."
-      ],
+      "language_servers": ["biome", "typescript-language-server", "!vtsls", "..."],
       "format_on_save": "on",
       "formatter": {
         "language_server": {
@@ -193,12 +183,7 @@
       }
     },
     "TSX": {
-      "language_servers": [
-        "biome",
-        "typescript-language-server",
-        "!vtsls",
-        "..."
-      ],
+      "language_servers": ["biome", "typescript-language-server", "!vtsls", "..."],
       "format_on_save": "on",
       "formatter": {
         "language_server": {
@@ -218,8 +203,13 @@
       "formatter": "prettier"
     },
     "CSS": {
+      "language_servers": ["biome", "..."],
       "format_on_save": "on",
-      "formatter": "prettier"
+      "formatter": {
+        "language_server": {
+          "name": "biome"
+        }
+      }
     },
     "SCSS": {
       "format_on_save": "on",
@@ -230,16 +220,36 @@
       "formatter": "language_server"
     },
     "JSON": {
+      "language_servers": ["biome", "..."],
       "format_on_save": "on",
-      "formatter": "language_server"
+      "formatter": {
+        "language_server": {
+          "name": "biome"
+        }
+      }
     },
     "JSONC": {
+      "language_servers": ["biome", "..."],
       "format_on_save": "on",
-      "formatter": "language_server"
+      "formatter": {
+        "language_server": {
+          "name": "biome"
+        }
+      }
     },
     "YAML": {
       "format_on_save": "on",
-      "formatter": "language_server"
+      "formatter": {
+        "external": {
+          "command": "sh",
+          "arguments": [
+            "-c",
+            "cd -- \"$(dirname -- \"$1\")\" && exec yamlfmt -in",
+            "yamlfmt",
+            "{buffer_path}"
+          ]
+        }
+      }
     },
     "TOML": {
       "format_on_save": "on",
@@ -264,7 +274,12 @@
     },
     "Markdown": {
       "format_on_save": "on",
-      "formatter": "prettier"
+      "formatter": {
+        "external": {
+          "command": "rumdl",
+          "arguments": ["fmt", "--stdin", "--stdin-filename", "{buffer_path}"]
+        }
+      }
     },
     "Dockerfile": {
       "format_on_save": "on",

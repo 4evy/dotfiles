@@ -14,10 +14,7 @@ const macOS = process.platform === "darwin";
 // Validate only the fields consumed here, leaving Tweezle's schema upstream
 const WrapperConfigSchema = Schema.Struct({
   browser: Schema.Struct({
-    paths: Schema.Record(
-      Schema.String,
-      Schema.Struct({ profile_dir: Schema.String }),
-    ),
+    paths: Schema.Record(Schema.String, Schema.Struct({ profile_dir: Schema.String })),
   }),
 });
 const PrivateConfigSchema = Schema.Struct({
@@ -26,10 +23,7 @@ const PrivateConfigSchema = Schema.Struct({
   ),
 });
 
-const avatar = Effect.fn("heliumAvatar")(function* (
-  profile: string,
-  cache: string,
-) {
+const avatar = Effect.fn("heliumAvatar")(function* (profile: string, cache: string) {
   const fs = yield* FileSystem.FileSystem;
   yield* Effect.scoped(
     Effect.gen(function* () {
@@ -75,20 +69,11 @@ const avatar = Effect.fn("heliumAvatar")(function* (
   );
 });
 
-const privatePayload = Effect.fn("heliumPrivatePayload")(function* (
-  root: string,
-) {
+const privatePayload = Effect.fn("heliumPrivatePayload")(function* (root: string) {
   const env = { ...process.env };
-  if (macOS)
-    env.SOPS_AGE_KEY_CMD = join(root, "home/files/.local/lib/sops/sops.sh");
+  if (macOS) env.SOPS_AGE_KEY_CMD = join(root, "home/files/.local/lib/sops/sops.sh");
   const decrypted = yield* run(
-    [
-      "sops",
-      "decrypt",
-      "--output-type",
-      "json",
-      join(root, "secrets/secrets.yaml"),
-    ],
+    ["sops", "decrypt", "--output-type", "json", join(root, "secrets/secrets.yaml")],
     { env, capture: true, stderr: "inherit" },
   );
   const privateConfig = yield* Schema.decodeUnknownEffect(
@@ -98,15 +83,12 @@ const privatePayload = Effect.fn("heliumPrivatePayload")(function* (
   const allowlist = privateConfig["chromium-cookie-allowed-for-urls"] ?? [];
   if (allowlist.length) payload.cookie_allowlist = allowlist;
   if (process.env.OP_ACCOUNT) {
-    const token = yield* run(
-      ["op", "read", "op://Private/Refined GitHub/token"],
-      {
-        capture: true,
-        check: false,
-        stderr: "ignore",
-        stdin: "ignore",
-      },
-    );
+    const token = yield* run(["op", "read", "op://Private/Refined GitHub/token"], {
+      capture: true,
+      check: false,
+      stderr: "ignore",
+      stdin: "ignore",
+    });
     const value = token.stdout.trim();
     if (token.code === 0 && value)
       payload.extension_values = { "refined-github-personal-token": value };
@@ -124,9 +106,8 @@ export const helium = Effect.fn("helium")(function* () {
     catch: (error) =>
       new DotfilesError(`Invalid Helium wrapper configuration: ${error}`),
   });
-  const config = (yield* Schema.decodeUnknownEffect(WrapperConfigSchema)(
-    parsed,
-  )).browser;
+  const config = (yield* Schema.decodeUnknownEffect(WrapperConfigSchema)(parsed))
+    .browser;
   const platform = macOS ? "macos" : "linux";
   const home = homedir();
   const variables = {
@@ -144,9 +125,7 @@ export const helium = Effect.fn("helium")(function* () {
     stdin: "ignore",
   });
   if (running.code !== 0 && running.code !== 1)
-    return yield* Effect.fail(
-      new DotfilesError("Could not inspect Helium processes"),
-    );
+    return yield* Effect.fail(new DotfilesError("Could not inspect Helium processes"));
   const applyProfile = running.code === 1;
   const cache = join(
     process.env.XDG_CACHE_HOME ?? join(home, ".cache"),
@@ -165,13 +144,9 @@ export const helium = Effect.fn("helium")(function* () {
     yield* avatar(profile, cache);
   } else {
     // Launcher updates are safe while Chromium owns its profile
-    console.log(
-      "Helium is running, refreshing launchers without profile changes",
-    );
+    console.log("Helium is running, refreshing launchers without profile changes");
   }
-  const input = applyProfile
-    ? JSON.stringify(yield* privatePayload(root))
-    : undefined;
+  const input = applyProfile ? JSON.stringify(yield* privatePayload(root)) : undefined;
   yield* run(
     [
       "tweezle",

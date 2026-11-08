@@ -5,15 +5,7 @@ import { message } from "@optique/core/message";
 import { map } from "@optique/core/modifiers";
 import { argument, flag, passThrough } from "@optique/core/primitives";
 import { string } from "@optique/core/valueparser";
-import {
-  Config,
-  ConfigProvider,
-  Effect,
-  Runtime,
-  Schema,
-  Stdio,
-  Stream,
-} from "effect";
+import { Config, ConfigProvider, Effect, Runtime, Schema, Stdio, Stream } from "effect";
 import { Manifest, name, version } from "./config.ts";
 import {
   execUnknown,
@@ -26,10 +18,7 @@ import { detect } from "./theme.ts";
 function write(text: string, error = false) {
   return Effect.gen(function* () {
     const stdio = yield* Stdio.Stdio;
-    yield* Stream.run(
-      Stream.make(text),
-      error ? stdio.stderr() : stdio.stdout(),
-    );
+    yield* Stream.run(Stream.make(text), error ? stdio.stderr() : stdio.stdout());
   });
 }
 
@@ -99,22 +88,19 @@ export function run(args: string[]) {
         { preserveEmptyStrings: true },
       ),
     );
-    const env = yield* Config.schema(
-      Schema.Record(Schema.String, Schema.String),
-    ).parse(provider);
+    const env = yield* Config.schema(Schema.Record(Schema.String, Schema.String)).parse(
+      provider,
+    );
     const manifest = yield* Manifest.load(env).pipe(
       Effect.catch((error) =>
-        write(
-          `${name}: failed to load configuration: ${error.message}\n`,
-          true,
-        ).pipe(Effect.as(undefined)),
+        write(`${name}: failed to load configuration: ${error.message}\n`, true).pipe(
+          Effect.as(undefined),
+        ),
       ),
     );
     if (!manifest) return 1;
     if (printTheme) {
-      yield* write(
-        `${yield* detect(manifest.runtime, env, !!options.printTheme)}\n`,
-      );
+      yield* write(`${yield* detect(manifest.runtime, env, !!options.printTheme)}\n`);
       return 0;
     }
     const requested = command[0];
@@ -122,13 +108,9 @@ export function run(args: string[]) {
     const runner = manifest.findRunner(requested);
     if (!runner) return yield* execUnknown(command, env);
     return yield* Effect.scoped(
-      prepareInvocation(
-        manifest,
-        runner,
-        requested,
-        command.slice(1),
-        env,
-      ).pipe(Effect.flatMap(runInvocation)),
+      prepareInvocation(manifest, runner, requested, command.slice(1), env).pipe(
+        Effect.flatMap(runInvocation),
+      ),
     ).pipe(
       Effect.catch((error) =>
         write(

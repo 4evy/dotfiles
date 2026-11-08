@@ -45,9 +45,7 @@ export const updateRenovatePatch = Effect.fn(function* () {
       dist: Schema.Struct({ tarball: Schema.String, integrity: Schema.String }),
     }),
   )(metadataData);
-  yield* Schema.decodeUnknownEffect(Schema.URLFromString)(
-    metadata.dist.tarball,
-  );
+  yield* Schema.decodeUnknownEffect(Schema.URLFromString)(metadata.dist.tarball);
   const archive = new Uint8Array(
     yield* download(metadata.dist.tarball, (response) => response.arrayBuffer),
   );
@@ -58,13 +56,10 @@ export const updateRenovatePatch = Effect.fn(function* () {
     );
   const archivePath = join(staging, "source.tar.gz");
   yield* fs.writeFile(archivePath, archive);
-  yield* run(
-    ["tar", "-xzf", archivePath, "--strip-components=1", "-C", staging],
-    {
-      cwd: root,
-      capture: true,
-    },
-  );
+  yield* run(["tar", "-xzf", archivePath, "--strip-components=1", "-C", staging], {
+    cwd: root,
+    capture: true,
+  });
   yield* fs.remove(archivePath);
   yield* run(["git", "init", "--quiet"], { cwd: staging, capture: true });
   yield* run(["git", "add", "--all", "--force"], {

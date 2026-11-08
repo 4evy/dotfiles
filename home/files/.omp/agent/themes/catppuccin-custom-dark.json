@@ -106,13 +106,7 @@
     "warningSurface": "@COLOR_DARK_WARNINGSURFACE@",
     "yellow": "@COLOR_DARK_YELLOW@"
   },
-  "ribbon": [
-    "accentBlue",
-    "accentPink",
-    "accentWhite",
-    "accentPink",
-    "accentBlue"
-  ],
+  "ribbon": ["accentBlue", "accentPink", "accentWhite", "accentPink", "accentBlue"],
   "colors": {
     "accent": "pink",
     "border": "border",

@@ -20,10 +20,22 @@ group = "git"
 [open]
 # Extend the built-in openers so new upstream rules remain available.
 prepend_rules = [
-  { mime = "application/{debian*-package,redhat-package-manager,rpm,android.package-archive}", use = ["extract", "reveal"] },
-  { url = "*.{AppImage,appimage}", use = ["extract", "reveal"] },
-  { mime = "application/{iso9660-image,qemu-disk,ms-wim,apple-diskimage}", use = ["extract", "reveal"] },
-  { mime = "application/virtualbox-{vhd,vhdx}", use = ["extract", "reveal"] },
+  { mime = "application/{debian*-package,redhat-package-manager,rpm,android.package-archive}", use = [
+    "extract",
+    "reveal",
+  ] },
+  { url = "*.{AppImage,appimage}", use = [
+    "extract",
+    "reveal",
+  ] },
+  { mime = "application/{iso9660-image,qemu-disk,ms-wim,apple-diskimage}", use = [
+    "extract",
+    "reveal",
+  ] },
+  { mime = "application/virtualbox-{vhd,vhdx}", use = [
+    "extract",
+    "reveal",
+  ] },
   { url = "*.{img,fat,ext,ext2,ext3,ext4,squashfs,ntfs,hfs,hfsx}", use = [
     "extract",
     "reveal",

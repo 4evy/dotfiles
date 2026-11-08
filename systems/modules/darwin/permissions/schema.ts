@@ -1,10 +1,4 @@
-import {
-  blob,
-  integer,
-  primaryKey,
-  sqliteTable,
-  text,
-} from "drizzle-orm/sqlite-core";
+import { blob, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // Describe Apple's existing table only, never create or migrate TCC databases
 export const access = sqliteTable(

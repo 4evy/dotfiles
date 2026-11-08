@@ -7,12 +7,7 @@ import { runMain } from "@dotfiles/core/runtime";
 import { object, or } from "@optique/core/constructs";
 import { runParser } from "@optique/core/facade";
 import { map, withDefault } from "@optique/core/modifiers";
-import {
-  argument,
-  command,
-  constant,
-  passThrough,
-} from "@optique/core/primitives";
+import { argument, command, constant, passThrough } from "@optique/core/primitives";
 import { choice } from "@optique/core/valueparser";
 import { Effect, FileSystem, Schema } from "effect";
 import { prepareAiHome } from "./home.ts";
@@ -92,10 +87,7 @@ runMain(
       });
       if (process.platform === "linux" && Bun.which("systemctl")) {
         yield* run(["systemctl", "--user", "daemon-reload"]);
-        const environment = join(
-          home,
-          ".config/environment.d/60-codex-cli.conf",
-        );
+        const environment = join(home, ".config/environment.d/60-codex-cli.conf");
         if (yield* fs.exists(environment)) {
           const value = (yield* fs.readFileString(environment))
             .trim()
@@ -109,12 +101,7 @@ runMain(
                 "--systemd",
                 `CODEX_CLI_PATH=${cli}`,
               ]
-            : [
-                "systemctl",
-                "--user",
-                "set-environment",
-                `CODEX_CLI_PATH=${cli}`,
-              ];
+            : ["systemctl", "--user", "set-environment", `CODEX_CLI_PATH=${cli}`];
           yield* run(command);
         }
         yield* run(["systemctl", "--user", "enable", "ghidra-mcp.service"]);
@@ -129,8 +116,7 @@ runMain(
       yield* parseJson(yield* fs.readFileString(join(root, "flake.lock"))),
     );
     const ai = lock.nodes[lock.root]?.inputs?.ai;
-    const revision =
-      typeof ai === "string" ? lock.nodes[ai]?.locked?.rev : undefined;
+    const revision = typeof ai === "string" ? lock.nodes[ai]?.locked?.rev : undefined;
     if (typeof revision !== "string" || !/^[a-f0-9]{40}$/.test(revision))
       return yield* Effect.fail(
         new DotfilesError("The AI input must lock a GitHub revision"),

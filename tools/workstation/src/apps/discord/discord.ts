@@ -11,21 +11,14 @@ import { map, multiple } from "@optique/core/modifiers";
 import { parseSync } from "@optique/core/parser";
 import { argument, flag, passThrough } from "@optique/core/primitives";
 import { string } from "@optique/core/valueparser";
-import {
-  Effect,
-  FileSystem,
-  Option,
-  Schema,
-  SchemaTransformation,
-} from "effect";
+import { Effect, FileSystem, Option, Schema, SchemaTransformation } from "effect";
 
 const truthy = [true, 1, "1", "on", "true", "yes", "t", "y"] as const;
 const falsy = [false, 0, "0", "off", "false", "no", "f", "n"] as const;
 const coercibleBoolean = Schema.Unknown.pipe(
   Schema.decode<typeof Schema.Unknown>(
     SchemaTransformation.transform<unknown, unknown>({
-      decode: (value) =>
-        typeof value === "string" ? value.toLowerCase() : value,
+      decode: (value) => (typeof value === "string" ? value.toLowerCase() : value),
       encode: (value) => value,
     }),
   ),
@@ -70,20 +63,14 @@ const settingsSchema = Schema.StructWithRest(
   [Schema.Record(Schema.String, Schema.Unknown)],
 );
 
-export const configureGPU = Effect.fn("configureGPU")(function* (
-  directory: string,
-) {
+export const configureGPU = Effect.fn("configureGPU")(function* (directory: string) {
   const fs = yield* FileSystem.FileSystem;
   const path = join(directory, "settings.json");
-  const input = (yield* fs.exists(path))
-    ? yield* fs.readFileString(path)
-    : "{}";
+  const input = (yield* fs.exists(path)) ? yield* fs.readFileString(path) : "{}";
   const settings = yield* Schema.decodeUnknownEffect(
     Schema.fromJsonString(settingsSchema),
   )(input).pipe(
-    Effect.mapError(
-      () => new DotfilesError(`Invalid Discord settings JSON: ${path}`),
-    ),
+    Effect.mapError(() => new DotfilesError(`Invalid Discord settings JSON: ${path}`)),
   );
   yield* writeJson(
     path,
@@ -146,6 +133,5 @@ export const discord = Effect.fn("discord")(function* (args: string[]) {
     catch: (error) =>
       error instanceof DotfilesError ? error : new DotfilesError(String(error)),
   });
-  return (yield* run([executable.value, ...flags, ...args], { check: false }))
-    .code;
+  return (yield* run([executable.value, ...flags, ...args], { check: false })).code;
 });

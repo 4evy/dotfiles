@@ -12,14 +12,11 @@ export const resolveLayout = Effect.fn(function* (
   window: Meta.Window,
   preset: LayoutPreset,
 ) {
-  const { workArea, current, minimum } = yield* native(
-    "read window geometry",
-    () => ({
-      workArea: window.get_work_area_current_monitor(),
-      current: window.get_frame_rect(),
-      minimum: window.get_min_size(),
-    }),
-  );
+  const { workArea, current, minimum } = yield* native("read window geometry", () => ({
+    workArea: window.get_work_area_current_monitor(),
+    current: window.get_frame_rect(),
+    minimum: window.get_min_size(),
+  }));
   let rect = resolveLayoutPresetRect(workArea, current, preset);
   const [hasMinSize, minWidth, minHeight] = minimum;
   if (hasMinSize) {

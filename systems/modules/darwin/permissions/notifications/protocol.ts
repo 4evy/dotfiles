@@ -23,9 +23,7 @@ function object(value: unknown, label: string): Record<string, unknown> {
 
 export function string(value: unknown, label: string): string {
   if (typeof value !== "string" || value.length === 0 || value.includes("\0")) {
-    throw new Error(
-      `${label} must be a nonempty string without NUL characters`,
-    );
+    throw new Error(`${label} must be a nonempty string without NUL characters`);
   }
   return value;
 }
@@ -59,9 +57,7 @@ export function parseInput(value: unknown, action: Action): Input {
     };
   });
   const baseline =
-    input.baseline === undefined
-      ? undefined
-      : string(input.baseline, "baseline");
+    input.baseline === undefined ? undefined : string(input.baseline, "baseline");
   if (action === "verify" && baseline === undefined) {
     throw new Error("verify requires a baseline path");
   }

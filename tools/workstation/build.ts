@@ -13,8 +13,7 @@ export async function buildWorkstation(destination: string) {
       autoloadBunfig: false,
     },
   });
-  if (!result.success)
-    throw new DotfilesError(result.logs.map(String).join("\n"));
+  if (!result.success) throw new DotfilesError(result.logs.map(String).join("\n"));
 }
 
 if (import.meta.main) await buildWorkstation(resolve(root, "dist/workstation"));

@@ -21,11 +21,7 @@ import { check, packWorkspace, unpackWorkspace } from "./workspace.ts";
 
 type Operation = (
   vault: Vault,
-) => Effect.Effect<
-  void,
-  DotfilesError | PlatformError.PlatformError,
-  RuntimeServices
->;
+) => Effect.Effect<void, DotfilesError | PlatformError.PlatformError, RuntimeServices>;
 
 function selectOperation(args: string[]) {
   let operation: Operation | undefined;
@@ -116,31 +112,26 @@ function selectOperation(args: string[]) {
       { hidden: true },
     ),
   );
-  const selected = runParser(
-    parser,
-    "records",
-    args.length ? args : ["--help"],
-    {
-      brief: message`Manage encrypted dotfile records`,
-      help: {
-        option: { names: ["-h", "--help"] },
-        command: true,
-        onShow: () => {
-          completed = true;
-        },
-      },
-      onError: () => {
+  const selected = runParser(parser, "records", args.length ? args : ["--help"], {
+    brief: message`Manage encrypted dotfile records`,
+    help: {
+      option: { names: ["-h", "--help"] },
+      command: true,
+      onShow: () => {
         completed = true;
-        status = 1;
-      },
-      stdout: (text) => {
-        stdout += `${text}\n`;
-      },
-      stderr: (text) => {
-        stderr += `${text}\n`;
       },
     },
-  );
+    onError: () => {
+      completed = true;
+      status = 1;
+    },
+    stdout: (text) => {
+      stdout += `${text}\n`;
+    },
+    stderr: (text) => {
+      stderr += `${text}\n`;
+    },
+  });
   if (!completed) operation = selected;
   return { operation, stdout, stderr, status };
 }

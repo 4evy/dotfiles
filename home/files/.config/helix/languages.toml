@@ -31,24 +31,51 @@ language-servers = ["bash-language-server"]
 [[language]]
 name = "javascript"
 auto-format = true
-indent = { tab-width = 4, unit = "    " }
 language-servers = ["tsrs"]
+formatter = { command = "biome", args = [
+  "format",
+  "--stdin-file-path",
+  "%{buffer_name}",
+] }
 
 [[language]]
 name = "jsx"
+auto-format = true
+formatter = { command = "biome", args = [
+  "format",
+  "--stdin-file-path",
+  "%{buffer_name}",
+] }
 language-servers = ["tsrs"]
 
 [[language]]
 name = "typescript"
+auto-format = true
+formatter = { command = "biome", args = [
+  "format",
+  "--stdin-file-path",
+  "%{buffer_name}",
+] }
 language-servers = ["tsrs"]
 
 [[language]]
 name = "tsx"
+auto-format = true
+formatter = { command = "biome", args = [
+  "format",
+  "--stdin-file-path",
+  "%{buffer_name}",
+] }
 language-servers = ["tsrs"]
 
 [[language]]
 name = "css"
 auto-format = true
+formatter = { command = "biome", args = [
+  "format",
+  "--stdin-file-path",
+  "%{buffer_name}",
+] }
 language-servers = ["vscode-css-language-server"]
 
 [[language]]
@@ -76,10 +103,22 @@ file-types = ["json", "jsonc", { glob = "*.json.tmpl" }]
 auto-format = true
 indent = { tab-width = 2, unit = "  " }
 language-servers = ["vscode-json-language-server"]
+formatter = { command = "biome", args = [
+  "format",
+  "--stdin-file-path",
+  "%{buffer_name}",
+] }
 
 [[language]]
 name = "yaml"
 file-types = ["yaml", "yml", { glob = "*.yaml.tmpl" }, { glob = "*.yml.tmpl" }]
+auto-format = true
+formatter = { command = "sh", args = [
+  "-c",
+  'cd -- "$(dirname -- "$1")" && exec yamlfmt -in',
+  "yamlfmt",
+  "%{buffer_name}",
+] }
 language-servers = ["yaml-language-server"]
 
 [[language]]
@@ -138,9 +177,6 @@ args = [
   "--stdio",
 ]
 
-[language-server.yaml-language-server.config.yaml]
-format = { enable = true }
-
 [language-server.docker-langserver]
 command = "bunx"
 args = [
@@ -150,7 +186,3 @@ args = [
   "docker-langserver",
   "--stdio",
 ]
-
-[language-server.taplo.config.evenBetterToml.formatter]
-alignEntries = true
-columnWidth = 100

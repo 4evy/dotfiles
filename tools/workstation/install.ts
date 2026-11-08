@@ -33,9 +33,7 @@ const commandNames = Effect.fn("workstation.commandNames")(function* (
   yield* Schema.decodeUnknownEffect(Schema.Array(Schema.String))(names);
   if (!names.length || names.some((name) => !/^[a-z][a-z0-9-]*$/.test(name)))
     return yield* Effect.fail(
-      new DotfilesError(
-        "The workstation executable returned invalid command names",
-      ),
+      new DotfilesError("The workstation executable returned invalid command names"),
     );
   return names;
 });
@@ -56,9 +54,7 @@ const entry = Effect.fn("workstation.entry")(function* (path: string) {
 const sourceHash = Effect.fn("workstation.sourceHash")(function* () {
   const fs = yield* FileSystem.FileSystem;
   const hash = createHash("sha256");
-  const add = (
-    path: string,
-  ): Effect.Effect<void, PlatformError.PlatformError> =>
+  const add = (path: string): Effect.Effect<void, PlatformError.PlatformError> =>
     Effect.gen(function* () {
       hash.update(relative(root, path)).update("\0");
       if ((yield* fs.lstat(path)).type === "Directory") {
@@ -69,13 +65,7 @@ const sourceHash = Effect.fn("workstation.sourceHash")(function* () {
       } else hash.update(yield* fs.readFile(path));
       hash.update("\0");
     });
-  for (const name of [
-    "src",
-    "assets",
-    "package.json",
-    "build.ts",
-    "tsconfig.json",
-  ])
+  for (const name of ["src", "assets", "package.json", "build.ts", "tsconfig.json"])
     yield* add(join(packageRoot, name));
   yield* add(join(root, "package.json"));
   yield* add(join(root, "tsconfig.json"));
@@ -87,9 +77,7 @@ const sourceHash = Effect.fn("workstation.sourceHash")(function* () {
   yield* add(join(root, "home/deploy/schema.ts"));
   yield* add(join(root, "home/files/.local/lib/package.json"));
   yield* add(join(root, "home/files/.local/lib/typescript/process.ts"));
-  hash.update(
-    `${Bun.version}:${Bun.revision}:${process.platform}:${process.arch}`,
-  );
+  hash.update(`${Bun.version}:${Bun.revision}:${process.platform}:${process.arch}`);
   return hash.digest("hex");
 });
 
@@ -101,9 +89,7 @@ const managedLauncher = Effect.fn("workstation.managedLauncher")(function* (
   const fs = yield* FileSystem.FileSystem;
   const info = yield* entry(launcher);
   if (info?.type === "SymbolicLink")
-    return (
-      resolve(dirname(launcher), yield* fs.readLink(launcher)) === executable
-    );
+    return resolve(dirname(launcher), yield* fs.readLink(launcher)) === executable;
   if (info?.type !== "File") return false;
   // Recognize only the exact launchers installed before multicall symlinks
   const argument = name === "workstation" ? "" : `${shellQuote(name)} `;
@@ -128,13 +114,9 @@ const useImage = Effect.fn("workstation.useImage")(function* (
     (yield* fs.readFileString(imageStamp)).trim() !== fingerprint
   )
     return false;
-  for (const name of [
-    "workstation",
-    ...(yield* commandNames(imageExecutable)),
-  ]) {
+  for (const name of ["workstation", ...(yield* commandNames(imageExecutable))]) {
     const launcher = join(bin, name);
-    if (yield* managedLauncher(launcher, name, executable))
-      yield* fs.remove(launcher);
+    if (yield* managedLauncher(launcher, name, executable)) yield* fs.remove(launcher);
   }
   if (
     (yield* entry(stamp))?.type === "File" &&
@@ -244,8 +226,7 @@ if (import.meta.main) {
         catch: (error) => error,
       });
       if (!parsed) return;
-      if (parsed.fingerprint)
-        yield* sourceHash().pipe(Effect.flatMap(Console.log));
+      if (parsed.fingerprint) yield* sourceHash().pipe(Effect.flatMap(Console.log));
       else yield* install();
     }).pipe(
       Effect.catchCause((cause) => {

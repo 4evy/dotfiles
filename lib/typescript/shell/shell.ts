@@ -65,7 +65,6 @@ class ShellLexer {
 // Parse flags with POSIX shlex quoting and comments, without shell expansion
 export function shellWords(text: string): string[] {
   const lexer = new ShellLexer();
-  for (let index = 0; index < text.length; index++)
-    index = lexer.feed(text, index);
+  for (let index = 0; index < text.length; index++) index = lexer.feed(text, index);
   return lexer.finish();
 }

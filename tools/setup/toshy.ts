@@ -67,8 +67,7 @@ export function extractSlices(config: string): Record<string, string> {
   for (const match of config.matchAll(sliceMarker)) {
     const name = match.groups?.name;
     const body = match.groups?.body;
-    if (name !== undefined && body !== undefined)
-      slices[name] = `${body.trim()}\n`;
+    if (name !== undefined && body !== undefined) slices[name] = `${body.trim()}\n`;
   }
   return slices;
 }
@@ -92,9 +91,7 @@ export const mergeSlices = Effect.fn(function* (
     for (const name of resetSlices) {
       if (Object.hasOwn(replacements, name))
         return yield* Effect.fail(
-          new DotfilesError(
-            `Slice ${name} cannot be both reset and dotfiles-managed`,
-          ),
+          new DotfilesError(`Slice ${name} cannot be both reset and dotfiles-managed`),
         );
       const upstreamSlice = upstreamSlices[name];
       if (upstreamSlice === undefined)
@@ -228,10 +225,7 @@ const hideDesktopSurfaces = Effect.fn(function* (home: string) {
     join(home, ".local/share/applications"),
     join(home, ".config/autostart"),
   ]) {
-    for (const name of [
-      "Toshy_Tray.desktop",
-      "app.toshy.preferences.desktop",
-    ]) {
+    for (const name of ["Toshy_Tray.desktop", "app.toshy.preferences.desktop"]) {
       const path = join(directory, name);
       const info = yield* statIfExists(path);
       if (info?.type !== "File") continue;
@@ -245,10 +239,7 @@ const hideDesktopSurfaces = Effect.fn(function* (home: string) {
 export const provisionToshy = Effect.fn(function* () {
   const fs = yield* FileSystem.FileSystem;
   const home = homedir();
-  const state = join(
-    process.env.XDG_STATE_HOME || join(home, ".local/state"),
-    "toshy",
-  );
+  const state = join(process.env.XDG_STATE_HOME || join(home, ".local/state"), "toshy");
   yield* fs.makeDirectory(state, { recursive: true });
   const runtime = join(state, "runtime");
   if (!(yield* fs.exists("/etc/NIXOS")))
@@ -264,10 +255,7 @@ export const provisionToshy = Effect.fn(function* () {
   const revision = (yield* fs.readFileString(
     join(runtime, "share/toshy/revision"),
   )).trim();
-  const configDir = join(
-    process.env.XDG_CONFIG_HOME || join(home, ".config"),
-    "toshy",
-  );
+  const configDir = join(process.env.XDG_CONFIG_HOME || join(home, ".config"), "toshy");
   const config = join(configDir, "toshy_config.py");
   const stamp = join(state, "installed-revision");
   const env: NodeJS.ProcessEnv = { ...process.env, TOSHY_RUNTIME_DIR: runtime };
@@ -303,13 +291,10 @@ export const provisionToshy = Effect.fn(function* () {
     yield* fs.writeFile(config, encoded);
     yield* run(["systemctl", "--user", "restart", "toshy-config.service"]);
   }
-  yield* run(
-    ["systemctl", "--user", "disable", "--now", "toshy-tray.service"],
-    {
-      check: false,
-      stderr: "ignore",
-    },
-  );
+  yield* run(["systemctl", "--user", "disable", "--now", "toshy-tray.service"], {
+    check: false,
+    stderr: "ignore",
+  });
   // Arming the path watcher is enough: running its oneshot here restarts a
   // healthy remapper on every apply, discarding any keys currently held
   yield* run([
@@ -321,13 +306,7 @@ export const provisionToshy = Effect.fn(function* () {
   ]);
   yield* hideDesktopSurfaces(home);
   yield* run(["systemctl", "is-active", "--quiet", "kanata-main.service"]);
-  yield* run([
-    "systemctl",
-    "--user",
-    "is-active",
-    "--quiet",
-    "toshy-config.service",
-  ]);
+  yield* run(["systemctl", "--user", "is-active", "--quiet", "toshy-config.service"]);
 
   const device = "/run/kanata-main/main";
   const deviceInfo = yield* fs.lstat(device).pipe(

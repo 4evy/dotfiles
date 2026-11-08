@@ -21,10 +21,7 @@ interface Frameworks {
   };
   NSFont: {
     fontWithNameSize(name: string, size: number): NativeObject;
-    monospacedSystemFontOfSizeWeight(
-      size: number,
-      weight: number,
-    ): NativeObject;
+    monospacedSystemFontOfSizeWeight(size: number, weight: number): NativeObject;
   };
   NSKeyedArchiver: {
     archivedDataWithRootObject(value: NativeObject): NativeObject;
@@ -116,10 +113,7 @@ export function nativeTerminal(
     $(policy.profileNames[currentVariant]),
     "Startup Window Settings",
   );
-  domain.setObjectForKey(
-    $(policy.defaultProfilesVersion),
-    "DefaultProfilesVersion",
-  );
+  domain.setObjectForKey($(policy.defaultProfilesVersion), "DefaultProfilesVersion");
   domain.setObjectForKey(
     $(policy.profile.ProfileCurrentVersion),
     "ProfileCurrentVersion",

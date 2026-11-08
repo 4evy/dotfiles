@@ -1,13 +1,5 @@
 import { BunRuntime, BunServices } from "@effect/platform-bun";
-import {
-  Cause,
-  Console,
-  Effect,
-  Exit,
-  Layer,
-  Runtime,
-  type Scope,
-} from "effect";
+import { Cause, Console, Effect, Exit, Layer, Runtime, type Scope } from "effect";
 import { FetchHttpClient, type HttpClient } from "effect/http";
 
 // Sibling deployed scripts resolve dependencies from this package, not the checkout

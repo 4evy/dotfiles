@@ -50,15 +50,12 @@ const generateCompletion = Effect.fn("generateCompletion")(function* (
 
 export const shellCompletions = Effect.fn("shellCompletions")(function* () {
   const home = process.env.HJEM_HOME_DIR;
-  if (!home)
-    return yield* Effect.fail(new DotfilesError("HJEM_HOME_DIR is required"));
+  if (!home) return yield* Effect.fail(new DotfilesError("HJEM_HOME_DIR is required"));
   const cache = process.env.XDG_CACHE_HOME ?? join(home, ".cache");
   const data = process.env.XDG_DATA_HOME ?? join(home, ".local/share");
-  const generators =
-    yield* Schema.decodeUnknownEffect(GeneratorsSchema)(generatorData);
+  const generators = yield* Schema.decodeUnknownEffect(GeneratorsSchema)(generatorData);
   for (const generator of generators) {
-    if (generator.systems && !generator.systems.includes(process.platform))
-      continue;
+    if (generator.systems && !generator.systems.includes(process.platform)) continue;
     const target = completionTarget(generator.target, cache, data);
     if (target) yield* generateCompletion(generator, target, home);
   }

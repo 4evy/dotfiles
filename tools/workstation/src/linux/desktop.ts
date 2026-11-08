@@ -7,9 +7,7 @@ export function desktopArguments(...args: string[]): [string, ...string[]] {
   return ["gjs", "-c", source, ...args];
 }
 
-export const desktopOutput = Effect.fn("desktopOutput")(function* (
-  ...args: string[]
-) {
+export const desktopOutput = Effect.fn("desktopOutput")(function* (...args: string[]) {
   const result = yield* run(desktopArguments(...args), {
     capture: true,
     check: false,

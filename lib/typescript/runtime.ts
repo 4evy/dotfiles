@@ -1,17 +1,12 @@
 import { BunRuntime, BunServices } from "@effect/platform-bun";
-import {
-  Cause,
-  Console,
-  Effect,
-  Layer,
-  type Runtime,
-  type Scope,
-} from "effect";
+import { Cause, Console, Effect, Layer, type Runtime, type Scope } from "effect";
 import { SecureRandom } from "effect/crypto";
 import { FetchHttpClient, type HttpClient } from "effect/http";
 
 export type RuntimeServices =
-  BunServices.BunServices | HttpClient.HttpClient | SecureRandom.SecureRandom;
+  | BunServices.BunServices
+  | HttpClient.HttpClient
+  | SecureRandom.SecureRandom;
 
 // Effect 4.1 separates secure randomness from the platform's BunServices
 export const layer = Layer.mergeAll(

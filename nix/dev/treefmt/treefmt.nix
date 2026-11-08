@@ -63,6 +63,8 @@
             ".hgignore"
             ".svnignore"
             "LICENSE"
+            # Match the existing Biome and EditorConfig vendor exclusions
+            "tools/tiling/vendor/**"
           ];
 
           formatter = {

@@ -61,108 +61,46 @@
 
   /* Catppuccin Custom uses its message-action roles for solid controls. */
   --control-primary-background-default: var(--catppuccin-custom-messageAction);
-  --control-primary-background-hover: var(
-    --catppuccin-custom-messageActionHover
-  );
-  --control-primary-background-active: var(
-    --catppuccin-custom-messageActionHover
-  );
-  --control-primary-icon-default: var(
-    --catppuccin-custom-messageActionForeground
-  );
-  --control-primary-icon-hover: var(
-    --catppuccin-custom-messageActionForeground
-  );
-  --control-primary-icon-active: var(
-    --catppuccin-custom-messageActionForeground
-  );
-  --control-primary-text-default: var(
-    --catppuccin-custom-messageActionForeground
-  );
-  --control-primary-text-hover: var(
-    --catppuccin-custom-messageActionForeground
-  );
-  --control-primary-text-active: var(
-    --catppuccin-custom-messageActionForeground
-  );
-  --control-expressive-background-default: var(
-    --catppuccin-custom-messageAction
-  );
-  --control-expressive-background-hover: var(
-    --catppuccin-custom-messageActionHover
-  );
-  --control-expressive-background-active: var(
-    --catppuccin-custom-messageActionHover
-  );
-  --control-expressive-icon-default: var(
-    --catppuccin-custom-messageActionForeground
-  );
-  --control-expressive-icon-hover: var(
-    --catppuccin-custom-messageActionForeground
-  );
-  --control-expressive-icon-active: var(
-    --catppuccin-custom-messageActionForeground
-  );
-  --control-expressive-text-default: var(
-    --catppuccin-custom-messageActionForeground
-  );
-  --control-expressive-text-hover: var(
-    --catppuccin-custom-messageActionForeground
-  );
-  --control-expressive-text-active: var(
-    --catppuccin-custom-messageActionForeground
-  );
+  --control-primary-background-hover: var(--catppuccin-custom-messageActionHover);
+  --control-primary-background-active: var(--catppuccin-custom-messageActionHover);
+  --control-primary-icon-default: var(--catppuccin-custom-messageActionForeground);
+  --control-primary-icon-hover: var(--catppuccin-custom-messageActionForeground);
+  --control-primary-icon-active: var(--catppuccin-custom-messageActionForeground);
+  --control-primary-text-default: var(--catppuccin-custom-messageActionForeground);
+  --control-primary-text-hover: var(--catppuccin-custom-messageActionForeground);
+  --control-primary-text-active: var(--catppuccin-custom-messageActionForeground);
+  --control-expressive-background-default: var(--catppuccin-custom-messageAction);
+  --control-expressive-background-hover: var(--catppuccin-custom-messageActionHover);
+  --control-expressive-background-active: var(--catppuccin-custom-messageActionHover);
+  --control-expressive-icon-default: var(--catppuccin-custom-messageActionForeground);
+  --control-expressive-icon-hover: var(--catppuccin-custom-messageActionForeground);
+  --control-expressive-icon-active: var(--catppuccin-custom-messageActionForeground);
+  --control-expressive-text-default: var(--catppuccin-custom-messageActionForeground);
+  --control-expressive-text-hover: var(--catppuccin-custom-messageActionForeground);
+  --control-expressive-text-active: var(--catppuccin-custom-messageActionForeground);
 
-  --control-secondary-background-default: var(
-    --catppuccin-custom-toolbarControl
-  );
-  --control-secondary-background-hover: var(
-    --catppuccin-custom-toolbarControlHover
-  );
+  --control-secondary-background-default: var(--catppuccin-custom-toolbarControl);
+  --control-secondary-background-hover: var(--catppuccin-custom-toolbarControlHover);
   --control-secondary-background-active: var(--catppuccin-custom-secondary);
   --control-secondary-border-default: var(--catppuccin-custom-border);
   --control-secondary-border-hover: var(--catppuccin-custom-input);
   --control-secondary-border-active: var(--catppuccin-custom-input);
-  --control-secondary-icon-default: var(
-    --catppuccin-custom-toolbarControlForeground
-  );
-  --control-secondary-icon-hover: var(
-    --catppuccin-custom-toolbarControlForeground
-  );
-  --control-secondary-icon-active: var(
-    --catppuccin-custom-toolbarControlForeground
-  );
-  --control-secondary-text-default: var(
-    --catppuccin-custom-toolbarControlForeground
-  );
-  --control-secondary-text-hover: var(
-    --catppuccin-custom-toolbarControlForeground
-  );
-  --control-secondary-text-active: var(
-    --catppuccin-custom-toolbarControlForeground
-  );
+  --control-secondary-icon-default: var(--catppuccin-custom-toolbarControlForeground);
+  --control-secondary-icon-hover: var(--catppuccin-custom-toolbarControlForeground);
+  --control-secondary-icon-active: var(--catppuccin-custom-toolbarControlForeground);
+  --control-secondary-text-default: var(--catppuccin-custom-toolbarControlForeground);
+  --control-secondary-text-hover: var(--catppuccin-custom-toolbarControlForeground);
+  --control-secondary-text-active: var(--catppuccin-custom-toolbarControlForeground);
 
   --control-critical-primary-background-default: var(--catppuccin-custom-error);
   --control-critical-primary-background-hover: var(--catppuccin-custom-error);
   --control-critical-primary-background-active: var(--catppuccin-custom-error);
-  --control-critical-primary-icon-default: var(
-    --catppuccin-custom-accentForeground
-  );
-  --control-critical-primary-icon-hover: var(
-    --catppuccin-custom-accentForeground
-  );
-  --control-critical-primary-icon-active: var(
-    --catppuccin-custom-accentForeground
-  );
-  --control-critical-primary-text-default: var(
-    --catppuccin-custom-accentForeground
-  );
-  --control-critical-primary-text-hover: var(
-    --catppuccin-custom-accentForeground
-  );
-  --control-critical-primary-text-active: var(
-    --catppuccin-custom-accentForeground
-  );
+  --control-critical-primary-icon-default: var(--catppuccin-custom-accentForeground);
+  --control-critical-primary-icon-hover: var(--catppuccin-custom-accentForeground);
+  --control-critical-primary-icon-active: var(--catppuccin-custom-accentForeground);
+  --control-critical-primary-text-default: var(--catppuccin-custom-accentForeground);
+  --control-critical-primary-text-hover: var(--catppuccin-custom-accentForeground);
+  --control-critical-primary-text-active: var(--catppuccin-custom-accentForeground);
 
   --control-connected-background-default: var(--catppuccin-custom-success);
   --control-connected-background-hover: var(--catppuccin-custom-success);
@@ -174,28 +112,18 @@
   --control-connected-text-hover: var(--catppuccin-custom-accentForeground);
   --control-connected-text-active: var(--catppuccin-custom-accentForeground);
 
-  --checkbox-background-selected-default: var(
-    --catppuccin-custom-messageAction
-  );
-  --checkbox-background-selected-hover: var(
-    --catppuccin-custom-messageActionHover
-  );
+  --checkbox-background-selected-default: var(--catppuccin-custom-messageAction);
+  --checkbox-background-selected-hover: var(--catppuccin-custom-messageActionHover);
   --checkbox-icon-active: var(--catppuccin-custom-messageActionForeground);
   --radio-background-selected-default: var(--catppuccin-custom-messageAction);
-  --radio-background-selected-hover: var(
-    --catppuccin-custom-messageActionHover
-  );
+  --radio-background-selected-hover: var(--catppuccin-custom-messageActionHover);
   --radio-foreground-active: var(--catppuccin-custom-messageAction);
-  --radio-thumb-background-active: var(
-    --catppuccin-custom-messageActionForeground
-  );
+  --radio-thumb-background-active: var(--catppuccin-custom-messageActionForeground);
   --switch-background-default: var(--catppuccin-custom-toolbarControl);
   --switch-background-hover: var(--catppuccin-custom-toolbarControlHover);
   --switch-background-active: var(--catppuccin-custom-messageActionHover);
   --switch-background-selected-default: var(--catppuccin-custom-messageAction);
-  --switch-background-selected-hover: var(
-    --catppuccin-custom-messageActionHover
-  );
+  --switch-background-selected-hover: var(--catppuccin-custom-messageActionHover);
   --switch-border-default: var(--border-normal);
   --switch-border-hover: var(--border-strong);
   --switch-border-selected-default: var(--catppuccin-custom-messageAction);
@@ -247,22 +175,12 @@
   );
   --interactive-background-default: transparent;
   --interactive-background-hover: var(--catppuccin-custom-sidebarRowHover);
-  --interactive-background-selected: var(
-    --catppuccin-custom-sidebarRowSelected
-  );
+  --interactive-background-selected: var(--catppuccin-custom-sidebarRowSelected);
   --interactive-background-active: var(--catppuccin-custom-sidebarRowActive);
 
   /* Preserve Discord's contrast ladder around Catppuccin Custom's border roles. */
-  --border-muted: color-mix(
-    in srgb,
-    var(--catppuccin-custom-border) 55%,
-    transparent
-  );
-  --border-subtle: color-mix(
-    in srgb,
-    var(--catppuccin-custom-border) 75%,
-    transparent
-  );
+  --border-muted: color-mix(in srgb, var(--catppuccin-custom-border) 55%, transparent);
+  --border-subtle: color-mix(in srgb, var(--catppuccin-custom-border) 75%, transparent);
   --border-normal: var(--catppuccin-custom-border);
   --border-strong: var(--catppuccin-custom-input);
   --border-focus: var(--catppuccin-custom-focus);
@@ -346,13 +264,9 @@
     var(--catppuccin-custom-brand) 30%,
     transparent
   );
-  --message-mentioned-background-default: var(
-    --catppuccin-custom-warningSurface
-  );
+  --message-mentioned-background-default: var(--catppuccin-custom-warningSurface);
   --message-mentioned-background-hover: var(--catppuccin-custom-warningSurface);
-  --message-highlight-background-default: var(
-    --catppuccin-custom-updateSurface
-  );
+  --message-highlight-background-default: var(--catppuccin-custom-updateSurface);
   --message-highlight-background-hover: var(--catppuccin-custom-updateSurface);
   --message-automod-background-default: var(--catppuccin-custom-errorSurface);
   --message-automod-background-hover: var(--catppuccin-custom-errorSurface);
@@ -373,14 +287,10 @@
 
   /* Profile widgets use a separate overlay palette from the base ramps. */
   --user-profile-overlay-background: var(--catppuccin-custom-surfaceRaised);
-  --user-profile-overlay-background-hover: var(
-    --catppuccin-custom-accentSurface
-  );
+  --user-profile-overlay-background-hover: var(--catppuccin-custom-accentSurface);
   --user-profile-background-hover: var(--catppuccin-custom-accentSurface);
   --user-profile-toolbar-background: var(--catppuccin-custom-surfaceRaised);
-  --user-profile-activity-toolbar-background: var(
-    --catppuccin-custom-surfaceRaised
-  );
+  --user-profile-activity-toolbar-background: var(--catppuccin-custom-surfaceRaised);
   --user-profile-border: var(--catppuccin-custom-border);
   --user-profile-toolbar-border: var(--catppuccin-custom-border);
 
@@ -403,26 +313,18 @@
   --expressive-gradient-tenure-badge-gold-end: var(--catppuccin-custom-yellow);
   --expressive-gradient-tenure-badge-opal-start: var(--catppuccin-custom-teal);
   --expressive-gradient-tenure-badge-opal-end: var(--catppuccin-custom-blue);
-  --expressive-gradient-tenure-badge-platinum-start: var(
-    --catppuccin-custom-foam
-  );
+  --expressive-gradient-tenure-badge-platinum-start: var(--catppuccin-custom-foam);
   --expressive-gradient-tenure-badge-platinum-end: var(--catppuccin-custom-sky);
   --expressive-gradient-tenure-badge-ruby-start: var(--catppuccin-custom-red);
   --expressive-gradient-tenure-badge-ruby-end: var(--catppuccin-custom-love);
-  --expressive-gradient-tenure-badge-silver-start: var(
-    --catppuccin-custom-overlay0
-  );
-  --expressive-gradient-tenure-badge-silver-end: var(
-    --catppuccin-custom-overlay2
-  );
+  --expressive-gradient-tenure-badge-silver-start: var(--catppuccin-custom-overlay0);
+  --expressive-gradient-tenure-badge-silver-end: var(--catppuccin-custom-overlay2);
 
   --scrollbar-thin-thumb: var(--catppuccin-custom-terminalScrollbar);
   --scrollbar-thin-track: transparent;
   --scrollbar-auto-thumb: var(--catppuccin-custom-terminalScrollbar);
   --scrollbar-auto-track: transparent;
-  --scrollbar-auto-scrollbar-color-thumb: var(
-    --catppuccin-custom-terminalScrollbar
-  );
+  --scrollbar-auto-scrollbar-color-thumb: var(--catppuccin-custom-terminalScrollbar);
   --scrollbar-auto-scrollbar-color-track: transparent;
   --opacity-blurple-8: color-mix(
     in srgb,
@@ -453,7 +355,7 @@
 
 /* Light-mode selected reactions bypass semantics with legacy brand ramps */
 :is(.visual-refresh.theme-light, .visual-refresh .theme-light)
-  [class*="reaction_"][class*="reactionMe_"] {
+[class*="reaction_"][class*="reactionMe_"] {
   background-color: var(--reaction-background-reacted-default);
 }
 
@@ -472,35 +374,23 @@
 
 /* Lazy profile-theme chunks redeclare these tokens on their theme root. */
 .visual-refresh
-  :is(
-    .user-profile-modal,
-    .user-profile-modal-v2,
-    .user-profile-popout,
-    .user-profile-sidebar.user-profile-sidebar-redesign
-  ) {
+:is(
+  .user-profile-modal,
+  .user-profile-modal-v2,
+  .user-profile-popout,
+  .user-profile-sidebar.user-profile-sidebar-redesign
+) {
   --user-profile-overlay-background: var(--catppuccin-custom-surfaceRaised);
-  --user-profile-overlay-background-hover: var(
-    --catppuccin-custom-accentSurface
-  );
+  --user-profile-overlay-background-hover: var(--catppuccin-custom-accentSurface);
   --user-profile-background-hover: var(--catppuccin-custom-accentSurface);
   --user-profile-note-background-focus: var(--catppuccin-custom-accentSurface);
   --user-profile-toolbar-background: var(--catppuccin-custom-surfaceRaised);
-  --user-profile-activity-toolbar-background: var(
-    --catppuccin-custom-surfaceRaised
-  );
+  --user-profile-activity-toolbar-background: var(--catppuccin-custom-surfaceRaised);
   --user-profile-border: var(--catppuccin-custom-border);
   --user-profile-toolbar-border: var(--catppuccin-custom-border);
 
-  --border-muted: color-mix(
-    in srgb,
-    var(--catppuccin-custom-border) 55%,
-    transparent
-  );
-  --border-subtle: color-mix(
-    in srgb,
-    var(--catppuccin-custom-border) 75%,
-    transparent
-  );
+  --border-muted: color-mix(in srgb, var(--catppuccin-custom-border) 55%, transparent);
+  --border-subtle: color-mix(in srgb, var(--catppuccin-custom-border) 75%, transparent);
   --border-normal: var(--catppuccin-custom-border);
   --border-strong: var(--catppuccin-custom-input);
   --border-focus: var(--catppuccin-custom-focus);
@@ -512,12 +402,8 @@
   --input-border-error-default: var(--catppuccin-custom-critical);
   --input-border-readonly: var(--border-muted);
 
-  --control-secondary-background-default: var(
-    --catppuccin-custom-toolbarControl
-  );
-  --control-secondary-background-hover: var(
-    --catppuccin-custom-toolbarControlHover
-  );
+  --control-secondary-background-default: var(--catppuccin-custom-toolbarControl);
+  --control-secondary-background-hover: var(--catppuccin-custom-toolbarControlHover);
   --control-secondary-background-active: var(--catppuccin-custom-secondary);
   --control-secondary-border-default: var(--catppuccin-custom-border);
   --control-secondary-border-hover: var(--catppuccin-custom-input);
@@ -558,14 +444,8 @@
 
 /* The composer prefers the shared gradient token over chat-background-default */
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   div[class*="channelTextArea_"]
   div[class*="themedBackground_"] {
@@ -579,14 +459,8 @@
  * Equal-specificity states run from default through hover, selected, and pressed
  */
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   label:has(input[role="switch"])
   > [data-mana-component="switch"] {
@@ -595,14 +469,8 @@
 }
 
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   label:where(:not([data-disabled]):hover):has(input[role="switch"])
   > [data-mana-component="switch"] {
@@ -611,14 +479,8 @@
 }
 
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   label:has(input[role="switch"]:where(:checked))
   > [data-mana-component="switch"] {
@@ -627,32 +489,18 @@
 }
 
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
-  label:where(:not([data-disabled]):hover):has(
-    input[role="switch"]:where(:checked)
-  )
+  label:where(:not([data-disabled]):hover):has(input[role="switch"]:where(:checked))
   > [data-mana-component="switch"] {
   background-color: var(--switch-background-selected-hover) !important;
   border-color: var(--switch-border-selected-hover) !important;
 }
 
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   label:where(:not([data-disabled]):active):has(input[role="switch"])
   > [data-mana-component="switch"] {
@@ -660,14 +508,8 @@
 }
 
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   label:has(input[role="switch"])
   > [data-mana-component="switch"]
@@ -677,14 +519,8 @@
 }
 
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   label:where(:has(input:checked), :not([data-disabled]):active):has(
     input[role="switch"]
@@ -696,14 +532,8 @@
 }
 
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   label:has(input[role="switch"])
   > [data-mana-component="switch"]
@@ -712,14 +542,8 @@
 }
 
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   label:where(:has(input:checked), :not([data-disabled]):active):has(
     input[role="switch"]
@@ -731,68 +555,31 @@
 
 /* Voice-state glows are emitted from literal RGB channels. */
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  [class*="greenGlow_"] {
-  background: color-mix(
-    in srgb,
-    var(--catppuccin-custom-positive) 10%,
-    transparent
-  );
+  .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+  .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+) [class*="greenGlow_"] {
+  background: color-mix(in srgb, var(--catppuccin-custom-positive) 10%, transparent);
 }
 
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   [class*="greenGlow_"]:hover {
-  background: color-mix(
-    in srgb,
-    var(--catppuccin-custom-positive) 20%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--catppuccin-custom-positive) 20%, transparent);
 }
 
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   [class*="redGlow_"] {
-  background: color-mix(
-    in srgb,
-    var(--catppuccin-custom-critical) 10%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--catppuccin-custom-critical) 10%, transparent);
 }
 
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   [class*="redGlow_"]:hover {
   background: color-mix(
@@ -804,16 +591,9 @@
 
 /* Media and forum-card fades contain literal native neutral colors. */
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  div[class^="overlay_"][class*="darkThemeGradient_"] {
+  .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+  .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+) div[class^="overlay_"][class*="darkThemeGradient_"] {
   background: linear-gradient(
     0deg,
     var(--catppuccin-custom-base) 0,
@@ -823,14 +603,8 @@
 }
 
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   div[class^="textContentFooter_"] {
   background: linear-gradient(
@@ -842,14 +616,8 @@
 }
 
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   div[class^="textContentFooter_"]
   [class*="tagPill_"] {
@@ -857,19 +625,9 @@
 }
 
 :is(
-    .visual-refresh:is(
-      .theme-light,
-      .theme-dark,
-      .theme-darker,
-      .theme-midnight
-    ),
-    .visual-refresh
-      :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
   )
   ::selection {
-  background: color-mix(
-    in srgb,
-    var(--catppuccin-custom-brand) 42%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--catppuccin-custom-brand) 42%, transparent);
 }

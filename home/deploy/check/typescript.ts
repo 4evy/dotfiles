@@ -67,16 +67,11 @@ runMain(
         ...config,
         extends: join(source, "tsconfig.json"),
         include: [],
-        files: [...sources.keys()].filter(
-          (path) => scriptExtensions[extname(path)],
-        ),
+        files: [...sources.keys()].filter((path) => scriptExtensions[extname(path)]),
       }),
     );
     // Deployed package checks use the workspace's development dependencies
-    yield* fs.symlink(
-      join(root, "node_modules"),
-      join(staging, "node_modules"),
-    );
+    yield* fs.symlink(join(root, "node_modules"), join(staging, "node_modules"));
     // Keep diagnostics relative even when macOS resolves /var to /private/var
     const compiler = yield* run(
       [
@@ -96,10 +91,8 @@ runMain(
       },
     );
     process.stdout.write(
-      compiler.stdout.replace(
-        /^(.+?)(\(\d+,\d+\):)/gm,
-        (line, file, location) =>
-          sources.has(file) ? `${sources.get(file)}${location}` : line,
+      compiler.stdout.replace(/^(.+?)(\(\d+,\d+\):)/gm, (line, file, location) =>
+        sources.has(file) ? `${sources.get(file)}${location}` : line,
       ),
     );
     process.exitCode = compiler.code;

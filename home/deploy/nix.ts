@@ -24,10 +24,7 @@ export const buildHjemOutput = Effect.fn("buildHjemOutput")(function* (
       ].map((name) => [name, environment[name] || ""]),
     ),
   };
-  const argument = JSON.stringify(JSON.stringify(runtime)).replaceAll(
-    "${",
-    "\\${",
-  );
+  const argument = JSON.stringify(JSON.stringify(runtime)).replaceAll("${", "\\${");
   const options = {
     cwd: repository,
     env: environment,

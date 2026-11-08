@@ -40,9 +40,7 @@
       "customType": "regex",
       "description": "Track BlueBuild CLI releases for the explicitly feature-enabled Nix build",
       "managerFilePatterns": ["/^flake\\.nix$/"],
-      "matchStrings": [
-        "url = \"github:blue-build/cli/(?<currentValue>v[^\"/]+)\";"
-      ],
+      "matchStrings": ["url = \"github:blue-build/cli/(?<currentValue>v[^\"/]+)\";"],
       "depNameTemplate": "blue-build/cli",
       "datasourceTemplate": "github-releases"
     },
@@ -142,9 +140,7 @@
     {
       "customType": "regex",
       "description": "Track the checksum-verified mise bootstrap",
-      "managerFilePatterns": [
-        "/^\\.github/actions/setup/check/tools/action\\.yaml$/"
-      ],
+      "managerFilePatterns": ["/^\\.github/actions/setup/check/tools/action\\.yaml$/"],
       "matchStrings": ["MISE_VERSION: (?<currentValue>v[^\\s]+)"],
       "depNameTemplate": "jdx/mise",
       "datasourceTemplate": "github-releases"
@@ -219,9 +215,7 @@
     {
       "customType": "regex",
       "description": "Track the ChatGPT flake lock",
-      "managerFilePatterns": [
-        "/^home/files/\\.local/share/nix/chatgpt/flake\\.lock$/"
-      ],
+      "managerFilePatterns": ["/^home/files/\\.local/share/nix/chatgpt/flake\\.lock$/"],
       "matchStringsStrategy": "recursive",
       "matchStrings": [
         "\"nixpkgs\": \\{[\\s\\S]+?\"original\"",

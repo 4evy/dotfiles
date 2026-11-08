@@ -38,11 +38,7 @@ const waitForExit = Effect.fn(function* (pid: number) {
           process.kill(pid, 0);
           return false;
         } catch (cause) {
-          if (
-            cause instanceof Error &&
-            "code" in cause &&
-            cause.code === "ESRCH"
-          )
+          if (cause instanceof Error && "code" in cause && cause.code === "ESRCH")
             return true;
           throw cause;
         }
@@ -72,9 +68,7 @@ export const notificationPermissions = Effect.fn(function* (
   const version = yield* output(["/usr/bin/sw_vers", "-productVersion"]);
   if (Number(version.split(".")[0]) !== settings.majorVersion)
     return yield* Effect.fail(
-      new DotfilesError(
-        `Notification encoding is not verified for macOS ${version}`,
-      ),
+      new DotfilesError(`Notification encoding is not verified for macOS ${version}`),
     );
   const helper =
     process.env.DOTFILES_NOTIFICATIONS_HELPER ??
@@ -82,9 +76,7 @@ export const notificationPermissions = Effect.fn(function* (
   const fs = yield* FileSystem.FileSystem;
   if (!(yield* fs.exists(helper)))
     return yield* Effect.fail(
-      new DotfilesError(
-        "Native notification helper is missing. Run just permissions",
-      ),
+      new DotfilesError("Native notification helper is missing. Run just permissions"),
     );
   const container = settings.container.replaceAll("{home}", home);
   const request = {
@@ -103,9 +95,7 @@ export const notificationPermissions = Effect.fn(function* (
     user,
     helper,
   ];
-  const inspect = Effect.fn(function* (
-    action: "inspect" | "synchronize" | "apply",
-  ) {
+  const inspect = Effect.fn(function* (action: "inspect" | "synchronize" | "apply") {
     const text = yield* output([...command, action], {
       input: JSON.stringify(request),
       timeout: 30,
@@ -179,9 +169,7 @@ export const notificationPermissions = Effect.fn(function* (
           return yield* Effect.fail(
             new DotfilesError("Unrelated notification preferences changed"),
           );
-        console.log(
-          `Applied ${verified.managedChanges} scoped notification grants`,
-        );
+        console.log(`Applied ${verified.managedChanges} scoped notification grants`);
       }),
     () =>
       Effect.gen(function* () {
@@ -190,12 +178,9 @@ export const notificationPermissions = Effect.fn(function* (
           check: false,
         });
         if (loaded.code !== 0)
-          yield* run(
-            ["/bin/launchctl", "bootstrap", `gui/${uid}`, settings.agent],
-            {
-              capture: true,
-            },
-          );
+          yield* run(["/bin/launchctl", "bootstrap", `gui/${uid}`, settings.agent], {
+            capture: true,
+          });
         yield* run(["/bin/launchctl", "kickstart", service], { capture: true });
       }),
   );

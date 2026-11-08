@@ -25,9 +25,7 @@ function help(command?: CommandName) {
       return;
     }
     const entry = commands[command];
-    yield* Console.log(
-      `Usage: ${command}${entry.usage ? ` ${entry.usage}` : ""}`,
-    );
+    yield* Console.log(`Usage: ${command}${entry.usage ? ` ${entry.usage}` : ""}`);
     if (entry.environment.length)
       yield* Console.log(`Environment: ${entry.environment.join(", ")}`);
   });
@@ -44,13 +42,10 @@ if (import.meta.main) {
         or(
           or(
             ...commandNames.map((name) =>
-              map(
-                subcommand(name, passThrough({ format: "greedy" })),
-                (args) => ({
-                  command: name,
-                  args,
-                }),
-              ),
+              map(subcommand(name, passThrough({ format: "greedy" })), (args) => ({
+                command: name,
+                args,
+              })),
             ),
           ),
           map(
@@ -75,10 +70,7 @@ if (import.meta.main) {
       const forwarded = [...parsed.value.args];
       const meta = parseSync(
         object({
-          help: map(
-            multiple(flag("-h", "--help")),
-            (values) => values.length > 0,
-          ),
+          help: map(multiple(flag("-h", "--help")), (values) => values.length > 0),
           arguments: multiple(
             or(
               map(argument(string()), (value) => [value]),

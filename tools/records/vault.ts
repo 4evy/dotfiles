@@ -57,9 +57,7 @@ export function validRelativePath(value: string): boolean {
     value.length > 0 &&
     value.isWellFormed() &&
     !value.includes("\0") &&
-    value
-      .split("/")
-      .every((part) => part !== "" && part !== "." && part !== "..")
+    value.split("/").every((part) => part !== "" && part !== "." && part !== "..")
   );
 }
 
@@ -69,10 +67,7 @@ const bodySchema = v.pipe(
   v.check((value) => value.isWellFormed()),
 );
 // Serialized records have no defaults and reject unknown fields at every level
-const collectionSchemas: Record<
-  string,
-  v.GenericSchema<unknown, RecordItem>
-> = {
+const collectionSchemas: Record<string, v.GenericSchema<unknown, RecordItem>> = {
   t0: v.strictObject({
     body: bodySchema,
     executable: v.boolean(),
@@ -118,13 +113,9 @@ export function decodeRecord(
     // Report schema paths and constraints, never private values or messages
     const failure = result.issues[0];
     const location =
-      failure.type === "strict_object"
-        ? failure.path?.slice(0, -1)
-        : failure.path;
+      failure.type === "strict_object" ? failure.path?.slice(0, -1) : failure.path;
     const path = location?.map((item) => String(item.key)).join("/") ?? "";
-    throw new DotfilesError(
-      `${label} invalid field /${path} (${failure.type})`,
-    );
+    throw new DotfilesError(`${label} invalid field /${path} (${failure.type})`);
   }
   return result.output;
 }
@@ -165,10 +156,7 @@ export function validateCollections(value: CollectionSet): void {
   }
 }
 
-export function equalCollections(
-  left: CollectionSet,
-  right: CollectionSet,
-): boolean {
+export function equalCollections(left: CollectionSet, right: CollectionSet): boolean {
   const keys = Object.keys(left);
   if (keys.length !== Object.keys(right).length) return false;
   return keys.every((collection) => {
@@ -189,9 +177,7 @@ export function equalCollections(
           record.private === other.private &&
           record.render === other.render &&
           record.paths.length === other.paths.length &&
-          record.paths.every(
-            (path, pathIndex) => path === other.paths[pathIndex],
-          ) &&
+          record.paths.every((path, pathIndex) => path === other.paths[pathIndex]) &&
           record.systems.length === other.systems.length &&
           record.systems.every(
             (system, systemIndex) => system === other.systems[systemIndex],
@@ -258,15 +244,12 @@ export class Vault {
         .realPath(configured ?? (yield* defaultRepository()))
         .pipe(
           Effect.map(resolve),
-          Effect.mapError(
-            () => new DotfilesError("resolve records repository failed"),
-          ),
+          Effect.mapError(() => new DotfilesError("resolve records repository failed")),
         );
       return new Vault({
         repository,
         file: resolve(
-          process.env.RECORDS_FILE ??
-            join(repository, "secrets", "records.yaml"),
+          process.env.RECORDS_FILE ?? join(repository, "secrets", "records.yaml"),
         ),
         marker: resolve(
           process.env.RECORDS_MARKER ?? join(repository, ".records-unpacked"),
@@ -445,11 +428,7 @@ export class Vault {
 
 function defaultRepository() {
   return Effect.gen(function* () {
-    const candidates = [
-      process.cwd(),
-      dirname(process.execPath),
-      import.meta.dir,
-    ];
+    const candidates = [process.cwd(), dirname(process.execPath), import.meta.dir];
     for (const candidate of candidates) {
       let current = resolve(candidate);
       while (true) {

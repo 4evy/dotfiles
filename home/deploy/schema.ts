@@ -10,9 +10,7 @@ export const EntrySchema = Schema.Struct({
   source: Schema.String,
   target: Schema.String,
   clobber: Schema.optionalKey(Schema.Boolean),
-  permissions: Schema.optionalKey(
-    Schema.String.check(Schema.isPattern(/^[0-7]{4}$/)),
-  ),
+  permissions: Schema.optionalKey(Schema.String.check(Schema.isPattern(/^[0-7]{4}$/))),
   requireCommand: Schema.optionalKey(Schema.String),
 }).mapFields(Struct.map(Schema.mutableKey));
 export const ManifestSchema = Schema.Struct({

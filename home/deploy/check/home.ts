@@ -16,10 +16,8 @@ type Validator = (
   contents: string,
   path: string,
 ) => Effect.Effect<unknown, DotfilesError, RuntimeServices>;
-const bash: Validator = (_, path) =>
-  run(["bash", "-n", path], { cwd: repository });
-const zsh: Validator = (_, path) =>
-  run(["zsh", "-n", path], { cwd: repository });
+const bash: Validator = (_, path) => run(["bash", "-n", path], { cwd: repository });
+const zsh: Validator = (_, path) => run(["zsh", "-n", path], { cwd: repository });
 const js = new Bun.Transpiler({ loader: "js" });
 const ts = new Bun.Transpiler({ loader: "ts" });
 const jsx = new Bun.Transpiler({ loader: "jsx" });
@@ -101,8 +99,7 @@ runMain(
           .filter(
             (path) =>
               isAbsolute(path) &&
-              (basename(path).startsWith("hjem-hook-") ||
-                scripts[extname(path)]),
+              (basename(path).startsWith("hjem-hook-") || scripts[extname(path)]),
           )
           .map((source) => ({ source, target: source })),
       ),
@@ -130,8 +127,7 @@ runMain(
           contents.slice(2).split("\n", 1)[0]?.trim().split(/\s+/) ?? [];
         const program = basename(interpreter ?? "");
         // env -S splits the remaining shebang into a command and its arguments
-        const command =
-          program === "env" ? args[args[0] === "-S" ? 1 : 0] : program;
+        const command = program === "env" ? args[args[0] === "-S" ? 1 : 0] : program;
         const shell = basename(command ?? "");
         if (Object.hasOwn(shells, shell)) validate = shells[shell];
       }
@@ -147,8 +143,6 @@ runMain(
       );
       checked++;
     }
-    console.log(
-      `${platform}: checked ${checked} generated home files and hooks`,
-    );
+    console.log(`${platform}: checked ${checked} generated home files and hooks`);
   }),
 );

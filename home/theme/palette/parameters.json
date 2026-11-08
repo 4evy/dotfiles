@@ -1,14 +1,7 @@
 {
   "hueConcentration": 4,
   "minimumTextContrast": 4.5,
-  "contrastSurfaces": [
-    "base",
-    "mantle",
-    "crust",
-    "surface0",
-    "surface1",
-    "surface2"
-  ],
+  "contrastSurfaces": ["base", "mantle", "crust", "surface0", "surface1", "surface2"],
   "fillFlavor": "mocha",
   "fillForeground": "crust",
   "reference": {

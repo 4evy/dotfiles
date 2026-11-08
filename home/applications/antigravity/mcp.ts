@@ -24,9 +24,7 @@ const ContentSchema = Schema.StructWithRest(
 );
 const MessageSchema = Schema.StructWithRest(
   Schema.Struct({
-    id: Schema.optionalKey(
-      Schema.Union([Schema.String, Schema.Number, Schema.Null]),
-    ),
+    id: Schema.optionalKey(Schema.Union([Schema.String, Schema.Number, Schema.Null])),
     method: Schema.optionalKey(Schema.String),
     params: Schema.optionalKey(
       Schema.StructWithRest(
@@ -102,8 +100,7 @@ runMain(
       Effect.catch((error) => {
         if (
           error._tag === "PlatformError" &&
-          (error.reason.cause as NodeJS.ErrnoException | undefined)?.code ===
-            "EPIPE"
+          (error.reason.cause as NodeJS.ErrnoException | undefined)?.code === "EPIPE"
         )
           return Effect.void;
         return Effect.fail(error);

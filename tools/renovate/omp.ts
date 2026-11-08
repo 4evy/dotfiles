@@ -19,19 +19,14 @@ export const updateOmpDependencies = Effect.fn(function* () {
   const { storePath } = yield* Schema.decodeUnknownEffect(
     Schema.fromJsonString(Schema.Struct({ storePath: Schema.String })),
   )(
-    yield* output(
-      ["nix", "flake", "prefetch", "--json", "--inputs-from", root, "ai"],
-      {
-        cwd: root,
-      },
-    ),
+    yield* output(["nix", "flake", "prefetch", "--json", "--inputs-from", root, "ai"], {
+      cwd: root,
+    }),
   );
   const { dependencies } = yield* Schema.decodeUnknownEffect(
     Schema.fromJsonString(Schema.Struct({ dependencies: dependencyMap })),
   )(
-    yield* fs.readFileString(
-      join(storePath, "apps/omp/runtime/upstream/package.json"),
-    ),
+    yield* fs.readFileString(join(storePath, "apps/omp/runtime/upstream/package.json")),
   );
   const path = join(root, "package.json");
   const raw = yield* Schema.decodeUnknownEffect(

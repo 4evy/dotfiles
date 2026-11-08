@@ -20,9 +20,7 @@ export function exitCode(
         signal && Object.hasOwn(constants.signals, signal)
           ? constants.signals[signal as keyof typeof constants.signals]
           : undefined;
-      return number === undefined
-        ? Effect.fail(error)
-        : Effect.succeed(128 + number);
+      return number === undefined ? Effect.fail(error) : Effect.succeed(128 + number);
     }),
   );
 }
