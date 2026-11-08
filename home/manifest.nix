@@ -11,16 +11,18 @@
       nixGenerated = true;
     }
     {
-      source = "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/catppuccin-custom-dark.scss";
+      source = "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/catppuccin-custom.scss";
       target = "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/catppuccin-custom-dark.scss";
+      variant = "dark";
       systems = [
         "darwin"
       ];
       nixGenerated = true;
     }
     {
-      source = "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/catppuccin-custom-light.scss";
+      source = "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/catppuccin-custom.scss";
       target = "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/catppuccin-custom-light.scss";
+      variant = "light";
       systems = [
         "darwin"
       ];

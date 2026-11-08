@@ -164,8 +164,22 @@ let
       variant = entry.variant or "dark";
       variantText =
         lib.strings.replaceStrings
-          [ "_VARIANT_" "catppuccin_custom_variant" ]
-          [ "_${lib.strings.toUpper variant}_" "catppuccin_custom_${variant}" ]
+          [
+            "_VARIANT_"
+            "catppuccin_custom_variant"
+            "@THEME_VARIANT@"
+            "@CIDER_SCROLLBAR_MIX@"
+            "@CIDER_SCROLLBAR_THUMB_MIX@"
+            "@CIDER_POWERSWOOSH_FOREGROUND@"
+          ]
+          [
+            "_${lib.strings.toUpper variant}_"
+            "catppuccin_custom_${variant}"
+            variant
+            (if variant == "light" then "48" else "52")
+            (if variant == "light" then "44" else "50")
+            (if variant == "light" then "var(--crust)" else "var(--text)")
+          ]
           templateText;
       text = replace (
         if source == ".config/eza/theme.yml" then

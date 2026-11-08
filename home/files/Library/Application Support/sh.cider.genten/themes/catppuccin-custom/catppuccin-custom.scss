@@ -1,21 +1,24 @@
-body.body--dark {
-  --accent: @COLOR_DARK_ACCENT@;
-  --accent-text: @COLOR_DARK_PINK@;
-  --accent-foreground: @COLOR_DARK_ACCENTFOREGROUND@;
-  --text: @COLOR_DARK_TEXT@;
-  --subtext1: @COLOR_DARK_SUBTEXT1@;
-  --subtext0: @COLOR_DARK_SUBTEXT0@;
-  --overlay1: @COLOR_DARK_OVERLAY1@;
-  --overlay0: @COLOR_DARK_OVERLAY0@;
-  --surface0: @COLOR_DARK_SURFACE0@;
-  --base: @COLOR_DARK_BASE@;
-  --mantle: @COLOR_DARK_MANTLE@;
-  --crust: @COLOR_DARK_CRUST@;
+/* Rendered twice by home/deploy/nix/files.nix using each manifest entry's variant
+ * Cider processes nesting with PostCSS, so keep variant choices in the renderer
+ */
+body.body--@THEME_VARIANT@ {
+  --accent: @COLOR_VARIANT_ACCENT@;
+  --accent-text: @COLOR_VARIANT_PINK@;
+  --accent-foreground: @COLOR_VARIANT_ACCENTFOREGROUND@;
+  --text: @COLOR_VARIANT_TEXT@;
+  --subtext1: @COLOR_VARIANT_SUBTEXT1@;
+  --subtext0: @COLOR_VARIANT_SUBTEXT0@;
+  --overlay1: @COLOR_VARIANT_OVERLAY1@;
+  --overlay0: @COLOR_VARIANT_OVERLAY0@;
+  --surface0: @COLOR_VARIANT_SURFACE0@;
+  --base: @COLOR_VARIANT_BASE@;
+  --mantle: @COLOR_VARIANT_MANTLE@;
+  --crust: @COLOR_VARIANT_CRUST@;
 
   --selection-bg: color-mix(in srgb, var(--accent) 30%, transparent);
-  --red: @COLOR_DARK_RED@;
-  --green: @COLOR_DARK_GREEN@;
-  --blue: @COLOR_DARK_BLUE@;
+  --red: @COLOR_VARIANT_RED@;
+  --green: @COLOR_VARIANT_GREEN@;
+  --blue: @COLOR_VARIANT_BLUE@;
 
   /* Globals */
 
@@ -433,7 +436,7 @@ body.body--dark {
     [sfc-name="PowerSwoosh"] {
       .powerswoosh-lockup-detail-title,
       .powerswoosh-lockup-detail-subtitle {
-        color: var(--text);
+        color: @CIDER_POWERSWOOSH_FOREGROUND@;
       }
     }
 
@@ -1263,44 +1266,44 @@ body.body--dark {
 }
 
 /* Cider 4 application tokens, added after the complete Catppuccin coverage baseline. */
-body.body--dark {
-  --systemRed: @COLOR_DARK_RED@;
-  --systemGreen: @COLOR_DARK_GREEN@;
-  --systemBlue: @COLOR_DARK_BLUE@;
-  --systemPink: @COLOR_DARK_PINK@;
-  --systemPurple: @COLOR_DARK_MAUVE@;
-  --systemOrange: @COLOR_DARK_PEACH@;
-  --systemYellow: @COLOR_DARK_YELLOW@;
-  --systemTeal: @COLOR_DARK_TEAL@;
-  --systemCyan: @COLOR_DARK_SKY@;
-  --systemIndigo: @COLOR_DARK_LAVENDER@;
-  --systemMint: @COLOR_DARK_TEAL@;
-  --systemGray: @COLOR_DARK_OVERLAY0@;
-  --backgroundColor: color-mix(in srgb, @COLOR_DARK_BASE@ 88%, transparent);
-  --backgroundColorFallback: @COLOR_DARK_BASE@;
-  --chromeColor: @COLOR_DARK_MANTLE@;
-  --chromeColor2: @COLOR_DARK_BASE@;
-  --contextMenuBorderColor: @COLOR_DARK_SURFACE0@;
-  --contextMenuTextColor: @COLOR_DARK_TEXT@;
-  --contextMenuOverrideTextColor: @COLOR_DARK_RED@;
-  --dropdownBackground: @COLOR_DARK_MANTLE@;
-  --dropdownLightGray: @COLOR_DARK_SURFACE0@;
-  --dropdownLightGrayIcon: @COLOR_DARK_SUBTEXT1@;
-  --dropdownActiveOutlineColor: @COLOR_DARK_PINK@;
+body.body--@THEME_VARIANT@ {
+  --systemRed: @COLOR_VARIANT_RED@;
+  --systemGreen: @COLOR_VARIANT_GREEN@;
+  --systemBlue: @COLOR_VARIANT_BLUE@;
+  --systemPink: @COLOR_VARIANT_PINK@;
+  --systemPurple: @COLOR_VARIANT_MAUVE@;
+  --systemOrange: @COLOR_VARIANT_PEACH@;
+  --systemYellow: @COLOR_VARIANT_YELLOW@;
+  --systemTeal: @COLOR_VARIANT_TEAL@;
+  --systemCyan: @COLOR_VARIANT_SKY@;
+  --systemIndigo: @COLOR_VARIANT_LAVENDER@;
+  --systemMint: @COLOR_VARIANT_TEAL@;
+  --systemGray: @COLOR_VARIANT_OVERLAY0@;
+  --backgroundColor: color-mix(in srgb, @COLOR_VARIANT_BASE@ 88%, transparent);
+  --backgroundColorFallback: @COLOR_VARIANT_BASE@;
+  --chromeColor: @COLOR_VARIANT_MANTLE@;
+  --chromeColor2: @COLOR_VARIANT_BASE@;
+  --contextMenuBorderColor: @COLOR_VARIANT_SURFACE0@;
+  --contextMenuTextColor: @COLOR_VARIANT_TEXT@;
+  --contextMenuOverrideTextColor: @COLOR_VARIANT_RED@;
+  --dropdownBackground: @COLOR_VARIANT_MANTLE@;
+  --dropdownLightGray: @COLOR_VARIANT_SURFACE0@;
+  --dropdownLightGrayIcon: @COLOR_VARIANT_SUBTEXT1@;
+  --dropdownActiveOutlineColor: @COLOR_VARIANT_PINK@;
   --dropdownActiveOutlineColorShadow: color-mix(
     in srgb,
-    @COLOR_DARK_PINK@ 35%,
+    @COLOR_VARIANT_PINK@ 35%,
     transparent
   );
-  --hudBGColor: @COLOR_DARK_MANTLE@;
-  --hudTextColor: @COLOR_DARK_TEXT@;
-  --librarySongsTrackInactiveBG: @COLOR_DARK_MANTLE@;
+  --hudBGColor: @COLOR_VARIANT_MANTLE@;
+  --hudTextColor: @COLOR_VARIANT_TEXT@;
+  --librarySongsTrackInactiveBG: @COLOR_VARIANT_MANTLE@;
 
   * {
     scrollbar-color: color-mix(
         in srgb,
-        @COLOR_DARK_PINK@ 52%,
-        @COLOR_DARK_SURFACE0@
+        @COLOR_VARIANT_PINK@ @CIDER_SCROLLBAR_MIX@%,
+        @COLOR_VARIANT_SURFACE0@
       )
       transparent;
     scrollbar-width: thin;
@@ -1316,14 +1319,14 @@ body.body--dark {
   ::-webkit-scrollbar-thumb {
     background: color-mix(
       in srgb,
-      @COLOR_DARK_PINK@ 50%,
-      @COLOR_DARK_SURFACE0@
+      @COLOR_VARIANT_PINK@ @CIDER_SCROLLBAR_THUMB_MIX@%,
+      @COLOR_VARIANT_SURFACE0@
     );
     background-clip: content-box;
     border: 3px solid transparent;
     border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: @COLOR_DARK_PINK@;
+    background: @COLOR_VARIANT_PINK@;
   }
 }
