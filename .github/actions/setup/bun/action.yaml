@@ -14,9 +14,35 @@ runs:
   using: composite
   steps:
     - name: Install Bun
-      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-      with:
-        bun-version-file: .tool-versions
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |- # zizmor: ignore[github-env] export the pinned runtime path only
+        set -euo pipefail
+        case "$RUNNER_OS-$RUNNER_ARCH" in
+          Linux-X64) platform=linux-x64 ;;
+          macOS-ARM64) platform=darwin-aarch64 ;;
+          macOS-X64) platform=darwin-x64 ;;
+          *) echo 'Unsupported runner platform' >&2; exit 1 ;;
+        esac
+        version=
+        while read -r tool pinned; do
+          if [[ "$tool" == bun ]]; then
+            version=$pinned
+            break
+          fi
+        done < .tool-versions
+        [[ -n "$version" ]]
+        temporary=$(mktemp -d)
+        trap 'rm -rf "$temporary"' EXIT
+        # Use the release API, not the browser download route
+        gh release download "bun-v$version" --repo oven-sh/bun \
+          --pattern "bun-$platform.zip" --output "$temporary/bun.zip"
+        unzip -q "$temporary/bun.zip" -d "$temporary"
+        bin="$RUNNER_TEMP/bun/bin"
+        mkdir -p "$bin"
+        install -m 755 "$temporary/bun-$platform/bun" "$bin/bun"
+        printf '%s\n' "$bin" >> "$GITHUB_PATH"
 
     - name: Resolve Bun Lockfiles
       id: lockfiles

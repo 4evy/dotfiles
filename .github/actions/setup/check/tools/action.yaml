@@ -22,6 +22,7 @@ runs:
         # Trust only the version file, not arbitrary repository mise configuration
         MISE_TRUSTED_CONFIG_PATHS: ${{ env.MISE_TRUSTED_CONFIG_PATHS || format('{0}/.tool-versions', github.workspace) }}
         MISE_GITHUB_TOKEN: ${{ github.token }}
+        GH_TOKEN: ${{ github.token }}
       run: |- # zizmor: ignore[github-env] export the verified bootstrap and pinned tool paths only
         set -euo pipefail
         case "$RUNNER_OS-$RUNNER_ARCH" in
@@ -34,9 +35,9 @@ runs:
         mkdir -p "$bin"
         temporary=$(mktemp -d)
         trap 'rm -rf "$temporary"' EXIT
-        curl -fsSL --retry 3 --retry-delay 1 \
-          "https://github.com/jdx/mise/releases/download/$MISE_VERSION/mise-$MISE_VERSION-$platform" \
-          -o "$temporary/mise"
+        # The release API avoids the browser download route's gateway failures
+        gh release download "$MISE_VERSION" --repo jdx/mise \
+          --pattern "mise-$MISE_VERSION-$platform" --output "$temporary/mise"
         # BSD sha256sum requires an explicit stdin operand in check mode
         if command -v sha256sum >/dev/null 2>&1; then
           printf '%s  %s\n' "$checksum" "$temporary/mise" | sha256sum -c -
