@@ -109,7 +109,7 @@ The script asks for administrator and 1Password access when needed
 
 </details>
 
-## Formatting
+## Formatting and validation
 
 Run `just fmt` (or `bun run format`) to format the repository and any available
 encrypted records through the [pinned treefmt workflow](just/dev/format.just).
@@ -125,6 +125,12 @@ formatter versions as CI rather than whichever versions are installed globally.
 Formatting does not apply lint fixes. Use `bun run lint:fix` for Biome lint
 fixes and `just check format` for a sandboxed formatting check without worktree
 changes.
+
+Run `just lint` for repository-wide validation, or `bun run check` for Biome,
+TypeScript, builds, and Fallow. `bun run check:fallow` checks dead code with
+the matching TypeScript semantic companion, cyclomatic and cognitive complexity,
+and duplicate code. Complexity gates exclude estimated CRAP scores because
+they require coverage data to be meaningful.
 
 ## License
 

@@ -3,13 +3,27 @@
   "entry": [
     "tools/{setup,renovate}/**/*.ts",
     "tools/workstation/install.ts",
+    "tools/workstation/src/cli.ts",
+    "tools/workstation/build.ts",
+    "tools/tiling/src/{gnome/extension,kde/main}.ts",
+    "tools/records/main.ts",
+    "tools/theme/run/main.ts",
+    ".github/renovate/src/config.cjs",
     "systems/modules/darwin/**/*.ts",
     "systems/spectrum/recipes/spectrum/sources/sources.ts",
     "home/{deploy,applications,theme}/**/*.ts",
+    "home/applications/discord/equicord/css/css.css",
+    "home/files/Library/Application Support/sh.cider.genten/themes/**/*.scss",
+    "home/files/.config/rex/themes.ts",
+    "home/files/.local/lib/typescript/compiler.mts",
     "home/files/.omp/agent/extensions/**/*.ts",
     "home/files/.local/lib/{helium,helix,solaar,vscode}/*.ts"
   ],
+  // Shell entrypoints use these outside the TypeScript import graph
+  // tools/setup/setup.sh imports platform-bun and tsrs.sh launches tsrs
+  "ignoreDependencies": ["@effect/platform-bun", "tsrs"],
   "ignorePatterns": [
+    "!home/files/.config/rex/**",
     "!home/files/.local/**",
     "!home/files/.omp/**",
     ".jj/**",
@@ -18,9 +32,6 @@
     "target/**",
     "zig-pkg/**",
     "zig-out/**",
-    // Workstation runs Fallow through its own package check script
-    "tools/workstation/src/**",
-    "tools/workstation/assets/**",
     "tools/tiling/vendor/**"
   ]
 }

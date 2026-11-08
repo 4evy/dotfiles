@@ -28,8 +28,9 @@
     }
   },
   "scripts": {
-    "check": "bun run check:biome && bun run tsc -p tsconfig.json && bun run --sequential --workspaces check",
+    "check": "bun run check:biome && bun run check:fallow && bun run tsc -p tsconfig.json && bun run --sequential --workspaces check",
     "check:biome": "bun run biome check .",
+    "check:fallow": "bun run fallow dead-code --type-aware && bun run fallow health --complexity --max-crap 0 && bun run fallow dupes --fail-on-issues",
     "format": "just fmt",
     "lint": "bun run biome lint .",
     "lint:fix": "bun run biome lint --write .",
@@ -41,14 +42,13 @@
     "@catppuccin/palette": "1.8.0",
     "@oh-my-pi/pi-coding-agent": "18.16.0",
     "@oh-my-pi/pi-tui": "18.16.0",
-    "@tailnet/tailscaled": "0.1.2",
     "@types/bun": "catalog:",
     "@types/culori": "4.0.1",
     "@types/write-file-atomic": "4.0.3",
     "culori": "4.0.2",
     "fallow": "file:tools/tiling/vendor/fallow",
-    "typescript": "catalog:",
-    "vscode-jsonrpc": "10.0.0"
+    "fallow-type-aware": "3.39.0",
+    "typescript": "catalog:"
   },
   "dependencies": {
     "@dotfiles/core": "workspace:*",

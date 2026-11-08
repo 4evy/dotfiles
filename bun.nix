@@ -625,10 +625,6 @@
     url = "https://registry.npmjs.org/@puppeteer/browsers/-/browsers-3.0.6.tgz";
     hash = "sha512-B/gKoqlFkzhvzsI6jo9K1cZz9o5ypviVv/xu8CwA4grZzyVwN+XfkT+tu8T1zrauuEXv6VhS2oGX+6NL95WcKA==";
   };
-  "@tailnet/tailscaled@0.1.2" = fetchurl {
-    url = "https://registry.npmjs.org/@tailnet/tailscaled/-/tailscaled-0.1.2.tgz";
-    hash = "sha512-zVmL05ubIeXaGZqwVb+RI8mfpirgxzSmtmQMcDDSbv+AFwio/G/oHPWYTKzsEV9kYMULhqA4N/WDqmu7Hwshgw==";
-  };
   "@tsrs/darwin-arm64@0.23.0-ts7.1.0-beta" = fetchurl {
     url = "https://registry.npmjs.org/@tsrs/darwin-arm64/-/darwin-arm64-0.23.0-ts7.1.0-beta.tgz";
     hash = "sha512-Bk1aFZRo4d4RKtOU8OEVLXWZ7E0JqnL8xKhOb+FuvRRb9Qxu5UIgD0W3xiGvixzZ99I7f8Bj/NCTN30xX7MkEA==";
@@ -842,6 +838,10 @@
     hash = "sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==";
   };
   "fallow" = copyPathToStore ./tools/tiling/vendor/fallow;
+  "fallow-type-aware@3.39.0" = fetchurl {
+    url = "https://registry.npmjs.org/fallow-type-aware/-/fallow-type-aware-3.39.0.tgz";
+    hash = "sha512-OLOQjU22q4xKRy0pEdbrVJwNinLS8q/MqEu1lQRVc5lrlpIxYrLjQSfhZL2buUbC2u24IuO6eVFrh/2brQbmPg==";
+  };
   "fast-xml-builder@1.3.1" = fetchurl {
     url = "https://registry.npmjs.org/fast-xml-builder/-/fast-xml-builder-1.3.1.tgz";
     hash = "sha512-pIM/1n3ntFXKYrUZwW7QCK0gAW7XY+wzj1YMIV3tLDvPj/V+zTGJK5e3/4WJfwj0qWw2ElNXiTixda/R+3YSug==";
