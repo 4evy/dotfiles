@@ -5,6 +5,25 @@
  * express the fix.
  */
 
+/* Theme roots and lazy profile themes share the same border contrast ladder */
+:is(
+  .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
+  .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
+),
+.visual-refresh
+  :is(
+    .user-profile-modal,
+    .user-profile-modal-v2,
+    .user-profile-popout,
+    .user-profile-sidebar.user-profile-sidebar-redesign
+  ) {
+  --border-muted: color-mix(in srgb, var(--catppuccin-custom-border) 55%, transparent);
+  --border-subtle: color-mix(in srgb, var(--catppuccin-custom-border) 75%, transparent);
+  --border-normal: var(--catppuccin-custom-border);
+  --border-strong: var(--catppuccin-custom-input);
+  --border-focus: var(--catppuccin-custom-focus);
+}
+
 :is(
   .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
   .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
@@ -178,12 +197,6 @@
   --interactive-background-selected: var(--catppuccin-custom-sidebarRowSelected);
   --interactive-background-active: var(--catppuccin-custom-sidebarRowActive);
 
-  /* Preserve Discord's contrast ladder around Catppuccin Custom's border roles. */
-  --border-muted: color-mix(in srgb, var(--catppuccin-custom-border) 55%, transparent);
-  --border-subtle: color-mix(in srgb, var(--catppuccin-custom-border) 75%, transparent);
-  --border-normal: var(--catppuccin-custom-border);
-  --border-strong: var(--catppuccin-custom-input);
-  --border-focus: var(--catppuccin-custom-focus);
   --border-feedback-positive: var(--catppuccin-custom-positive);
   --border-feedback-warning: var(--catppuccin-custom-warning);
   --border-feedback-critical: var(--catppuccin-custom-critical);
@@ -389,11 +402,6 @@
   --user-profile-border: var(--catppuccin-custom-border);
   --user-profile-toolbar-border: var(--catppuccin-custom-border);
 
-  --border-muted: color-mix(in srgb, var(--catppuccin-custom-border) 55%, transparent);
-  --border-subtle: color-mix(in srgb, var(--catppuccin-custom-border) 75%, transparent);
-  --border-normal: var(--catppuccin-custom-border);
-  --border-strong: var(--catppuccin-custom-input);
-  --border-focus: var(--catppuccin-custom-focus);
   --border-feedback-critical: var(--catppuccin-custom-critical);
   --app-frame-border: var(--border-normal);
   --input-border-default: var(--border-normal);
@@ -440,196 +448,122 @@
   --chat-background-default: var(--catppuccin-custom-surfaceRaised);
   --catppuccin-custom-composer: var(--catppuccin-custom-surfaceRaised);
   --catppuccin-custom-composer-border: var(--catppuccin-custom-input);
-}
 
-/* The composer prefers the shared gradient token over chat-background-default */
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  div[class*="channelTextArea_"]
-  div[class*="themedBackground_"] {
-  background: var(--catppuccin-custom-composer) !important;
-  border-color: var(--catppuccin-custom-composer-border) !important;
-}
+  /* Nest under the original :is() scope without changing its specificity */
 
-/*
- * Mana resolves color constants in JS rather than reading CSS variables
- * Keep its geometry, focus ring, and disabled opacity, but override its paint
- * Equal-specificity states run from default through hover, selected, and pressed
- */
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  label:has(input[role="switch"])
-  > [data-mana-component="switch"] {
-  background-color: var(--switch-background-default) !important;
-  border-color: var(--switch-border-default) !important;
-}
+  /* The composer prefers the gradient token over chat-background-default */
+  & div[class*="channelTextArea_"] div[class*="themedBackground_"] {
+    background: var(--catppuccin-custom-composer) !important;
+    border-color: var(--catppuccin-custom-composer-border) !important;
+  }
 
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  label:where(:not([data-disabled]):hover):has(input[role="switch"])
-  > [data-mana-component="switch"] {
-  background-color: var(--switch-background-hover) !important;
-  border-color: var(--switch-border-hover) !important;
-}
+  /*
+   * Mana resolves color constants in JS rather than reading CSS variables
+   * Keep its geometry, focus ring, and disabled opacity, but override its paint
+   * Equal-specificity states run default, hover, selected, and pressed
+   */
+  & label:has(input[role="switch"]) > [data-mana-component="switch"] {
+    background-color: var(--switch-background-default) !important;
+    border-color: var(--switch-border-default) !important;
+  }
 
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  label:has(input[role="switch"]:where(:checked))
-  > [data-mana-component="switch"] {
-  background-color: var(--switch-background-selected-default) !important;
-  border-color: var(--switch-border-selected-default) !important;
-}
+  &
+    label:where(:not([data-disabled]):hover):has(input[role="switch"])
+    > [data-mana-component="switch"] {
+    background-color: var(--switch-background-hover) !important;
+    border-color: var(--switch-border-hover) !important;
+  }
 
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  label:where(:not([data-disabled]):hover):has(input[role="switch"]:where(:checked))
-  > [data-mana-component="switch"] {
-  background-color: var(--switch-background-selected-hover) !important;
-  border-color: var(--switch-border-selected-hover) !important;
-}
+  & label:has(input[role="switch"]:where(:checked)) > [data-mana-component="switch"] {
+    background-color: var(--switch-background-selected-default) !important;
+    border-color: var(--switch-border-selected-default) !important;
+  }
 
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  label:where(:not([data-disabled]):active):has(input[role="switch"])
-  > [data-mana-component="switch"] {
-  background-color: var(--switch-background-active) !important;
-}
+  &
+    label:where(:not([data-disabled]):hover):has(input[role="switch"]:where(:checked))
+    > [data-mana-component="switch"] {
+    background-color: var(--switch-background-selected-hover) !important;
+    border-color: var(--switch-border-selected-hover) !important;
+  }
 
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  label:has(input[role="switch"])
-  > [data-mana-component="switch"]
-  > svg
-  > rect {
-  fill: var(--switch-thumb-background-default) !important;
-}
+  &
+    label:where(:not([data-disabled]):active):has(input[role="switch"])
+    > [data-mana-component="switch"] {
+    background-color: var(--switch-background-active) !important;
+  }
 
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  label:where(:has(input:checked), :not([data-disabled]):active):has(
-    input[role="switch"]
-  )
-  > [data-mana-component="switch"]
-  > svg
-  > rect {
-  fill: var(--switch-thumb-background-selected-default) !important;
-}
+  & label:has(input[role="switch"]) > [data-mana-component="switch"] > svg > rect {
+    fill: var(--switch-thumb-background-default) !important;
+  }
 
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  label:has(input[role="switch"])
-  > [data-mana-component="switch"]
-  path {
-  fill: var(--switch-thumb-icon-default) !important;
-}
+  &
+    label:where(:has(input:checked), :not([data-disabled]):active):has(
+      input[role="switch"]
+    )
+    > [data-mana-component="switch"]
+    > svg
+    > rect {
+    fill: var(--switch-thumb-background-selected-default) !important;
+  }
 
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  label:where(:has(input:checked), :not([data-disabled]):active):has(
-    input[role="switch"]
-  )
-  > [data-mana-component="switch"]
-  path {
-  fill: var(--switch-thumb-icon-active) !important;
-}
+  & label:has(input[role="switch"]) > [data-mana-component="switch"] path {
+    fill: var(--switch-thumb-icon-default) !important;
+  }
 
-/* Voice-state glows are emitted from literal RGB channels. */
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  [class*="greenGlow_"] {
-  background: color-mix(in srgb, var(--catppuccin-custom-positive) 10%, transparent);
-}
+  &
+    label:where(:has(input:checked), :not([data-disabled]):active):has(
+      input[role="switch"]
+    )
+    > [data-mana-component="switch"]
+    path {
+    fill: var(--switch-thumb-icon-active) !important;
+  }
 
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  [class*="greenGlow_"]:hover {
-  background: color-mix(in srgb, var(--catppuccin-custom-positive) 20%, transparent);
-}
+  /* Voice-state glows are emitted from literal RGB channels */
+  & [class*="greenGlow_"] {
+    background: color-mix(in srgb, var(--catppuccin-custom-positive) 10%, transparent);
+  }
 
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  [class*="redGlow_"] {
-  background: color-mix(in srgb, var(--catppuccin-custom-critical) 10%, transparent);
-}
+  & [class*="greenGlow_"]:hover {
+    background: color-mix(in srgb, var(--catppuccin-custom-positive) 20%, transparent);
+  }
 
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  [class*="redGlow_"]:hover {
-  background: color-mix(
-    in srgb,
-    var(--catppuccin-custom-critical) 20%,
-    transparent
-  ) !important;
-}
+  & [class*="redGlow_"] {
+    background: color-mix(in srgb, var(--catppuccin-custom-critical) 10%, transparent);
+  }
 
-/* Media and forum-card fades contain literal native neutral colors. */
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  div[class^="overlay_"][class*="darkThemeGradient_"] {
-  background: linear-gradient(
-    0deg,
-    var(--catppuccin-custom-base) 0,
-    color-mix(in srgb, var(--catppuccin-custom-surface0) 50%, transparent) 50%,
-    transparent
-  );
-}
+  & [class*="redGlow_"]:hover {
+    background: color-mix(
+      in srgb,
+      var(--catppuccin-custom-critical) 20%,
+      transparent
+    ) !important;
+  }
 
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  div[class^="textContentFooter_"] {
-  background: linear-gradient(
-    0deg,
-    var(--catppuccin-custom-surface),
-    color-mix(in srgb, var(--catppuccin-custom-surface) 97%, transparent) 36px,
-    color-mix(in srgb, var(--catppuccin-custom-surfaceRaised) 40%, transparent)
-  ) !important;
-}
+  /* Media and forum-card fades contain literal native neutral colors */
+  & div[class^="overlay_"][class*="darkThemeGradient_"] {
+    background: linear-gradient(
+      0deg,
+      var(--catppuccin-custom-base) 0,
+      color-mix(in srgb, var(--catppuccin-custom-surface0) 50%, transparent) 50%,
+      transparent
+    );
+  }
 
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  div[class^="textContentFooter_"]
-  [class*="tagPill_"] {
-  background-color: var(--catppuccin-custom-accentSurface);
-}
+  & div[class^="textContentFooter_"] {
+    background: linear-gradient(
+      0deg,
+      var(--catppuccin-custom-surface),
+      color-mix(in srgb, var(--catppuccin-custom-surface) 97%, transparent) 36px,
+      color-mix(in srgb, var(--catppuccin-custom-surfaceRaised) 40%, transparent)
+    ) !important;
+  }
 
-:is(
-    .visual-refresh:is(.theme-light, .theme-dark, .theme-darker, .theme-midnight),
-    .visual-refresh :is(.theme-light, .theme-dark, .theme-darker, .theme-midnight)
-  )
-  ::selection {
-  background: color-mix(in srgb, var(--catppuccin-custom-brand) 42%, transparent);
+  & div[class^="textContentFooter_"] [class*="tagPill_"] {
+    background-color: var(--catppuccin-custom-accentSurface);
+  }
+
+  & ::selection {
+    background: color-mix(in srgb, var(--catppuccin-custom-brand) 42%, transparent);
+  }
 }
