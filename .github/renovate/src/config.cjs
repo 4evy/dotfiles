@@ -8,6 +8,8 @@ module.exports = {
   gitAuthor:
     "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>",
   allowedCommands: ["^bun tools/renovate/artifacts\\.ts$"],
+  // Post-upgrade tasks filter inherited env; forward only the read-only token
+  customEnvVariables: process.env.GH_TOKEN ? { GH_TOKEN: process.env.GH_TOKEN } : {},
   onboarding: false,
   requireConfig: "required",
   force: {
