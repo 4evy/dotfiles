@@ -5,6 +5,7 @@ import { runMain } from "@dotfiles/core/runtime";
 import { Effect, FileSystem, Schema } from "effect";
 
 const root = resolve(import.meta.dir, "../../..");
+const DEPLOYED_SOURCE_PREFIX = "home/files/";
 const source = join(root, "home");
 // TypeScript's supported source extensions, including JSX and module variants
 const scriptExtensions: Record<string, true> = {
@@ -17,6 +18,21 @@ const scriptExtensions: Record<string, true> = {
   ".mjs": true,
   ".cjs": true,
 };
+
+const stageSource = Effect.fn("stageTypeScriptSource")(function* (
+  original: string,
+  target: string,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  yield* fs.makeDirectory(dirname(target), { recursive: true });
+  yield* fs.copyFile(original, target);
+  // Preserve each deployed package's own dependencies in the staged home tree
+  if (original.endsWith("/package.json")) {
+    const modules = join(dirname(original), "node_modules");
+    if (yield* fs.exists(modules))
+      yield* fs.symlink(modules, join(dirname(target), "node_modules"));
+  }
+});
 
 runMain(
   Effect.gen(function* () {
@@ -40,11 +56,11 @@ runMain(
     // Stage the native home tree so workspace metadata cannot become a target
     const sources = new Map<string, string>();
     for (const file of discovery.split("\0")) {
-      if (!file.startsWith("home/files/")) continue;
+      if (!file.startsWith(DEPLOYED_SOURCE_PREFIX)) continue;
       const extension = extname(file);
       // JSON includes imported data and package metadata needed for resolution
       if (!scriptExtensions[extension] && extension !== ".json") continue;
-      const target = file.slice("home/files/".length);
+      const target = file.slice(DEPLOYED_SOURCE_PREFIX.length);
       if (sources.has(target))
         return yield* Effect.fail(
           new DotfilesError(`Duplicate staged path: ${target}`),
@@ -52,10 +68,7 @@ runMain(
       const original = join(root, file);
       if (!(yield* fs.exists(original))) continue;
       sources.set(target, file);
-      yield* fs.makeDirectory(dirname(join(staging, target)), {
-        recursive: true,
-      });
-      yield* fs.copyFile(original, join(staging, target));
+      yield* stageSource(original, join(staging, target));
     }
     const text = yield* fs.readFileString(join(source, "tsconfig.json"));
     const config = yield* Schema.decodeUnknownEffect(
