@@ -132,6 +132,34 @@ the matching TypeScript semantic companion, cyclomatic and cognitive complexity,
 and duplicate code. Complexity gates exclude estimated CRAP scores because
 they require coverage data to be meaningful.
 
+## Dependency updates
+
+[Renovate](.github/renovate.json) owns external dependency pins, including
+flake inputs, workspace dependencies, toolchains, container images, bootstrap
+installers, application snapshots, and vendored launchers.
+[Artifact refreshes](tools/renovate/artifacts.ts) keep hashes, lockfiles,
+versioned asset URLs, and generated palettes aligned before updates are committed.
+Unversioned Homebrew, Flatpak, and browser-store declarations follow their
+upstream package managers rather than introducing a second release pin.
+
+Custom Nix packages expose `passthru.updateScript`. Run an exported package's
+updater from the repository root without building the application:
+
+```bash
+bun tools/renovate/nix.ts rex
+```
+
+The [runner](tools/renovate/nix.ts) supports executable paths and argument lists.
+Input-backed packages update their owning flake inputs. Local-source packages
+regenerate the shared Bun lockfile and Nix dependency cache. Binary packages
+refresh their versions and platform hashes.
+
+The Darwin Helium pin can also be refreshed from Linux:
+
+```bash
+nix run .#update-helium-darwin
+```
+
 ## License
 
 [MIT](LICENSE)

@@ -22,12 +22,16 @@ let
   dataHome = xdg "XDG_DATA_HOME" ".local/share";
   stateHome = xdg "XDG_STATE_HOME" ".local/state";
   profile = "${stateHome}/hjem/standalone/current-profile";
-  heliumAppDir = linkFarm "helium-browser-app" {
-    "helium-wrapper" = lib.meta.getExe helium-browser;
-    # Tweezle matches desktop_exec against the configured launcher name
-    "helium.desktop" = "${helium-configured}/share/applications/helium.desktop";
-    "product_logo_256.png" = "${helium-browser}/share/icons/hicolor/256x256/apps/helium.png";
-  };
+  heliumAppDir =
+    (linkFarm "helium-browser-app" {
+      "helium-wrapper" = lib.meta.getExe helium-browser;
+      # Tweezle matches desktop_exec against the configured launcher name
+      "helium.desktop" = "${helium-configured}/share/applications/helium.desktop";
+      "product_logo_256.png" = "${helium-browser}/share/icons/hicolor/256x256/apps/helium.png";
+    }).overrideAttrs
+      {
+        passthru = { inherit (helium-browser) updateScript; };
+      };
   environmentFile = writeText "hjem-environment.conf" ''
     PATH=${profile}/bin:''${PATH}
     MANPATH=${profile}/share/man:''${MANPATH}

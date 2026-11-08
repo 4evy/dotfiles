@@ -10,6 +10,7 @@
       "lib/typescript/package.json",
       "home/files/.local/lib/package.json",
       "tools/tiling/package.json",
+      "tools/tiling/vendor/fallow/package.json",
       "tools/workstation/package.json"
     ]
   }

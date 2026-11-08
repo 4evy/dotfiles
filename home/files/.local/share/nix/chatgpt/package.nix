@@ -3,6 +3,7 @@
   at-spi2-atk,
   at-spi2-core,
   autoPatchelfHook,
+  callPackage,
   cairo,
   coreutils,
   cups,
@@ -104,13 +105,20 @@ let
       runHook postInstall
     '';
 
-    # RPM discovery lives in update.nix, the standard script refreshes hashes
-    passthru.updateScript = nix-update-script {
-      attrPath = "chatgpt.unwrapped";
-      extraArgs = [
-        "--flake"
-        "--version=skip"
-      ];
+    passthru = {
+      # Keep discovery as the public updater and hash repair available to it
+      updateScript = lib.meta.getExe (
+        callPackage ./update.nix {
+          chatgpt = finalAttrs.finalPackage;
+        }
+      );
+      hashUpdateScript = nix-update-script {
+        attrPath = "chatgpt.unwrapped";
+        extraArgs = [
+          "--flake"
+          "--version=skip"
+        ];
+      };
     };
 
     meta = {

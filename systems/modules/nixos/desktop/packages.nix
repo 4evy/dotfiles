@@ -56,14 +56,22 @@ let
   };
 
   heliumBrowser = helium-browser;
-  heliumAppDir = linkFarm "helium-browser-app" {
-    "helium-wrapper" = getExe heliumBrowser;
-    "helium.desktop" = "${heliumBrowser}/share/applications/helium.desktop";
-    "product_logo_256.png" = "${heliumBrowser}/share/icons/hicolor/256x256/apps/helium.png";
-  };
+  heliumAppDir =
+    (linkFarm "helium-browser-app" {
+      "helium-wrapper" = getExe heliumBrowser;
+      "helium.desktop" = "${heliumBrowser}/share/applications/helium.desktop";
+      "product_logo_256.png" = "${heliumBrowser}/share/icons/hicolor/256x256/apps/helium.png";
+    }).overrideAttrs
+      {
+        passthru.updateScript = pkgs.dotfilesPackageUpdaters.flakeInputs [ "eupkgs" ];
+      };
 
   applyHelium = writeShellApplication {
     name = "apply-helium";
+    passthru.updateScript = pkgs.dotfilesPackageUpdaters.flakeInputs [
+      "eupkgs"
+      "tweezle"
+    ];
     runtimeInputs = attrValues {
       inherit (pkgs)
         coreutils

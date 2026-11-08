@@ -15,10 +15,13 @@ let
       toshySrc = source;
       python3 = python314;
     }).overrideAttrs
-      {
+      (old: {
         doCheck = false;
         doInstallCheck = false;
-      };
+        passthru = (old.passthru or { }) // {
+          inherit (sourcePin) updateScript;
+        };
+      });
 in
 symlinkJoin {
   name = "toshy-runtime-${version}";

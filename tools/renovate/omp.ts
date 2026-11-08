@@ -4,6 +4,7 @@ import { DotfilesError } from "@dotfiles/core/errors";
 import { writeJson } from "@dotfiles/core/files";
 import { runMain } from "@dotfiles/core/runtime";
 import { Effect, FileSystem, Schema } from "effect";
+import { readManifest } from "./npm.ts";
 import { root } from "./paths.ts";
 
 const dependencyMap = Schema.Record(Schema.String, Schema.String);
@@ -29,9 +30,7 @@ export const updateOmpDependencies = Effect.fn(function* () {
     yield* fs.readFileString(join(storePath, "apps/omp/runtime/upstream/package.json")),
   );
   const path = join(root, "package.json");
-  const raw = yield* Schema.decodeUnknownEffect(
-    Schema.fromJsonString(Schema.Record(Schema.String, Schema.Unknown)),
-  )(yield* fs.readFileString(path));
+  const raw = yield* readManifest(path);
   const manifest = yield* Schema.decodeUnknownEffect(manifestSchema)(raw);
   const updated = { ...raw };
   for (const key of ["dependencies", "devDependencies"] as const) {

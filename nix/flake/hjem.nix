@@ -27,7 +27,7 @@
       withSystem "x86_64-linux" (
         { pkgs, self', ... }:
         let
-          inherit (pkgs) callPackage writeText;
+          inherit (pkgs) callPackage dotfilesPackageUpdaters writeText;
           runtime = builtins.fromJSON runtimeJSON;
           configuration = import ../../home/deploy/nix {
             inherit pkgs;
@@ -39,12 +39,21 @@
             };
           };
         in
-        writeText "hjem-configuration.nix" (lib.generators.toPretty { } configuration)
+        (writeText "hjem-configuration.nix" (lib.generators.toPretty { } configuration)).overrideAttrs {
+          passthru.updateScript = dotfilesPackageUpdaters.sequence "update-hjem-configuration" [
+            (dotfilesPackageUpdaters.flakeInputs [ "hjem" ])
+            dotfilesPackageUpdaters.localWorkspace
+          ];
+        }
       );
   };
 
   perSystem = { system, pkgs, ... }: {
-    packages.hjem = inputs.hjem.packages.${system}.hjem;
+    packages.hjem = inputs.hjem.packages.${system}.hjem.overrideAttrs (old: {
+      passthru = (old.passthru or { }) // {
+        updateScript = pkgs.dotfilesPackageUpdaters.flakeInputs [ "hjem" ];
+      };
+    });
     packages.hjem-files = import ../../home/deploy/nix/home.nix { inherit pkgs inputs; };
   };
 }

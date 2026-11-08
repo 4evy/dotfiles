@@ -5,6 +5,7 @@
 }:
 let
   inherit (pkgs)
+    dotfilesPackageUpdaters
     lib
     linkFarm
     stdenv
@@ -387,6 +388,7 @@ let
                   name = "hjem-hook-${name}";
                   # Optional apps and host/session tools still come from PATH
                   inheritPath = true;
+                  passthru.updateScript = dotfilesPackageUpdaters.localWorkspace;
                   bashOptions = [
                     "errexit"
                     "nounset"
@@ -430,8 +432,11 @@ assert lib.asserts.assertMsg (missingShellHooks == [ ])
   "Hjem hooks have no command or shellHooks entry: ${lib.strings.concatStringsSep ", " missingShellHooks}";
 assert lib.asserts.assertMsg (unusedShellHooks == [ ])
   "Hjem shellHooks entries have no matching commandless manifest hook: ${lib.strings.concatStringsSep ", " unusedShellHooks}";
-linkFarm "hjem-home" {
+(linkFarm "hjem-home" {
   "manifest.json" = manifest;
   "hooks.json" = hookMetadata;
   "generators.json" = generatorMetadata;
-}
+}).overrideAttrs
+  {
+    passthru.updateScript = dotfilesPackageUpdaters.localWorkspace;
+  }

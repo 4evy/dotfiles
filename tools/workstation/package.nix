@@ -8,6 +8,7 @@
   glib,
   flatpak,
   aiTools,
+  dotfilesPackageUpdaters,
 }:
 let
   metadata = lib.trivial.importJSON ./package.json;
@@ -101,6 +102,8 @@ stdenvNoCC.mkDerivation {
     "$out/bin/phone-mirror" --help
     runHook postInstallCheck
   '';
+
+  passthru.updateScript = dotfilesPackageUpdaters.localWorkspace;
 
   meta = {
     description = "Personal workstation utilities shared across Linux and macOS";

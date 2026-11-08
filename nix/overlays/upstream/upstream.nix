@@ -3,6 +3,7 @@ final: prev:
 let
   inherit (final)
     dbus
+    dotfilesPackageUpdaters
     dotfilesSourcePins
     inotify-tools
     unstable
@@ -17,6 +18,7 @@ in
       version = "1.4.4";
       src = finalAttrs.passthru.sources.${unstable.stdenvNoCC.hostPlatform.system};
       passthru = previous.passthru // {
+        updateScript = dotfilesPackageUpdaters.binaryPin "bun";
         # Reuse upstream's version-aware URLs with our per-platform hashes
         sources =
           lib.attrsets.mapAttrs
@@ -40,6 +42,9 @@ in
       python3Packages = python315Packages;
     }).overrideAttrs
       (previous: {
+        passthru = (previous.passthru or { }) // {
+          updateScript = dotfilesPackageUpdaters.flakeInputs [ "nixpkgs-unstable" ];
+        };
         patches = (previous.patches or [ ]) ++ [ ../../../packages/solaar/tray.patch ];
         # Desktop notifications load Notify's typelib through the GTK wrapper
         preFixup = (previous.preFixup or "") + ''
@@ -47,14 +52,17 @@ in
         '';
       });
 
-  libtsm = libtsm.overrideAttrs {
+  libtsm = libtsm.overrideAttrs (old: {
     version = lib.lists.head (
       lib.strings.match ".*version: '([^']+)'.*" (
         lib.trivial.readFile "${dotfilesSourcePins.libtsm.outPath}/meson.build"
       )
     );
     src = dotfilesSourcePins.libtsm.outPath;
-  };
+    passthru = (old.passthru or { }) // {
+      updateScript = dotfilesSourcePins.libtsm.updateScript;
+    };
+  });
 
   kmscon = (kmscon.override { inherit (final) libtsm; }).overrideAttrs (
     _finalAttrs: previousAttrs: {
@@ -66,6 +74,9 @@ in
         )
         + "-unstable-${lib.strings.substring 0 8 dotfilesSourcePins.kmscon.revision}";
       src = dotfilesSourcePins.kmscon.outPath;
+      passthru = (previousAttrs.passthru or { }) // {
+        updateScript = dotfilesSourcePins.kmscon.updateScript;
+      };
       # The pinned source already includes Nixpkgs' libseat logging fix
       patches = lib.lists.filter (
         patch: !(lib.strings.hasInfix "153db63d679df719a99dd36505f9c2f55d9c59f6" (patch.url or ""))

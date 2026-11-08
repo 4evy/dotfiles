@@ -158,7 +158,8 @@
 
     source-karabiner-vhid-package = {
       flake = false;
-      url = "file+https://github.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/releases/download/v8.7.0/Karabiner-DriverKit-VirtualHIDDevice-8.7.0.pkg";
+      # Upstream's tagged copy avoids the unreliable release download route
+      url = "file+https://raw.githubusercontent.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v8.7.0/dist/Karabiner-DriverKit-VirtualHIDDevice-8.7.0.pkg";
     };
 
     source-kmscon = {
@@ -169,6 +170,11 @@
     source-libtsm = {
       flake = false;
       url = "github:kmscon/libtsm/main";
+    };
+
+    source-nix-gl-host = {
+      flake = false;
+      url = "github:numtide/nix-gl-host/5269b233f83880a0b433eafe026f0bc0d8f1a4a9";
     };
 
     source-toshy = {
@@ -189,7 +195,7 @@
       };
       # Support Bun's v2/v3 lockfiles until upstream merges bun2nix#110
       # https://github.com/nix-community/bun2nix/pull/110
-      url = "github:nix-community/bun2nix/0456acb1b7394fc14c414b056aa889df5124943a";
+      url = "github:Mic92/bun2nix/lockfile-v2-v3";
     };
 
     eupkgs.inputs.nixpkgs.follows = "nixpkgs-unstable";

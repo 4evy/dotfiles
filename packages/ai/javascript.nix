@@ -1,13 +1,15 @@
 {
   ai-app-modules,
   ai-javascript,
-  lib,
-  nix,
+  dotfilesPackageUpdaters,
   runCommand,
 }:
 let
   modules = ai-app-modules.overrideAttrs (old: {
     patches = (old.patches or [ ]) ++ [ ./omp-process-name.patch ];
+    passthru = (old.passthru or { }) // {
+      updateScript = dotfilesPackageUpdaters.flakeInputs [ "ai" ];
+    };
   });
 in
 runCommand "ai-javascript-omp-process-name"
@@ -15,12 +17,7 @@ runCommand "ai-javascript-omp-process-name"
     inherit (ai-javascript) meta;
     passthru = (ai-javascript.passthru or { }) // {
       # The upstream input owns the JavaScript sources and dependency hashes
-      updateScript = [
-        (lib.getExe nix)
-        "flake"
-        "update"
-        "ai"
-      ];
+      updateScript = dotfilesPackageUpdaters.flakeInputs [ "ai" ];
     };
   }
   ''

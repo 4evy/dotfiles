@@ -5,6 +5,7 @@
   quickCss,
   settings,
   writeText,
+  dotfilesPackageUpdaters,
 }:
 let
   quickCssFile = writeText "equicord-quick-css" quickCss;
@@ -24,4 +25,5 @@ in
       platforms = lib.systems.doubles.all;
     };
     strictDeps = true;
+    passthru.updateScript = dotfilesPackageUpdaters.flakeInputs [ "nixcord" ];
   }

@@ -4,6 +4,7 @@
   bun,
   bun2nix,
   makeBinaryWrapper,
+  dotfilesPackageUpdaters,
 }:
 let
   root = ./.;
@@ -82,6 +83,8 @@ stdenvNoCC.mkDerivation {
     )}
     runHook postInstallCheck
   '';
+
+  passthru.updateScript = dotfilesPackageUpdaters.localWorkspace;
 
   meta = {
     description = "Bundled Effect-native activation and hardware tools";

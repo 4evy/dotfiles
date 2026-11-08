@@ -65,15 +65,15 @@
       "locked": {
         "lastModified": 1790000994,
         "narHash": "sha256-8HmRrSjDKZNl9KC0fms3QMtDJlO/OssK4cZw7VrllcA=",
-        "owner": "nix-community",
+        "owner": "Mic92",
         "repo": "bun2nix",
         "rev": "0456acb1b7394fc14c414b056aa889df5124943a",
         "type": "github"
       },
       "original": {
-        "owner": "nix-community",
+        "owner": "Mic92",
+        "ref": "lockfile-v2-v3",
         "repo": "bun2nix",
-        "rev": "0456acb1b7394fc14c414b056aa889df5124943a",
         "type": "github"
       }
     },
@@ -519,6 +519,7 @@
         "source-karabiner-vhid-package": "source-karabiner-vhid-package",
         "source-kmscon": "source-kmscon",
         "source-libtsm": "source-libtsm",
+        "source-nix-gl-host": "source-nix-gl-host",
         "source-noto-color-emoji": "source-noto-color-emoji",
         "source-oh-my-bash": "source-oh-my-bash",
         "source-oh-my-zsh": "source-oh-my-zsh",
@@ -663,11 +664,11 @@
       "locked": {
         "narHash": "sha256-ThFzgR9TU8sqJtpW6C7ApmSE7h4fq5NxbyOmvEnejWo=",
         "type": "file",
-        "url": "https://github.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/releases/download/v8.7.0/Karabiner-DriverKit-VirtualHIDDevice-8.7.0.pkg"
+        "url": "https://raw.githubusercontent.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v8.7.0/dist/Karabiner-DriverKit-VirtualHIDDevice-8.7.0.pkg"
       },
       "original": {
         "type": "file",
-        "url": "https://github.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/releases/download/v8.7.0/Karabiner-DriverKit-VirtualHIDDevice-8.7.0.pkg"
+        "url": "https://raw.githubusercontent.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v8.7.0/dist/Karabiner-DriverKit-VirtualHIDDevice-8.7.0.pkg"
       }
     },
     "source-kmscon": {
@@ -701,6 +702,23 @@
         "owner": "kmscon",
         "ref": "main",
         "repo": "libtsm",
+        "type": "github"
+      }
+    },
+    "source-nix-gl-host": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1732211616,
+        "narHash": "sha256-QZCKJoypcwgS3tDNSWMjlxEBZtOYPW3eXV24rMzKsac=",
+        "owner": "numtide",
+        "repo": "nix-gl-host",
+        "rev": "5269b233f83880a0b433eafe026f0bc0d8f1a4a9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "nix-gl-host",
+        "rev": "5269b233f83880a0b433eafe026f0bc0d8f1a4a9",
         "type": "github"
       }
     },

@@ -4,6 +4,7 @@
   bun,
   bun2nix,
   glib,
+  dotfilesPackageUpdaters,
 }:
 let
   inherit (bun2nix) hook;
@@ -64,6 +65,9 @@ let
         ++ (args.nativeBuildInputs or [ ]);
       doCheck = false;
       doInstallCheck = false;
+      passthru = (args.passthru or { }) // {
+        updateScript = dotfilesPackageUpdaters.localWorkspace;
+      };
 
       meta = {
         homepage = "https://github.com/4evy/dotfiles";

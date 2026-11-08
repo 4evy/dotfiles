@@ -155,3 +155,22 @@ index a41ae1d..2d8955e 100644
  	const config = { ...prConfig };
  	const filteredPrConfig = generatePrBodyFingerprintConfig(config);
  	const prBodyFingerprint = fingerprint(filteredPrConfig);
+diff --git a/dist/modules/manager/nix/extract.js b/dist/modules/manager/nix/extract.js
+--- a/dist/modules/manager/nix/extract.js
++++ b/dist/modules/manager/nix/extract.js
+@@ -30,9 +30,12 @@ async function extractPackageFile(content, packageFile, config) {
+ 		}, `flake.lock is missing "root" node`);
+ 		return null;
+ 	}
+-	for (const [depName, flakeInput] of Object.entries(flakeLock.nodes)) {
+-		if (depName === "root") continue;
+-		if (!(depName in rootInputs)) continue;
++	// Input names are not lock node IDs when transitive flakes share a name
++	// Follows arrays have no independently owned pin to update
++	for (const [depName, nodeId] of Object.entries(rootInputs)) {
++		if (typeof nodeId !== "string") continue;
++		const flakeInput = flakeLock.nodes[nodeId];
++		if (!flakeInput) continue;
+ 		const flakeLocked = flakeInput.locked;
+ 		const flakeOriginal = flakeInput.original;
+ 		if (flakeLocked === void 0) {

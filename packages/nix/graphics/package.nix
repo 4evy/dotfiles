@@ -1,20 +1,18 @@
 {
   lib,
   stdenvNoCC,
-  fetchFromGitHub,
-  nix-update-script,
+  dotfilesSourcePins,
   unstable,
   patchelf,
 }:
+let
+  sourcePin = dotfilesSourcePins.nix-gl-host;
+  date = sourcePin.lastModifiedDate;
+in
 stdenvNoCC.mkDerivation {
   pname = "nix-gl-host";
-  version = "0.1-unstable-2024-11-21";
-  src = fetchFromGitHub {
-    owner = "numtide";
-    repo = "nix-gl-host";
-    rev = "5269b233f83880a0b433eafe026f0bc0d8f1a4a9";
-    hash = "sha256-QZCKJoypcwgS3tDNSWMjlxEBZtOYPW3eXV24rMzKsac=";
-  };
+  version = "0.1-unstable-${lib.strings.substring 0 4 date}-${lib.strings.substring 4 2 date}-${lib.strings.substring 6 2 date}";
+  src = sourcePin.outPath;
   buildInputs = [ unstable.python315 ];
   nativeCheckInputs = [ unstable.python315 ];
   dontBuild = true;
@@ -32,13 +30,7 @@ stdenvNoCC.mkDerivation {
       --replace-fail 'IN_NIX_STORE = False' 'IN_NIX_STORE = True'
     runHook postInstall
   '';
-  passthru.updateScript = nix-update-script {
-    attrPath = "nix-gl-host";
-    extraArgs = [
-      "--flake"
-      "--version=branch"
-    ];
-  };
+  passthru.updateScript = sourcePin.updateScript;
   meta = {
     description = "Expose host NVIDIA graphics libraries to Nix applications";
     homepage = "https://github.com/numtide/nix-gl-host";

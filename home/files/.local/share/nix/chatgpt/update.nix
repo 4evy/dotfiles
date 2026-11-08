@@ -9,7 +9,8 @@
   writeShellApplication,
 }:
 let
-  inherit (chatgpt) unwrapped updateScript;
+  unwrapped = chatgpt.unwrapped or chatgpt;
+  inherit (unwrapped) hashUpdateScript;
 in
 writeShellApplication {
   name = "update-chatgpt";
@@ -21,9 +22,14 @@ writeShellApplication {
     nix
   ];
   text = ''
+    # Both the owning flake directory and the repository root are supported
+    if [ -f home/files/.local/share/nix/chatgpt/flake.nix ]; then
+      cd home/files/.local/share/nix/chatgpt
+    fi
+
     # Renovate has already selected a version, only its hash needs refreshing
     if [ "$#" = 1 ] && [ "$1" = "--version=skip" ]; then
-      exec ${lib.strings.escapeShellArgs updateScript}
+      exec ${lib.strings.escapeShellArgs hashUpdateScript}
     fi
 
     check_only=false
@@ -91,6 +97,6 @@ writeShellApplication {
     if [ "$version" = ${lib.strings.escapeShellArg unwrapped.version} ]; then
       version=skip
     fi
-    ${lib.strings.escapeShellArgs updateScript} --version="$version"
+    ${lib.strings.escapeShellArgs hashUpdateScript} --version="$version"
   '';
 }

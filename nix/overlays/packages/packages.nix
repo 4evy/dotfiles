@@ -3,11 +3,19 @@ final: prev:
 let
   inherit (final)
     callPackage
+    dotfilesPackageUpdaters
     hyper-window-tiling
     stdenv
     unstable
     ;
   aiPackages = inputs.ai.packages.${stdenv.hostPlatform.system};
+  withInputs =
+    names: package:
+    package.overrideAttrs (old: {
+      passthru = (old.passthru or { }) // {
+        updateScript = dotfilesPackageUpdaters.flakeInputs names;
+      };
+    });
   inherit (aiPackages)
     ai-tools
     farstep
@@ -15,9 +23,9 @@ let
     farstep-service
     ;
   inherit (hyper-window-tiling) gnome kde;
-  # Farstep's Crane builders require Rust 1.99, ahead of pinned Nixpkgs
+  # The rust-overlay input owns the stable toolchain, ahead of pinned Nixpkgs
   farstepCraneLib = (inputs.ai.inputs.crane.mkLib final).overrideToolchain (
-    pkgs: (inputs.rust-overlay.lib.mkRustBin { } pkgs).stable."1.99.1".minimal
+    pkgs: (inputs.rust-overlay.lib.mkRustBin { } pkgs).stable.latest.minimal
   );
   farstepDesktop = farstep-desktop.override { craneLib = farstepCraneLib; };
   farstepService = farstep-service.override { craneLib = farstepCraneLib; };
@@ -61,6 +69,9 @@ let
                     patches = (old.patches or [ ]) ++ [
                       ../../../packages/toshy/runtime/i3ipc/i3ipc.patch
                     ];
+                    passthru = (old.passthru or { }) // {
+                      inherit (final.dotfilesSourcePins.toshy) updateScript;
+                    };
                   });
                 }
               )
@@ -78,19 +89,22 @@ let
 in
 packages
 // {
-  aiTools = aiPackages // {
-    ai-javascript = aiJavaScript;
-    ai-tools = ai-tools.override {
+  aiTools = lib.attrsets.mapAttrs (_: package: withInputs [ "ai" "rust-overlay" ] package) (
+    aiPackages
+    // {
       ai-javascript = aiJavaScript;
-    };
-    farstep-desktop = farstepDesktop;
-    farstep-service = farstepService;
-    farstep = farstep.override {
+      ai-tools = ai-tools.override {
+        ai-javascript = aiJavaScript;
+      };
       farstep-desktop = farstepDesktop;
       farstep-service = farstepService;
-    };
-  };
-  bun2nix = inputs.bun2nix.packages.${stdenv.hostPlatform.system}.default;
+      farstep = farstep.override {
+        farstep-desktop = farstepDesktop;
+        farstep-service = farstepService;
+      };
+    }
+  );
+  bun2nix = withInputs [ "bun2nix" ] inputs.bun2nix.packages.${stdenv.hostPlatform.system}.default;
   # Upstream schema downloads have no deadline, including recursive $ref fetches
   check-jsonschema = prev.check-jsonschema.overridePythonAttrs (
     old:
@@ -104,6 +118,9 @@ packages
           --replace-fail 'requests.get(file_url, stream=True)' \
             'requests.get(file_url, stream=True, timeout=(${toString connectTimeoutSeconds}, ${toString readTimeoutSeconds}))'
       '';
+      passthru = (old.passthru or { }) // {
+        updateScript = dotfilesPackageUpdaters.flakeInputs [ "nixpkgs" ];
+      };
     }
   );
   inherit (unstable) gh;

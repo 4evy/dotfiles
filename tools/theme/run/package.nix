@@ -3,6 +3,7 @@
   bun,
   bun2nix,
   lib,
+  dotfilesPackageUpdaters,
 }:
 
 stdenvNoCC.mkDerivation {
@@ -71,6 +72,8 @@ stdenvNoCC.mkDerivation {
     COLOR_SCHEME=dark THEME_RUN_CONFIG= "$out/bin/theme-run" --print-theme-no-terminal
     runHook postInstallCheck
   '';
+
+  passthru.updateScript = dotfilesPackageUpdaters.localWorkspace;
 
   meta = {
     description = "Theme-aware launcher for terminal applications";

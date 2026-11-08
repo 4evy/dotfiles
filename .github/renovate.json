@@ -23,7 +23,116 @@
     "commitMessageAction": "refresh lock files",
     "schedule": ["at any time"]
   },
+  "customDatasources": {
+    "rex-server": {
+      "defaultRegistryUrlTemplate": "https://blob.superlogical.com/api/releases/rex/snapshot",
+      "transformTemplates": [
+        "{\"releases\":[{\"version\":version,\"digest\":commit,\"isStable\":true}]}"
+      ]
+    },
+    "rex-app": {
+      "defaultRegistryUrlTemplate": "https://blob.superlogical.com/public/rex-app/snapshot-arm64/appcast.xml",
+      "format": "plain",
+      "transformTemplates": [
+        "{\"releases\":$match($join(releases.version,\"\\n\"), /<sparkle:version>([0-9]+)<\\/sparkle:version>/).{\"version\":groups[0]}}"
+      ]
+    },
+    "super-engineering-linux": {
+      "defaultRegistryUrlTemplate": "https://releases.super.engineering/linux/nightly/manifest.json",
+      "transformTemplates": [
+        "$eval($base64decode(payload))",
+        "{\"releases\":[{\"version\":\"0-unstable-\" & date,\"digest\":artifacts.\"x86_64-unknown-linux-gnu\".commit,\"isStable\":true}]}"
+      ]
+    },
+    "super-engineering-darwin": {
+      "defaultRegistryUrlTemplate": "https://releases.super.engineering/latest-v2.json",
+      "transformTemplates": [
+        "{\"releases\":[{\"version\":\"0-unstable-\" & nightly.date,\"digest\":nightly.artifacts.\"aarch64-apple-darwin\".sha,\"isStable\":true}]}"
+      ]
+    }
+  },
   "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track Rex server snapshots and their matching support sources",
+      "managerFilePatterns": ["/^packages/rex/sources\\.json$/"],
+      "matchStrings": [
+        "\"server\":\\s*\\{\\s*\"version\":\\s*\"(?<currentValue>[^\"]+)\",\\s*\"rev\":\\s*\"(?<currentDigest>[a-f0-9]+)\""
+      ],
+      "depNameTemplate": "rex-server",
+      "datasourceTemplate": "custom.rex-server",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Track Rex app builds independently of its bundled server",
+      "managerFilePatterns": ["/^packages/rex/sources\\.json$/"],
+      "matchStrings": ["\"build\":\\s*\"(?<currentValue>[0-9]+)\""],
+      "depNameTemplate": "rex-app",
+      "datasourceTemplate": "custom.rex-app",
+      "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
+      "description": "Track both Super Engineering nightly channels, including same-day rebuilds",
+      "managerFilePatterns": ["/^packages/super-engineering/sources\\.json$/"],
+      "matchStrings": [
+        "\"(?<platform>linux|darwin)\":\\s*\\{\\s*\"version\":\\s*\"(?<currentValue>[^\"]+)\",\\s*\"rev\":\\s*\"(?<currentDigest>[a-f0-9]+)\""
+      ],
+      "depNameTemplate": "super-engineering-{{{platform}}}",
+      "datasourceTemplate": "custom.super-engineering-{{{platform}}}",
+      "versioningTemplate": "regex:^0-unstable-(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})$"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the Noto emoji font's owning source revision",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
+      "matchStrings": [
+        "file\\+https://raw\\.githubusercontent\\.com/googlefonts/noto-emoji/(?<currentDigest>[a-f0-9]{40})/2D/fonts/NotoColorEmoji\\.ttf"
+      ],
+      "depNameTemplate": "googlefonts/noto-emoji",
+      "packageNameTemplate": "https://github.com/googlefonts/noto-emoji",
+      "datasourceTemplate": "git-refs",
+      "currentValueTemplate": "main",
+      "versioningTemplate": "exact"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the Darwin Helium release override",
+      "managerFilePatterns": ["/^nix/overlays/applications\\.nix$/"],
+      "matchStrings": ["version = \"(?<currentValue>[0-9.]+)\";\\s+src = fetchurl"],
+      "depNameTemplate": "imputnet/helium-macos",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the managed Bun release override and all platform hashes",
+      "managerFilePatterns": ["/^nix/overlays/upstream/upstream\\.nix$/"],
+      "matchStrings": ["version = \"(?<currentValue>[0-9.]+)\";"],
+      "depNameTemplate": "oven-sh/bun",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^bun-v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the checksum-verified Homebrew installer",
+      "managerFilePatterns": ["/^tools/setup/setup\\.ts$/"],
+      "matchStrings": ["homebrewRevision = \"(?<currentDigest>[a-f0-9]{40})\""],
+      "depNameTemplate": "Homebrew/install",
+      "packageNameTemplate": "https://github.com/Homebrew/install",
+      "datasourceTemplate": "git-refs",
+      "currentValueTemplate": "HEAD",
+      "versioningTemplate": "exact"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the vendored Fallow launcher as well as its native dependencies",
+      "managerFilePatterns": ["/^tools/tiling/vendor/fallow/package\\.json$/"],
+      "matchStrings": ["\"version\":\\s*\"(?<currentValue>[^\"]+)\""],
+      "depNameTemplate": "fallow",
+      "datasourceTemplate": "npm"
+    },
     {
       "customType": "regex",
       "description": "Track the all-features BlueBuild main installer digest, since release installers omit recipe v2 and bootc",
@@ -96,17 +205,6 @@
     },
     {
       "customType": "regex",
-      "description": "Track the Astral source flake input",
-      "managerFilePatterns": ["/^flake\\.nix$/"],
-      "matchStrings": [
-        "url = \"file\\+https://files\\.pythonhosted\\.org/packages/source/a/astral/astral-(?<currentValue>[^/]+)\\.tar\\.gz\";"
-      ],
-      "depNameTemplate": "astral",
-      "datasourceTemplate": "pypi",
-      "versioningTemplate": "pep440"
-    },
-    {
-      "customType": "regex",
       "description": "Track Toshy release tags in the flake",
       "managerFilePatterns": ["/^flake\\.nix$/"],
       "matchStrings": [
@@ -160,7 +258,7 @@
       "description": "Track the Karabiner VirtualHID device binary",
       "managerFilePatterns": ["/^flake\\.nix$/"],
       "matchStrings": [
-        "file\\+https://github\\.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/releases/download/v(?<currentValue>[^/]+)/[^\"\\s]+"
+        "file\\+https://raw\\.githubusercontent\\.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v(?<currentValue>[^/]+)/dist/[^\"\\s]+"
       ],
       "depNameTemplate": "pqrs-org/Karabiner-DriverKit-VirtualHIDDevice",
       "datasourceTemplate": "github-releases"
@@ -214,21 +312,6 @@
     },
     {
       "customType": "regex",
-      "description": "Track the ChatGPT flake lock",
-      "managerFilePatterns": ["/^home/files/\\.local/share/nix/chatgpt/flake\\.lock$/"],
-      "matchStringsStrategy": "recursive",
-      "matchStrings": [
-        "\"nixpkgs\": \\{[\\s\\S]+?\"original\"",
-        "\"rev\": \"(?<currentDigest>[a-f0-9]{40})\""
-      ],
-      "depNameTemplate": "chatgpt-nixpkgs",
-      "packageNameTemplate": "https://github.com/NixOS/nixpkgs",
-      "datasourceTemplate": "git-refs",
-      "currentValueTemplate": "nixos-unstable",
-      "versioningTemplate": "exact"
-    },
-    {
-      "customType": "regex",
       "description": "Track the checksum-verified Bun bootstrap",
       "managerFilePatterns": ["/^tools/setup/setup\\.sh$/"],
       "matchStrings": [
@@ -240,6 +323,28 @@
     }
   ],
   "packageRules": [
+    {
+      "description": "The vendored launcher owns its matching native binary release",
+      "matchFileNames": ["tools/tiling/vendor/fallow/package.json"],
+      "matchPackageNames": ["@fallow-cli/**"],
+      "enabled": false
+    },
+    {
+      "description": "The vendored Fallow updater owns the matching semantic companion",
+      "matchFileNames": ["package.json"],
+      "matchPackageNames": ["fallow-type-aware"],
+      "enabled": false
+    },
+    {
+      "description": "Track nightly digests even when their published version is unchanged",
+      "matchDatasources": [
+        "custom.rex-server",
+        "custom.super-engineering-linux",
+        "custom.super-engineering-darwin"
+      ],
+      "ignoreUnstable": false,
+      "pinDigests": true
+    },
     {
       "description": "Extract Bun toolchain versions from bun-v release tags",
       "matchManagers": ["custom.regex"],
@@ -254,9 +359,7 @@
         "source-bluebuild-cli",
         "source-toshy",
         "source-uresourced",
-        "determinate",
-        "bun2nix",
-        "nixpkgs"
+        "determinate"
       ],
       "enabled": false
     },
@@ -264,17 +367,6 @@
       "description": "Inherit OMP runtime and extension versions from the locked AI flake input",
       "matchManagers": ["npm", "bun"],
       "matchPackageNames": ["@oh-my-pi/**"],
-      "enabled": false
-    },
-    {
-      "description": "Keep Biome aligned with the formatter in the pinned Nixpkgs inputs",
-      "matchPackageNames": ["@biomejs/biome"],
-      "allowedVersions": "2.6.4"
-    },
-    {
-      "description": "Module images must retain the recipe module API major",
-      "matchPackageNames": ["ghcr.io/blue-build/modules/**"],
-      "matchUpdateTypes": ["major"],
       "enabled": false
     },
     {
@@ -303,6 +395,7 @@
     "commands": ["bun tools/renovate/artifacts.ts"],
     "fileFilters": [
       "flake.lock",
+      "flake.nix",
       "bun.nix",
       "**/bun.lock",
       "**/package.json",
@@ -313,7 +406,14 @@
       "home/files/.config/yazi/package.toml",
       "home/files/.local/share/nix/chatgpt/*",
       "tools/setup/setup.sh",
-      "biome.jsonc"
+      "tools/setup/setup.ts",
+      "tools/tiling/vendor/fallow/**",
+      "home/theme/palette/palette.json",
+      "systems/spectrum/recipes/spectrum/modules/software.yml",
+      "biome.jsonc",
+      "packages/**",
+      "systems/spectrum/recipes/**/*.yml",
+      "nix/overlays/**"
     ],
     "executionMode": "branch"
   },

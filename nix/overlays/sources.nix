@@ -79,6 +79,7 @@ let
     );
 in
 final: _prev: {
+  dotfilesPackageUpdaters = final.callPackage ../lib/package-updaters.nix { };
   dotfilesSourcePins = lib.attrsets.mapAttrs' (
     name: source:
     lib.attrsets.nameValuePair (lib.strings.removePrefix "source-" name) (
@@ -89,13 +90,24 @@ final: _prev: {
       }
       //
         lib.attrsets.optionalAttrs
-          (builtins.elem name [
-            "source-bluebuild-cli"
-            "source-toshy"
-            "source-uresourced"
-          ])
+          (
+            !(builtins.elem name [
+              "source-noto-color-emoji"
+              "source-karabiner-vhid-package"
+            ])
+          )
           {
-            updateScript = taggedUpdater final name;
+            updateScript =
+              if
+                builtins.elem name [
+                  "source-bluebuild-cli"
+                  "source-toshy"
+                  "source-uresourced"
+                ]
+              then
+                taggedUpdater final name
+              else
+                final.dotfilesPackageUpdaters.flakeInputs [ name ];
           }
     )
   ) sourceInputs;
