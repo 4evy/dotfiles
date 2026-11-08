@@ -99,15 +99,6 @@ if [[ -z "${JAVA_HOME:-}" ]]; then
 	unset _dotfiles_java_home
 fi
 
-# Homebrew's Android command-line tools use this directory as the SDK root.
-if [[ -z "${ANDROID_HOME:-}" && -n "${HOMEBREW_PREFIX:-}" ]]; then
-	_dotfiles_android_home="$HOMEBREW_PREFIX/share/android-commandlinetools"
-	if [[ -d "$_dotfiles_android_home" ]]; then
-		export ANDROID_HOME="$_dotfiles_android_home"
-	fi
-	unset _dotfiles_android_home
-fi
-
 # 02 / PATH
 # Build a unique preferred prefix, then append the inherited PATH in its
 # original order. Empty entries are omitted so PATH never implies the current

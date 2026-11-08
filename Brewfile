@@ -144,8 +144,7 @@ if OS.mac?
 end
 brew "wget" if OS.mac?
 
-# Android device access and screen mirroring
-cask "android-commandlinetools"
+# Android device access and screen mirroring, without the SDK or NDK
 cask "android-platform-tools"
 brew "scrcpy"
 
