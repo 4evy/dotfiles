@@ -83,7 +83,7 @@ const configRules: Record<string, ConfigRule> = {
   ".omp/agent/config.yml": {
     format: "yaml",
     preserveCurrent: true,
-    // Replace exported appearance policy before merging with runtime state
+    // Replace exported appearance and notification policy before runtime merging
     managedOverrides: ompConfig,
   },
   ".omp/agent/keybindings.yml": {

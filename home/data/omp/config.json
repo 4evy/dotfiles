@@ -6,6 +6,9 @@
   "composer": {
     "shape": "pi"
   },
+  "completion": {
+    "notify": "off"
+  },
   "statusLine": {
     "preset": "custom",
     "separator": "none",
