@@ -30,6 +30,9 @@ in
       })
       // {
         builders-use-substitutes = true;
+        # Bound compiler parallelism for this Mac's 8 GiB of memory
+        max-jobs = 2;
+        cores = 2;
         extra-experimental-features = [ "parallel-eval" ];
       };
     determinateNixd.builder.state = "disabled";
