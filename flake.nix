@@ -148,7 +148,7 @@
 
     source-bluebuild-cli = {
       flake = false;
-      url = "github:blue-build/cli/v0.9.41";
+      url = "github:blue-build/cli/v0.9.42";
     };
 
     source-helix = {

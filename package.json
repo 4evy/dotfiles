@@ -47,7 +47,7 @@
     "@types/write-file-atomic": "4.0.3",
     "culori": "4.0.2",
     "fallow": "file:tools/tiling/vendor/fallow",
-    "fallow-type-aware": "3.39.0",
+    "fallow-type-aware": "3.40.0",
     "typescript": "catalog:"
   },
   "dependencies": {

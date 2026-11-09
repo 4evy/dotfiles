@@ -7,7 +7,7 @@ modules:
   # Release installers omit the recipe-v2 and bootc features used on the host
   - type: containerfile
     snippets:
-      - COPY --from=ghcr.io/blue-build/cli:main-installer@sha256:82cc067df83d8ce51b045aaa8dfce33c99603b51be18355e3523ef09c8820068 /out/bluebuild /out/usr/bin/bluebuild
+      - COPY --from=ghcr.io/blue-build/cli:main-installer@sha256:e3a2445a70ea9b1d5a21113549b59db54dbe0272b8af0da6fc6ccf654788ec19 /out/bluebuild /out/usr/bin/bluebuild
 
   - type: copy@v1
     from: workstation
