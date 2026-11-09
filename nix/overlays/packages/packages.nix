@@ -27,7 +27,22 @@ let
   farstepCraneLib = (inputs.ai.inputs.crane.mkLib final).overrideToolchain (
     pkgs: (inputs.rust-overlay.lib.mkRustBin { } pkgs).stable.latest.minimal
   );
-  farstepDesktop = farstep-desktop.override { craneLib = farstepCraneLib; };
+  # Native Swift bridges do not need the REPL's separately built LLDB
+  farstepSwift = final.swift.override { enableRepl = false; };
+  farstepDesktop =
+    (farstep-desktop.override {
+      craneLib = farstepCraneLib;
+      swift = farstepSwift;
+    }).overrideAttrs
+      (
+        old:
+        lib.attrsets.optionalAttrs stdenv.hostPlatform.isDarwin {
+          env = (old.env or { }) // {
+            # Swift bridge archives need the compiler's back-deployment libraries
+            NIX_LDFLAGS = "${old.env.NIX_LDFLAGS or ""} -L${farstepSwift}/lib/swift/macosx";
+          };
+        }
+      );
   farstepService = farstep-service.override { craneLib = farstepCraneLib; };
   aiJavaScript = callPackage ../../../packages/ai/javascript.nix {
     inherit (aiPackages) ai-app-modules ai-javascript;
