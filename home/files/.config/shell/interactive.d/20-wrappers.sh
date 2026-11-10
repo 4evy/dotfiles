@@ -35,6 +35,17 @@ alias hja='bun "$_dotfiles_repo_path/home/deploy/apply.ts" apply'
 alias hjd='bun "$_dotfiles_repo_path/home/deploy/apply.ts" diff'
 alias hjs='bun "$_dotfiles_repo_path/home/deploy/apply.ts" status'
 
+if [[ $(uname -s) == Darwin ]]; then
+	# Disable session restoration, then request a normal loginwindow restart
+	# Login items still launch; these undocumented preferences remain disabled
+	alias restart="defaults write com.apple.loginwindow TALLogoutSavesState -bool false &&
+		defaults write com.apple.loginwindow LoginwindowLaunchesRelaunchApps -bool false &&
+		osascript -e 'tell application \"loginwindow\" to «event aevtrest»'"
+
+	# Restart Finder, Dock, menu-bar controls, notifications, and input menu
+	alias restartui="killall Finder Dock SystemUIServer ControlCenter NotificationCenter TextInputMenuAgent"
+fi
+
 # `op plugin init` owns this generated file. Keeping the source guarded makes
 # shell-plugin aliases portable without making 1Password a shell startup
 # dependency on machines where the CLI or plugin configuration is absent.
