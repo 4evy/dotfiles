@@ -34,6 +34,7 @@ modules:
         - ayugram-desktop
         - code
         - curl
+        - dbus-libs
         - file
         - findutils
         - flatpak
@@ -75,6 +76,7 @@ modules:
         - selinux-policy-devel
         - solaar
         - systemd-oomd-defaults
+        - systemd-libs
         - tailscale
         - telegram-desktop
         - uresourced

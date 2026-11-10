@@ -1,0 +1,33 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/stage-v1.json
+name: bootvine
+# Link against the final image's Fedora release and runtime libraries
+from: ${BASE_IMAGE}
+modules:
+  # Keep toolchain installation independent of the projected source revision
+  - type: dnf@v1
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:e6cffa08197dc55f2cdc9f596e5bae6af4dc82e8a33884ff5a4edccc251b0218
+    install:
+      install-weak-deps: false
+      packages:
+        - cargo
+        - dbus-devel
+        - gcc
+        - git
+        - jq
+        - pkgconf-pkg-config
+        - rust
+        - systemd-devel
+
+  # Stage-backed binds preserve the compile cache and work under SELinux
+  - type: containerfile
+    snippets:
+      - |-
+        RUN \
+          --mount=type=bind,from=bootvine-inputs,src=/src/sources.json,target=/src/sources.json \
+          --mount=type=bind,from=bootvine-inputs,src=/src/build-bootvine.sh,target=/src/build-bootvine.sh \
+          --mount=type=cache,id=spectrum-bootvine-cargo-registry-v1,sharing=locked,target=/root/.cargo/registry \
+          --mount=type=cache,id=spectrum-bootvine-cargo-git-v1,sharing=locked,target=/root/.cargo/git \
+          --mount=type=cache,id=spectrum-bootvine-target-v1,sharing=locked,target=/build/bootvine-source/target \
+          SOURCE_LOCK=/src/sources.json \
+          bash /src/build-bootvine.sh

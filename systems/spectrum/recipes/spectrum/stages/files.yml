@@ -45,6 +45,11 @@ modules:
     dest: /out/usr
 
   - type: copy@v1
+    from: bootvine
+    src: /out
+    dest: /out
+
+  - type: copy@v1
     src: systems/spectrum/files/system
     dest: /out
 

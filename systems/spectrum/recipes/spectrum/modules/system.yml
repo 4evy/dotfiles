@@ -6,9 +6,6 @@ modules:
     kargs:
       - plymouth.enable=0
       - rd.plymouth=0
-      - systemd.show_status=1
-      - rd.systemd.show_status=1
-      - loglevel=7
       # Turing notebooks need explicit runtime D3 power management
       - nvidia.NVreg_DynamicPowerManagement=0x02
 
@@ -16,6 +13,8 @@ modules:
     source: ghcr.io/blue-build/modules/systemd:v1@sha256:2d2b3d8f7388a999544dbaa90de639f4bbe37f2f6adb4af8dabce5cb5cd4090a
     system:
       enabled:
+        - bootvine.service
+        - bootvine-shutdown.service
         - brew-setup.service
         - fedora-atomic-desktop-appstream-cache-refresh.timer
         - kanata-main.service
@@ -95,3 +94,7 @@ modules:
             rmdir "$directory"
           fi
         done
+
+  # Rebuild the shipped kernel images after Bootvine's dracut module is present
+  - type: initramfs@v1
+    source: ghcr.io/blue-build/modules/initramfs:v1@sha256:9959ae9f131c68019a189c6840db5c080db238f5ccb249651ff39756f623aad3

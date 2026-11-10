@@ -25,6 +25,8 @@ stages:
   - from-file: spectrum/stages/tiling/tiling.yml
   - from-file: spectrum/stages/kanata-inputs.yml
   - from-file: spectrum/stages/kanata.yml
+  - from-file: spectrum/stages/bootvine-inputs.yml
+  - from-file: spectrum/stages/bootvine.yml
   - from-file: spectrum/stages/files.yml
 
 modules:

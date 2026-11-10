@@ -19,6 +19,12 @@ The [`kanata` stage](recipes/spectrum/stages/kanata.yml) mounts only its source
 locks, patch metadata, and build script. Keep changing inputs out of heavyweight
 filesystem layers.
 
+The [`bootvine` stage](recipes/spectrum/stages/bootvine.yml) builds the same
+Bootvine revision locked for NixOS. It stages upstream's boot and shutdown units
+and dracut hook. The [system module](recipes/spectrum/modules/system.yml) enables
+the units and rebuilds the shipped initramfs. Bootvine appears after switching
+to the rebuilt image and rebooting, with Plymouth kept disabled.
+
 The [`spectrum-files` stage](recipes/spectrum/stages/files.yml) assembles builder
 outputs and local configuration under `/out`. The final image copies that tree
 once, after remote software installation. Add local image resources there
