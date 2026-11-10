@@ -7,11 +7,16 @@ on:
     paths:
       - .containerignore
       - .tool-versions
-      - .github/actions/**
+      - .github/actions/spectrum/**
+      - .github/actions/setup/bun/**
+      - .github/actions/setup/check/tools/**
+      - .github/actions/setup/nix/**
       - .github/workflows/spectrum.yaml
       - bun.lock
       - package.json
-      - data/**
+      - tsconfig.json
+      - data/nix/caches.json
+      - data/rustdesk/options.json
       - Justfile
       - just/**
       - systems/spectrum/**
@@ -25,7 +30,10 @@ on:
       - flake.nix
       - lib/**
       - nix/**
-      - packages/**
+      - packages/bluebuild/**
+      - packages/kanata/build.sh
+      - packages/kanata/kanata.kbd
+      - packages/solaar/tray.patch
       - tools/workstation/**
       - tools/tiling/**
       - tools/theme/run/**
