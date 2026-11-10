@@ -108,7 +108,7 @@
     "starts_open": true,
     "indent_size": 12,
     "file_icons": true,
-    "hide_gitignore": true,
+    "hide_gitignore": false,
     "folder_indicator": "both"
   },
   "git": {
