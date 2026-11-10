@@ -321,6 +321,7 @@ const workstation = Effect.gen(function* () {
       if (!(yield* isExecutable(join(brewPrefix, "bin/just"))))
         yield* command([join(brewPrefix, "bin/brew"), "install", "just", "jq"]);
       yield* command([join(brewPrefix, "bin/just"), "nix", "_ensure"]);
+      yield* command([process.execPath, join(root, "tools/setup/nix.ts")]);
       if (process.platform === "linux")
         yield* command([join(brewPrefix, "bin/just"), "nix"]);
     });

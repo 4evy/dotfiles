@@ -67,6 +67,10 @@ cd ~/dotfiles
 just setup
 ```
 
+Setup refreshes dotfiles-owned Nix cache settings from the
+[current cache list](data/nix/caches.json), preserving other options and leaving
+unmanaged configurations alone
+
 </details>
 
 <details>
