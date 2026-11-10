@@ -10,6 +10,11 @@ retain their native `etc/` and `usr/` structure under `files/system/`.
 Repository definitions live in `files/dnf/` and are staged under the DNF
 module's `CONFIG_DIRECTORY` before native repository installation and cleanup.
 
+The [`bun-dependencies` stage](recipes/spectrum/stages/bun-dependencies.yml)
+installs the workstation and tiling workspace dependencies once. Both builders
+inherit it. Keep source, palette, and extension metadata copies in the consumer
+stages so those edits reuse the dependency layer.
+
 The [`kanata` stage](recipes/spectrum/stages/kanata.yml) mounts only its source
 locks, patch metadata, and build script. Keep changing inputs out of heavyweight
 filesystem layers.

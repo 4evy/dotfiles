@@ -1,49 +1,8 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/stage-v1.json
 name: hyper-window-tiling
-from: docker.io/oven/bun:1.4.4@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d
+from: bun-dependencies
 modules:
-  - type: copy@v1
-    src: tools/tiling/package.json
-    dest: /src/tools/tiling/package.json
-
-  - type: copy@v1
-    src: bun.lock
-    dest: /src/bun.lock
-
-  - type: copy@v1
-    src: tools/tiling/vendor
-    dest: /src/tools/tiling/vendor
-
-  - type: copy@v1
-    src: package.json
-    dest: /src/package.json
-
-  - type: copy@v1
-    src: home/package.json
-    dest: /src/home/package.json
-
-  - type: copy@v1
-    src: home/files/.local/lib/package.json
-    dest: /src/home/files/.local/lib/package.json
-
-  - type: copy@v1
-    src: lib/typescript/package.json
-    dest: /src/lib/typescript/package.json
-
-  - type: copy@v1
-    src: tools/workstation/package.json
-    dest: /src/tools/workstation/package.json
-
-  # Keep dependency installation cached when extension source or metadata changes
-  - type: containerfile
-    snippets:
-      - |-
-        RUN \
-          --mount=type=cache,id=spectrum-hyper-window-tiling-bun-v1,sharing=locked,target=/root/.bun/install/cache \
-          cd /src && \
-          bun install --frozen-lockfile --filter @dotfiles/tiling
-
   - type: copy@v1
     src: tools/tiling/tsconfig.json
     dest: /src/tools/tiling/tsconfig.json

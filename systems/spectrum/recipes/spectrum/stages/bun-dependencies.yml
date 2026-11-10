@@ -1,0 +1,47 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/stage-v1.json
+name: bun-dependencies
+from: docker.io/oven/bun:1.4.4@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d
+modules:
+  # Only dependency inputs belong here, leaving source edits in consumer stages
+  - type: copy@v1
+    src: package.json
+    dest: /src/package.json
+
+  - type: copy@v1
+    src: bun.lock
+    dest: /src/bun.lock
+
+  - type: copy@v1
+    src: home/package.json
+    dest: /src/home/package.json
+
+  - type: copy@v1
+    src: home/files/.local/lib/package.json
+    dest: /src/home/files/.local/lib/package.json
+
+  - type: copy@v1
+    src: lib/typescript/package.json
+    dest: /src/lib/typescript/package.json
+
+  - type: copy@v1
+    src: tools/workstation/package.json
+    dest: /src/tools/workstation/package.json
+
+  - type: copy@v1
+    src: tools/tiling/package.json
+    dest: /src/tools/tiling/package.json
+
+  # Fallow is a local file dependency with no install lifecycle scripts
+  - type: copy@v1
+    src: tools/tiling/vendor
+    dest: /src/tools/tiling/vendor
+
+  - type: containerfile
+    snippets:
+      - |-
+        RUN \
+          --mount=type=cache,id=spectrum-bun-dependencies-v1,sharing=locked,target=/root/.bun/install/cache \
+          cd /src && \
+          bun install --frozen-lockfile --ignore-scripts \
+            --filter @dotfiles/workstation --filter @dotfiles/tiling

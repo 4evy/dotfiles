@@ -20,6 +20,7 @@ spec:
     - linux/amd64
 
 stages:
+  - from-file: spectrum/stages/bun-dependencies.yml
   - from-file: spectrum/stages/workstation.yml
   - from-file: spectrum/stages/tiling/tiling.yml
   - from-file: spectrum/stages/kanata-inputs.yml
