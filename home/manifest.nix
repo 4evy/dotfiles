@@ -931,26 +931,7 @@
         "linux"
       ];
     }
-  ]
-  ++
-    builtins.map
-      (
-        name:
-        let
-          path = ".omp/agent/extensions/pride/${name}.ts";
-        in
-        {
-          source = path;
-          target = path;
-          # Bare dependencies resolve from the deployed agent package
-          mutable = true;
-        }
-      )
-      [
-        "flags"
-        "index"
-        "widget"
-      ];
+  ];
   hooks = [
     {
       onChange = false;
