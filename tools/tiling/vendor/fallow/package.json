@@ -1,6 +1,6 @@
 {
   "name": "fallow",
-  "version": "3.40.0",
+  "version": "3.42.0",
   "private": true,
   "description": "Official Fallow npm launcher, packaged without the optional Go-backed type-aware sidecar",
   "license": "MIT",
@@ -26,13 +26,13 @@
     "detect-libc": "2.1.2"
   },
   "optionalDependencies": {
-    "@fallow-cli/darwin-arm64": "3.40.0",
-    "@fallow-cli/darwin-x64": "3.40.0",
-    "@fallow-cli/linux-x64-gnu": "3.40.0",
-    "@fallow-cli/linux-arm64-gnu": "3.40.0",
-    "@fallow-cli/linux-x64-musl": "3.40.0",
-    "@fallow-cli/linux-arm64-musl": "3.40.0",
-    "@fallow-cli/win32-arm64-msvc": "3.40.0",
-    "@fallow-cli/win32-x64-msvc": "3.40.0"
+    "@fallow-cli/darwin-arm64": "3.42.0",
+    "@fallow-cli/darwin-x64": "3.42.0",
+    "@fallow-cli/linux-x64-gnu": "3.42.0",
+    "@fallow-cli/linux-arm64-gnu": "3.42.0",
+    "@fallow-cli/linux-x64-musl": "3.42.0",
+    "@fallow-cli/linux-arm64-musl": "3.42.0",
+    "@fallow-cli/win32-arm64-msvc": "3.42.0",
+    "@fallow-cli/win32-x64-msvc": "3.42.0"
   }
 }
