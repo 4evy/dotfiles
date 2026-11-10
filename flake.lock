@@ -19,11 +19,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794161607,
-        "narHash": "sha256-msISEbntLHKUQmz2si82SynbX1xuHQEpO+2ivbAG/to=",
+        "lastModified": 1794316800,
+        "narHash": "sha256-5HnT7udrPZ7mT+dwFMdmI/JqUS5aVdfjjE+j2qjBR74=",
         "owner": "4evy",
         "repo": "ai",
-        "rev": "ba7199f273934853d8d20046bdac23e5af4d67d8",
+        "rev": "b2c3fd3beba614f9fcbbddbcd84b0d0f26810501",
         "type": "github"
       },
       "original": {
@@ -510,7 +510,6 @@
         "nixpkgs-unstable": "nixpkgs-unstable",
         "patches": "patches",
         "raycast": "raycast",
-        "rust-overlay": "rust-overlay",
         "sops-nix": "sops-nix",
         "source-bluebuild-cli": "source-bluebuild-cli",
         "source-fzf-tab": "source-fzf-tab",
@@ -530,26 +529,6 @@
         "treefmt-nix": "treefmt-nix",
         "tweezle": "tweezle",
         "vicinae": "vicinae"
-      }
-    },
-    "rust-overlay": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1794303164,
-        "narHash": "sha256-UZMtOt43/HRVssXPSuPv8t11Toq9+CjyWUfYQ3tqGVE=",
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "rev": "89750a2ef1c6a44db9f4251b16c23deffdcfddff",
-        "type": "github"
-      },
-      "original": {
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "type": "github"
       }
     },
     "sops-nix": {

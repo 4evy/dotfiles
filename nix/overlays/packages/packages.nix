@@ -16,34 +16,8 @@ let
         updateScript = dotfilesPackageUpdaters.flakeInputs names;
       };
     });
-  inherit (aiPackages)
-    ai-tools
-    farstep
-    farstep-desktop
-    farstep-service
-    ;
+  inherit (aiPackages) ai-tools;
   inherit (hyper-window-tiling) gnome kde;
-  # The rust-overlay input owns the stable toolchain, ahead of pinned Nixpkgs
-  farstepCraneLib = (inputs.ai.inputs.crane.mkLib final).overrideToolchain (
-    pkgs: (inputs.rust-overlay.lib.mkRustBin { } pkgs).stable.latest.minimal
-  );
-  # Native Swift bridges do not need the REPL's separately built LLDB
-  farstepSwift = final.swift.override { enableRepl = false; };
-  farstepDesktop =
-    (farstep-desktop.override {
-      craneLib = farstepCraneLib;
-      swift = farstepSwift;
-    }).overrideAttrs
-      (
-        old:
-        lib.attrsets.optionalAttrs stdenv.hostPlatform.isDarwin {
-          env = (old.env or { }) // {
-            # Swift bridge archives need the compiler's back-deployment libraries
-            NIX_LDFLAGS = "${old.env.NIX_LDFLAGS or ""} -L${farstepSwift}/lib/swift/macosx";
-          };
-        }
-      );
-  farstepService = farstep-service.override { craneLib = farstepCraneLib; };
   aiJavaScript = callPackage ../../../packages/ai/javascript.nix {
     inherit (aiPackages) ai-app-modules ai-javascript;
   };
@@ -104,18 +78,12 @@ let
 in
 packages
 // {
-  aiTools = lib.attrsets.mapAttrs (_: package: withInputs [ "ai" "rust-overlay" ] package) (
+  aiTools = lib.attrsets.mapAttrs (_: package: withInputs [ "ai" ] package) (
     aiPackages
     // {
       ai-javascript = aiJavaScript;
       ai-tools = ai-tools.override {
         ai-javascript = aiJavaScript;
-      };
-      farstep-desktop = farstepDesktop;
-      farstep-service = farstepService;
-      farstep = farstep.override {
-        farstep-desktop = farstepDesktop;
-        farstep-service = farstepService;
       };
     }
   );
