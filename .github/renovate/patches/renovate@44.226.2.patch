@@ -1,3 +1,23 @@
+diff --git a/dist/modules/manager/nix/extract.js b/dist/modules/manager/nix/extract.js
+index 4f7ee2a..303e8a3 100644
+--- a/dist/modules/manager/nix/extract.js
++++ b/dist/modules/manager/nix/extract.js
+@@ -30,9 +30,12 @@ async function extractPackageFile(content, packageFile, config) {
+ 		}, `flake.lock is missing "root" node`);
+ 		return null;
+ 	}
+-	for (const [depName, flakeInput] of Object.entries(flakeLock.nodes)) {
+-		if (depName === "root") continue;
+-		if (!(depName in rootInputs)) continue;
++	// Input names are not lock node IDs when transitive flakes share a name
++	// Follows arrays have no independently owned pin to update
++	for (const [depName, nodeId] of Object.entries(rootInputs)) {
++		if (typeof nodeId !== "string") continue;
++		const flakeInput = flakeLock.nodes[nodeId];
++		if (!flakeInput) continue;
+ 		const flakeLocked = flakeInput.locked;
+ 		const flakeOriginal = flakeInput.original;
+ 		if (flakeLocked === void 0) {
 diff --git a/dist/modules/platform/github/graphql.js b/dist/modules/platform/github/graphql.js
 index e59101d..b228b55 100644
 --- a/dist/modules/platform/github/graphql.js
@@ -11,10 +31,10 @@ index e59101d..b228b55 100644
      autoMergeAllowed
      mergeCommitAllowed
 diff --git a/dist/modules/platform/github/index.js b/dist/modules/platform/github/index.js
-index 03ffdce..7f7d85c 100644
+index 6e7dbf2..0f11cc0 100644
 --- a/dist/modules/platform/github/index.js
 +++ b/dist/modules/platform/github/index.js
-@@ -407,7 +407,10 @@ async function initRepo({ repository, forkCreation, forkOrg, forkToken, gitUrl,
+@@ -408,7 +408,10 @@ async function initRepo({ repository, forkCreation, forkOrg, forkToken, gitUrl,
  		else if (repo.rebaseMergeAllowed) config.mergeMethod = "rebase";
  		else logger.debug("Could not find allowed merge methods for repo");
  		config.autoMergeAllowed = repo.autoMergeAllowed;
@@ -26,7 +46,7 @@ index 03ffdce..7f7d85c 100644
  		config.hasVulnerabilityAlertsEnabled = repo.hasVulnerabilityAlertsEnabled;
  		config.mergeQueueEnabled[config.defaultBranch] = isNonEmptyObject(repo.mergeQueue);
  		const recentIssues = GithubIssue.array().catch([]).parse(res?.data?.repository?.issues?.nodes);
-@@ -593,6 +596,7 @@ async function fetchPr(prNo) {
+@@ -594,6 +597,7 @@ async function fetchPr(prNo) {
  	}
  }
  async function getPr(prNo, refreshCache = false) {
@@ -34,7 +54,7 @@ index 03ffdce..7f7d85c 100644
  	if (!prNo) return null;
  	if (refreshCache) return fetchPr(prNo);
  	let pr = (await getPrList()).find(({ number }) => number === prNo) ?? null;
-@@ -606,6 +610,8 @@ function matchesState(state, desiredState) {
+@@ -607,6 +611,8 @@ function matchesState(state, desiredState) {
  	return state === desiredState;
  }
  async function getPrList() {
@@ -43,7 +63,7 @@ index 03ffdce..7f7d85c 100644
  	if (!config.prList) {
  		const repo = config.parentRepo ?? config.repository;
  		let username = config.renovateUsername;
-@@ -616,6 +622,7 @@ async function getPrList() {
+@@ -617,6 +623,7 @@ async function getPrList() {
  	return config.prList;
  }
  async function findPr({ branchName, prTitle, state = "all", includeOtherAuthors }) {
@@ -51,7 +71,7 @@ index 03ffdce..7f7d85c 100644
  	logger.debug(`findPr(${branchName}, ${prTitle}, ${state})`);
  	if (includeOtherAuthors) {
  		const repo = config.parentRepo ?? config.repository;
-@@ -919,6 +926,8 @@ async function closeIssue(issueNumber) {
+@@ -920,6 +927,8 @@ async function closeIssue(issueNumber) {
  	}
  }
  async function ensureIssue({ title, reuseTitle, body: rawBody, labels, once = false, shouldReOpen = true }) {
@@ -60,7 +80,7 @@ index 03ffdce..7f7d85c 100644
  	logger.debug(`ensureIssue(${title})`);
  	/* v8 ignore next -- specs initialize repos with issues enabled */
  	if (config.hasIssuesEnabled === false) {
-@@ -1226,6 +1235,9 @@ async function tryPrAutomerge(prNumber, prNodeId, platformPrOptions) {
+@@ -1227,6 +1236,9 @@ async function tryPrAutomerge(prNumber, prNodeId, platformPrOptions) {
  	}
  }
  async function createPr({ sourceBranch, targetBranch, prTitle: title, prBody: rawBody, labels, draftPR = false, platformPrOptions, milestone }) {
@@ -155,22 +175,3 @@ index a41ae1d..2d8955e 100644
  	const config = { ...prConfig };
  	const filteredPrConfig = generatePrBodyFingerprintConfig(config);
  	const prBodyFingerprint = fingerprint(filteredPrConfig);
-diff --git a/dist/modules/manager/nix/extract.js b/dist/modules/manager/nix/extract.js
---- a/dist/modules/manager/nix/extract.js
-+++ b/dist/modules/manager/nix/extract.js
-@@ -30,9 +30,12 @@ async function extractPackageFile(content, packageFile, config) {
- 		}, `flake.lock is missing "root" node`);
- 		return null;
- 	}
--	for (const [depName, flakeInput] of Object.entries(flakeLock.nodes)) {
--		if (depName === "root") continue;
--		if (!(depName in rootInputs)) continue;
-+	// Input names are not lock node IDs when transitive flakes share a name
-+	// Follows arrays have no independently owned pin to update
-+	for (const [depName, nodeId] of Object.entries(rootInputs)) {
-+		if (typeof nodeId !== "string") continue;
-+		const flakeInput = flakeLock.nodes[nodeId];
-+		if (!flakeInput) continue;
- 		const flakeLocked = flakeInput.locked;
- 		const flakeOriginal = flakeInput.original;
- 		if (flakeLocked === void 0) {
