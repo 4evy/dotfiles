@@ -415,6 +415,23 @@ const prepareManifest = Effect.fn("prepareManifest")(function* (
     ...privateManifest.files,
     ...(yield* preparedAi(output, managesAi)),
   );
+  if (managesAi) {
+    const rex = manifest.files.find(
+      (entry) => entry.target === join(home, ".local/bin/rex"),
+    );
+    if (!rex)
+      return yield* Effect.fail(new DotfilesError("The home manifest is missing Rex"));
+    // Render upstream's Claude hook before Hjem fingerprints its managed settings
+    // The activation hook can then update skills without changing managed bytes
+    yield* runCommand(
+      [rex.source, "skill", "setup", "--agent", "claude", "--session-naming=false"],
+      {
+        env: { ...environment, HOME: join(output, "ai") },
+        capture: true,
+        stdin: "ignore",
+      },
+    );
+  }
   return manifest;
 });
 
