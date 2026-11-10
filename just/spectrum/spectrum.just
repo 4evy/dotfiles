@@ -85,5 +85,13 @@ switch *args: (_doctor 'nix')
 [linux]
 [positional-arguments]
 _switch *args: _validate
+    # BlueBuild captures bootc's output, so authenticate before its hidden prompt
+    sudo -v
+    # Keep the ticket valid across long builds without changing sudo policy
+    (while sleep 60; do sudo -n -v || exit; done) &
+    sudo_keepalive=$!
+    trap 'kill "$sudo_keepalive" 2>/dev/null || :; wait "$sudo_keepalive" 2>/dev/null || :' EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
     # Match build's disk-backed temporary storage for the image transfer
     TMPDIR=/var/tmp bluebuild switch --skip-validation "$@" systems/spectrum/recipes/spectrum.yml
