@@ -30,11 +30,13 @@
   nix-update-script,
   nspr,
   nss,
+  openssl,
   pango,
   rpmextract,
   runCommand,
   stdenv,
   systemd,
+  tpm2-tss,
   wrapGAppsHook3,
 }:
 let
@@ -70,9 +72,12 @@ let
       libxkbcommon
       nspr
       nss
+      # The remote-control device-key module links TPM2 and OpenSSL
+      openssl
       pango
       stdenv.cc.cc.lib
       systemd
+      tpm2-tss
       libx11
       libxcomposite
       libxdamage
