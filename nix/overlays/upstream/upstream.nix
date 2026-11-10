@@ -37,6 +37,12 @@ in
     }
   );
 
+  # The Rust setup hook requires system AWS-LC, which zizmor omits upstream
+  zizmor = prev.zizmor.overrideAttrs (old: {
+    buildInputs = (old.buildInputs or [ ]) ++ [ final.aws-lc ];
+    nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.pkg-config ];
+  });
+
   solaar =
     (solaar.override {
       python3Packages = python315Packages;
