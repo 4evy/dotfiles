@@ -9,6 +9,9 @@
   "completion": {
     "notify": "off"
   },
+  "terminal": {
+    "programStatus": false
+  },
   "statusLine": {
     "preset": "custom",
     "separator": "none",
