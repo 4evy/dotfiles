@@ -1,7 +1,12 @@
 {
+  aws-lc,
   dotfilesSourcePins,
   lib,
+  libgit2,
+  pkg-config,
   rustPlatform,
+  zlib,
+  zstd,
 }:
 let
   sourcePin = dotfilesSourcePins.bluebuild-cli;
@@ -12,6 +17,15 @@ in
 rustPlatform.buildRustPackage {
   pname = "bluebuild";
   inherit version src;
+
+  # Rust's setup hook requires system libraries rather than vendored copies
+  buildInputs = [
+    aws-lc
+    libgit2
+    zlib
+    zstd
+  ];
+  nativeBuildInputs = [ pkg-config ];
 
   # Forward switch's validation policy to its internal Containerfile generator
   postPatch = ''
