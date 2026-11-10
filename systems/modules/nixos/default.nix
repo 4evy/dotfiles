@@ -22,6 +22,7 @@ in
   meta.maintainers = [ lib.maintainers._4evy ];
 
   imports = [
+    ./boot.nix
     ./nix.nix
     ../shared/nixpkgs.nix
     ./desktop/packages.nix

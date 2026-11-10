@@ -96,6 +96,10 @@ shorter command is enough:
 sudo nixos-rebuild switch --flake .#nixos
 ```
 
+[Bootvine](https://codeberg.org/wvhulle/bootvine) displays boot and shutdown
+progress after the next reboot. Its [NixOS policy](systems/modules/nixos/boot.nix)
+enables the upstream module in both the initrd and the real system.
+
 </details>
 
 <details>
