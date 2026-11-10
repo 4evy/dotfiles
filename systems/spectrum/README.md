@@ -24,10 +24,12 @@ outputs and local configuration under `/out`. The final image copies that tree
 once, after remote software installation. Add local image resources there
 rather than adding another final-image `COPY`.
 
-CI caches the pinned CLI and validator as one Nix binary-cache archive. It saves
-that archive before generating or building the image, so a later failure does
-not discard the tooling. The first run after a tooling change still builds
-uncached outputs.
+CI restores [all five runtime tools](../../.github/actions/spectrum/prepare/action.yaml)
+from one Nix binary-cache archive before realizing them: Podman, Skopeo, Cosign,
+the pinned CLI, and the schema validator. It saves changed closures before base
+verification or image generation, so later failures do not discard the tooling.
+Image layers remain in the existing GHCR cache. `RUN` cache mounts are local to
+the builder and are not exported by the registry layer cache.
 
 - Use bootc for image updates so `/usr/lib/bootc/kargs.d` arguments apply.
 - Keep Bluefin's bundled Homebrew setup. The BlueBuild `brew` module replaces

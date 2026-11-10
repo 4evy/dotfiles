@@ -24,59 +24,23 @@ runs:
         # Apt removals are slow and fail when runner images drop a package
         remove-large-packages: "false"
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-      with:
-        version-file: .tool-versions
-
     - name: Set Up Determinate Nix
       uses: ./.github/actions/setup/nix # zizmor: ignore[self-repository]
 
-    - name: Set Up Podman
-      shell: bash
-      run: |
-        set -euo pipefail
-        # Use the locked container stack instead of Ubuntu's older cache exporter
-        podman_store=$(nix build --inputs-from . --out-link /tmp/podman-result --print-out-paths 'nixpkgs#podman^out')
-        skopeo_store=$(nix build --inputs-from . --out-link /tmp/skopeo-result --print-out-paths 'nixpkgs#skopeo^out')
-        sudo ln --symbolic --force "$podman_store/bin/podman" /usr/local/bin/podman
-        sudo ln --symbolic --force "$skopeo_store/bin/skopeo" /usr/local/bin/skopeo
-        sudo podman info
-
-    - name: Install Cosign
-      shell: bash
-      run: |
-        set -euo pipefail
-        cosign_store=$(nix build --inputs-from . --out-link /tmp/cosign-result --print-out-paths nixpkgs#cosign)
-        sudo ln --symbolic --force "$cosign_store/bin/cosign" /usr/local/bin/cosign
-        cosign version
-
-    - name: Verify Locked Bluefin Base
-      env:
-        BASE_LOCK: systems/spectrum/recipes/spectrum.lock
-      shell: bash
-      run: |
-        set -euo pipefail
-        locked_ref=$(tr -d '\n' <"$BASE_LOCK")
-        # Verify the pinned image even when the upstream tag has moved.
-        cosign verify \
-          --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
-          --certificate-identity-regexp='^https://github.com/projectbluefin/(bluefin|actions)/\.github/workflows/.*' \
-          "$locked_ref"
-
-    # Archive the small runtime closures together instead of making hundreds
-    # of per-path requests to the rate-limited GitHub Nix cache
-    - name: Restore Feature-Gated Tooling Cache
+    # Archive runtime closures together instead of making hundreds of per-path
+    # requests to the rate-limited GitHub Nix cache, before any tools are built
+    - name: Restore Runtime Tooling Cache
       id: tooling-cache
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/spectrum-tooling-cache
         key: >-
-          spectrum-tooling-v1-${{ runner.os }}-${{ runner.arch }}-${{
-          hashFiles('flake.nix', 'flake.lock', 'packages/bluebuild/**',
+          spectrum-tooling-v2-${{ runner.os }}-${{ runner.arch }}-${{
+          hashFiles('.github/actions/spectrum/prepare/action.yaml',
+          'flake.nix', 'flake.lock', 'packages/bluebuild/**',
           'nix/**/*.nix', 'lib/**/*.nix') }}
         restore-keys: |
-          spectrum-tooling-v1-${{ runner.os }}-${{ runner.arch }}-
+          spectrum-tooling-v2-${{ runner.os }}-${{ runner.arch }}-
 
     - name: Restore Tooling Closure
       env:
@@ -90,7 +54,7 @@ runs:
           nix copy --from "file://$TOOLING_CACHE" --no-check-sigs "${roots[@]}"
         fi
 
-    - name: Build Feature-Gated Tooling
+    - name: Build Runtime Tooling
       id: tools
       env:
         TOOLING_CACHE: ${{ runner.temp }}/spectrum-tooling-cache
@@ -98,8 +62,16 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        bluebuild_store=$(nix build --out-link /tmp/bluebuild-result --print-out-paths .#bluebuild-v2)
-        validator_store=$(nix build --out-link /tmp/validator-result --print-out-paths .#check-jsonschema)
+        # Build runtime tools together and retain every output with a root link
+        nix build --inputs-from . --out-link /tmp/spectrum-tools \
+          'nixpkgs#podman^out' 'nixpkgs#skopeo^out' nixpkgs#cosign \
+          .#bluebuild-v2 .#check-jsonschema
+        # Nix numbers links by installable index, omitting the zero suffix
+        podman_store=$(readlink -f /tmp/spectrum-tools)
+        skopeo_store=$(readlink -f /tmp/spectrum-tools-1)
+        cosign_store=$(readlink -f /tmp/spectrum-tools-2)
+        bluebuild_store=$(readlink -f /tmp/spectrum-tools-3)
+        validator_store=$(readlink -f /tmp/spectrum-tools-4)
         bluebuild="$bluebuild_store/bin/bluebuild"
         validator="$validator_store/bin/check-jsonschema"
         "$bluebuild" --version
@@ -109,17 +81,43 @@ runs:
           # Replace old closures restored by the fallback key
           rm -rf "$TOOLING_CACHE"
           nix copy --to "file://$TOOLING_CACHE?compression=zstd" \
+            "$podman_store" "$skopeo_store" "$cosign_store" \
             "$bluebuild_store" "$validator_store"
-          printf '%s\n' "$bluebuild_store" "$validator_store" >"$TOOLING_CACHE/roots"
+          printf '%s\n' "$podman_store" "$skopeo_store" "$cosign_store" \
+            "$bluebuild_store" "$validator_store" >"$TOOLING_CACHE/roots"
         fi
 
-    # Save before image generation/build so their failures do not lose tooling
-    - name: Save Feature-Gated Tooling Cache
+    # Save before base verification/generation so failures do not lose tooling
+    - name: Save Runtime Tooling Cache
       if: steps.tooling-cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/spectrum-tooling-cache
         key: ${{ steps.tooling-cache.outputs.cache-primary-key }}
+
+    - name: Set Up Container Tools
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Use the locked container stack instead of Ubuntu's older cache exporter
+        sudo ln --symbolic --force /tmp/spectrum-tools/bin/podman /usr/local/bin/podman
+        sudo ln --symbolic --force /tmp/spectrum-tools-1/bin/skopeo /usr/local/bin/skopeo
+        sudo ln --symbolic --force /tmp/spectrum-tools-2/bin/cosign /usr/local/bin/cosign
+        sudo podman info
+        cosign version
+
+    - name: Verify Locked Bluefin Base
+      env:
+        BASE_LOCK: systems/spectrum/recipes/spectrum.lock
+      shell: bash
+      run: |
+        set -euo pipefail
+        locked_ref=$(tr -d '\n' <"$BASE_LOCK")
+        # Verify the pinned image even when the upstream tag has moved
+        cosign verify \
+          --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+          --certificate-identity-regexp='^https://github.com/projectbluefin/(bluefin|actions)/\.github/workflows/.*' \
+          "$locked_ref"
 
     - name: Generate and Validate Containerfile
       env:
