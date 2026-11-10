@@ -241,6 +241,8 @@ export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
     ".local/bin/opencode": "apps/opencode/opencode.ts",
     ".omp/agent/lib/schema": "apps/omp/lib/schema",
     ".omp/agent/lib/sky": "farstep/sky",
+    // Match the packaged Mac runtime's compact footer presentation
+    ".omp/agent/extensions/compact": "apps/omp/extensions/compact",
     ".omp/agent/extensions/remote": "apps/omp/extensions/remote",
     ".omp/agent/extensions/skylight": "apps/omp/extensions/skylight",
     ".omp/agent/extensions/thinking": "apps/omp/extensions/thinking",
