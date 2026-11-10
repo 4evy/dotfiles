@@ -670,11 +670,11 @@
     "source-libtsm": {
       "flake": false,
       "locked": {
-        "lastModified": 1792661656,
-        "narHash": "sha256-cw0t316AZkc+CvSrpfcaFHyqf5F/NfFP497QpZT5zRU=",
+        "lastModified": 1794322856,
+        "narHash": "sha256-UJ4WOsZ74FAz7L3cghrCkmX8MH+s3R2nhs9cC7BqAE0=",
         "owner": "kmscon",
         "repo": "libtsm",
-        "rev": "c0733a5be2915d04b2c49adb003df5da6f8aff94",
+        "rev": "feb600cf2b2cf38e0e7807f70ed2f44756f1cc09",
         "type": "github"
       },
       "original": {
