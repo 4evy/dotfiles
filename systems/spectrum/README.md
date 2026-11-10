@@ -1,55 +1,27 @@
 # Spectrum
 
-Run `just spectrum build` from the repository root to build only, or
-`just spectrum switch` (`rebuild` in an interactive shell) to build and stage the
-image. Both validate the recipe and source inputs before using the pinned
-BlueBuild CLI in the operations shell.
+Run from the repository root:
 
-The recipe lives in `systems/spectrum/recipes/spectrum.yml`. Image resources
-retain their native `etc/` and `usr/` structure under `files/system/`.
-Repository definitions live in `files/dnf/` and are staged under the DNF
-module's `CONFIG_DIRECTORY` before native repository installation and cleanup.
+```bash
+just spectrum validate
+just spectrum build   # Build only
+just spectrum switch  # Build and stage, or `rebuild` in an interactive shell
+```
 
-The [`bun-dependencies` stage](recipes/spectrum/stages/bun-dependencies.yml)
-installs the workstation and tiling workspace dependencies once. Both builders
-inherit it. Keep source, palette, and extension metadata copies in the consumer
-stages so those edits reuse the dependency layer.
+Recipe: [`recipes/spectrum.yml`](recipes/spectrum.yml)
 
-The [`kanata` stage](recipes/spectrum/stages/kanata.yml) mounts only its source
-locks, patch metadata, and build script. Keep changing inputs out of heavyweight
-filesystem layers.
+## Editing
 
-The [`bootvine` stage](recipes/spectrum/stages/bootvine.yml) builds the same
-Bootvine revision locked for NixOS. It stages upstream's boot and shutdown units
-and dracut hook. The [system module](recipes/spectrum/modules/system.yml) enables
-the units and rebuilds the shipped initramfs. Bootvine appears after switching
-to the rebuilt image and rebooting, with Plymouth kept disabled.
-
-The [`spectrum-files` stage](recipes/spectrum/stages/files.yml) assembles builder
-outputs and local configuration under `/out`. The final image copies that tree
-once, after remote software installation. Add local image resources there
-rather than adding another final-image `COPY`.
-
-CI restores [all five runtime tools](../../.github/actions/spectrum/prepare/action.yaml)
-from one Nix binary-cache archive before realizing them: Podman, Skopeo, Cosign,
-the pinned CLI, and the schema validator. It saves changed closures before base
-verification or image generation, so later failures do not discard the tooling.
-Image layers remain in the existing GHCR cache. `RUN` cache mounts are local to
-the builder and are not exported by the registry layer cache.
-
-- Use bootc for image updates so `/usr/lib/bootc/kargs.d` arguments apply.
-- Keep Bluefin's bundled Homebrew setup. The BlueBuild `brew` module replaces
-  its payload and services. Brew updates here are manual: `just update`.
-- A shared module `source` image overrides the version in `type`, so it can
-  silently run a different implementation than the recipe names.
-- Use `script@v2` for multiline snippets. Version 1 splits them into separate
-  commands, breaking heredocs and shell control flow.
-- The Nix package tracks released CLI sources with `bootc` and `recipe-v2`
-  enabled. Upstream release installers omit those features, so the image
-  deliberately retains a digest-pinned `main-installer` instead.
-- Validate with `just spectrum validate`: the CLI validator selects the v1
-  schema, but these recipes use v2.
-  The packaged CLI forwards `switch --skip-validation` to its internal generator
-  so switching uses those schema checks instead of repeating v1 validation.
-  Schema downloads, including remote `$ref` files, have 10-second connect and
-  30-second read timeouts. The validator retains upstream's three attempts.
+- Put local image resources in `files/system/`, preserving `etc/` and `usr/`
+  paths. Add them through the [files stage](recipes/spectrum/stages/files.yml),
+  not another final-image `COPY`
+- Keep source, palette, and extension metadata in consumer stages to reuse the
+  shared [dependency layer](recipes/spectrum/stages/bun-dependencies.yml)
+- Use bootc for updates so `/usr/lib/bootc/kargs.d` arguments apply
+- Keep Bluefin's bundled Homebrew setup. The BlueBuild `brew` module replaces it.
+  Update Brew manually with `just update`
+- A shared module `source` image overrides the version in `type`
+- Use `script@v2` for multiline snippets. Version 1 splits shell control flow
+- Keep the digest-pinned `main-installer`. Release installers lack `bootc` and
+  `recipe-v2`
+- Use `just spectrum validate` for v2 recipes. The CLI validator selects v1
