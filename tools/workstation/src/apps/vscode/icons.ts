@@ -211,7 +211,9 @@ export const vscodeIcons = Effect.fn("vscodeIcons")(function* () {
   const code = yield* Effect.sync(() => Bun.which("code"));
   if (!code) return;
   const fs = yield* FileSystem.FileSystem;
-  const upstream = (yield* output([code, "--locate-extension", upstreamId])).trim();
+  const upstream = (yield* output([code, "--locate-extension", upstreamId], {
+    stdin: "ignore",
+  })).trim();
   if (!upstream) return;
   if (!(yield* fs.exists(upstream)))
     return yield* Effect.fail(
@@ -252,5 +254,5 @@ export const vscodeIcons = Effect.fn("vscodeIcons")(function* () {
   });
   const vsix = join(temporary, `${extensionId}-${version}.vsix`);
   yield* buildVSIX(extension, vsix, version);
-  yield* run([code, "--install-extension", vsix, "--force"]);
+  yield* run([code, "--install-extension", vsix, "--force"], { stdin: "ignore" });
 }, Effect.scoped);

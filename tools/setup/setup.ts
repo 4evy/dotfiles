@@ -290,12 +290,16 @@ const workstation = Effect.gen(function* () {
     Effect.gen(function* () {
       if (nixos) return;
       yield* ensureSudo;
-      yield* command([
-        process.execPath,
-        join(root, "tools/setup/homebrew.ts"),
-        "bundle",
-        ...(env.DOTFILES_HOMEBREW_UPGRADE === "1" ? ["--upgrade"] : []),
-      ]);
+      // Sudo is ready, so Brew and its helpers need no terminal input
+      yield* command(
+        [
+          process.execPath,
+          join(root, "tools/setup/homebrew.ts"),
+          "bundle",
+          ...(env.DOTFILES_HOMEBREW_UPGRADE === "1" ? ["--upgrade"] : []),
+        ],
+        { stdin: "ignore" },
+      );
       yield* command([
         join(brewPrefix, "bin/rustup"),
         "toolchain",

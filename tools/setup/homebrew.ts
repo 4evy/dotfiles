@@ -44,14 +44,18 @@ export const bundle = Effect.fn(function* (prefix: string, upgrade: boolean) {
         updateSandbox(prefix, deniedRule, temporaryRule),
         () => updateSandbox(prefix, temporaryRule, deniedRule).pipe(Effect.orDie),
       );
-      yield* run([
-        join(prefix, "bin/brew"),
-        "bundle",
-        "install",
-        upgrade ? "--upgrade" : "--no-upgrade",
-        "--file",
-        join(ROOT, "Brewfile"),
-      ]);
+      // Keep extension installers from changing the caller's terminal input
+      yield* run(
+        [
+          join(prefix, "bin/brew"),
+          "bundle",
+          "install",
+          upgrade ? "--upgrade" : "--no-upgrade",
+          "--file",
+          join(ROOT, "Brewfile"),
+        ],
+        { stdin: "ignore" },
+      );
     }),
   );
 });
