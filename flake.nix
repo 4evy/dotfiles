@@ -119,7 +119,7 @@
 
     source-oh-my-zsh = {
       flake = false;
-      url = "github:ohmyzsh/ohmyzsh/cca3bdfbef8c52ef8939ce7911ff68852b949daa";
+      url = "github:ohmyzsh/ohmyzsh/6010fb6260f359e71d99ba25f05f9215809b3ed2";
     };
     source-zsh-autosuggestions = {
       flake = false;

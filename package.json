@@ -38,7 +38,7 @@
     "typecheck": "bun run tsc -p tsconfig.json && bun run --sequential --workspaces typecheck"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.5",
+    "@biomejs/biome": "2.6.6",
     "@catppuccin/palette": "1.8.0",
     "@oh-my-pi/pi-coding-agent": "18.18.1",
     "@oh-my-pi/pi-tui": "18.18.1",
