@@ -14,10 +14,10 @@ runs:
     - name: Install Check Tools
       shell: bash
       env:
-        MISE_VERSION: v2026.11.5
-        LINUX_X64_SHA256: 7a5b051d6f17d335c502f8047a5175cf3103f347d91942771c60da4e302ebcb0
-        MACOS_ARM64_SHA256: 4f9faebcfac7f8bb1321e697ba7a5ba26f645233aa269741a16482f757bd482e
-        MACOS_X64_SHA256: f9489962f8c979520111b86b70c5da91086c54c9141edd116198d89093784a1e
+        MISE_VERSION: v2026.11.6
+        LINUX_X64_SHA256: 5fb74f80aab81e0a5ca20eb6414cc69b78ae0cab1deaeb521572ed26d8d4a6e3
+        MACOS_ARM64_SHA256: 8b9b3459f331bde1e7b830d829dddd7cda5a558063103e451fba9f976e91acdb
+        MACOS_X64_SHA256: a502913a19b7e2284ed9aa1f349434245929f0cd3ae53acfd300b0ad28043c71
         TOOLS: ${{ inputs.tools }}
         # Trust only the version file, not arbitrary repository mise configuration
         MISE_TRUSTED_CONFIG_PATHS: ${{ env.MISE_TRUSTED_CONFIG_PATHS || format('{0}/.tool-versions', github.workspace) }}
