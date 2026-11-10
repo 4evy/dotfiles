@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { dirname, join, relative } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { output, run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { ensureDirectory, writeJson } from "@dotfiles/core/files";
@@ -234,7 +235,7 @@ export const vscodeIcons = Effect.fn("vscodeIcons")(function* () {
       palettes[variant],
     );
   const version = yield* contentVersion(extension);
-  yield* writeJson(join(extension, "package.json"), {
+  const manifest = {
     name: extensionMetadata.name,
     displayName: extensionMetadata.displayName,
     description: extensionMetadata.description,
@@ -251,7 +252,23 @@ export const vscodeIcons = Effect.fn("vscodeIcons")(function* () {
         },
       ],
     },
-  });
+  };
+  const installed = (yield* output([code, "--locate-extension", extensionId], {
+    stdin: "ignore",
+  })).trim();
+  if (installed) {
+    const installedManifest = yield* Schema.decodeUnknownEffect(
+      Schema.fromJsonString(Schema.Record(Schema.String, Schema.Unknown)),
+    )(yield* fs.readFileString(join(installed, "package.json")));
+    // VS Code adds __metadata and queries the gallery on every VSIX install
+    if (
+      Object.entries(manifest).every(([key, value]) =>
+        isDeepStrictEqual(installedManifest[key], value),
+      )
+    )
+      return;
+  }
+  yield* writeJson(join(extension, "package.json"), manifest);
   const vsix = join(temporary, `${extensionId}-${version}.vsix`);
   yield* buildVSIX(extension, vsix, version);
   yield* run([code, "--install-extension", vsix, "--force"], { stdin: "ignore" });
