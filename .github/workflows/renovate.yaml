@@ -57,11 +57,27 @@ jobs:
             nixpkgs-unstable#cargo
           echo "$HOME/.nix-profile/bin" >> "$GITHUB_PATH"
 
+      # Persist public lookup and extraction metadata, never repository clones
+      - name: Restore Renovate Metadata
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/renovate-cache/renovate
+          # A fresh snapshot per attempt keeps TTL-managed lookup data current
+          key: >-
+            ${{ runner.os }}-${{ runner.arch }}-renovate-metadata-v1-${{
+            hashFiles('.github/renovate/bun.lock') }}-${{
+            github.run_id }}-${{ github.run_attempt }}
+          restore-keys: >-
+            ${{ runner.os }}-${{ runner.arch }}-renovate-metadata-v1-${{
+            hashFiles('.github/renovate/bun.lock') }}-
+
       - name: Run Renovate
         run: .github/renovate/node_modules/.bin/renovate
         env:
           LOG_LEVEL: info
           RENOVATE_EXIT_CODE_FOR_ERRORS: "true"
+          RENOVATE_CACHE_DIR: ${{ runner.temp }}/renovate-cache
+          RENOVATE_REPOSITORY_CACHE: enabled
           # Public release reads use the job's read-only token, not the push token
           GH_TOKEN: ${{ github.token }}
           # Separate OAuth token with repo and workflow scopes
