@@ -205,11 +205,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794329072,
-        "narHash": "sha256-XoADJdofJA4ESdW0Sowk/5mpCRpyYcpJKJkwEb5nX5M=",
+        "lastModified": 1794414271,
+        "narHash": "sha256-uaL40XP9LpJLzhXPUSOEhguj6E0XhBejCuU05pomVWI=",
         "owner": "euvlok",
         "repo": "pkgs",
-        "rev": "436cfdc31cf99d577bfd4f0d2d9e9e8106f8f0f0",
+        "rev": "e2c0a07f9a56ee15f61c78fef854d227338328d5",
         "type": "github"
       },
       "original": {
@@ -344,11 +344,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794358929,
-        "narHash": "sha256-rS0LXCe8SEx/KMCPyEBN6Jg3+UvpRBQRJpwdfBTgmd8=",
+        "lastModified": 1794415071,
+        "narHash": "sha256-xbwzslUgUPVXgWMiz6YPsEF+PDFFJqQ8K/pCu/oYA7w=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "d4e982c45559f1d1798a84d736d861e2c2666096",
+        "rev": "fd5203fc8298bef54245dacc5b5c30cd807b6b90",
         "type": "github"
       },
       "original": {
@@ -421,11 +421,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1794348053,
-        "narHash": "sha256-ZsM74jabuw4l/En/PO0zpGN7Yro7LRhDDZuhliQRMxk=",
-        "rev": "a9cb3b1c871b21085459c4af78637871e126c873",
+        "lastModified": 1794406962,
+        "narHash": "sha256-7aeBMTxorr9f9CeCEjmk9nfueyd/eLQkSlpZoWSrYHU=",
+        "rev": "39b15f146050cf402c45e0f0ea09170da0293fba",
         "type": "tarball",
-        "url": "https://releases.nixos.org/nixos/unstable-small/nixos-26.11pre1116952.a9cb3b1c871b/nixexprs.tar.zst"
+        "url": "https://releases.nixos.org/nixos/unstable-small/nixos-26.11pre1117830.39b15f146050/nixexprs.tar.zst"
       },
       "original": {
         "type": "tarball",
@@ -922,11 +922,11 @@
         "nixpkgs": []
       },
       "locked": {
-        "lastModified": 1794046931,
-        "narHash": "sha256-HNisGUjqz/fB0aC1F40zkL7/Bquix0UnVhYsx3A5h3w=",
+        "lastModified": 1794309628,
+        "narHash": "sha256-flzFFhQ1nsWDT0FWROZYPB1iZdsJsv4rCADEagRRgzs=",
         "owner": "4evy",
         "repo": "tweezle",
-        "rev": "9502092873edb5d50dabadfa93848e1f1eaae4ce",
+        "rev": "440a7c5e458f3b46a921b4d04f081d2a20f2aa92",
         "type": "github"
       },
       "original": {
