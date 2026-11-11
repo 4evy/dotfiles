@@ -27,6 +27,20 @@ runs:
     - name: Set Up Determinate Nix
       uses: ./.github/actions/setup/nix # zizmor: ignore[self-repository]
 
+    - name: Resolve Runtime Tooling Cache Key
+      id: tooling-roots
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Key the archive by runtime outputs, not unrelated lockfile or CI edits
+        for installable in nixpkgs#podman nixpkgs#skopeo nixpkgs#cosign \
+          .#bluebuild-v2 .#check-jsonschema; do
+          nix eval --raw --inputs-from . "$installable.outPath"
+          printf '\n'
+        done >"$RUNNER_TEMP/spectrum-tooling-roots"
+        read -r key _ < <(sha256sum "$RUNNER_TEMP/spectrum-tooling-roots")
+        echo "key=$key" >>"$GITHUB_OUTPUT"
+
     # Archive runtime closures together instead of making hundreds of per-path
     # requests to the rate-limited GitHub Nix cache, before any tools are built
     - name: Restore Runtime Tooling Cache
@@ -36,9 +50,7 @@ runs:
         path: ${{ runner.temp }}/spectrum-tooling-cache
         key: >-
           spectrum-tooling-v2-${{ runner.os }}-${{ runner.arch }}-${{
-          hashFiles('.github/actions/spectrum/prepare/action.yaml',
-          'flake.nix', 'flake.lock', 'packages/bluebuild/**',
-          'nix/**/*.nix', 'lib/**/*.nix') }}
+          steps.tooling-roots.outputs.key }}
         restore-keys: |
           spectrum-tooling-v2-${{ runner.os }}-${{ runner.arch }}-
 
