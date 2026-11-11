@@ -9,9 +9,9 @@ on:
   workflow_dispatch: null
 
 concurrency:
-  group: "${{ github.workflow }}-${{ github.ref }}"
-  # Supersede PR checks without interrupting default-branch or manual runs
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: "${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}"
+  # Supersede stale validation while keeping manual runs separate
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 permissions:
   contents: read # needed to checkout repository contents
