@@ -27,8 +27,6 @@ jobs:
       contains(fromJSON('[29139614, 41898282, 49699333]'), github.event.pull_request.user.id))
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    outputs:
-      native-checks: ${{ steps.native-inputs.outputs.checks }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -49,6 +47,31 @@ jobs:
       - name: Check Flake and Repository
         run: just nix ci check
 
+  # Native builds need only the matrix, not the flake and repository results
+  discover:
+    name: Discover native checks
+    # Apply the same trust gate before evaluating pull-request Nix code
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) ||
+      (github.event.pull_request.user.type == 'Bot' &&
+      contains(fromJSON('[29139614, 41898282, 49699333]'), github.event.pull_request.user.id))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      native-checks: ${{ steps.native-inputs.outputs.checks }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set Up Check Tools
+        uses: ./.github/actions/setup/check/tools # zizmor: ignore[self-repository]
+
+      - name: Set Up Nix
+        uses: ./.github/actions/setup/nix # zizmor: ignore[self-repository]
+
       - name: Discover Native Checks
         id: native-inputs
         run: |
@@ -57,13 +80,13 @@ jobs:
 
   # Omit `name` so skipped matrices do not expose an unevaluated matrix expression.
   native-checks: # zizmor: ignore[anonymous-definition] GitHub adds matrix values to the job ID.
-    needs: checks
+    needs: discover
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        check: ${{ fromJSON(needs.checks.outputs.native-checks) }}
+        check: ${{ fromJSON(needs.discover.outputs.native-checks) }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
