@@ -46,12 +46,30 @@
     '';
   };
 
+  # Codex needs a stdio bridge for Affinity's legacy SSE transport
+  programs.codex.settings.mcp_servers.affinity = {
+    command = lib.meta.getExe pkgs.mcp-proxy;
+    args = [
+      "http://localhost:6767/sse"
+      "--transport=sse"
+    ];
+    enabled = true;
+  };
+
   programs.ai = {
     enable = true;
     user.enable = true;
     farstep.desktop.enable = true;
     omp.keybindings = lib.trivial.importJSON ../../../home/data/omp/keybindings.json;
     omp.settings = lib.trivial.importJSON ../../../home/data/omp/config.json;
+    # Affinity serves SSE while the desktop app is open
+    omp.mcp.mcpServers.affinity = {
+      type = "sse";
+      url = "http://localhost:6767/sse";
+      enabled = true;
+      startup = "manual";
+      shutdown = "agent_end";
+    };
     chatgpt = {
       enable = true;
       package = null;
