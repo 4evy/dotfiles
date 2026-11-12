@@ -4,7 +4,7 @@ description: Provision build tools, verify the locked base, and generate the Con
 
 outputs:
   bluebuild:
-    description: Absolute path to the feature-gated BlueBuild executable.
+    description: Absolute path to the upstream BlueBuild executable.
     value: ${{ steps.tools.outputs.bluebuild }}
 
 runs:
@@ -34,7 +34,7 @@ runs:
         set -euo pipefail
         # Key the archive by runtime outputs, not unrelated lockfile or CI edits
         for installable in nixpkgs#podman nixpkgs#skopeo nixpkgs#cosign \
-          .#bluebuild-v2 .#check-jsonschema; do
+          .#bluebuild .#check-jsonschema; do
           nix eval --raw --inputs-from . "$installable.outPath"
           printf '\n'
         done >"$RUNNER_TEMP/spectrum-tooling-roots"
@@ -77,7 +77,7 @@ runs:
         # Build runtime tools together and retain every output with a root link
         nix build --inputs-from . --out-link /tmp/spectrum-tools \
           'nixpkgs#podman^out' 'nixpkgs#skopeo^out' nixpkgs#cosign \
-          .#bluebuild-v2 .#check-jsonschema
+          .#bluebuild .#check-jsonschema
         # Nix numbers links by installable index, omitting the zero suffix
         podman_store=$(readlink -f /tmp/spectrum-tools)
         skopeo_store=$(readlink -f /tmp/spectrum-tools-1)

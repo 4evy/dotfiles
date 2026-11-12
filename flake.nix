@@ -155,11 +155,6 @@
       url = "file+https://raw.githubusercontent.com/googlefonts/noto-emoji/99701e07d3d1fe1bdbcdb14964547f0fd592966f/2D/fonts/NotoColorEmoji.ttf";
     };
 
-    source-bluebuild-cli = {
-      flake = false;
-      url = "github:blue-build/cli/v0.9.42";
-    };
-
     source-helix = {
       flake = false;
       url = "github:gj1118/helix";

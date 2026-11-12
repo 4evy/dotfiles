@@ -141,8 +141,8 @@
           extraOutputsToInstall = [ "man" ];
         };
         inherit (pkgs)
+          bluebuild
           nixcord-discord
-          bluebuild-v2
           check-jsonschema
           helium-configured
           hyper-window-tiling-gnome

@@ -39,7 +39,7 @@
             inherit (unstable) uv;
           }
           # Use the host container engine with its matching storage and helpers
-          ++ lib.lists.optionals isLinux [ self'.packages.bluebuild-v2 ];
+          ++ lib.lists.optionals isLinux [ self'.packages.bluebuild ];
       };
 
     in

@@ -147,14 +147,6 @@
     },
     {
       "customType": "regex",
-      "description": "Track BlueBuild CLI releases for the explicitly feature-enabled Nix build",
-      "managerFilePatterns": ["/^flake\\.nix$/"],
-      "matchStrings": ["url = \"github:blue-build/cli/(?<currentValue>v[^\"/]+)\";"],
-      "depNameTemplate": "blue-build/cli",
-      "datasourceTemplate": "github-releases"
-    },
-    {
-      "customType": "regex",
       "description": "Track the pinned Spectrum Bluefin base image",
       "managerFilePatterns": [
         "/^systems\\/spectrum\\/recipes\\/spectrum\\.yml$/",
@@ -355,12 +347,7 @@
     {
       "description": "Let release managers own tag and explicitly pinned revision changes",
       "matchManagers": ["nix"],
-      "matchDepNames": [
-        "source-bluebuild-cli",
-        "source-toshy",
-        "source-uresourced",
-        "determinate"
-      ],
+      "matchDepNames": ["source-toshy", "source-uresourced", "determinate"],
       "enabled": false
     },
     {

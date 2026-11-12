@@ -290,7 +290,7 @@
         "ai-tools",
         {
           "label": "Linux only",
-          "value": "bluebuild-v2"
+          "value": "bluebuild"
         },
         "bun2nix",
         {

@@ -30,7 +30,6 @@ on:
       - flake.nix
       - lib/**
       - nix/**
-      - packages/bluebuild/**
       - packages/kanata/build.sh
       - packages/kanata/kanata.kbd
       - packages/solaar/tray.patch

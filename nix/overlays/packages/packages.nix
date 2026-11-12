@@ -22,7 +22,6 @@ let
     inherit (aiPackages) ai-app-modules ai-javascript;
   };
   packageFiles = {
-    bluebuild-v2 = ../../../packages/bluebuild/package.nix;
     # Use the managed Bun runtime rather than bypassing its upstream override
     dotfiles-workstation = ../../../tools/workstation/package.nix;
     dotfiles-typescript-tools = ../../../package.nix;

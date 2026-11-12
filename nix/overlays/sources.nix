@@ -100,7 +100,6 @@ final: _prev: {
             updateScript =
               if
                 builtins.elem name [
-                  "source-bluebuild-cli"
                   "source-toshy"
                   "source-uresourced"
                 ]

@@ -12,6 +12,18 @@ let
   inherit (unstable) libnotify python315Packages solaar;
 in
 {
+  bluebuild = unstable.bluebuild.overrideAttrs (old: {
+    postPatch = (old.postPatch or "") + ''
+      # Forward switch's validation policy to its Containerfile generator
+      substituteInPlace src/commands/switch.rs \
+        --replace-fail '.recipe(&self.recipe)' \
+          '.recipe(&self.recipe).skip_validation(self.skip_validation)'
+      # Explicit drivers must not evaluate unused runtime autodetection
+      substituteInPlace process/drivers/types/drivers.rs \
+        --replace-fail '*self.get_or_insert(' '*self.get_or_insert_with(||'
+    '';
+  });
+
   # Keep the managed runtime on the stable release ahead of the nixpkgs pin
   bun = unstable.bun.overrideAttrs (
     finalAttrs: previous: {
