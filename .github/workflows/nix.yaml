@@ -37,7 +37,10 @@ jobs:
         uses: ./.github/actions/setup/check/tools # zizmor: ignore[self-repository]
 
       - name: Set Up Nix
+        id: nix
         uses: ./.github/actions/setup/nix # zizmor: ignore[self-repository]
+        with:
+          cache-scope: flake-checks
 
       - name: Check Generated Bun Dependencies
         run: >-
@@ -46,6 +49,10 @@ jobs:
 
       - name: Check Flake and Repository
         run: just nix ci check
+
+      - name: Export Nix Build Cache
+        if: steps.nix.outputs.cache-hit != 'true'
+        run: just nix ci cache
 
   # Native builds need only the matrix, not the flake and repository results
   discover:
@@ -97,7 +104,10 @@ jobs:
         uses: ./.github/actions/setup/check/tools # zizmor: ignore[self-repository]
 
       - name: Set Up Nix
+        id: nix
         uses: ./.github/actions/setup/nix # zizmor: ignore[self-repository]
+        with:
+          cache-scope: native-${{ matrix.check }}
 
       # Independent runners prevent one expensive package from consuming the
       # entire workflow timeout and preserve successful caches for other checks.
@@ -105,3 +115,7 @@ jobs:
         env:
           CHECK: ${{ matrix.check }}
         run: just nix build check "$CHECK"
+
+      - name: Export Nix Build Cache
+        if: steps.nix.outputs.cache-hit != 'true'
+        run: just nix ci cache

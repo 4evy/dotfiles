@@ -1,6 +1,17 @@
 ---
 name: Set Up Nix
-description: Install pinned Determinate Nix.
+description: Install pinned Determinate Nix and optionally restore local build outputs.
+
+inputs:
+  cache-scope:
+    description: Job-specific build archive namespace, empty to skip store caching.
+    required: false
+    default: ""
+
+outputs:
+  cache-hit:
+    description: Whether the complete build archive already exists for this revision.
+    value: ${{ steps.cache.outputs.cache-hit }}
 
 runs:
   using: composite
@@ -11,9 +22,29 @@ runs:
       # Image signing retains OIDC access in its own steps.
       env:
         ACTIONS_ID_TOKEN_REQUEST_URL: ""
-
-    - name: Cache Nix Store
-      uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
       with:
-        use-gha-cache: enabled
-        use-flakehub: disabled
+        extra-conf: >-
+          ${{ inputs.cache-scope != '' &&
+          format('extra-substituters = file://{0}/nix-build-cache?trusted=true', runner.temp) || '' }}
+
+    # One archive avoids per-store-path GitHub requests and their rate limits
+    # Only unsigned build outputs are saved, not the public dependency closure
+    - name: Restore Nix Build Cache
+      if: inputs.cache-scope != ''
+      id: cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/nix-build-cache
+        key: >-
+          nix-build-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.cache-scope }}-${{
+          hashFiles('flake.lock') }}-${{ github.sha }}
+        restore-keys: |
+          nix-build-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.cache-scope }}-${{ hashFiles('flake.lock') }}-
+          nix-build-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.cache-scope }}-
+
+    - name: Initialize Nix Build Cache
+      if: inputs.cache-scope != ''
+      shell: bash
+      run: |-
+        set -euo pipefail
+        nix copy --to "file://$RUNNER_TEMP/nix-build-cache" --no-recursive --stdin </dev/null

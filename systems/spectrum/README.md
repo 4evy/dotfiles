@@ -27,3 +27,12 @@ Recipe: [`recipes/spectrum.yml`](recipes/spectrum.yml)
 - Keep the digest-pinned `main-installer`. Release installers lack `bootc` and
   `recipe-v2`
 - Use `just spectrum validate` for v2 recipes. The CLI validator selects v1
+
+## CI caching
+
+Spectrum reuses registry layers and its runtime-tooling archive. Nix check jobs
+use a separate [build-output archive](../../.github/actions/setup/nix/action.yaml)
+instead of per-path GitHub cache requests. The
+[export recipe](../../just/nix/ci.just) retains unsigned build outputs, including
+intermediate compiler artifacts, while signed dependencies come from upstream
+binary caches
