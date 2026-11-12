@@ -17,6 +17,9 @@ Recipe: [`recipes/spectrum.yml`](recipes/spectrum.yml)
   not another final-image `COPY`
 - Keep source, palette, and extension metadata in consumer stages to reuse the
   shared [dependency layer](recipes/spectrum/stages/bun-dependencies.yml)
+- Keep versioned RPM URLs after the bulk package and extension modules in
+  [`software.yml`](recipes/spectrum/modules/software.yml) so updates reuse those
+  earlier layers
 - Use bootc for updates so `/usr/lib/bootc/kargs.d` arguments apply
 - Keep Bluefin's bundled Homebrew setup. The BlueBuild `brew` module replaces it.
   Update Brew manually with `just update`
@@ -29,6 +32,12 @@ Recipe: [`recipes/spectrum.yml`](recipes/spectrum.yml)
 - Use `just spectrum validate` for v2 recipes. The CLI validator selects v1
 
 ## CI caching
+
+The [build preparation](../../.github/actions/spectrum/prepare/action.yaml)
+installs [runner-only storage options](../../.github/actions/spectrum/build/storage.conf)
+before Podman's first probe. Keep native overlay diffs enabled so committing a
+small change does not scan the entire Bluefin filesystem. These options do not
+change workstation storage
 
 Spectrum reuses registry layers and its runtime-tooling archive. Nix check jobs
 use a separate [build-output archive](../../.github/actions/setup/nix/action.yaml)

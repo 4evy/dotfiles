@@ -115,6 +115,8 @@ runs:
         sudo ln --symbolic --force /tmp/spectrum-tools/bin/podman /usr/local/bin/podman
         sudo ln --symbolic --force /tmp/spectrum-tools-1/bin/skopeo /usr/local/bin/skopeo
         sudo ln --symbolic --force /tmp/spectrum-tools-2/bin/cosign /usr/local/bin/cosign
+        # Configure storage before Podman's first probe caches diff capabilities
+        sudo install -Dm644 .github/actions/spectrum/build/storage.conf /etc/containers/storage.conf
         sudo podman info
         cosign version
 

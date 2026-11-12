@@ -86,8 +86,6 @@ modules:
         - xdg-desktop-portal
         - xdg-desktop-portal-gnome
         - xdg-desktop-portal-gtk
-        # renovate: datasource=github-releases depName=rustdesk/rustdesk
-        - https://github.com/rustdesk/rustdesk/releases/download/1.5.3/rustdesk-1.5.3-0.x86_64.rpm
         - https://discord.com/api/download?platform=linux&format=rpm
 
   # The RPM owns desktop files and icons. Keep helper GIDs consistent between
@@ -137,3 +135,12 @@ modules:
       - 5592 # Focused Window D-Bus
       - 8594 # Vicinae
       - 8834 # Copyous
+
+  # Versioned RPM updates must not invalidate the bulk install and extensions
+  - type: dnf@v1
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:e6cffa08197dc55f2cdc9f596e5bae6af4dc82e8a33884ff5a4edccc251b0218
+    install:
+      install-weak-deps: false
+      packages:
+        # renovate: datasource=github-releases depName=rustdesk/rustdesk
+        - https://github.com/rustdesk/rustdesk/releases/download/1.5.3/rustdesk-1.5.3-0.x86_64.rpm
