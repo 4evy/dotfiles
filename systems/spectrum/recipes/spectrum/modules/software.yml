@@ -9,7 +9,7 @@ modules:
     dest: /tmp/spectrum-config/dnf
 
   - type: dnf@v1
-    source: ghcr.io/blue-build/modules/dnf:v1@sha256:e6cffa08197dc55f2cdc9f596e5bae6af4dc82e8a33884ff5a4edccc251b0218
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:f461849889b66098b7b5c7dc2661ac41c8a9b5cad6e0fbedd142de8e42ae72ec
     env:
       CONFIG_DIRECTORY: /tmp/spectrum-config
     repos:
@@ -91,7 +91,7 @@ modules:
   # The RPM owns desktop files and icons. Keep helper GIDs consistent between
   # the image group database, setgid executables, and boot-time sysusers.
   - type: script@v2
-    source: ghcr.io/blue-build/modules/script:v2@sha256:d6076360da9195e2a6d781043a1b049bede3d2389757912a828a957bc78929b8
+    source: ghcr.io/blue-build/modules/script:v2@sha256:7c53921aee3ea68f91edacccac13f793ec63424d1376b0b0c8b1c0b56eca5b4c
     snippets:
       - |
         readonly onepassword_gid=1500 onepassword_cli_gid=1600 onepassword_mcp_gid=1700
@@ -116,7 +116,7 @@ modules:
   # Reconcile user Flatpaks at boot. Flatpak itself selects and maintains the
   # host's matching graphics-driver extensions with each runtime.
   - type: default-flatpaks@v2
-    source: ghcr.io/blue-build/modules/default-flatpaks:v2@sha256:9a57a74188d54cd717520a6c434ddfa41346f769b48bbb3bbf418538180f8397
+    source: ghcr.io/blue-build/modules/default-flatpaks:v2@sha256:05ad18b6d39c2152db9810eccd6d7fa6a0a0fcce854b0abcd32d39846657c26a
     configurations:
       - scope: user
         notify: false
@@ -128,7 +128,7 @@ modules:
           - org.gnome.NautilusPreviewer
 
   - type: gnome-extensions@v1
-    source: ghcr.io/blue-build/modules/gnome-extensions:v1@sha256:01fc3f2497deccf8572213a232347e35b4d78d3447317e88ecedb5ad0c89e1c9
+    source: ghcr.io/blue-build/modules/gnome-extensions:v1@sha256:7208c3e6f925715f3fee04557eedc69ac2477438cd12b4eb2b03bb767303be74
     install:
       - 4974 # Window Calls Extended
       - 5060 # Xremap
@@ -138,7 +138,7 @@ modules:
 
   # Versioned RPM updates must not invalidate the bulk install and extensions
   - type: dnf@v1
-    source: ghcr.io/blue-build/modules/dnf:v1@sha256:e6cffa08197dc55f2cdc9f596e5bae6af4dc82e8a33884ff5a4edccc251b0218
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:f461849889b66098b7b5c7dc2661ac41c8a9b5cad6e0fbedd142de8e42ae72ec
     install:
       install-weak-deps: false
       packages:

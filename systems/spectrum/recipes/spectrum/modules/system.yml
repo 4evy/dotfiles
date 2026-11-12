@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://schema.blue-build.org/module-list-v1.json
 modules:
   - type: kargs@v1
-    source: ghcr.io/blue-build/modules/kargs:v1@sha256:e54b580450f2f6674721b8fc752686cd198fdfbe2210a2502a02dd16738ad247
+    source: ghcr.io/blue-build/modules/kargs:v1@sha256:a5ab2a19cad1962ff8a66519e81fcb8a0809699ee95db2192fc3389da9534b4d
     kargs:
       - plymouth.enable=0
       - rd.plymouth=0
@@ -10,7 +10,7 @@ modules:
       - nvidia.NVreg_DynamicPowerManagement=0x02
 
   - type: systemd@v1
-    source: ghcr.io/blue-build/modules/systemd:v1@sha256:2d2b3d8f7388a999544dbaa90de639f4bbe37f2f6adb4af8dabce5cb5cd4090a
+    source: ghcr.io/blue-build/modules/systemd:v1@sha256:8647f1fa6eb472b93c23bb5d4c06604e84728432ec520836e045e94b90649401
     system:
       enabled:
         - bootvine.service
@@ -40,7 +40,7 @@ modules:
         - vicinae.service
 
   - type: script@v2
-    source: ghcr.io/blue-build/modules/script:v2@sha256:d6076360da9195e2a6d781043a1b049bede3d2389757912a828a957bc78929b8
+    source: ghcr.io/blue-build/modules/script:v2@sha256:7c53921aee3ea68f91edacccac13f793ec63424d1376b0b0c8b1c0b56eca5b4c
     snippets:
       - |
         install -d -m 0755 /usr/share/selinux/packages/spectrum
@@ -97,4 +97,4 @@ modules:
 
   # Rebuild the shipped kernel images after Bootvine's dracut module is present
   - type: initramfs@v1
-    source: ghcr.io/blue-build/modules/initramfs:v1@sha256:9959ae9f131c68019a189c6840db5c080db238f5ccb249651ff39756f623aad3
+    source: ghcr.io/blue-build/modules/initramfs:v1@sha256:3e211b517d68d65030445aa18bd1a218a7c450610cc926948f90de7458cee591
