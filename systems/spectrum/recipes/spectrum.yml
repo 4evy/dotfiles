@@ -4,9 +4,9 @@ version: 2
 base:
   image:
     registry: ghcr.io
-    repository: projectbluefin/bluefin-nvidia
-    tag: stable
-    digest: sha256:27dc87ad87606fea73092a9e6271663f90058698e24339f8d8e05fdb639e8746
+    repository: ublue-os/bluefin-nvidia-open
+    tag: "45"
+    digest: sha256:dcf0c82bcb6a4e7677db1d84be1f8653a16b93fd87186890ad0c151875809a58
 metadata:
   name: spectrum
   description: Evy's Bluefin workstation image

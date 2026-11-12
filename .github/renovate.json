@@ -153,10 +153,10 @@
         "/^systems\\/spectrum\\/recipes\\/spectrum\\.lock$/"
       ],
       "matchStrings": [
-        "registry:\\s+ghcr\\.io\\n\\s+repository:\\s+projectbluefin/bluefin-nvidia\\n\\s+tag:\\s+(?<currentValue>[^\\s@]+)\\n\\s+digest:\\s+(?<currentDigest>sha256:[a-f0-9]+)",
-        "ghcr\\.io/projectbluefin/bluefin-nvidia:(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]+)"
+        "registry:\\s+ghcr\\.io\\n\\s+repository:\\s+ublue-os/bluefin-nvidia-open\\n\\s+tag:\\s+\"?(?<currentValue>\\d+)\"?\\n\\s+digest:\\s+(?<currentDigest>sha256:[a-f0-9]+)",
+        "ghcr\\.io/ublue-os/bluefin-nvidia-open:(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]+)"
       ],
-      "depNameTemplate": "ghcr.io/projectbluefin/bluefin-nvidia",
+      "depNameTemplate": "ghcr.io/ublue-os/bluefin-nvidia-open",
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
     },

@@ -10,6 +10,10 @@ just spectrum switch  # Build and stage, or `rebuild` in an interactive shell
 
 Recipe: [`recipes/spectrum.yml`](recipes/spectrum.yml)
 
+Spectrum uses Bluefin's Fedora 45 NVIDIA Open image, pinned in the recipe and
+[`spectrum.lock`](recipes/spectrum.lock). The `45` tag keeps digest updates on
+Fedora 45 rather than following `latest` across major releases
+
 ## Editing
 
 - Put local image resources in `files/system/`, preserving `etc/` and `usr/`
