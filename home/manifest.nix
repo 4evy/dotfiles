@@ -302,21 +302,21 @@
       ];
     }
     {
-      source = ".config/helix/config.toml";
-      target = ".config/helix/config.toml";
+      source = ".config/mitos/config.toml";
+      target = ".config/mitos/config.toml";
     }
     {
-      source = ".config/helix/languages.toml";
-      target = ".config/helix/languages.toml";
+      source = ".config/mitos/languages.toml";
+      target = ".config/mitos/languages.toml";
     }
     {
-      source = ".config/helix/themes/catppuccin_custom_dark.toml";
-      target = ".config/helix/themes/catppuccin_custom_dark.toml";
+      source = ".config/mitos/themes/catppuccin_custom_dark.toml";
+      target = ".config/mitos/themes/catppuccin_custom_dark.toml";
       nixGenerated = true;
     }
     {
-      source = ".config/helix/themes/catppuccin_custom_light.toml";
-      target = ".config/helix/themes/catppuccin_custom_light.toml";
+      source = ".config/mitos/themes/catppuccin_custom_light.toml";
+      target = ".config/mitos/themes/catppuccin_custom_light.toml";
       nixGenerated = true;
     }
     {
@@ -630,8 +630,8 @@
       ];
     }
     {
-      source = ".local/lib/helix/helix.ts";
-      target = ".local/lib/helix/helix.ts";
+      source = ".local/lib/mitos/mitos.ts";
+      target = ".local/lib/mitos/mitos.ts";
       executable = true;
       mutable = true;
     }

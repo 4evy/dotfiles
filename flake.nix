@@ -155,9 +155,9 @@
       url = "file+https://raw.githubusercontent.com/googlefonts/noto-emoji/99701e07d3d1fe1bdbcdb14964547f0fd592966f/2D/fonts/NotoColorEmoji.ttf";
     };
 
-    source-helix = {
+    source-mitos = {
       flake = false;
-      url = "github:gj1118/helix";
+      url = "github:mitos-editor/mitos";
     };
 
     source-karabiner-vhid-package = {

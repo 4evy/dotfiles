@@ -42,7 +42,7 @@ in
     environment.systemPackages = attrValues {
       hjem = inputs.hjem.packages.${stdenv.hostPlatform.system}.hjem;
       inherit (pkgs)
-        helix
+        mitos
         jj-patched
         just
         yamllint

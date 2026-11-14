@@ -35,8 +35,10 @@
 unset NO_COLOR
 
 # A1 / editor
-#      e h v vi vim ────────────> Helix
+#      e h hx mi v vi vim ──────> Mitos
 
+alias hx="ms"
+alias mi="ms"
 alias e="hx"
 alias h="hx"
 alias v="hx"

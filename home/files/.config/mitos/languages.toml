@@ -135,7 +135,7 @@ language-servers = ["nil"]
 
 [language-server.rumdl]
 command = "bun"
-args = ["@HOME@/.local/lib/helix/helix.ts"]
+args = ["@HOME@/.local/lib/mitos/mitos.ts"]
 
 [language-server.ruff]
 command = "ruff"

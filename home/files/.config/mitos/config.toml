@@ -4,30 +4,26 @@ light = "catppuccin_custom_light"
 fallback = "catppuccin_custom_dark"
 
 [editor]
-auto-format = true
-auto-save = false
+format.on-save = true
+files.auto-save.focus-lost = false
 idle-timeout = 100
-completion-timeout = 50
-color-modes = true
-cursorline = true
+completion.trigger-delay = 50
+cursor.highlight-line = true
 line-number = "relative"
-true-color = true
-kitty-keyboard-protocol = "auto"
-mouse = true
-bufferline = { render-mode = "always" }
-completion-replace = true
-completion-trigger-len = 1
+mouse.enable = true
+bufferline.show = "always"
+completion.replace = true
+completion.trigger-length = 1
 text-width = 80
-end-of-line-diagnostics = "hint"
-popup-border = "all"
-rounded-corners = true
-rainbow-brackets = true
+diagnostics.end-of-line.severity = "hint"
+border-style = "rounded"
+rainbow-brackets.enable = true
 
-# Keep messages available without covering the buffer with popup stacks
-[editor.notifications]
-style = "statusline"
+# Keep messages in the bottom statusline rather than a separate command row
+[editor.command-line]
+show = "auto"
 
-[editor.cursor-shape]
+[editor.cursor.shape]
 insert = "bar"
 normal = "block"
 select = "underline"
@@ -44,7 +40,17 @@ enable = true
 path = "none"
 
 [editor.statusline]
-center = ["version-control"]
+# Mitos has no center region; retain branch information beside the file name
+left = [
+  "mode",
+  "spinner",
+  "file-name",
+  "read-only-indicator",
+  "file-modification-indicator",
+  "branch",
+  "debug-session",
+]
+mode.color = true
 right = [
   "diagnostics",
   "workspace-diagnostics",
@@ -66,18 +72,15 @@ nbsp = "⍽"
 space = " "
 tab = "→"
 tabpad = " "
-trail = " "
 
 [editor.lsp]
-display-messages = true
-display-inlay-hints = true
-display-progress-messages = false
-auto-document-highlight = true
-inlay-hints-length-limit = 50
+messages.enable = true
+inlay-hints.enable = true
+progress.enable = false
+document-highlight.auto-trigger = true
+inlay-hints.length-limit = 50
 
-[editor.inline-diagnostics]
-# The fork requires this in addition to a severity filter
-show-virtual-lines = true
+[editor.diagnostics.inline]
 cursor-line = "warning"
 
 [editor.file-picker]
@@ -92,7 +95,7 @@ ignore = true
 git-ignore = true
 git-global = true
 git-exclude = true
-flatten-dirs = true
+# Mitos displays the directory tree without the fork's flatten-dirs option
 
 [editor.buffer-picker]
 start-position = "previous"
@@ -101,10 +104,10 @@ start-position = "previous"
 enable = false
 wrap-at-text-width = false
 
-[editor.smart-tab]
+[editor.indent.smart-tab]
 enable = true
 
-[editor.word-completion]
+[editor.completion.word]
 enable = true
 trigger-length = 4
 
@@ -112,19 +115,23 @@ trigger-length = 4
 smart-case = true
 wrap-around = true
 
+[terminal]
+true-color = true
+keyboard.kitty-protocol = "auto"
+
 [keys.normal]
 "{" = "page_cursor_half_up"
 "}" = "page_cursor_half_down"
-# Keep Helix's counted G motion; ge goes to the last line.
+# Keep the counted G motion; ge goes to the last line
 G = "goto_line"
-# Reflow the existing selection; use mip first to select a paragraph.
+# Reflow the existing selection; use mip first to select a paragraph
 g = { g = "goto_file_start", q = ":reflow" }
 Z = { Z = ":write-quit", Q = ":quit!" }
 "space" = { "space" = "file_picker" }
 C-space = "yank_to_clipboard"
 tab = "move_parent_node_end"
 S-tab = "move_parent_node_start"
-# Keep the discarded selections available through Ctrl-o.
+# Keep the discarded selections available through Ctrl-o
 esc = ["save_selection", "collapse_selection", "keep_primary_selection"]
 
 [keys.insert]

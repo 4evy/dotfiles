@@ -17,7 +17,7 @@
     "home/files/.config/rex/themes.ts",
     "home/files/.local/lib/typescript/compiler.mts",
     "home/files/.omp/agent/extensions/**/*.ts",
-    "home/files/.local/lib/{helium,helix,just,solaar}/*.ts"
+    "home/files/.local/lib/{helium,just,mitos,solaar}/*.ts"
   ],
   // Shell entrypoints use these outside the TypeScript import graph
   // tools/setup/setup.sh imports platform-bun and tsrs.sh launches tsrs

@@ -11,7 +11,7 @@ trim_trailing_whitespace = true
 [*.{py,py.in,py.j2,pyi,pyw}]
 indent_size = 4
 
-[{systems/spectrum/files/system/usr/bin/open,home/files/.local/bin/helix-rumdl-lsp}]
+[systems/spectrum/files/system/usr/bin/open]
 indent_size = 4
 
 [*.{rs,zig,zon}]

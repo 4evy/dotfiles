@@ -43,7 +43,7 @@
           dotfiles-workstation
           dotfiles-typescript-tools
           helium-browser
-          helix
+          mitos
           jj-patched
           kanata-with-cmd
           rex
@@ -58,7 +58,7 @@
             [
               (dotfilesPackageUpdaters.flakeInputs [
                 "eupkgs"
-                "source-helix"
+                "source-mitos"
                 "patches"
                 "tweezle"
                 "nixcord"
@@ -73,7 +73,7 @@
             lib.attrsets.attrValues {
               inherit (pkgs)
                 helium-browser
-                helix
+                mitos
                 jj-patched
                 kanata-with-cmd
                 theme-run

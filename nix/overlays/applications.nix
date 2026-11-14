@@ -96,26 +96,10 @@ in
           --replace-fail 'Exec=${lib.meta.getExe upstreamHelium}' 'Exec=helium'
         ln -s helium.desktop "$out/share/applications/helium-browser.desktop"
       '';
-  helix = withInputs [ "source-helix" ] (
-    callPackage (inputs.source-helix + "/default.nix") {
-      gitRev = inputs.source-helix.rev;
-      grammarOverlays = [
-        (_grammarFinal: grammarPrev: {
-          # Preserve the exact Cylc revision after its original repository vanished
-          cylc = grammarPrev.cylc.overrideAttrs (old: {
-            src = builtins.fetchTree {
-              type = "github";
-              owner = "seanwallawalla";
-              repo = "ElliotFontaine_Tree-Sitter-Cylc";
-              rev = old.version;
-            };
-            passthru = (old.passthru or { }) // {
-              updateScript = dotfilesPackageUpdaters.flakeInputs [ "source-helix" ];
-            };
-          });
-        })
-      ]
-      ++ lib.lists.optionals stdenv.hostPlatform.isLinux [
+  mitos = withInputs [ "source-mitos" ] (
+    (callPackage (inputs.source-mitos + "/default.nix") {
+      gitRev = inputs.source-mitos.rev;
+      grammarOverlays = lib.lists.optionals stdenv.hostPlatform.isLinux [
         # Match Nixpkgs' strict-aliasing workaround for the Haskell grammar on GCC 16
         (
           _grammarFinal: grammarPrev:
@@ -128,7 +112,7 @@ in
                 NIX_CFLAGS_COMPILE = (old.env.NIX_CFLAGS_COMPILE or "") + " -fno-strict-aliasing";
               };
               passthru = (old.passthru or { }) // {
-                updateScript = dotfilesPackageUpdaters.flakeInputs [ "source-helix" ];
+                updateScript = dotfilesPackageUpdaters.flakeInputs [ "source-mitos" ];
               };
             });
           }
@@ -145,7 +129,13 @@ in
           "nginx"
           "debian"
         ]);
-    }
+    }).overrideAttrs
+      (old: {
+        postInstall = (old.postInstall or "") + ''
+          ln -s ms "$out/bin/hx"
+          ln -s ms "$out/bin/mi"
+        '';
+      })
   );
   nixcord-discord = hostGraphics (withInputs [ "nixcord" ] (
     discord.override {

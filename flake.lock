@@ -540,10 +540,10 @@
         "sops-nix": "sops-nix",
         "source-fzf-tab": "source-fzf-tab",
         "source-fzf-tab-completion": "source-fzf-tab-completion",
-        "source-helix": "source-helix",
         "source-karabiner-vhid-package": "source-karabiner-vhid-package",
         "source-kmscon": "source-kmscon",
         "source-libtsm": "source-libtsm",
+        "source-mitos": "source-mitos",
         "source-nix-gl-host": "source-nix-gl-host",
         "source-noto-color-emoji": "source-noto-color-emoji",
         "source-oh-my-bash": "source-oh-my-bash",
@@ -651,22 +651,6 @@
         "type": "github"
       }
     },
-    "source-helix": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1793328453,
-        "narHash": "sha256-mM95Fk0dtxhOFSF0WyT6mOwu5iTR5oN/jzJQ2yuDbJk=",
-        "owner": "gj1118",
-        "repo": "helix",
-        "rev": "2610b17609de15a1f1a944a6f16a1ffd5160fa2e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "gj1118",
-        "repo": "helix",
-        "type": "github"
-      }
-    },
     "source-karabiner-vhid-package": {
       "flake": false,
       "locked": {
@@ -710,6 +694,22 @@
         "owner": "kmscon",
         "ref": "main",
         "repo": "libtsm",
+        "type": "github"
+      }
+    },
+    "source-mitos": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794485157,
+        "narHash": "sha256-LCbkHgezd01JbM5/yc5OHES1gmt1SV+7j6+C0FaU8Kw=",
+        "owner": "mitos-editor",
+        "repo": "mitos",
+        "rev": "45b648e4241487edbc2fd95140e6f1309ff2973b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mitos-editor",
+        "repo": "mitos",
         "type": "github"
       }
     },

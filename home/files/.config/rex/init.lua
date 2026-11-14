@@ -2,7 +2,7 @@ local scrollback = require("scrollback")
 
 rex.action({
 	name = "edit_scrollback",
-	title = "Edit Scrollback in Helix",
+	title = "Edit Scrollback in Mitos",
 	category = "Pane",
 	run = scrollback.open,
 })
