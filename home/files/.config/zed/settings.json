@@ -297,7 +297,7 @@
   "lsp": {
     "just-lsp": {
       "binary": {
-        "path": "~/.local/bin/vscode-just-lsp",
+        "path": "~/.local/bin/dotfiles-just-lsp",
         "arguments": []
       }
     },

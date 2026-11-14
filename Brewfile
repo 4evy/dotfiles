@@ -196,59 +196,12 @@ if OS.mac?
   cask "shottr"
   cask "stats"
   cask "telegram"
-  cask "visual-studio-code"
-  # VS Code keymap and Catppuccin are managed in home/files/.config/zed
+  # Keymap and Catppuccin are managed in home/files/.config/zed
   # Compare files with: zed --diff OLD NEW
   # Open saved Linux/Mac projects with Zed's Remote Projects command
   # Native and Linux Flatpak Zed use the same managed settings and theme
   cask "zed"
 end
-
-# Brew Bundle installs these through the native editor CLI on both Spectrum
-# and macOS, keeping editor packages in the same manifest as the editor.
-vscode "astral-sh.ty"
-vscode "biomejs.biome"
-vscode "bradlc.vscode-tailwindcss"
-vscode "catppuccin.catppuccin-vsc"
-vscode "catppuccin.catppuccin-vsc-icons"
-vscode "charliermarsh.ruff"
-vscode "christian-kohler.path-intellisense"
-vscode "csstools.postcss"
-vscode "davidanson.vscode-markdownlint"
-vscode "dbaeumer.vscode-eslint"
-vscode "editorconfig.editorconfig"
-vscode "esbenp.prettier-vscode"
-vscode "github.vscode-github-actions"
-vscode "golang.go"
-vscode "hangxingliu.vscode-systemd-support"
-vscode "jnoortheen.nix-ide"
-vscode "johnnymorganz.stylua"
-vscode "kdl-org.kdl"
-vscode "mads-hartmann.bash-ide-vscode"
-vscode "mikestead.dotenv"
-vscode "mkhl.shfmt"
-vscode "ms-azuretools.vscode-containers" if OS.linux?
-vscode "ms-python.debugpy"
-vscode "ms-python.python"
-vscode "ms-python.vscode-python-envs"
-vscode "ms-vscode.cpptools"
-vscode "ms-vscode.vscode-typescript-next"
-vscode "myriad-dreamin.tinymist"
-vscode "nefrob.vscode-just-syntax"
-vscode "oderwat.indent-rainbow"
-vscode "oven.bun-vscode"
-vscode "redhat.ansible"
-vscode "redhat.vscode-xml"
-vscode "redhat.vscode-yaml"
-vscode "sumneko.lua"
-vscode "svelte.svelte-vscode"
-vscode "tamasfe.even-better-toml"
-vscode "timonwong.shellcheck"
-vscode "tomoki1207.pdf"
-vscode "typescriptteam.native-preview"
-vscode "usernamehw.errorlens"
-vscode "xembly.gomplate"
-vscode "yoavbls.pretty-ts-errors"
 
 # Fonts
 cask "font-jetbrains-mono-nerd-font" if OS.mac?

@@ -16,12 +16,10 @@ modules:
       cleanup: true
       files:
         - 1password.repo
-        - vscode.repo
       copr:
         - scottames/vicinae
       keys:
         - https://downloads.1password.com/linux/keys/1password.asc
-        - https://packages.microsoft.com/keys/microsoft.asc
       nonfree: rpmfusion
     install:
       install-weak-deps: false
@@ -32,7 +30,6 @@ modules:
         - bootc
         - bubblewrap
         - ayugram-desktop
-        - code
         - curl
         - dbus-libs
         - file

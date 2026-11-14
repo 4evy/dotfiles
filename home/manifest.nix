@@ -3,14 +3,6 @@
   version = 1;
   files = [
     {
-      source = ".config/Code/User/settings.json";
-      target = "Library/Application Support/Code/User/settings.json";
-      systems = [
-        "darwin"
-      ];
-      nixGenerated = true;
-    }
-    {
       source = "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/catppuccin-custom.scss";
       target = "Library/Application Support/sh.cider.genten/themes/catppuccin-custom/catppuccin-custom-dark.scss";
       variant = "dark";
@@ -83,14 +75,6 @@
     {
       source = ".codex/themes/catppuccin-custom-light.tmTheme";
       target = ".codex/themes/catppuccin-custom-light.tmTheme";
-      nixGenerated = true;
-    }
-    {
-      source = ".config/Code/User/settings.json";
-      target = ".config/Code/User/settings.json";
-      systems = [
-        "linux"
-      ];
       nixGenerated = true;
     }
     {
@@ -662,8 +646,8 @@
       executable = true;
     }
     {
-      source = ".local/lib/vscode/vscode.ts";
-      target = ".local/lib/vscode/vscode.ts";
+      source = ".local/lib/just/lsp.ts";
+      target = ".local/lib/just/lsp.ts";
       executable = true;
       mutable = true;
     }
@@ -696,8 +680,8 @@
       symlink = true;
     }
     {
-      source = ".local/lib/vscode/launch.sh";
-      target = ".local/bin/vscode-just-lsp";
+      source = ".local/lib/just/launch.sh";
+      target = ".local/bin/dotfiles-just-lsp";
       executable = true;
     }
     {
@@ -1049,10 +1033,6 @@
         "darwin"
       ];
       name = "super_engineering_settings.sh";
-    }
-    {
-      onChange = false;
-      name = "vscode_catppuccin_custom_icons.sh";
     }
     {
       command = [

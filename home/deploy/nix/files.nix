@@ -111,14 +111,6 @@ let
       );
     }
     {
-      name = "@NIX_SERVER@";
-      value = firstCommand [ "vscode-nixd" "nixd" "nil" ] "nixd";
-    }
-    {
-      name = "@NIXFMT@";
-      value = firstCommand [ "vscode-nixfmt" "nixfmt" ] "nixfmt";
-    }
-    {
       name = "@HOME@";
       value = home;
     }

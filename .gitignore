@@ -8,8 +8,6 @@ Thumbs.db
 .decrypted~*
 .vs/
 .vscode/
-!/.vscode/
-!/.vscode/**
 
 # Local environments and tool state
 .ansible/

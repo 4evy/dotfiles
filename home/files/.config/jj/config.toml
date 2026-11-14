@@ -5,7 +5,6 @@ email = "git@evy.pink"
 [ui]
 color = "auto"
 paginate = "auto"
-merge-editor = "vscode"
 diff-formatter = "git-plaintext-records"
 default-command = "log"
 

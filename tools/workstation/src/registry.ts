@@ -7,7 +7,6 @@ import type { Scope } from "effect";
 import { Effect } from "effect";
 import { discord } from "./apps/discord/discord.ts";
 import { syncEquicordSettings } from "./apps/discord/settings.ts";
-import { vscodeIcons } from "./apps/vscode/icons.ts";
 import { desktopAudit } from "./desktop/audit.ts";
 import { gnomeAccent } from "./desktop/gnome.ts";
 import { jjDiff } from "./jj/diff.ts";
@@ -58,11 +57,6 @@ export const commands = {
   },
   "sync-equicord-settings": {
     run: noArguments(syncEquicordSettings),
-    usage: "",
-    environment: [],
-  },
-  "vscode-catppuccin-custom-icons": {
-    run: noArguments(vscodeIcons),
     usage: "",
     environment: [],
   },

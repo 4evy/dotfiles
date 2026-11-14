@@ -160,7 +160,6 @@ in
         wget
         which
         xz
-        vscode
         yaml-language-server
         yq-go
         yt-dlp

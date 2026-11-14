@@ -1,5 +1,5 @@
 [parallel]
-_lint-files: _check-worktree-paths hjem::check (_run-files 'jq' ['*.json', 'flake.lock', ':(exclude).vscode/settings.json'] ['empty']) _lint-container-files (_run-files 'luacheck' ['*.lua']) (_run 'rumdl' ['check', '--respect-gitignore', '.']) _lint-nix _lint-shell-files _lint-input-templates (_run-files 'taplo' ['*.toml'] ['lint']) _lint-xml
+_lint-files: _check-worktree-paths hjem::check (_run-files 'jq' ['*.json', 'flake.lock'] ['empty']) _lint-container-files (_run-files 'luacheck' ['*.lua']) (_run 'rumdl' ['check', '--respect-gitignore', '.']) _lint-nix _lint-shell-files _lint-input-templates (_run-files 'taplo' ['*.toml'] ['lint']) _lint-xml
 
 [linux]
 _lint-container-files: (_run-files 'hadolint' ['Dockerfile', 'Containerfile'])

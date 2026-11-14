@@ -204,11 +204,6 @@ let
           exit 1
         fi
         bun install --cwd "$HJEM_HOME_DIR/.local/lib" --frozen-lockfile --production --ignore-scripts
-        # The editor frontend uses our Rust SDK, not its bundled Go fallback
-        for extension in "$HJEM_HOME_DIR"/.vscode/extensions/typescriptteam.native-preview-*; do
-          [ -d "$extension" ] || continue
-          rm -f "$extension/lib/tsc"
-        done
       '';
     };
     "nix_github_auth.sh" = {
@@ -349,9 +344,6 @@ let
     "terminal_app_catppuccin_custom.sh".text = optionalHomeCommand {
       name = "terminal-catppuccin-custom";
       preferHome = false;
-    };
-    "vscode_catppuccin_custom_icons.sh".text = optionalHomeCommand {
-      name = "vscode-catppuccin-custom-icons";
     };
     "yazi_init.sh".text = ''
       if ! command -v ya >/dev/null 2>&1; then

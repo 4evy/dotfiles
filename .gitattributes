@@ -63,11 +63,8 @@ systems/spectrum/files/system/etc/dconf/db/local.d/* linguist-language=INI lingu
 # s-expression syntax, so Scheme is the closest supported highlighter.
 **/*.kbd linguist-language=Scheme
 
-# Hidden GitHub/VS Code configuration is repo-owned source, but Linguist treats
-# these paths as vendored by default. Generated attributes
-# below still take precedence for lockfiles inside these directories.
+# Hidden GitHub configuration is repo-owned source
 .github/** -linguist-vendored
-.vscode/*.json -linguist-vendored linguist-detectable
 
 # Plain-text files below are executable repository configuration or managed
 # data rather than documentation, so include them without inventing a DSL.
