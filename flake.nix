@@ -68,15 +68,6 @@
       url = "github:4evy/ai";
     };
 
-    bootvine = {
-      inputs = {
-        crane.follows = "ai/crane";
-        nixpkgs.follows = "nixpkgs";
-        rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
-      };
-      url = "git+https://codeberg.org/wvhulle/bootvine?ref=refs/tags/v0.1.3";
-    };
-
     # Only Tweezle's NixOS module is consumed, omit unused module inputs
     tweezle = {
       inputs = {

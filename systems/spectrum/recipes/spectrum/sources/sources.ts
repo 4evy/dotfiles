@@ -47,7 +47,6 @@ function sourcePin(
   lock: typeof Lock.Type,
   stackSources: typeof StackSources.Type,
 ): Record<string, unknown> {
-  if (name === "bootvine") return inputPin(lock, "bootvine");
   const source = stackSources[name === kanataHomebrewInput ? "kanata" : name];
   if (!source) return inputPin(lock, `source-${name}`);
   const parts = source.canonical.split("/");
@@ -118,7 +117,6 @@ const main = Effect.gen(function* () {
     buildData.config.dconf,
   );
   const groups = {
-    bootvine: ["bootvine"],
     kanata: [kanataHomebrewInput],
   };
   for (const [group, names] of Object.entries(groups)) {

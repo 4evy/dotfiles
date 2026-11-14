@@ -13,8 +13,6 @@ modules:
     source: ghcr.io/blue-build/modules/systemd:v1@sha256:8647f1fa6eb472b93c23bb5d4c06604e84728432ec520836e045e94b90649401
     system:
       enabled:
-        - bootvine.service
-        - bootvine-shutdown.service
         - brew-setup.service
         - fedora-atomic-desktop-appstream-cache-refresh.timer
         - kanata-main.service
@@ -94,7 +92,3 @@ modules:
             rmdir "$directory"
           fi
         done
-
-  # Rebuild the shipped kernel images after Bootvine's dracut module is present
-  - type: initramfs@v1
-    source: ghcr.io/blue-build/modules/initramfs:v1@sha256:3e211b517d68d65030445aa18bd1a218a7c450610cc926948f90de7458cee591
