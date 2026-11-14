@@ -2,7 +2,7 @@ import { chmodSync } from "node:fs";
 import { open, rmdir } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, sep } from "node:path";
 import { DotfilesError } from "@dotfiles/core/errors";
-import { Effect, FileSystem, Stdio, Stream } from "effect";
+import { Effect, FileSystem, Predicate, Stdio, Stream } from "effect";
 import { visit } from "jsonc-parser";
 import writeFileAtomic from "write-file-atomic";
 
@@ -186,20 +186,20 @@ export function parseJSONObject(path: string, label: string) {
     const content = yield* readUTF8(path, label);
     return yield* validate(() => {
       const value = parseJSON(content, label);
-      if (value === null || typeof value !== "object" || Array.isArray(value))
+      if (!Predicate.isObject(value))
         throw new DotfilesError(`${label} must be an object`);
-      return value as Record<string, unknown>;
+      return value;
     });
   });
 }
 
 function deterministic(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(deterministic);
-  if (value !== null && typeof value === "object") {
+  if (Predicate.isObject(value)) {
     return Object.fromEntries(
       Object.keys(value)
         .sort()
-        .map((key) => [key, deterministic((value as Record<string, unknown>)[key])]),
+        .map((key) => [key, deterministic(value[key])]),
     );
   }
   return value;
