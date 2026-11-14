@@ -30,7 +30,7 @@
           inherit (pkgs) callPackage dotfilesPackageUpdaters writeText;
           runtime = builtins.fromJSON runtimeJSON;
           configuration = import ../../home/deploy/nix {
-            inherit pkgs;
+            inherit pkgs inputs;
             inherit (runtime) environment;
             packages = lib.attrsets.attrValues {
               inherit (inputs.hjem.packages.x86_64-linux) hjem;

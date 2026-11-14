@@ -1,11 +1,12 @@
 # Project public files through Hjem's native file options and serializer
-# Targets are home-relative, with text/source and executable handled upstream
+# Hjem resolves home/XDG roots and handles text/source and executable modes
 # Runtime records must bypass Nix evaluation to keep plaintext out of the store
 {
   pkgs,
   inputs,
   home,
   files,
+  clobberDefault ? true,
 }:
 let
   inherit (pkgs) lib stdenv;
@@ -17,8 +18,8 @@ let
           type = lib.types.attrsOf (
             hjem.fileTypeRelativeTo {
               rootDir = home;
-              clobberDefault = true;
-              clobberDefaultText = "true";
+              inherit clobberDefault;
+              clobberDefaultText = builtins.toJSON clobberDefault;
             }
           );
         };
@@ -39,7 +40,6 @@ assert lib.asserts.assertMsg (
 ) "Duplicate public Hjem target";
 {
   version = 3;
-  # Compare copy contents so activation replaces pre-existing app settings
   files = map hjem.fileToJson (
     lib.lists.filter (file: file.enable) (lib.attrsets.attrValues evaluated.config.files)
   );

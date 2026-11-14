@@ -1,5 +1,6 @@
 {
   pkgs,
+  inputs,
   packages,
   environment,
 }:
@@ -52,23 +53,26 @@ assert lib.asserts.assertMsg (
 ) "Hjem requires an absolute HOME in its runtime environment";
 {
   packages = map toString packages;
-  manifest = {
-    version = 3;
+  # Share public file validation and serialization with the main home manifest
+  manifest = import ./manifest.nix {
+    inherit pkgs inputs home;
+    # Match the standalone manifest's existing non-clobbering policy
+    clobberDefault = false;
     files = [
       {
-        type = "symlink";
-        source = toString fonts;
-        target = "${configHome}/fontconfig/conf.d/10-hjem-fonts.conf";
+        source = fonts;
+        relativeTo = configHome;
+        target = "fontconfig/conf.d/10-hjem-fonts.conf";
       }
       {
-        type = "symlink";
-        source = toString heliumAppDir;
-        target = "${dataHome}/hjem/helium";
+        source = heliumAppDir;
+        relativeTo = dataHome;
+        target = "hjem/helium";
       }
       {
-        type = "symlink";
-        source = toString environmentFile;
-        target = "${configHome}/environment.d/50-hjem.conf";
+        source = environmentFile;
+        relativeTo = configHome;
+        target = "environment.d/50-hjem.conf";
       }
     ];
   };
