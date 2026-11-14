@@ -46,13 +46,10 @@
     '';
   };
 
-  # Codex needs a stdio bridge for Affinity's legacy SSE transport
+  # Keep startup independent of Affinity's app-hosted SSE server
   programs.codex.settings.mcp_servers.affinity = {
-    command = lib.meta.getExe pkgs.mcp-proxy;
-    args = [
-      "http://localhost:6767/sse"
-      "--transport=sse"
-    ];
+    command = lib.meta.getExe (pkgs.python3.withPackages (python: [ python.mcp_1 ]));
+    args = [ "${./affinity.py}" ];
     enabled = true;
   };
 
