@@ -10,7 +10,14 @@ import { formatMessage } from "@optique/core/message";
 import { map, multiple } from "@optique/core/modifiers";
 import { parseSync } from "@optique/core/parser";
 import { flag } from "@optique/core/primitives";
-import { Effect, FileSystem, Option, Schema, SchemaTransformation } from "effect";
+import {
+  Effect,
+  FileSystem,
+  Option,
+  Predicate,
+  Schema,
+  SchemaTransformation,
+} from "effect";
 import { forwardedArguments } from "../../lib/arguments.ts";
 
 const PRIVATE_SETTINGS_MODE = 0o600;
@@ -51,10 +58,7 @@ const settingsSchema = Schema.StructWithRest(
     chromiumSwitches: Schema.Unknown.pipe(
       Schema.decode<typeof Schema.Unknown>(
         SchemaTransformation.transform<unknown, unknown>({
-          decode: (value) =>
-            typeof value === "object" && value !== null && !Array.isArray(value)
-              ? value
-              : {},
+          decode: (value) => (Predicate.isObject(value) ? value : {}),
           encode: (value) => value,
         }),
       ),
