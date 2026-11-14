@@ -22,6 +22,7 @@ modules:
         - podman.socket
         - rustdesk.service
         - spectrum-tailscale-policy.service
+        - sshd.service
         - sshd-tailscale.socket
         - systemd-oomd.service
         - systemd-oomd.socket

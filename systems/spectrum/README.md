@@ -35,6 +35,60 @@ Fedora 45 rather than following `latest` across major releases
   `recipe-v2`
 - Use `just spectrum validate` for v2 recipes. The CLI validator selects v1
 
+## Recovery SSH
+
+Local builds create rootful `localhost/spectrum:latest` and a private
+`localhost/spectrum-recovery:latest` derivative. `switch` stages the private
+image without rebooting. Both commands accept an optional Wi-Fi profile name or
+UUID, otherwise they select the active Wi-Fi connection. The profile must
+autoconnect, have no user restriction, and store its PSK without a desktop
+secret agent
+
+To add recovery to an existing rootful Spectrum image without a full rebuild:
+
+```bash
+just spectrum recovery localhost/spectrum:latest 5ghz
+sudo bootc switch --transport containers-storage localhost/spectrum-recovery:latest
+```
+
+The [private builder](recovery/build.sh) reads the selected NetworkManager
+keyfile and keeps a separate SSH host key under `/var/lib/spectrum-recovery`.
+Podman secret mounts supply these to the initramfs build. Credentials stay out
+of the checkout, Nix store, and public image
+
+**Never publish the recovery image.** Its initramfs contains the Wi-Fi PSK and
+private host key. Treat local image layers, `/boot`, backups, and old
+deployments as sensitive. Rebuilding does not erase secrets from older copies
+
+Before the main OS mounts, connect from the LAN:
+
+```bash
+ssh -p 2222 root@<lan-ip>
+```
+
+Verify its fingerprint against
+`sudo ssh-keygen -lf /var/lib/spectrum-recovery/ssh_host_ed25519_key.pub`.
+Authentication uses the
+[managed public key](files/system/etc/ssh/authorized_keys/evy), never a
+password. After switch-root, that session ends and normal key-only SSH uses
+`evy` on port 22 with the normal host key
+
+The
+[initramfs module](files/system/usr/lib/dracut/modules.d/91spectrum-wifi/module-setup.sh)
+includes Intel AX200 Wi-Fi support and wired DHCP. Networking runs in the
+background without delaying a healthy local boot for an unavailable AP.
+Tailscale is not included, so off-site recovery needs an independent route into
+the LAN
+
+Use bare `rd.break` for a deliberate late-initramfs breakpoint. Earlier
+breakpoints such as `rd.break=cmdline` and `rd.break=pre-trigger` can stop boot
+before networking starts. Broken kernels, initramfs images, or network drivers
+still require a working deployment or out-of-band access
+
+Use `just spectrum switch` for updates so each new public build gets a fresh
+private initramfs. Plain `bootc upgrade` only consumes the already-built local
+image. Switching directly to a registry image removes this recovery setup
+
 ## CI caching
 
 The [build preparation](../../.github/actions/spectrum/prepare/action.yaml)

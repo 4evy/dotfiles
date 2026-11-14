@@ -62,36 +62,47 @@ generate output:
     # still hardcodes the v1 schema. The official v2 schema is checked above.
     "$bluebuild" generate --skip-validation --output "$generated" systems/spectrum/recipes/spectrum.yml
 
-# Build the local Spectrum image from the BlueBuild recipe v2 definition.
+# Build public Spectrum and its private, machine-local recovery derivative.
 [group('spectrum')]
 [linux]
-build: (_doctor 'nix')
+build profile="": (_doctor 'nix')
     nix develop .#operations --command \
-      {{ just_command }} spectrum _build
+      {{ just_command }} spectrum _build {{ quote(profile) }}
 
 [linux]
-_build: _validate
-    # Nix shells use /tmp, whose tmpfs quota can be smaller than an image layer.
-    TMPDIR=/var/tmp bluebuild build --skip-validation --no-sign systems/spectrum/recipes/spectrum.yml
-
-# Validate and switch with the same pinned CLI, rather than the booted image's CLI
-[group('spectrum')]
-[linux]
-[positional-arguments]
-switch *args: (_doctor 'nix')
-    nix develop .#operations --command \
-      {{ just_command }} spectrum _switch "$@"
-
-[linux]
-[positional-arguments]
-_switch *args: _validate
-    # BlueBuild captures bootc's output, so authenticate before its hidden prompt
+_build profile="": _validate
+    generated=$(mktemp)
     sudo -v
     # Keep the ticket valid across long builds without changing sudo policy
     (while sleep 60; do sudo -n -v || exit; done) &
     sudo_keepalive=$!
-    trap 'kill "$sudo_keepalive" 2>/dev/null || :; wait "$sudo_keepalive" 2>/dev/null || :' EXIT
+    trap 'rm -f "$generated"; kill "$sudo_keepalive" 2>/dev/null || :; wait "$sudo_keepalive" 2>/dev/null || :' EXIT
     trap 'exit 130' INT
     trap 'exit 143' TERM
-    # Match build's disk-backed temporary storage for the image transfer
-    TMPDIR=/var/tmp bluebuild switch --skip-validation "$@" systems/spectrum/recipes/spectrum.yml
+    {{ just_command }} spectrum generate "$generated"
+    # Build in bootc's rootful store, without a second rootless copy/archive
+    sudo env TMPDIR=/var/tmp podman build --platform linux/amd64 --layers \
+      --file "$generated" --tag localhost/spectrum:latest .
+    sudo bash systems/spectrum/recovery/build.sh localhost/spectrum:latest {{ quote(profile) }}
+
+# Rebuild recovery from an existing rootful image without rebuilding Spectrum.
+[group('spectrum')]
+[linux]
+recovery base="localhost/spectrum:latest" profile="":
+    sudo bash systems/spectrum/recovery/build.sh {{ quote(base) }} {{ quote(profile) }}
+
+# Build and stage the private image, preserving recovery across local rebuilds.
+[group('spectrum')]
+[linux]
+switch profile="": (_doctor 'nix')
+    nix develop .#operations --command \
+      {{ just_command }} spectrum _switch {{ quote(profile) }}
+
+[linux]
+_switch profile="": (_build profile)
+    current=$(sudo bootc status --json | jq -r '.spec.image.image')
+    if [[ $current == localhost/spectrum-recovery:latest ]]; then
+      sudo bootc upgrade
+    else
+      sudo bootc switch --transport containers-storage localhost/spectrum-recovery:latest
+    fi

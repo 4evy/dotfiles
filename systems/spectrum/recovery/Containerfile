@@ -1,0 +1,27 @@
+ARG BASE=localhost/spectrum:latest
+FROM ${BASE}
+
+# This derivative stays in root's local storage, never in the public registry
+RUN --mount=type=bind,source=systems/spectrum/files/system,target=/run/spectrum-system,ro,Z \
+    --mount=type=bind,source=systems/spectrum/recovery,target=/run/spectrum-recovery,ro,Z \
+    --mount=type=secret,id=recovery-wifi,required=true \
+    --mount=type=secret,id=recovery-host-key,target=/etc/ssh/dracut_ssh_host_ed25519_key,required=true \
+    --mount=type=secret,id=recovery-host-key-pub,target=/etc/ssh/dracut_ssh_host_ed25519_key.pub,required=true \
+    set -eu; \
+    dnf -y install dracut-sshd dracut-network NetworkManager-wifi wpa_supplicant; \
+    dnf clean all; \
+    cp -a /run/spectrum-system/usr/lib/dracut/modules.d/91spectrum-wifi /usr/lib/dracut/modules.d/; \
+    chown -R 0:0 /usr/lib/dracut/modules.d/91spectrum-wifi; \
+    install -Dm 0644 /run/spectrum-system/etc/ssh/sshd_config.d/00-spectrum.conf /etc/ssh/sshd_config.d/00-spectrum.conf; \
+    install -Dm 0644 /run/spectrum-system/etc/ssh/authorized_keys/evy /etc/ssh/authorized_keys/evy; \
+    install -Dm 0644 /run/spectrum-system/etc/ssh/authorized_keys/evy /etc/dracut-sshd/authorized_keys; \
+    install -Dm 0644 /run/spectrum-recovery/sshd_config /etc/dracut-sshd/sshd_config; \
+    install -d -m 0700 /var/roothome; \
+    set -- /usr/lib/modules/*; \
+    test "$#" -eq 1; \
+    kver="${1##*/}"; \
+    DRACUT_NO_XATTR=1 dracut --force --no-hostonly --add 'sshd spectrum-wifi' \
+      "/usr/lib/modules/$kver/initramfs.img" "$kver"; \
+    systemctl enable sshd.service; \
+    rm -rf /run/dnf /var/log/dnf5.log /var/cache/libdnf5 /var/lib/dnf/repos /var/cache/ldconfig/aux-cache; \
+    bootc container lint

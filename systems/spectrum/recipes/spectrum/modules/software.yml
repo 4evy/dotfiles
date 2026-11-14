@@ -61,6 +61,7 @@ modules:
         - ncurses
         - opensc
         - openssh-clients
+        - openssh-server
         - patch
         - pinentry
         - pinentry-gnome3

@@ -1,0 +1,9 @@
+Port 2222
+HostKey /etc/ssh/ssh_host_ed25519_key
+PermitRootLogin prohibit-password
+AuthenticationMethods publickey
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+UsePAM no
+AuthorizedKeysFile /root/.ssh/authorized_keys
+Subsystem sftp internal-sftp
