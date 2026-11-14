@@ -1,0 +1,5 @@
+[build]
+# Leave headroom on the eight-core Mac, with cargo -j N available per build
+jobs = 4
+# Apply utility QoS to rustc and its linker, including rust-analyzer's checks
+rustc-wrapper = "@HOME@/.local/lib/rust/rustc.sh"

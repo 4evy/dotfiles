@@ -54,6 +54,11 @@
       target = ".bashrc";
     }
     {
+      source = ".cargo/config.toml";
+      target = ".cargo/config.toml";
+      systems = [ "darwin" ];
+    }
+    {
       source = ".codex/skills/browser";
       target = ".codex/skills/browser";
       systems = [
@@ -696,6 +701,12 @@
     {
       source = ".local/lib/package.json";
       target = ".local/lib/package.json";
+    }
+    {
+      source = ".local/lib/rust/rustc.sh";
+      target = ".local/lib/rust/rustc.sh";
+      executable = true;
+      systems = [ "darwin" ];
     }
     {
       source = ".local/lib/typescript/compiler.mts";
