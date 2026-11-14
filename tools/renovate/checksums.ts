@@ -39,11 +39,7 @@ function replaceOnce(
   const matches = [...content.matchAll(pattern)];
   const [match] = matches;
   if (matches.length !== 1 || !match) throw new Error(`Expected one ${description}`);
-  return (
-    content.slice(0, match.index) +
-    replacement(match) +
-    content.slice(match.index + match[0].length)
-  );
+  return content.replace(pattern, () => replacement(match));
 }
 
 // TOML/YAML parsers and pure pin rewrites throw, so adapt those boundaries only
