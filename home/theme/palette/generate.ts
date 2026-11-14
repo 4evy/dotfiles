@@ -98,12 +98,9 @@ function roleDefinitions(value: unknown): RoleDefinitions {
         throw new Error(`Role ${role} must be common or mode-specific, not both`);
     }
   }
-  const lightKeys = Object.keys({ ...common, ...parsed.modes.light.roles });
-  const darkRoles = { ...common, ...parsed.modes.dark.roles };
-  if (
-    lightKeys.length !== Object.keys(darkRoles).length ||
-    lightKeys.some((key) => !Object.hasOwn(darkRoles, key))
-  )
+  const lightKeys = new Set(Object.keys({ ...common, ...parsed.modes.light.roles }));
+  const darkKeys = new Set(Object.keys({ ...common, ...parsed.modes.dark.roles }));
+  if (lightKeys.symmetricDifference(darkKeys).size)
     throw new Error("Light and dark modes must define the same public roles");
   return parsed;
 }
