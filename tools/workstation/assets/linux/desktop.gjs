@@ -65,10 +65,7 @@ switch (operation) {
         }
       }
       shell.set_strv("enabled-extensions", [
-        ...new Set([
-          ...enabled.filter((extension) => extension !== obsolete),
-          ...args,
-        ]),
+        ...new Set([...enabled.filter((extension) => extension !== obsolete), ...args]),
       ]);
       if (shell.is_writable("disabled-extensions"))
         shell.set_strv("disabled-extensions", [

@@ -1,5 +1,10 @@
 {
-  "MD013": false,
+  "MD013": {
+    "line_length": 80,
+    "reflow": true,
+    "code_blocks": false,
+    "headings": false
+  },
   "MD033": false,
   "MD041": false,
   "MD060": {

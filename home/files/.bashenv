@@ -22,6 +22,6 @@
 # and delegate all idempotence to the shared environment module.
 
 if [[ -r "$HOME/.config/shell/environment.sh" ]]; then
-  # shellcheck source=/dev/null
-  source "$HOME/.config/shell/environment.sh"
+	# shellcheck source=/dev/null
+	source "$HOME/.config/shell/environment.sh"
 fi

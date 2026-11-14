@@ -4,7 +4,9 @@ ${legacy}
 :root {
   --accent-bg-color: ${accent};
   --accent-fg-color: ${accentForeground};
-  --accent-color: oklab(from var(--accent-bg-color) var(--standalone-color-oklab));
+  --accent-color: oklab(
+    from var(--accent-bg-color) var(--standalone-color-oklab)
+  );
   --window-bg-color: ${canvas};
   --window-fg-color: ${text};
   --view-bg-color: ${surface};

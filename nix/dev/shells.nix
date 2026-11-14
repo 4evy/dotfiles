@@ -57,7 +57,6 @@
             inherit (config.treefmt.build) wrapper;
             inherit (pkgs) git just;
           };
-          inherit (config.pre-commit) shellHook;
         };
       };
     };

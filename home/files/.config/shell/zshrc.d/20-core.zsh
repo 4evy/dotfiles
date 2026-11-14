@@ -67,4 +67,3 @@ _dotfiles_command_path() {
   (( $+commands[$1] )) || return 1
   print -r -- "$commands[$1]"
 }
-

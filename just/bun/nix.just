@@ -13,7 +13,8 @@ check: *(_check *nix_projects)
 
 # Each mapped check owns its generated file and cleanup
 _check package:
-    generated_dir=$(mktemp -d)
+    mkdir -p .cache
+    generated_dir=$(mktemp -d "$PWD/.cache/bun-nix.XXXXXX")
     trap 'rm -rf "$generated_dir"' EXIT
     generated="$generated_dir/bun.nix"
     nix run .#bun2nix -- \
@@ -21,7 +22,7 @@ _check package:
       --copy-prefix "./" \
       --output-file "$generated"
     deadnix --edit "$generated"
-    nixfmt "$generated"
+    nix fmt -- "$generated"
     if ! diff -u {{ quote(package / 'bun.nix') }} "$generated"; then
       printf '%s/bun.nix is stale, run `just bun nix update`.\n' {{ quote(package) }} >&2
       exit 1
@@ -37,4 +38,4 @@ _update package:
       --copy-prefix "./" \
       --output-file {{ quote(package / 'bun.nix') }}
     deadnix --edit {{ quote(package / 'bun.nix') }}
-    nixfmt {{ quote(package / 'bun.nix') }}
+    nix fmt -- {{ quote(package / 'bun.nix') }}

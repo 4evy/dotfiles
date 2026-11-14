@@ -1279,7 +1279,11 @@ body.body--@THEME_VARIANT@ {
   --systemIndigo: @COLOR_VARIANT_LAVENDER@;
   --systemMint: @COLOR_VARIANT_TEAL@;
   --systemGray: @COLOR_VARIANT_OVERLAY0@;
-  --backgroundColor: color-mix(in srgb, @COLOR_VARIANT_BASE@ 88%, transparent);
+  --backgroundColor: color-mix(
+    in srgb,
+    @COLOR_VARIANT_BASE@ 88%,
+    transparent
+  );
   --backgroundColorFallback: @COLOR_VARIANT_BASE@;
   --chromeColor: @COLOR_VARIANT_MANTLE@;
   --chromeColor2: @COLOR_VARIANT_BASE@;

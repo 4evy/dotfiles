@@ -28,12 +28,12 @@
 # SSH follows the account shell from passwd. Hand interactive SSH logins to
 # Zsh even before the privileged system role has reconciled that account field.
 if [[ $- == *i* && -n "${SSH_CONNECTION:-}" &&
-  -z "${BASH_EXECUTION_STRING+x}" && -x /bin/zsh ]]; then
-  # Bash has already completed the system login initialization. Starting Zsh
-  # as another login shell would source /etc/profile and print Bluefin's MOTD
-  # a second time.
-  export DOTFILES_SSH_ZSH_HANDOFF=1
-  exec /bin/zsh
+	-z "${BASH_EXECUTION_STRING+x}" && -x /bin/zsh ]]; then
+	# Bash has already completed the system login initialization. Starting Zsh
+	# as another login shell would source /etc/profile and print Bluefin's MOTD
+	# a second time.
+	export DOTFILES_SSH_ZSH_HANDOFF=1
+	exec /bin/zsh
 fi
 
 # shellcheck source=/dev/null
