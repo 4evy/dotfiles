@@ -1,5 +1,26 @@
 {
+  "auto_fast_forward": false,
+  "auto_fast_forward_default_branch": false,
+  "delete_local_branch_on_cleanup": false,
   "ai_tier": {
+    "prompt_overrides": {
+      "commit": {
+        "instructions": "Read `~/.config/super-engineering/commands/commit.md` and follow it to commit the current changes using Jujutsu. Do not push.",
+        "user_message": "Commit without pushing"
+      },
+      "commit_push": {
+        "instructions": "Use Jujutsu, not mutating Git commands. Read `~/.config/super-engineering/commands/commit.md` and follow its local commit workflow first. Obtain explicit approval before pushing. Inspect `jj bookmark list` and `jj git remote list` to identify the intended bookmark and remote. Ask if either is ambiguous or no suitable bookmark exists. After approval, move only that bookmark to the last intended completed commit with `jj bookmark set`, not to the fresh empty working-copy commit, then push only that bookmark with `jj git push --remote <remote> --bookmark <bookmark>`. Do not force-push, push all bookmarks, or create a bookmark without permission. Verify the remote bookmark and report the commits pushed. Stop if this is not a Jujutsu repository.",
+        "user_message": "Commit and push using Jujutsu"
+      },
+      "create_pr": {
+        "instructions": "Use Jujutsu to inspect changes, bookmarks, and remotes. Do not use mutating Git commands or infer a branch from detached Git HEAD. Identify the intended existing source bookmark, remote repository, and target branch. Ask if ambiguous. Preserve unrelated work. If commits or a push are needed, obtain approval and use the Jujutsu commit workflow in `~/.config/super-engineering/commands/commit.md` and `jj git push` for only the approved bookmark. Propose the PR title and body for explicit approval before any GitHub mutation. Use `gh` with an explicit repository and head bookmark to create the approved PR, or report an existing matching PR. Stop if this is not a Jujutsu repository.",
+        "user_message": "Create a pull request using Jujutsu"
+      },
+      "resolve_conflicts": {
+        "instructions": "Resolve conflicts using Jujutsu, not Git's index or rebase workflow. Inspect `jj st` and the affected stack, and record the original working-copy change ID. Find conflicted revisions with `jj log` and `conflicts()`, then inspect each with `jj resolve --list -r <change-id>`. Resolve from oldest to newest using `jj edit` and file edits or a supported `jj resolve` tool. Preserve both sides' intended behavior and unrelated work. Do not blanket-select a side, abandon changes, force immutable history, or run `git add`, `git commit`, or `git rebase --continue`. Snapshot resolutions with `jj st`, return to the original working-copy change ID, and verify every affected revision is conflict-free. Run appropriate checks and report unresolved intent rather than guessing. Do not push. Stop if this is not a Jujutsu repository.",
+        "user_message": "Resolve conflicts using Jujutsu"
+      }
+    },
     "custom_commands": [
       {
         "id": "299605c4-2761-4df7-b898-f60369434ff1",
