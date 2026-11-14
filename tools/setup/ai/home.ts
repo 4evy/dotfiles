@@ -9,7 +9,7 @@ import {
   type PreparedAiManifest,
   PreparedAiManifestSchema,
 } from "@dotfiles/home/schema";
-import { Effect, FileSystem, Schema } from "effect";
+import { Effect, FileSystem, Predicate, Schema } from "effect";
 
 type Configuration = Record<string, unknown>;
 
@@ -51,13 +51,8 @@ function merge(left: Configuration, right: Configuration): Configuration {
   for (const [key, value] of Object.entries(right)) {
     const previous = left[key];
     left[key] =
-      value &&
-      typeof value === "object" &&
-      !Array.isArray(value) &&
-      previous &&
-      typeof previous === "object" &&
-      !Array.isArray(previous)
-        ? merge(previous as Configuration, value as Configuration)
+      Predicate.isObject(value) && Predicate.isObject(previous)
+        ? merge(previous, value)
         : value;
   }
   return left;
