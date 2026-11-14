@@ -2,10 +2,8 @@
 final: prev:
 let
   inherit (final)
-    dbus
     dotfilesPackageUpdaters
     dotfilesSourcePins
-    inotify-tools
     unstable
     ;
   inherit (prev) kmscon libtsm;
@@ -49,12 +47,6 @@ in
     }
   );
 
-  # The Rust setup hook requires system AWS-LC, which zizmor omits upstream
-  zizmor = prev.zizmor.overrideAttrs (old: {
-    buildInputs = (old.buildInputs or [ ]) ++ [ final.aws-lc ];
-    nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.pkg-config ];
-  });
-
   solaar =
     (solaar.override {
       python3Packages = python315Packages;
@@ -95,20 +87,9 @@ in
       passthru = (previousAttrs.passthru or { }) // {
         updateScript = dotfilesSourcePins.kmscon.updateScript;
       };
-      # The pinned source already includes Nixpkgs' libseat logging fix
-      patches = lib.lists.filter (
-        patch: !(lib.strings.hasInfix "153db63d679df719a99dd36505f9c2f55d9c59f6" (patch.url or ""))
-      ) (previousAttrs.patches or [ ]);
-      buildInputs = previousAttrs.buildInputs ++ lib.attrsets.attrValues { inherit dbus; };
       mesonFlags = (previousAttrs.mesonFlags or [ ]) ++ [ "-Dtests=false" ];
       doCheck = false;
       doInstallCheck = false;
-      # The pinned source installs kmscon itself as an ELF binary, only the
-      # launcher script contains a command path that needs rewriting
-      postFixup = ''
-        substituteInPlace $out/bin/kmscon-launch-gui \
-          --replace-fail "inotifywait" "${lib.meta.getExe' inotify-tools "inotifywait"}"
-      '';
     }
   );
 }
