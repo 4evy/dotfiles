@@ -12,6 +12,7 @@
       imports = [
         ../../systems/modules/nixos
         inputs.ai.nixosModules.default
+        inputs.catppuccin.nixosModules.catppuccin
         "${inputs.source-toshy}/nix/nixos-module.nix"
         inputs.tweezle.nixosModules.default
         inputs.determinate.nixosModules.default

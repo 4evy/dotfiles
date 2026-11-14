@@ -16,6 +16,8 @@ import roles from "./roles.json";
 
 // Run with: bun home/theme/palette/generate.ts
 // Official palette data and types come from the version locked in bun.lock
+// Nix resolves native tokens through catppuccin/nix in default.nix
+// Keep both upstream versions aligned when regenerating this runtime snapshot
 // Hue describes identity; Catppuccin supplies lightness, chroma, and neutrals
 // This is a design rule, not a claim of a uniquely correct aesthetic solution
 

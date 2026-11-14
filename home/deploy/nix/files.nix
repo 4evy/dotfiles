@@ -8,7 +8,11 @@
 }:
 let
   inherit (pkgs) lib stdenv;
-  palette = (lib.trivial.importJSON ../../theme/palette/palette.json).catppuccin_custom;
+  palette =
+    (import ../../theme/palette {
+      inherit inputs lib;
+      inherit (stdenv.hostPlatform) system;
+    }).palette;
   ompDependencies =
     (lib.trivial.importJSON "${inputs.ai}/apps/omp/runtime/upstream/package.json").dependencies;
   manifest = import ../../manifest.nix;

@@ -99,6 +99,11 @@
     sops-nix.inputs.nixpkgs.follows = "";
     sops-nix.url = "github:Mic92/sops-nix";
 
+    catppuccin = {
+      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:catppuccin/nix";
+    };
+
     # Numen and Soulver's main package sets follow this transitively
     # Soulver keeps its separate libxml2 ABI compatibility pin
     vicinae.inputs.nixpkgs.follows = "nixpkgs";

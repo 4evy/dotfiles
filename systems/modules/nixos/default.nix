@@ -34,6 +34,7 @@ in
     ./packages.nix
     ./shell.nix
     ./input/toshy.nix
+    ./theme.nix
     ./vicinae.nix
     ../shared/nixcord.nix
     ./services.nix

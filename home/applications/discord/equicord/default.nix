@@ -1,6 +1,10 @@
 { inputs, lib }:
 let
-  palette = (lib.trivial.importJSON ../../../theme/palette/palette.json).catppuccin_custom;
+  palette =
+    (import ../../../theme/palette {
+      inherit inputs lib;
+      system = "x86_64-linux";
+    }).palette;
   quickCss = import ./theme.nix {
     inherit lib palette;
     exceptions = lib.trivial.readFile ./css/css.css;
