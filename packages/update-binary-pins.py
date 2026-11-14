@@ -116,15 +116,13 @@ def main():
     updated = before + start + section + end + after
     if updated == content:
         return
-    descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-    try:
-        with os.fdopen(descriptor, "w") as output:
-            output.write(updated)
-        os.chmod(temporary, path.stat().st_mode)
-        os.replace(temporary, path)
-    finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
+    with tempfile.NamedTemporaryFile(
+        "w", prefix=f".{path.name}.", dir=path.parent, delete_on_close=False
+    ) as output:
+        output.write(updated)
+        output.close()
+        os.chmod(output.name, path.stat().st_mode)
+        os.replace(output.name, path)
 
 
 if __name__ == "__main__":
