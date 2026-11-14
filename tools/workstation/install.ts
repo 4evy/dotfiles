@@ -117,7 +117,7 @@ const useImage = Effect.fn("workstation.useImage")(function* (
     (yield* fs.readFileString(imageStamp)).trim() !== fingerprint
   )
     return false;
-  for (const name of ["workstation", ...(yield* commandNames(imageExecutable))]) {
+  for (const name of yield* fs.readDirectory(bin)) {
     const launcher = join(bin, name);
     if (yield* managedLauncher(launcher, name, executable)) yield* fs.remove(launcher);
   }
@@ -149,6 +149,11 @@ const installLaunchers = Effect.fn("workstation.installLaunchers")(function* (
           `Refusing to replace unmanaged workstation launcher: ${launcher}`,
         ),
       );
+  }
+  for (const name of yield* fs.readDirectory(bin)) {
+    if (names.includes(name)) continue;
+    const launcher = join(bin, name);
+    if (yield* managedLauncher(launcher, name, executable)) yield* fs.remove(launcher);
   }
   for (const name of names) {
     const launcher = join(bin, name);
