@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://schema.blue-build.org/module-list-v1.json
 modules:
   - type: kargs@v1
-    source: ghcr.io/blue-build/modules/kargs:v1@sha256:a5ab2a19cad1962ff8a66519e81fcb8a0809699ee95db2192fc3389da9534b4d
+    source: ghcr.io/blue-build/modules/kargs:v1@sha256:df83aed2658ff623a71faa2a7d990d5beaf1f5714ba05c00e7b7327f8a33fabd
     kargs:
       - plymouth.enable=0
       - rd.plymouth=0

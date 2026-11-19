@@ -9,7 +9,7 @@ modules:
     dest: /tmp/spectrum-config/dnf
 
   - type: dnf@v1
-    source: ghcr.io/blue-build/modules/dnf:v1@sha256:f461849889b66098b7b5c7dc2661ac41c8a9b5cad6e0fbedd142de8e42ae72ec
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:bbbc7755ce64b2a40d7cd4c0c974641d109e3959ff001d88cd5b746b1349ee59
     env:
       CONFIG_DIRECTORY: /tmp/spectrum-config
     repos:
@@ -118,7 +118,7 @@ modules:
   # Reconcile user Flatpaks at boot. Flatpak itself selects and maintains the
   # host's matching graphics-driver extensions with each runtime.
   - type: default-flatpaks@v2
-    source: ghcr.io/blue-build/modules/default-flatpaks:v2@sha256:05ad18b6d39c2152db9810eccd6d7fa6a0a0fcce854b0abcd32d39846657c26a
+    source: ghcr.io/blue-build/modules/default-flatpaks:v2@sha256:794205d13ab32454027a8d22753fe8224fbbc6dd206927df152a4fe56634e40c
     configurations:
       - scope: user
         notify: false
@@ -130,7 +130,7 @@ modules:
           - org.gnome.NautilusPreviewer
 
   - type: gnome-extensions@v1
-    source: ghcr.io/blue-build/modules/gnome-extensions:v1@sha256:7208c3e6f925715f3fee04557eedc69ac2477438cd12b4eb2b03bb767303be74
+    source: ghcr.io/blue-build/modules/gnome-extensions:v1@sha256:614be2778eb901481833c4451d3c1e5c6fe2db3f6e2be304c7fb858b44524c52
     install:
       - 4974 # Window Calls Extended
       - 5060 # Xremap
@@ -140,7 +140,7 @@ modules:
 
   # Versioned RPM updates must not invalidate the bulk install and extensions
   - type: dnf@v1
-    source: ghcr.io/blue-build/modules/dnf:v1@sha256:f461849889b66098b7b5c7dc2661ac41c8a9b5cad6e0fbedd142de8e42ae72ec
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:bbbc7755ce64b2a40d7cd4c0c974641d109e3959ff001d88cd5b746b1349ee59
     install:
       install-weak-deps: false
       packages:
