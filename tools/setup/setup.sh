@@ -33,11 +33,11 @@ fi
 case "$(uname -s)/$(uname -m)" in
 	Darwin/arm64)
 		archive='bun-darwin-aarch64'
-		expected=c240d7f0ccb90c263a849fcdb09b7ee62630d921348ed6aafda86b9d577bc510
+		expected=b5d6bc2e13caf14e57c89661e89efd073ff16165b41bfe43882616410609cd10
 		;;
 	Linux/x86_64)
 		archive='bun-linux-x64-baseline'
-		expected=e0446eb55995772eb9894bebae9a6be368d985a8b9271ee124486f9946eedd76
+		expected=dcb23a18a1c2fff12d57bcef696dbbb42eb67fde29f43816ecb595459a24c463
 		;;
 	*)
 		echo 'Setup requires Apple Silicon macOS or x86_64 Linux' >&2
@@ -52,7 +52,7 @@ trap 'exit 143' TERM
 readonly download_retries=3
 readonly download_retry_delay_seconds=1
 curl -fsSL --retry "$download_retries" --retry-delay "$download_retry_delay_seconds" \
-	"https://github.com/oven-sh/bun/releases/download/bun-v1.4.4/$archive.zip" \
+	"https://github.com/oven-sh/bun/releases/download/bun-v1.4.5/$archive.zip" \
 	-o "$temporary/bun.zip"
 if ! {
 	if command -v sha256sum >/dev/null 2>&1; then

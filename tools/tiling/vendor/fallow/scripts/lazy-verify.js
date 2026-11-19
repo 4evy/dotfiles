@@ -32,10 +32,11 @@ const {
 } = require("./verify-binary");
 
 // Bumped to 2 when SHA-256 + platformPkgDir binding landed (closes the
-// cross-install reuse gap in the shared $XDG fallback cache), and to 3 when
-// the sentinel started tracking fallow-similar-code alongside the multicall
-// CLI. Sentinels written under an older schema are invalidated automatically.
-const SENTINEL_SCHEMA_VERSION = 3;
+// cross-install reuse gap in the shared $XDG fallback cache), to 3 when the
+// sentinel tracked fallow-similar-code alongside the multicall CLI, and to 4
+// when the platform package went back to the multicall CLI alone. Sentinels
+// written under an older schema are invalidated automatically.
+const SENTINEL_SCHEMA_VERSION = 4;
 const VERIFY_LOG_ENV = "FALLOW_VERIFY_LOG";
 
 // One-shot warning state: each warning class fires once per process,
@@ -145,9 +146,6 @@ function sentinelStructureMatches(parsed, manifest, platformPkgDir) {
   return parsed.binaries && typeof parsed.binaries === "object";
 }
 
-// Compute a hex SHA-256 of a file's bytes. Used to bind the sentinel to the
-// exact binary bytes that passed verification, so a tampered binary with the
-// same mtime cannot ride a stale cache entry.
 function sha256OfFile(absPath) {
   try {
     return crypto.createHash("sha256").update(fs.readFileSync(absPath)).digest("hex");
@@ -343,7 +341,6 @@ function ensureVerified(input) {
     buildSentinelOptions(input || {}, platformPkgDir, packageName, env, platform),
   );
 
-  // Cache hit: sentinel exists, schema matches, mtimes match, version matches.
   if (sentinel.path && isSentinelValid(sentinel.path, platformPkgDir, manifest, platform)) {
     emitVerifyLog(env, { outcome: "ok", cache: "hit", sentinel: sentinel.path });
     return { ok: true, cached: true, sentinelPath: sentinel.path };

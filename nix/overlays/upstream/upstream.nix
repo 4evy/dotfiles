@@ -25,7 +25,7 @@ in
   # Keep the managed runtime on the stable release ahead of the nixpkgs pin
   bun = unstable.bun.overrideAttrs (
     finalAttrs: previous: {
-      version = "1.4.4";
+      version = "1.4.5";
       src = finalAttrs.passthru.sources.${unstable.stdenvNoCC.hostPlatform.system};
       passthru = previous.passthru // {
         updateScript = dotfilesPackageUpdaters.binaryPin "bun";
@@ -39,9 +39,9 @@ in
               }
             )
             {
-              aarch64-darwin = "sha256-wkDX8My5DCY6hJ/NsJt+5iYw2SE0jtaq/ahrnVd7xRA=";
-              aarch64-linux = "sha256-uqa7NvUdblhWHgK76oJQOKnfRU9nPW13bou/hvjHhQ4=";
-              x86_64-linux = "sha256-4ERutVmVdy65iUvrrppr42jZhai5Jx7hJEhvmUbu3XY=";
+              aarch64-darwin = "sha256-tda8LhPK8U5XyJZh6J79Bz/xYWW0G/5DiCYWQQYJzRA=";
+              aarch64-linux = "sha256-GGVqO/DqVkH1eWrkITt1JVV5pwoP3tLzN5M3hVaM34Q=";
+              x86_64-linux = "sha256-3LI6GKHC//EtV7zvaW27tC62f94p9DgW7LWVRZokxGM=";
             };
       };
     }

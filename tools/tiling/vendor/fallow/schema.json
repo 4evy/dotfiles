@@ -157,7 +157,7 @@
       "default": []
     },
     "duplicates": {
-      "description": "Configures clone detection: `enabled` (default true), `mode` (`strict`, `mild` default, `weak`, `semantic`, from least to most identifier/literal blinding; `strict` and `mild` are equivalent under fallow's AST tokenizer, `weak` blinds string literals, `semantic` blinds all identifiers and literals for Type-2 renamed-variable detection), `near` (false, add bounded function-scoped near-miss detection), `minTokens` (50), `minLines` (5), `minOccurrences` (integer >= 2, deserialization fails below 2), `threshold` (max duplication percentage, 0 = no limit), `ignore` globs, `ignoredClones` (reviewed clone keys to hide until their content or occurrence count changes), `ignoreDefaults` (true, merge built-in generated-file ignores), `skipLocal` (only report cross-directory clones), `ignoreSymlinks` (false, omit clone instances whose path is a symlink or lies under a symlinked directory), `crossLanguage` (strip TS type annotations to match .ts against .js), `ignoreImports` (true, strip ES import/re-export/top-level require wiring from the token stream), and `normalization` (per-flag `ignoreIdentifiers`/`ignoreStringValues`/`ignoreNumericValues` overrides on top of `mode`). Raise `minOccurrences` to focus on widespread copy-paste, enable `near` for gapped structural clones, or set `mode` to `semantic` to catch renamed-variable exact clones.",
+      "description": "Configures clone detection: `enabled` (default true), `mode` (`strict`, `mild` default, `weak`, `semantic`, from least to most identifier/literal blinding; `strict` and `mild` are equivalent under fallow's AST tokenizer, `weak` blinds string literals, `semantic` blinds all identifiers and literals for Type-2 renamed-variable detection), `near` (false, add bounded function-scoped near-miss detection), `minTokens` (50), `minLines` (5), `minOccurrences` (integer >= 2, deserialization fails below 2), `threshold` (max duplication percentage, 0 = no limit), `ignore` globs, `ignoredClones` (reviewed clone keys to hide until their content or occurrence count changes), `ignoreDefaults` (true, merge built-in generated-file ignores), `skipLocal` (only report cross-directory clones), `ignoreSymlinks` (false, omit clone instances whose path is a symlink or lies under a symlinked directory), `crossLanguage` (strip TS type annotations to match .ts against .js), `ignoreImports` (true, strip ES import/re-export/top-level require wiring from the token stream), and `normalization` (per-flag `ignoreIdentifiers`/`ignoreStringValues`/`ignoreNumericValues` overrides on top of `mode`, plus `consistentIdentifiers`, which with `ignoreIdentifiers` requires a one-to-one name mapping between clone instances). Raise `minOccurrences` to focus on widespread copy-paste, enable `near` for gapped structural clones, or set `mode` to `semantic` to catch renamed-variable exact clones.",
       "$ref": "#/$defs/DuplicatesConfig",
       "default": {
         "enabled": true,
@@ -193,7 +193,7 @@
       "$ref": "#/$defs/MutationConfig"
     },
     "health": {
-      "description": "Sets complexity and health thresholds for `fallow health` (also applied in combined `fallow` and `fallow audit`): `maxCyclomatic` (20), `maxCognitive` (15), `maxCrap` (30.0, findings at or above this are reported), `crapRefactorBand` (5, cyclomatic band below `maxCyclomatic` where a secondary refactor action is added), `maxUnitSize` (max function lines before a large-function finding, 60), `maxFileLines` (max physical lines per file before a file-level finding, 0 means off), `coverage`/`coverageRoot` (Istanbul coverage path and path-prefix strip for accurate CRAP), `ignore` globs (remove files from findings AND the health score), `thresholdOverrides` (per-file/per-function ceilings via `files`/`functions`/`maxCyclomatic`/`maxCognitive`/`maxCrap`/`maxUnitSize`/`maxFileLines`/`reason`), `ownership` (`botPatterns` and `emailMode` for `--ownership`), and `suggestInlineSuppression` (true, emit `suppress-line` action hints in JSON). Raise thresholds to relax which functions are flagged, wire `coverage` for real CRAP scores, or exempt generated/test files via `ignore` (drops them from the score too) or `thresholdOverrides` (keeps them visible under a higher ceiling). The `max*` thresholds govern findings only and never move `health_score`: its penalties use fixed calibration so grades stay comparable across projects, and `ignore` is the lever that removes files from the score.",
+      "description": "Sets complexity and health thresholds for `fallow health` (also applied in combined `fallow` and `fallow audit`): `maxCyclomatic` (20), `maxCognitive` (15), `maxCrap` (30.0, findings at or above this are reported), `crapRefactorBand` (5, cyclomatic band below `maxCyclomatic` where a secondary refactor action is added), `maxUnitSize` (max function lines before a large-function finding, 60), `maxFileLines` (max physical lines per file before a file-level finding, 0 means off), `coverage`/`coverageRoot` (Istanbul coverage path and path-prefix strip for accurate CRAP), `ignore` globs (remove files from findings AND the health score), `tailwindIgnorePatterns` (regexes on normalized `prefix-[value]` Tailwind arbitrary-value tokens to exclude from `--css` findings and analytics), `thresholdOverrides` (per-file/per-function ceilings via `files`/`functions`/`maxCyclomatic`/`maxCognitive`/`maxCrap`/`maxUnitSize`/`maxFileLines`/`reason`), `ownership` (`botPatterns` and `emailMode` for `--ownership`), and `suggestInlineSuppression` (true, emit `suppress-line` action hints in JSON). Raise thresholds to relax which functions are flagged, wire `coverage` for real CRAP scores, or exempt generated/test files via `ignore` (drops them from the score too) or `thresholdOverrides` (keeps them visible under a higher ceiling). The `max*` thresholds govern findings only and never move `health_score`: its penalties use fixed calibration so grades stay comparable across projects, and `ignore` is the lever that removes files from the score.",
       "$ref": "#/$defs/HealthConfig",
       "default": {
         "maxCyclomatic": 20,
@@ -243,11 +243,13 @@
         "unused-enum-members": "error",
         "unused-class-members": "error",
         "unused-namespace-members": "warn",
+        "unused-protected-class-members": "off",
         "unused-store-members": "warn",
         "unprovided-injects": "warn",
         "unrendered-components": "warn",
         "unused-component-props": "warn",
         "absent-component-props": "off",
+        "constant-parameters": "off",
         "unused-component-emits": "warn",
         "unused-component-inputs": "warn",
         "unused-component-outputs": "warn",
@@ -302,7 +304,8 @@
         "added-suppression": "warn",
         "test-only-branch": "warn",
         "diverged-clone-sibling": "off",
-        "added-dependency": "off"
+        "added-dependency": "off",
+        "introduced-clone-group": "warn"
       }
     },
     "unusedComponentProps": {
@@ -332,6 +335,18 @@
         "configObjectHeuristics": false
       }
     },
+    "sharedStateAllowlist": {
+      "description": "Exact [global root, direct slot] pairs excluded from shared-state inventory.",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
     "security": {
       "description": "Scopes the opt-in `fallow security` catalogue: which candidate categories run and which extra local identifiers count as HTTP request objects. Set when tuning security-candidate detection; the object holds `categories` (an object with `include` and/or `exclude` string arrays of catalogue category ids, where `include` restricts to a whitelist and `exclude` removes from the admitted set, both unset admits all ordinary categories) and `requestReceivers` (a string array of project-local names that extend, not replace, the built-in `*.query`/`*.params`/`*.body` source-receiver allowlist). The `hardcoded-secret` and `secret-to-network` categories are include-required: they fire only when explicitly listed in `categories.include`, even when no include list is otherwise set. The valid category ids are enumerated (with title, CWE, and include-required flag) in the `security_categories` block of `fallow schema`, and also listed by `fallow security --help`; they are not in this config-schema.",
       "$ref": "#/$defs/SecurityConfig",
@@ -352,7 +367,7 @@
       "default": {}
     },
     "production": {
-      "description": "Enables production mode, which excludes test/spec/story/dev files from discovery and forces `unused-dev-dependencies` and `unused-optional-dependencies` to `off`. Accepts a boolean (default false) applied to all analyses, or a per-analysis object `{ deadCode?, health?, dupes? }` (each boolean, default false) that scopes production mode to individual analyses in combined `fallow` and `fallow audit`. Set it to analyze only shipped code; the `--production`/`--no-production` and `--production-{dead-code,health,dupes}` CLI flags and `FALLOW_PRODUCTION*` env vars override this value (CLI flags win, then per-analysis env, then global env, then config).",
+      "description": "Enables production mode, which excludes test/spec/story/dev files from discovery and forces `unused-dev-dependencies` and `unused-optional-dependencies` to `off`. Accepts a boolean (default false) applied to all analyses, or a per-analysis object `{ deadCode?, health?, dupes?, ignore? }` that scopes production mode to individual analyses in combined `fallow` and `fallow audit` (each analysis key a boolean, default false). The object key `ignore` is a glob array of extra paths that discovery drops in production mode only. Set it to analyze only shipped code; the `--production`/`--no-production` and `--production-{dead-code,health,dupes}` CLI flags and `FALLOW_PRODUCTION*` env vars override this value (CLI flags win, then per-analysis env, then global env, then config).",
       "$ref": "#/$defs/ProductionConfig",
       "default": false
     },
@@ -978,7 +993,7 @@
       "type": "object",
       "properties": {
         "enabled": {
-          "description": "Whether duplication detection is enabled.",
+          "description": "Whether duplication detection is enabled. `false` turns off each duplication analysis that a command runs by default: the duplication analysis of the bare `fallow` command, the duplication sub-analysis of `fallow audit`, and the duplication measure and penalty of the health score. A command line that names the analysis still runs it: `--only dupes`, `--include-dupes`, `audit.dupes: true` and the `fallow dupes` command.",
           "type": "boolean",
           "default": true
         },
@@ -1131,6 +1146,13 @@
             "boolean",
             "null"
           ]
+        },
+        "consistentIdentifiers": {
+          "description": "Require a one-to-one mapping between the identifier names of clone\ninstances. Takes effect only when `ignoreIdentifiers` is on: `a = b + c`\nthen matches `x = y + z`, but not `x = x + x`. A clone that breaks the\nmapping keeps each maximal part that maps one-to-one.\nDefault: `false` in every mode.",
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       }
     },
@@ -1219,7 +1241,7 @@
           ]
         },
         "typecheck": {
-          "description": "Type-check each survived mutant through the TypeScript-Go companion\nof `--type-aware`. A survivor that does not type-check becomes\n`compile_error` and does not count in the score. A survivor that\nremoves an optional-chaining link from a receiver whose type excludes\n`null` and `undefined` gets an advisory `equivalence_hint`. Its status\nand the score do not change. Unset or `false` checks no survivor.\n`--typecheck` turns the check on.",
+          "description": "Type-check each survived mutant through the TypeScript-Go companion\nof `--type-aware`. A survivor that does not type-check becomes\n`compile_error` and does not count in the score. A survivor that\nremoves an optional-chaining link or a nullish fallback from a\nreceiver whose type excludes `null` and `undefined` gets an advisory\n`equivalence_hint`. Its status\nand the score do not change. Unset or `false` checks no survivor.\n`--typecheck` turns the check on.",
           "type": [
             "boolean",
             "null"
@@ -1231,6 +1253,16 @@
             "string",
             "null"
           ]
+        },
+        "runnerProjects": {
+          "description": "The names of the Vitest projects that the run uses, as the Vitest\n`--project` flag selects them, for example `[\"unit\"]`. A name can\nhold a `*` wildcard. The run then ignores each other project of the\nconfig, also a project from a separate config file. Only the Vitest\nrunner reads it. Unset uses each project. `--runner-project` wins.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false
@@ -1372,6 +1404,11 @@
           "description": "Opt-in. A lookaround negated, or `\\b` and `\\B` swapped.",
           "type": "string",
           "const": "regex-assertion"
+        },
+        {
+          "description": "Opt-in. `a ?? b` to `a`.",
+          "type": "string",
+          "const": "nullish-fallback"
         }
       ]
     },
@@ -1449,6 +1486,13 @@
             "type": "string"
           },
           "default": []
+        },
+        "tailwindIgnorePatterns": {
+          "description": "Regular expressions excluding Tailwind arbitrary-value utilities from\ntoken-drift findings and analytics, including CVA variants. Matches the\nnormalized `prefix-[value]` token, without variants, negative signs, or\nsuffix modifiers. Both `-mt-[7px]` and `mt-[7px]` match as `mt-[7px]`;\n`bg-[#abc]/50` matches as `bg-[#abc]`. These spellings cannot be excluded\nindependently. Use `^icon-\\[` to exclude Iconify tokens, including variants.\nDefaults to no exclusions. Invalid regexes fail config loading.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "thresholdOverrides": {
           "description": "Per-file or per-function threshold overrides. These keep exceptional\nfunctions visible as configured numeric ceilings instead of hiding them\nbehind binary suppressions.",
@@ -1767,6 +1811,11 @@
           "$ref": "#/$defs/Severity",
           "default": "warn"
         },
+        "unused-protected-class-members": {
+          "description": "A `protected` class member that neither its class nor a subclass\nreads through `this` or `super`. Classes of the public API of a\npackage are not checked, because a consumer can subclass them.\nDefaults to `off`, so the default output does not change. Known\nlimits: a read through a string key (`this[\"member\"]()`) gives no\ncredit, and a constructor parameter property\n(`constructor(protected readonly x: X)`) is not checked.",
+          "$ref": "#/$defs/Severity",
+          "default": "off"
+        },
         "unused-store-members": {
           "description": "Store members (Pinia `state` / `getters` / `actions` key, or a\nsetup-store returned key) declared but never accessed by any consumer\nproject-wide. Defaults to `warn`, not `error` like the closed-set\nclass/enum member rules: a store has an OPEN declaration surface\n(plugins, `$onAction`, dynamic dispatch) so analyzer confidence is\ngenuinely lower. A `warn` finding does not change the CLI exit code\nunless `--fail-on-issues` is set. The dead-code count gate of the GitHub\nAction counts it unless `fail-on-issues` is `false`. Promotable to\n`error` once validated on a codebase.",
           "$ref": "#/$defs/Severity",
@@ -1789,6 +1838,11 @@
         },
         "absent-component-props": {
           "description": "Used optional inputs absent from inspected callers. Requires manual review; off by default.",
+          "$ref": "#/$defs/Severity",
+          "default": "off"
+        },
+        "constant-parameters": {
+          "description": "Parameters, and option keys of object-pattern parameters, that each\nvisible call passes in one way. Requires manual review; off by\ndefault. A `warn` finding does not change the CLI exit code unless\n`--fail-on-issues` is set. When the rule is on, the dead-code count\ngate of the GitHub Action counts it unless `fail-on-issues` is\n`false`.",
           "$ref": "#/$defs/Severity",
           "default": "off"
         },
@@ -2066,6 +2120,11 @@
           "description": "An audit diff that adds a dependency to a `package.json`. `fallow\naudit` only. Opt-in; defaults to `off`.",
           "$ref": "#/$defs/Severity",
           "default": "off"
+        },
+        "introduced-clone-group": {
+          "description": "A clone group that `fallow audit` attributes to the change. `error`\nfails the audit verdict, `warn` gives `warn`, and `off` removes the\ngroup from the verdict. Under `--gate all`, every clone group in the\nchanged files follows this rule. Overrides resolve per instance file,\nand the most severe result applies. `fallow audit` only. Defaults to\n`warn`.",
+          "$ref": "#/$defs/Severity",
+          "default": "warn"
         }
       }
     },
@@ -2110,6 +2169,17 @@
         "ignoreLazyImports": {
           "description": "Skip import edges that load their target on demand or on another\nthread when fallow looks for cycles. A literal `import()` inside a\nfunction, a template `import()`, a lazy `import.meta.glob`, a worker\nURL and a webpack worker loader request (`worker-loader!./work.js`)\nare lazy edges. A top-level `await import()`, `require()` and an\neager `import.meta.glob` load before the module finishes, so they stay.\nAn edge that also carries a static import stays. Default `false`.",
           "type": "boolean"
+        },
+        "allow": {
+          "description": "Accepted cycles. Each entry is the list of files of one cycle, in\nimport order, without the repeat of the first file at the end. An\nentry accepts a cycle that has exactly these files in this order, from\nany start file: `[\"src/a.ts\", \"src/b.ts\", \"src/c.ts\"]` also accepts\n`src/b.ts -> src/c.ts -> src/a.ts`. A cycle with another set of files\nstays reported, also when it shares an import with an accepted cycle.\n\nEach path is relative to the project root, also in a monorepo: write\n`packages/app/src/a.ts`, not a path relative to the workspace. The\nmatch is case-sensitive on every platform. Globs are not supported.\nAn entry needs at least 2 files and lists each file once.\n\nAn entry that matches no cycle in a run gives a\n`circular-dependencies-allow-unmatched` diagnostic. The detector lists\nat most 20 cycles per group of files that import each other, and no\ncycle with more than 12 files. An accepted cycle does not count toward\nthe 20. An entry with more than 12 files, or with all files in a group\nthat reached the limit, gives no diagnostic, because the detector\ncannot prove that it matches no cycle.\n\nA `fallow-ignore-next-line circular-dependency` comment on an accepted\ncycle becomes a stale suppression: remove the comment when you add the\nentry. Default `[]`.",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 2
+          }
         }
       },
       "additionalProperties": false
@@ -2219,6 +2289,13 @@
             "string",
             "null"
           ]
+        },
+        "publicFiles": {
+          "description": "Globs of the public entry files of this zone.\n\nWhen the list is not empty, a file of another zone may import a file\nof this zone only through a file that is in this zone and matches a\nglob. The globs use the same base as `patterns`. On an `autoDiscover`\nzone, each glob is relative to each discovered folder.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
@@ -2493,7 +2570,7 @@
           "type": "boolean"
         },
         {
-          "description": "Object form (`{ deadCode?, health?, dupes? }`) scoping production mode\nper analysis family.",
+          "description": "Object form (`{ deadCode?, health?, dupes?, ignore? }`) scoping\nproduction mode per analysis family.",
           "$ref": "#/$defs/PerAnalysisProductionConfig"
         }
       ]
@@ -2516,6 +2593,13 @@
           "description": "When `production` is a per-analysis object, enables production mode for duplication analysis only (boolean, default false), so clone detection runs on shipped code only (test/spec/story/dev files excluded) while dead-code and health stay on the full tree. Set it to scope production analysis to dupes independently.",
           "type": "boolean",
           "default": false
+        },
+        "ignore": {
+          "description": "When `production` is a per-analysis object, an array of project-root-relative glob patterns for paths that discovery drops in production mode only, in addition to the built-in test/spec/story/dev patterns (default empty). The default run keeps these paths. The globs apply to each analysis that runs in production mode, also when the `--production` flag or a `FALLOW_PRODUCTION*` env var selects the mode. Set it for tooling, CI scripts, seeds and test harnesses that never ship (e.g. `[\"scripts/**\"]`). A single `*` stays within one path segment; use `**` to match across directories.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false
@@ -2667,6 +2751,17 @@
             }
           ]
         },
+        "unused-protected-class-members": {
+          "description": "Optional override for [`RulesConfig::unused_protected_class_members`].",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Severity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "unused-store-members": {
           "description": "Optional override for [`RulesConfig::unused_store_members`].",
           "anyOf": [
@@ -2713,6 +2808,17 @@
         },
         "absent-component-props": {
           "description": "Optional override for absent optional component inputs.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Severity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "constant-parameters": {
+          "description": "Optional override for constant parameters.",
           "anyOf": [
             {
               "$ref": "#/$defs/Severity"
@@ -3326,6 +3432,17 @@
               "type": "null"
             }
           ]
+        },
+        "introduced-clone-group": {
+          "description": "Optional override for [`RulesConfig::introduced_clone_group`].",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Severity"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
@@ -3356,6 +3473,12 @@
           "format": "uint",
           "minimum": 0,
           "default": 0
+        },
+        "constantParameters": {
+          "description": "Baseline count of constant parameter review candidates. Absent while\nzero, so a baseline without the opt-in rule keeps its shape.",
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0
         },
         "analysisIdentity": {
           "description": "Compatibility identity for the analysis that produced these counts.\nMissing values in existing configs are treated as syntactic.",
@@ -3667,7 +3790,7 @@
           ]
         },
         "dupes": {
-          "description": "Toggles the duplication sub-analysis in `fallow audit`. Defaults to on when unset; set `false` to leave clone groups out of the verdict, summary and attribution, on the head and on the base snapshot. `fallow audit --skip dupes` turns it off for one run and `--only` replaces this selection.",
+          "description": "Toggles the duplication sub-analysis in `fallow audit`. Defaults to the value of `duplicates.enabled` when unset, which is on by default; set `false` to leave clone groups out of the verdict, summary and attribution, on the head and on the base snapshot. `fallow audit --skip dupes` turns it off for one run and `--only` replaces this selection.",
           "type": [
             "boolean",
             "null"
@@ -3730,7 +3853,7 @@
       "description": "Value of `audit.gate`: which findings drive the `fallow audit` verdict.",
       "oneOf": [
         {
-          "description": "Fail only on findings the current changeset introduced, determined by\na base-snapshot attribution pass. The default.",
+          "description": "Fail only on findings the current changeset introduced, determined by\na base-snapshot attribution pass. An unused file or unused export\noutside the changed files counts when the base does not report it.\nThe default.",
           "type": "string",
           "const": "new-only"
         },
@@ -3766,7 +3889,7 @@
       "type": "object",
       "properties": {
         "dir": {
-          "description": "Directory for fallow's persistent analysis cache. Relative paths resolve\nfrom the project root.",
+          "description": "Directory for fallow's persistent analysis cache. Relative paths resolve\nfrom the project root. The directory must be inside the project: an\nabsolute path or a path that leaves the root is ignored with a\nwarning. Use `FALLOW_CACHE_DIR` to put the cache outside the project.",
           "type": [
             "string",
             "null"
