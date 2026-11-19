@@ -1,15 +1,15 @@
 {
   "linux": {
-    "version": "0-unstable-2026-11-05",
-    "rev": "4dc0659c8cc4689057025f84bc1f3949c7f05aaf"
+    "version": "0-unstable-2026-11-12",
+    "rev": "b1d11339f356b5acaf1d119216c07e5879b6e953"
   },
   "darwin": {
-    "version": "0-unstable-2026-11-12",
-    "rev": "1e2bdc159ddf7c917c2da6798c8e78ea0f4d3029"
+    "version": "0-unstable-2026-11-18",
+    "rev": "00a47770b17ef9245a033892b744e15ebc68a4d0"
   },
   "hashes": {
-    "aarch64-darwin": "sha256-EuSAxn9BTWr9HrDqpiifcztWWUfOmTY2lsFpaQjDsXA=",
-    "aarch64-linux": "sha256-4E2WTH4fY5eRC/UKN9iIcFv/SLhgQW6+VZEjlIFuIQI=",
-    "x86_64-linux": "sha256-9MWEAfrAvwb5xjeUolpRfoi8mGWRlV6I2NnVsaQAnhs="
+    "aarch64-darwin": "sha256-lY2EwLRSzZUU+MBgr152IOQ3+JJ25uuKCPr5pGzcad8=",
+    "aarch64-linux": "sha256-n4tqXicr2w0jG6+FhL5xGPndELafO0yggU0PjZBgqDo=",
+    "x86_64-linux": "sha256-r8JrCtBvUv+qZSpO26hV0eBGqhkyj57jD+HnA4ARwkU="
   }
 }

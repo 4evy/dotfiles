@@ -340,7 +340,7 @@ let
       cp -R super.engineering.app "$out/Applications/"
       makeWrapper "$out/Applications/super.engineering.app/Contents/MacOS/super.engineering" \
         "$out/bin/super-engineering"
-      makeWrapper "$out/Applications/super.engineering.app/Contents/MacOS/sc" "$out/bin/sc"
+      makeWrapper "$out/Applications/super.engineering.app/Contents/MacOS/se" "$out/bin/se"
 
       runHook postInstall
     '';
