@@ -1,4 +1,5 @@
 {
+  "model": "openai/gpt-6.2-sol",
   "update": "disable",
   "username": "Evy",
   "watcher": {

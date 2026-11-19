@@ -1,6 +1,7 @@
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
 import { DotfilesError } from "@dotfiles/core/errors";
+import codexConfig from "@dotfiles/home/data/codex/config";
 import ompConfig from "@dotfiles/home/data/omp/config";
 import keybindings from "@dotfiles/home/data/omp/keybindings";
 import opencodeConfig from "@dotfiles/home/data/opencode/config";
@@ -74,11 +75,12 @@ const configRules: Record<string, ConfigRule> = {
     format: "toml",
     preserveCurrent: true,
     onlyIfCurrentExists: true,
+    overrides: codexConfig,
   },
   ".omp/agent/config.yml": {
     format: "yaml",
     preserveCurrent: true,
-    // Replace exported appearance and notification policy before runtime merging
+    // Replace exported model, appearance, and notification defaults
     managedOverrides: ompConfig,
   },
   ".omp/agent/keybindings.yml": {

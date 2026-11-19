@@ -1,4 +1,8 @@
 {
+  "modelRoles": {
+    "default": "openai-codex/gpt-6.2-sol",
+    "web": "openai-codex/gpt-6.2-sol"
+  },
   "theme": {
     "dark": "catppuccin-custom-dark",
     "light": "catppuccin-custom-light"

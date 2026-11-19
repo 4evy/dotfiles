@@ -57,6 +57,10 @@
     enable = true;
     user.enable = true;
     farstep.desktop.enable = true;
+    overrides = {
+      ".codex/config.toml" = lib.trivial.importJSON ../../../home/data/codex/config.json;
+      ".config/opencode/opencode.json" = lib.trivial.importJSON ../../../home/data/opencode/config.json;
+    };
     omp.keybindings = lib.trivial.importJSON ../../../home/data/omp/keybindings.json;
     omp.settings = lib.trivial.importJSON ../../../home/data/omp/config.json;
     # Affinity serves SSE while the desktop app is open
