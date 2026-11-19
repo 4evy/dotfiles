@@ -58,10 +58,7 @@
           nixfmt.enable = true;
           ruff-format.enable = true;
           rumdl-format.enable = true;
-          shfmt = {
-            enable = true;
-            useEditorConfig = true;
-          };
+          shfmt.enable = true;
           stylua.enable = true;
           taplo.enable = true;
           xmllint.enable = true;
