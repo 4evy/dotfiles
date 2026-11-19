@@ -21,7 +21,7 @@
   },
   "commandAliases": [
     {
-      "id": "c:r:applications::*::application::=::/Applications/Rex Beta.app",
+      "id": "c:r:applications::*::application::=::/Applications/Rex.app",
       "extension_id": "e:r:applications",
       "alias": "terminal"
     },

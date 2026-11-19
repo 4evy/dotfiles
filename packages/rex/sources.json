@@ -1,16 +1,16 @@
 {
   "server": {
-    "version": "0.0.1794507617-gce0ad7",
-    "rev": "ce0ad72ccf17f68cc646da7ad78793b6bc2e34e0",
-    "supportHash": "sha256-WUywqA7hH+IW+P4JL+8Fnr1DqGCMV1gOo1nBISH/USs="
+    "version": "0.0.1795099484-g576030",
+    "rev": "576030830c45905d8e29808e13636efdd864de3a",
+    "supportHash": "sha256-61JQqyDwv5DgnTwHy9s090aLrJT85GZ11pmF3FxyThE="
   },
   "app": {
     "version": "0.1.0",
-    "build": "1948"
+    "build": "2056"
   },
   "hashes": {
-    "aarch64-darwin": "sha256-/c68b3NnD9xloa9SDBevLt8uZI+zuFOGn4qyp9FI5uE=",
-    "aarch64-linux": "sha256-+/V22o9Ao5d70N+3UzR9EaDTxs/5DwtzPE7NDwfJE4Q=",
-    "x86_64-linux": "sha256-oBlt2d7VolaobBqVYEKkmaHLnXuRDUbn+Nv/va3uROs="
+    "aarch64-darwin": "sha256-hd3tYqJvYxjXU3Qau6Q/BtCzdovTZ+IyUMxmHUwY0MY=",
+    "aarch64-linux": "sha256-50tRg8SK1pDL/KwF4GtivbMSXnWdDBjR7/nJMdTZMu8=",
+    "x86_64-linux": "sha256-7mM1TPwZZYHVKYYakv988JyNlwy9sw3b9XL8n8FQtHw="
   }
 }
