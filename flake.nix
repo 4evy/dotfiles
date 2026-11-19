@@ -124,7 +124,7 @@
 
     source-oh-my-zsh = {
       flake = false;
-      url = "github:ohmyzsh/ohmyzsh/6010fb6260f359e71d99ba25f05f9215809b3ed2";
+      url = "github:ohmyzsh/ohmyzsh/c0140703a53eb0d22be44f7bac318d0baacc927c";
     };
     source-zsh-autosuggestions = {
       flake = false;
