@@ -88,7 +88,7 @@ _build profile="": _validate
 # Rebuild recovery from an existing rootful image without rebuilding Spectrum.
 [group('spectrum')]
 [linux]
-recovery base="localhost/spectrum:latest" profile="":
+recovery base="localhost/spectrum-recovery:latest" profile="":
     sudo bash systems/spectrum/recovery/build.sh {{ quote(base) }} {{ quote(profile) }}
 
 # Build and stage the private image, preserving recovery across local rebuilds.

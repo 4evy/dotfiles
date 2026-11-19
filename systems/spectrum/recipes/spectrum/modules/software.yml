@@ -32,6 +32,8 @@ modules:
         - ayugram-desktop
         - curl
         - dbus-libs
+        - dracut-network
+        - dracut-sshd
         - file
         - findutils
         - flatpak
@@ -59,6 +61,7 @@ modules:
         - liberation-serif-fonts
         - libxdo
         - ncurses
+        - NetworkManager-wifi
         - opensc
         - openssh-clients
         - openssh-server
@@ -81,6 +84,7 @@ modules:
         - vim-enhanced
         - vicinae
         - vulkan-tools
+        - wpa_supplicant
         - xdg-desktop-portal
         - xdg-desktop-portal-gnome
         - xdg-desktop-portal-gtk
