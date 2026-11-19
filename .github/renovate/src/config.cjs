@@ -26,7 +26,7 @@ module.exports = {
       minimumReleaseAge: "never",
       mergeConfidence: "never",
     },
-    dependencyDashboard: false,
+    dependencyDashboard: { enabled: false },
     dependencyDashboardApproval: false,
     configWarningReuseIssue: false,
     configMigration: false,

@@ -1,5 +1,5 @@
 diff --git a/dist/modules/manager/nix/extract.js b/dist/modules/manager/nix/extract.js
-index 4f7ee2a..303e8a3 100644
+index 7f56f65..4302266 100644
 --- a/dist/modules/manager/nix/extract.js
 +++ b/dist/modules/manager/nix/extract.js
 @@ -30,9 +30,12 @@ async function extractPackageFile(content, packageFile, config) {
@@ -19,7 +19,7 @@ index 4f7ee2a..303e8a3 100644
  		const flakeOriginal = flakeInput.original;
  		if (flakeLocked === void 0) {
 diff --git a/dist/modules/platform/github/graphql.js b/dist/modules/platform/github/graphql.js
-index e59101d..b228b55 100644
+index 6f01335..d796e57 100644
 --- a/dist/modules/platform/github/graphql.js
 +++ b/dist/modules/platform/github/graphql.js
 @@ -11,6 +11,7 @@ query($owner: String!, $name: String!, $user: String) {
@@ -31,10 +31,10 @@ index e59101d..b228b55 100644
      autoMergeAllowed
      mergeCommitAllowed
 diff --git a/dist/modules/platform/github/index.js b/dist/modules/platform/github/index.js
-index 6e7dbf2..0f11cc0 100644
+index c5abb6d..8be6128 100644
 --- a/dist/modules/platform/github/index.js
 +++ b/dist/modules/platform/github/index.js
-@@ -408,7 +408,10 @@ async function initRepo({ repository, forkCreation, forkOrg, forkToken, gitUrl,
+@@ -409,7 +409,10 @@ async function initRepo({ repository, forkCreation, forkOrg, forkToken, gitUrl,
  		else if (repo.rebaseMergeAllowed) config.mergeMethod = "rebase";
  		else logger.debug("Could not find allowed merge methods for repo");
  		config.autoMergeAllowed = repo.autoMergeAllowed;
@@ -46,15 +46,15 @@ index 6e7dbf2..0f11cc0 100644
  		config.hasVulnerabilityAlertsEnabled = repo.hasVulnerabilityAlertsEnabled;
  		config.mergeQueueEnabled[config.defaultBranch] = isNonEmptyObject(repo.mergeQueue);
  		const recentIssues = GithubIssue.array().catch([]).parse(res?.data?.repository?.issues?.nodes);
-@@ -594,6 +597,7 @@ async function fetchPr(prNo) {
+@@ -595,6 +598,7 @@ async function fetchPr(prNo) {
  	}
  }
  async function getPr(prNo, refreshCache = false) {
 +	if (config.hasPullRequestsEnabled === false) return null;
  	if (!prNo) return null;
  	if (refreshCache) return fetchPr(prNo);
- 	let pr = (await getPrList()).find(({ number }) => number === prNo) ?? null;
-@@ -607,6 +611,8 @@ function matchesState(state, desiredState) {
+ 	const pr = (await getPrList()).find(({ number }) => number === prNo) ?? null;
+@@ -610,6 +614,8 @@ function matchesState(state, desiredState) {
  	return state === desiredState;
  }
  async function getPrList() {
@@ -63,7 +63,7 @@ index 6e7dbf2..0f11cc0 100644
  	if (!config.prList) {
  		const repo = config.parentRepo ?? config.repository;
  		let username = config.renovateUsername;
-@@ -617,6 +623,7 @@ async function getPrList() {
+@@ -620,6 +626,7 @@ async function getPrList() {
  	return config.prList;
  }
  async function findPr({ branchName, prTitle, state = "all", includeOtherAuthors }) {
@@ -71,16 +71,16 @@ index 6e7dbf2..0f11cc0 100644
  	logger.debug(`findPr(${branchName}, ${prTitle}, ${state})`);
  	if (includeOtherAuthors) {
  		const repo = config.parentRepo ?? config.repository;
-@@ -920,6 +927,8 @@ async function closeIssue(issueNumber) {
- 	}
+@@ -932,6 +939,8 @@ async function pinIssue(issueId) {
+ 	logger.debug("Issue pinned");
  }
- async function ensureIssue({ title, reuseTitle, body: rawBody, labels, once = false, shouldReOpen = true }) {
+ async function ensureIssue({ title, reuseTitle, body: rawBody, labels, once = false, shouldReOpen = true, shouldPin = false }) {
 +	// Never create or reopen issues, including dashboards and configuration errors
 +	return null;
  	logger.debug(`ensureIssue(${title})`);
  	/* v8 ignore next -- specs initialize repos with issues enabled */
  	if (config.hasIssuesEnabled === false) {
-@@ -1227,6 +1236,9 @@ async function tryPrAutomerge(prNumber, prNodeId, platformPrOptions) {
+@@ -1241,6 +1250,9 @@ async function tryPrAutomerge(prNumber, prNodeId, platformPrOptions) {
  	}
  }
  async function createPr({ sourceBranch, targetBranch, prTitle: title, prBody: rawBody, labels, draftPR = false, platformPrOptions, milestone }) {
@@ -91,10 +91,10 @@ index 6e7dbf2..0f11cc0 100644
  	const base = targetBranch;
  	const head = `${config.repository.split("/")[0]}:${sourceBranch}`;
 diff --git a/dist/util/git/index.js b/dist/util/git/index.js
-index a087a75..21f8957 100644
+index 7aab38e..964c4e2 100644
 --- a/dist/util/git/index.js
 +++ b/dist/util/git/index.js
-@@ -619,6 +619,8 @@ async function resetHardFromRemote(remoteAndBranch) {
+@@ -621,6 +621,8 @@ async function resetHardFromRemote(remoteAndBranch) {
  	}
  }
  async function forcePushToRemote(branchName, remote) {
@@ -103,7 +103,7 @@ index a087a75..21f8957 100644
  	try {
  		const pushLog = await git.push([
  			remote,
-@@ -808,6 +810,8 @@ async function isBranchConflicted(baseBranch, branch) {
+@@ -810,6 +812,8 @@ async function isBranchConflicted(baseBranch, branch) {
  	return result;
  }
  async function deleteBranch(branchName) {
@@ -112,7 +112,7 @@ index a087a75..21f8957 100644
  	await syncGit();
  	if (isVirtualBranch(branchName)) {
  		const ref = remoteBranchRef(branchName);
-@@ -887,6 +891,8 @@ async function mergeToLocal(branchName, { localBranch = false } = {}) {
+@@ -889,6 +893,8 @@ async function mergeToLocal(branchName, { localBranch = false } = {}) {
  	}
  }
  async function mergeBranch(branchName) {
@@ -121,7 +121,7 @@ index a087a75..21f8957 100644
  	let status;
  	try {
  		await syncGit();
-@@ -907,6 +913,9 @@ async function mergeBranch(branchName) {
+@@ -909,6 +915,9 @@ async function mergeBranch(branchName) {
  		await gitRetry(() => git.push("origin", config.currentBranch));
  		incLimitedValue("Commits");
  	} catch (err) {
@@ -131,7 +131,7 @@ index a087a75..21f8957 100644
  		logger.debug({
  			baseBranch: config.currentBranch,
  			baseSha: config.currentBranchSha,
-@@ -1098,7 +1107,13 @@ async function prepareCommit({ branchName, files, message, trailers, force = fal
+@@ -1102,7 +1111,13 @@ async function prepareCommit({ branchName, files, message, trailers, force = fal
  	}
  }
  async function pushCommit({ sourceRef, targetRef, files, pushOptions }) {
@@ -145,7 +145,7 @@ index a087a75..21f8957 100644
  	logger.debug(`Pushing refSpec ${sourceRef}:${targetRef ?? sourceRef}`);
  	let result = false;
  	try {
-@@ -1179,6 +1194,8 @@ let remoteRefsExist = false;
+@@ -1183,6 +1198,8 @@ let remoteRefsExist = false;
  *
  */
  async function pushCommitToRenovateRef(commitSha, refName) {
@@ -155,7 +155,7 @@ index a087a75..21f8957 100644
  	await git.raw([
  		"update-ref",
 diff --git a/dist/workers/repository/update/pr/index.js b/dist/workers/repository/update/pr/index.js
-index a41ae1d..2d8955e 100644
+index 91222b8..ccb25a2 100644
 --- a/dist/workers/repository/update/pr/index.js
 +++ b/dist/workers/repository/update/pr/index.js
 @@ -71,6 +71,16 @@ function addPullRequestNoteIfAttestationHasBeenLost(upgrade, currentReleaseHasAt

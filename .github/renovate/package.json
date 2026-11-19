@@ -1,13 +1,13 @@
 {
   "devDependencies": {
-    "renovate": "44.226.2"
+    "renovate": "44.253.2"
   },
   "patchedDependencies": {
-    "renovate@44.226.2": "patches/renovate@44.226.2.patch"
+    "renovate@44.253.2": "patches/renovate@44.253.2.patch"
   },
   "name": "dotfiles-renovate",
   "private": true,
-  "packageManager": "bun@1.4.4",
+  "packageManager": "bun@1.4.5",
   "scripts": {
     "extract": "cd ../.. && LOG_LEVEL=warn RENOVATE_CONFIG_FILE=.github/renovate/src/config.cjs .github/renovate/node_modules/.bin/renovate --platform=local --dry-run=extract --require-config=required",
     "renovate": "renovate",
