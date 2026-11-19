@@ -1,13 +1,14 @@
-{
-  inputs,
-  lib,
-  system,
-}:
+{ inputs, lib }:
 let
-  # Use the module's pinned source directly, without building a theme package
-  upstream = lib.trivial.importJSON "${
-    inputs.catppuccin.packages.${system}.palette.src
-  }/palette.json";
+  # Read only fetch metadata from this package set, never realize its derivation
+  source = inputs.catppuccin.packages.x86_64-linux.palette.src;
+  # Keep evaluation platform-independent while following upstream's pin and hash
+  tree = builtins.fetchTree {
+    type = "github";
+    inherit (source) owner repo rev;
+    narHash = source.outputHash;
+  };
+  upstream = lib.trivial.importJSON "${tree}/palette.json";
   definitions = lib.trivial.importJSON ./roles.json;
   custom = (lib.trivial.importJSON ./palette.json).catppuccin_custom;
   palette = lib.attrsets.mapAttrs (

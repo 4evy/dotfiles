@@ -11,7 +11,6 @@ let
   palette =
     (import ../../theme/palette {
       inherit inputs lib;
-      inherit (stdenv.hostPlatform) system;
     }).palette;
   ompDependencies =
     (lib.trivial.importJSON "${inputs.ai}/apps/omp/runtime/upstream/package.json").dependencies;

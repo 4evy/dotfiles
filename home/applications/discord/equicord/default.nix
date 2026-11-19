@@ -3,7 +3,6 @@ let
   palette =
     (import ../../../theme/palette {
       inherit inputs lib;
-      system = "x86_64-linux";
     }).palette;
   quickCss = import ./theme.nix {
     inherit lib palette;

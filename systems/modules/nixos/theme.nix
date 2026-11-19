@@ -7,7 +7,6 @@
 let
   theme = import ../../../home/theme/palette {
     inherit inputs lib;
-    inherit (pkgs.stdenv.hostPlatform) system;
   };
 in
 {
