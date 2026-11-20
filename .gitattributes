@@ -15,7 +15,7 @@
 *.yml linguist-detectable
 .gitattributes linguist-detectable -linguist-vendored
 .gitignore linguist-detectable -linguist-vendored
-.containerignore linguist-language=Ignore-List linguist-detectable
+.dockerignore linguist-language=Ignore-List linguist-detectable
 
 # Classify native entry points and substitution inputs by language
 home/files/.bash* linguist-language=Shell

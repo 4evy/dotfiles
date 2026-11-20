@@ -1,79 +1,47 @@
-# Start from an empty build context and add back only Spectrum image inputs
-*
-
-!.yamllint
-!LICENSE
+# Docker Buildx and Podman share this allowlist for the public build context
+**
 !package.json
 !bun.lock
 !tsconfig.json
 
-!data/
-!data/rustdesk/
 !data/rustdesk/options.json
 
-!systems/
-!systems/spectrum/
-!systems/spectrum/**
+!systems/spectrum/files/**
+!systems/spectrum/recipes/spectrum/sources/system/**
+!systems/spectrum/recipes/spectrum/sources/*.json
+!systems/spectrum/recovery/sshd_config
 
 # BlueBuild extracts embedded build helpers here before building the image
 !.bluebuild-scripts_*/
 !.bluebuild-scripts_*/**
 
-!home/
-!home/**
-home/records/
-home/records/**
-
-!flake.lock
+!home/package.json
+!home/generators.json
+!home/deploy/schema.ts
+!home/files/.local/lib/package.json
+!home/files/.local/lib/typescript/process.ts
+!home/files/.local/lib/typescript/runtime.ts
+!home/theme/palette/palette.json
 
 # Workstation's shared TypeScript helpers are also builder inputs
-!lib/
-!lib/typescript/
 !lib/typescript/**
 
-!tools/
-!tools/workstation/
-tools/workstation/*
 !tools/workstation/package.json
 !tools/workstation/build.ts
 !tools/workstation/tsconfig.json
 !tools/workstation/install.ts
 !tools/workstation/install.sh
-!tools/workstation/assets/
 !tools/workstation/assets/**
-!tools/workstation/src/
 !tools/workstation/src/**
-!tools/tiling/
-tools/tiling/*
 !tools/tiling/package.json
 !tools/tiling/bindings.json
-!tools/tiling/scripts/
 !tools/tiling/scripts/**
-!tools/tiling/vendor/
 !tools/tiling/vendor/**
 !tools/tiling/tsconfig.json
-!tools/tiling/src/
 !tools/tiling/src/**
-!tools/tiling/gnome/
 !tools/tiling/gnome/**
-!tools/tiling/kde/
 !tools/tiling/kde/**
-!tools/theme/
-!tools/theme/run/
-tools/theme/run/*
-!tools/theme/run/go.mod
-!tools/theme/run/go.sum
-!tools/theme/run/package.nix
-!tools/theme/run/cmd/
-!tools/theme/run/cmd/**
-!tools/theme/run/internal/
-!tools/theme/run/internal/**
-
-!packages/
-packages/*
-!packages/solaar/
 !packages/solaar/tray.patch
-!packages/kanata/
 !packages/kanata/kanata.kbd
 !packages/kanata/build.sh
 

@@ -5,11 +5,9 @@ on:
   push:
     branches: [master]
     paths:
-      - .containerignore
+      - .dockerignore
       - .tool-versions
-      - .github/actions/spectrum/**
       - .github/actions/setup/bun/**
-      - .github/actions/setup/check/tools/**
       - .github/actions/setup/nix/**
       - .github/workflows/spectrum.yaml
       - bun.lock
@@ -17,9 +15,8 @@ on:
       - tsconfig.json
       - data/nix/caches.json
       - data/rustdesk/options.json
-      - Justfile
-      - just/**
-      - systems/spectrum/**
+      - systems/spectrum/files/**
+      - systems/spectrum/recipes/**
       - home/package.json
       - home/files/.local/lib/**
       - home/generators.json
@@ -28,14 +25,16 @@ on:
       - recipes
       - flake.lock
       - flake.nix
-      - lib/**
-      - nix/**
+      - lib/typescript/**
+      - nix/flake/**
+      - nix/lib/cache/**
+      - nix/lib/gnome/**
+      - nix/lib/spectrum/**
       - packages/kanata/build.sh
       - packages/kanata/kanata.kbd
       - packages/solaar/tray.patch
       - tools/workstation/**
       - tools/tiling/**
-      - tools/theme/run/**
   workflow_dispatch:
 
 concurrency:
@@ -63,19 +62,64 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Prepare Build
-        id: prepare
-        uses: ./.github/actions/spectrum/prepare # zizmor: ignore[self-repository]
+      - name: Check Builder Disk Space
+        id: disk
+        run: |
+          available=$(df --output=avail -B1 /var/lib/docker | tail -1)
+          if (( available < 80 * 1024 ** 3 )); then
+            echo 'cleanup=true' >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Build and Publish
+      - name: Free Space for the Bluefin Image
+        if: steps.disk.outputs.cleanup == 'true'
+        uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
+        with:
+          remove-large-packages: "false"
+
+      - name: Set Up Nix
+        uses: ./.github/actions/setup/nix # zizmor: ignore[self-repository]
+
+      - name: Set Up Bun
+        uses: ./.github/actions/setup/bun # zizmor: ignore[self-repository]
+        with:
+          cache-scope: spectrum
+          cache-dependency-path: bun.lock
+
+      - name: Prepare Sources and Verify Bluefin
+        run: |
+          bun install --production --frozen-lockfile --ignore-scripts
+          base=$(bun systems/spectrum/recipes/spectrum/sources/sources.ts)
+          nix run --inputs-from . nixpkgs-unstable#cosign -- verify \
+            --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp='^https://github[.]com/ublue-os/bluefin/[.]github/workflows/reusable-build[.]yml@refs/heads/(main|gh-readonly-queue/main/.+)$' \
+            "$base"
+
+      - name: Build and Publish Spectrum
         id: image
-        uses: ./.github/actions/spectrum/build # zizmor: ignore[self-repository]
-        with:
-          bluebuild: ${{ steps.prepare.outputs.bluebuild }}
-          publish: "true"
+        env:
+          BB_USERNAME: ${{ github.actor }}
+          BB_PASSWORD: ${{ github.token }}
+          BB_REGISTRY: ghcr.io
+          BB_REGISTRY_NAMESPACE: ${{ github.repository_owner }}
+        run: |
+          nix run --inputs-from . nixpkgs-unstable#bluebuild -- build \
+            --build-driver docker --run-driver docker --push --cache-layers \
+            --compression-format zstd --no-sign --digestfile "$RUNNER_TEMP/image.json" \
+            recipes/spectrum.yml
+          image="ghcr.io/${BB_REGISTRY_NAMESPACE,,}/spectrum"
+          digest=$(jq -er --arg tag "$image:latest" \
+            '.[$tag] | strings | select(test("^sha256:[0-9a-f]{64}$"))' "$RUNNER_TEMP/image.json")
+          printf 'name=%s\ndigest=%s\n' "$image" "$digest" >> "$GITHUB_OUTPUT"
 
-      - name: Sign and Attest
-        uses: ./.github/actions/spectrum/publish # zizmor: ignore[self-repository]
+      # BlueBuild's signing preflight requires a key pair. Keep signing keyless
+      - name: Sign Published Digest
+        env:
+          IMAGE_REF: ${{ steps.image.outputs.name }}@${{ steps.image.outputs.digest }}
+        run: nix run --inputs-from . nixpkgs-unstable#cosign -- sign --yes "$IMAGE_REF"
+
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          image-ref: ${{ steps.image.outputs.image-ref }}
-          image-digest: ${{ steps.image.outputs.image-digest }}
+          subject-name: ${{ steps.image.outputs.name }}
+          subject-digest: ${{ steps.image.outputs.digest }}
+          push-to-registry: true

@@ -8,8 +8,12 @@ just spectrum build   # Build only
 just spectrum switch  # Build and stage recovery image without rebooting
 ```
 
-Recipe: [`recipes/spectrum.yml`](recipes/spectrum.yml), pinned to Bluefin Fedora
-45 NVIDIA Open
+The [BlueBuild recipe](recipes/spectrum.yml) pins the Bluefin Fedora 45 NVIDIA
+Open base by digest. The
+[publish workflow](../../.github/workflows/spectrum.yaml) verifies that digest
+before building `ghcr.io/4evy/spectrum` with Buildx. BlueBuild stores
+intermediate layers in `:latest-cache`. CI signs and attests the digest returned
+by the build, not the current value of `:latest`.
 
 ## Recovery SSH
 
