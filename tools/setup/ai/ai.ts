@@ -315,8 +315,13 @@ runMain(
       yield* run(
         [process.execPath, "tools/scripts/cli/cli.ts", "chatgpt", "configure"],
         source,
-        // Do not reuse an enclosing OMP session's per-command launcher
-        { ...process.env, AI_TOOLS_WRAPPER_BIN: undefined },
+        {
+          ...process.env,
+          // Keep the patcher on the same revision as the configure command
+          PATCH_CHATGPT_COMPUTER_USE:
+            process.env.PATCH_CHATGPT_COMPUTER_USE ??
+            join(source, "apps/chatgpt/policy/policy.ts"),
+        },
       );
     } else if (rules.generate) {
       yield* generateAiConfigs(source, farstepPackage);
