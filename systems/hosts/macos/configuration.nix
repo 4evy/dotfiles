@@ -61,15 +61,17 @@
       ".codex/config.toml" = lib.trivial.importJSON ../../../home/data/codex/config.json;
       ".config/opencode/opencode.json" = lib.trivial.importJSON ../../../home/data/opencode/config.json;
     };
-    omp.keybindings = lib.trivial.importJSON ../../../home/data/omp/keybindings.json;
-    omp.settings = lib.trivial.importJSON ../../../home/data/omp/config.json;
-    # Affinity serves SSE while the desktop app is open
-    omp.mcp.mcpServers.affinity = {
-      type = "sse";
-      url = "http://localhost:6767/sse";
-      enabled = true;
-      startup = "manual";
-      shutdown = "agent_end";
+    omp = {
+      keybindings = lib.trivial.importJSON ../../../home/data/omp/keybindings.json;
+      settings = lib.trivial.importJSON ../../../home/data/omp/config.json;
+      # Affinity serves SSE while the desktop app is open
+      mcp.mcpServers.affinity = {
+        type = "sse";
+        url = "http://localhost:6767/sse";
+        enabled = true;
+        startup = "manual";
+        shutdown = "agent_end";
+      };
     };
     chatgpt = {
       enable = true;
