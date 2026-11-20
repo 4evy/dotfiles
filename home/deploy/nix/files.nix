@@ -8,10 +8,12 @@
 }:
 let
   inherit (pkgs) lib stdenv;
-  palette =
+  inherit
     (import ../../theme/palette {
       inherit inputs lib;
-    }).palette;
+    })
+    palette
+    ;
   ompDependencies =
     (lib.trivial.importJSON "${inputs.ai}/apps/omp/runtime/upstream/package.json").dependencies;
   manifest = import ../../manifest.nix;

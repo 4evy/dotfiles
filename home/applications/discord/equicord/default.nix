@@ -1,9 +1,11 @@
 { inputs, lib }:
 let
-  palette =
+  inherit
     (import ../../../theme/palette {
       inherit inputs lib;
-    }).palette;
+    })
+    palette
+    ;
   quickCss = import ./theme.nix {
     inherit lib palette;
     exceptions = lib.trivial.readFile ./css/css.css;
