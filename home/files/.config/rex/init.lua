@@ -22,6 +22,7 @@ local secondary_actions = {
 	{ "backspace", "pane.close" },
 	{ "t", "client.tab.new" },
 	{ "n", "client.window.new" },
+	{ "c", "pane.copy" },
 	{ "v", "pane.paste" },
 }
 local tab_navigation = {
@@ -30,6 +31,7 @@ local tab_navigation = {
 }
 local prefix_actions = {
 	{ "t", "client.tab.new" },
+	{ "c", "pane.copy_mode.enter" },
 	{ "s>e", "edit_scrollback" },
 }
 

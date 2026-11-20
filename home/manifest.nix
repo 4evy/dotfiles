@@ -933,23 +933,6 @@
       name = "rex_agents.sh";
     }
     {
-      # Copy is a native menu command in the installed Rex client
-      command = [
-        "/usr/bin/defaults"
-        "write"
-        "com.superlogical.rex"
-        "NSUserKeyEquivalents"
-        "-dict-add"
-        "Copy"
-        "@$c"
-      ];
-      systems = [
-        "darwin"
-      ];
-      onChange = true;
-      name = "rex_shortcuts.sh";
-    }
-    {
       # Read Hjem's generated shared palette, not a frozen Rex export
       command = [
         "bun"
