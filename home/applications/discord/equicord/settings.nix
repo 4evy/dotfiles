@@ -1,16 +1,40 @@
 { lib, parseRules }:
 let
-  inherit (lib.attrsets) mapAttrs' nameValuePair removeAttrs;
-  inherit (lib.strings) substring toUpper;
+  /**
+    Uppercase only the initial character, preserving camel-case suffixes
 
-  # Keep camelCase plugin suffixes intact, unlike strings.toSentenceCase
-  capitalize = string: toUpper (substring 0 1 string) + substring 1 (-1) string;
+    # Type
+    `capitalize :: String -> String`
 
+    # Examples
+    `capitalize "callTimer"` returns `"CallTimer"`
+  */
+  capitalize =
+    name: lib.strings.toUpper (lib.strings.substring 0 1 name) + lib.strings.substring 1 (-1) name;
+
+  /**
+    Map a Nixcord plugin name to Equicord's JSON key, honoring rename rules
+
+    # Type
+    `pluginJsonName :: String -> String`
+
+    # Examples
+    Without an explicit rule, `pluginJsonName "callTimer"` returns `"CallTimer"`
+  */
   pluginJsonName = name: parseRules.pluginRenames.${name} or (capitalize name);
 
+  /**
+    Convert `enable` into `enabled`, which defaults to `true` when omitted
+
+    # Type
+    `pluginToJson :: AttrSet -> AttrSet`
+
+    # Examples
+    `pluginToJson { enable = false; }` returns `{ enabled = false; }`
+  */
   pluginToJson =
     plugin:
-    (removeAttrs plugin [ "enable" ])
+    (lib.attrsets.removeAttrs plugin [ "enable" ])
     // {
       enabled = plugin.enable or true;
     };
@@ -218,8 +242,8 @@ let
   };
 
   jsonConfig = nixcordConfig // {
-    plugins = mapAttrs' (
-      name: plugin: nameValuePair (pluginJsonName name) (pluginToJson plugin)
+    plugins = lib.attrsets.mapAttrs' (
+      name: plugin: lib.attrsets.nameValuePair (pluginJsonName name) (pluginToJson plugin)
     ) nixcordConfig.plugins;
   };
 in

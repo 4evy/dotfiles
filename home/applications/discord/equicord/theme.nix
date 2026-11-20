@@ -4,21 +4,7 @@
   exceptions,
 }:
 let
-  inherit (builtins) toString;
-  inherit (lib.lists)
-    all
-    findFirst
-    head
-    last
-    map
-    range
-    tail
-    zipListsWith
-    ;
-  inherit (lib.strings) concatMapAttrsStringSep concatMapStringsSep;
-  inherit (lib.trivial) div throwIfNot;
-
-  modernSteps = range 1 100;
+  modernSteps = lib.lists.range 1 100;
   legacySteps = [
     100
     130
@@ -49,6 +35,15 @@ let
     900
   ];
 
+  /**
+    Mark a color at a step on a Discord scale
+
+    # Type
+    `anchor :: Int -> String -> { at: Int, color: String }`
+
+    # Examples
+    `anchor 50 "#000000"` returns `{ at = 50; color = "#000000"; }`
+  */
   anchor = at: color: { inherit at color; };
   neutralAnchors = {
     light = [
@@ -88,68 +83,188 @@ let
     ];
   };
 
+  /**
+    Pair consecutive anchors in a nonempty ordered list
+
+    # Type
+    `adjacentAnchorPairs :: [Anchor] -> [{ lower: Anchor, upper: Anchor }]`
+
+    # Examples
+    `adjacentAnchorPairs [ a b c ]` returns
+    `[ { lower = a; upper = b; } { lower = b; upper = c; } ]`
+  */
   adjacentAnchorPairs =
-    anchors: zipListsWith (lower: upper: { inherit lower upper; }) anchors (tail anchors);
+    anchors:
+    lib.lists.zipListsWith (lower: upper: { inherit lower upper; }) anchors (lib.lists.tail anchors);
+
+  /**
+    Return ordered anchors that cover all requested steps, or throw for `name`
+
+    # Type
+    `validateAnchors :: String -> [Int] -> [Anchor] -> [Anchor]`
+
+    # Examples
+    With `a.at = 1` and `b.at = 10`, `validateAnchors "red" [ 5 ] [ a b ]`
+    returns `[ a b ]`
+  */
   validateAnchors =
     name: steps: anchors:
-    throwIfNot (
+    lib.trivial.throwIfNot (
       anchors != [ ]
-      && (head anchors).at <= head steps
-      && (last anchors).at >= last steps
-      && all ({ lower, upper }: lower.at < upper.at) (adjacentAnchorPairs anchors)
+      && (lib.lists.head anchors).at <= lib.lists.head steps
+      && (lib.lists.last anchors).at >= lib.lists.last steps
+      && lib.lists.all ({ lower, upper }: lower.at < upper.at) (adjacentAnchorPairs anchors)
     ) "Discord color scale ${name} must have ordered anchors covering every requested step" anchors;
+
+  /**
+    Select the interpolation interval for a step, clamping at the final anchor
+
+    # Type
+    `anchorPairAt :: [Anchor] -> Int -> { lower: Anchor, upper: Anchor }`
+
+    # Examples
+    If `b.at = 10`, `anchorPairAt [ a b ] 10` returns `{ lower = b; upper = b; }`
+  */
   anchorPairAt =
     anchors: step:
     let
-      final = last anchors;
+      final = lib.lists.last anchors;
     in
-    findFirst ({ upper, ... }: step < upper.at) {
+    lib.lists.findFirst ({ upper, ... }: step < upper.at) {
       lower = final;
       upper = final;
     } (adjacentAnchorPairs anchors);
+
+  /**
+    Return an exact anchor color or a CSS interpolation for the requested step
+
+    # Type
+    `colorAt :: [Anchor] -> Int -> String`
+
+    # Examples
+    `colorAt [ (anchor 1 "#ffffff") (anchor 3 "#000000") ] 2` returns
+    `"color-mix(in oklab, #ffffff 50%, #000000)"`
+  */
   colorAt =
     anchors: step:
     let
       inherit (anchorPairAt anchors step) lower upper;
       lowerWeight =
-        if lower.at == upper.at then 100 else div ((upper.at - step) * 100) (upper.at - lower.at);
+        if lower.at == upper.at then
+          100
+        else
+          lib.trivial.div ((upper.at - step) * 100) (upper.at - lower.at);
     in
     if step == lower.at || lower.at == upper.at then
       lower.color
     else
       "color-mix(in oklab, ${lower.color} ${toString lowerWeight}%, ${upper.color})";
 
+  /**
+    Emit custom CSS properties for named steps covered by the given anchors
+
+    # Type
+    `scaleDeclarations :: String -> [Int] -> [Anchor] -> String`
+
+    # Examples
+    `scaleDeclarations "red" [ 1 ] [ (anchor 1 "#f00") ]` returns
+    `"  --red-1: #f00;"`
+  */
   scaleDeclarations =
     name: steps: anchors:
     let
       checkedAnchors = validateAnchors name steps anchors;
     in
-    concatMapStringsSep "\n" (
+    lib.strings.concatMapStringsSep "\n" (
       step: "  --${name}-${toString step}: ${colorAt checkedAnchors step};"
     ) steps;
+
+  /**
+    Emit CSS for each named scale at the same set of steps
+
+    # Type
+    `scaleGroupDeclarations :: [Int] -> AttrSet [Anchor] -> String`
+
+    # Examples
+    `scaleGroupDeclarations [ 1 ] { red = [ (anchor 1 "#f00") ]; }`
+    returns `"  --red-1: #f00;"`
+  */
   scaleGroupDeclarations =
-    steps: scales: concatMapAttrsStringSep "\n" (name: scaleDeclarations name steps) scales;
+    steps: scales: lib.strings.concatMapAttrsStringSep "\n" (name: scaleDeclarations name steps) scales;
+
+  /**
+    Emit a CSS custom property for each named application color
+
+    # Type
+    `paletteDeclarations :: AttrSet String -> String`
+
+    # Examples
+    `paletteDeclarations { accent = "#fac"; }` returns
+    `"  --catppuccin-custom-accent: #fac;"`
+  */
   paletteDeclarations =
     colors:
-    concatMapAttrsStringSep "\n" (role: color: "  --catppuccin-custom-${role}: ${color};") colors;
+    lib.strings.concatMapAttrsStringSep "\n" (
+      role: color: "  --catppuccin-custom-${role}: ${color};"
+    ) colors;
 
+  /**
+    Place a palette role halfway along Discord's modern scale for `variant`
+
+    # Type
+    `accentAnchors :: String -> String -> [Anchor]`
+
+    # Examples
+    `lib.lists.elemAt (accentAnchors "dark" "blue") 1` returns
+    `{ at = 50; color = palette.dark.blue; }`
+  */
   accentAnchors = variant: role: [
     (anchor 1 (if variant == "light" then palette.light.surface else palette.dark.text))
     (anchor 50 palette.${variant}.${role})
     (anchor 100 palette.dark.crust)
   ];
+
+  /**
+    Place a palette role at `center` on a legacy scale for `variant`
+
+    # Type
+    `legacyAccentAnchors :: String -> String -> Int -> [Anchor]`
+
+    # Examples
+    `lib.lists.elemAt (legacyAccentAnchors "dark" "blue" 400) 1` returns
+    `{ at = 400; color = palette.dark.blue; }`
+  */
   legacyAccentAnchors = variant: role: center: [
     (anchor 100 (if variant == "light" then palette.light.surface else palette.dark.text))
     (anchor center palette.${variant}.${role})
     (anchor 900 palette.dark.crust)
   ];
+
+  /**
+    Stretch one variant's neutral anchors from the modern to the legacy range
+
+    # Type
+    `legacyNeutralAnchors :: String -> [Anchor]`
+
+    # Examples
+    `(lib.lists.head (legacyNeutralAnchors "light")).at` returns `100`
+  */
   legacyNeutralAnchors =
     variant:
-    map (
+    lib.lists.map (
       { at, color }:
-      anchor (100 + div ((at - 1) * 800) 99) color
+      anchor (100 + lib.trivial.div ((at - 1) * 800) 99) color
     ) neutralAnchors.${variant};
 
+  /**
+    Collect Discord's modern color scales for one palette variant
+
+    # Type
+    `modernScales :: String -> AttrSet [Anchor]`
+
+    # Examples
+    `(modernScales "light").neutral` returns `neutralAnchors.light`
+  */
   modernScales = variant: {
     "blue-new" = accentAnchors variant "blue";
     "green-new" = accentAnchors variant "green";
@@ -161,6 +276,16 @@ let
     "teal-new" = accentAnchors variant "teal";
     "yellow-new" = accentAnchors variant "yellow";
   };
+
+  /**
+    Collect the legacy scales that still feed Discord's semantic tokens
+
+    # Type
+    `legacyScales :: String -> AttrSet [Anchor]`
+
+    # Examples
+    `(legacyScales "dark").primary` returns `legacyNeutralAnchors "dark"`
+  */
   legacyScales = variant: {
     primary = legacyNeutralAnchors variant;
     brand = legacyAccentAnchors variant "accent" 500;
@@ -170,6 +295,16 @@ let
     teal = legacyAccentAnchors variant "teal" 400;
   };
 
+  /**
+    Render application roles and both sets of Discord scales for a variant
+
+    # Type
+    `variantDeclarations :: String -> String`
+
+    # Examples
+    `lib.strings.hasInfix "--neutral-1:" (variantDeclarations "light")`
+    returns `true`
+  */
   variantDeclarations = variant: ''
     ${paletteDeclarations palette.${variant}}
     --catppuccin-custom-brand: var(--catppuccin-custom-accent);

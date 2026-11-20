@@ -37,7 +37,7 @@ let
         hex = if mode == null then color.hex else palette.${mode}.${name};
       }) data.colors;
     }
-  ) (builtins.removeAttrs upstream [ "version" ]);
+  ) (lib.attrsets.removeAttrs upstream [ "version" ]);
 in
 assert lib.asserts.assertMsg (upstream.version == custom._source.version)
   "Catppuccin palette changed: update @catppuccin/palette and run bun home/theme/palette/generate.ts";
