@@ -4,45 +4,7 @@
   options,
   ...
 }:
-let
-  /**
-    Forward an upstream option to its local counterpart without warning
-
-    # Inputs
-
-    `from`
-    : Dot-separated path of the upstream option (required)
-
-    `to`
-    : Dot-separated path of the local option (required)
-
-    # Type
-
-    ```
-    alias :: String -> String -> Module
-    ```
-
-    # Examples
-
-    ```nix
-    alias "launchd.user.envVariables" "launchd.environment.variables"
-    => lib.modules.mkAliasOptionModule
-         [ "launchd" "user" "envVariables" ]
-         [ "launchd" "environment" "variables" ]
-    ```
-  */
-  alias =
-    from: to:
-    lib.modules.mkAliasOptionModule (lib.strings.splitString "." from) (lib.strings.splitString "." to);
-in
 {
-  # Bridge the contracts used by the pinned AI and Nixcord modules
-  imports = [
-    (alias "launchd.user.envVariables" "launchd.environment.variables")
-    (alias "system.activationScripts.users.text" "system.activation.steps.upstream-users.text")
-    (alias "system.activationScripts.applications.text" "system.activation.steps.upstream-applications.text")
-  ];
-
   options = {
     meta = lib.options.mkOption {
       type = lib.types.attrsOf lib.types.anything;
@@ -52,18 +14,6 @@ in
     system.requiresPrimaryUser = lib.options.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      internal = true;
-    };
-    launchd.user.agents = lib.options.mkOption {
-      type = lib.types.attrsOf (
-        lib.types.submodule {
-          options.serviceConfig = lib.options.mkOption {
-            type = lib.types.attrsOf lib.types.anything;
-            default = { };
-          };
-        }
-      );
-      default = { };
       internal = true;
     };
     environment.extraInit = lib.options.mkOption {
@@ -80,28 +30,16 @@ in
         message = "The imported modules require system.primary.user";
       }
     ];
-    launchd.agents = lib.attrsets.mapAttrs (_: agent: {
-      enable = true;
-      config = agent.serviceConfig;
-    }) config.launchd.user.agents;
     # Preserve upstream mkDefault/mkForce priorities across this bridge
     programs.zsh.env.extra = lib.modules.mkAliasAndWrapDefsWithPriority lib.trivial.id options.environment.extraInit;
     programs.bash.bashrc.extra = lib.modules.mkAliasAndWrapDefsWithPriority lib.trivial.id options.environment.extraInit;
-    system.activation.steps = {
-      upstream-users = {
-        deps = [ "users" ];
-        # Reject AI file conflicts before any system activation steps run
-        checks = lib.modules.mkIf config.programs.ai.user.enable (
-          lib.darwin.shell.asUser config.system.primary.user [
-            "/usr/bin/env"
-            "DRY_RUN=1"
-            (lib.meta.getExe config.programs.ai.user.activationPackage)
-          ]
-        );
-      };
-      launchd.deps = [ "upstream-users" ];
-      upstream-applications.deps = [ "applications" ];
-      extra.deps = [ "upstream-applications" ];
-    };
+    # Reject AI file conflicts before any system activation steps run
+    system.activation.steps.legacy-users.checks = lib.modules.mkIf config.programs.ai.user.enable (
+      lib.darwin.shell.asUser config.system.primary.user [
+        "/usr/bin/env"
+        "DRY_RUN=1"
+        (lib.meta.getExe config.programs.ai.user.activationPackage)
+      ]
+    );
   };
 }

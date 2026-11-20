@@ -122,11 +122,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792279800,
-        "narHash": "sha256-riGDV9hVJhaLmaBE+WW6/UVyM+pq7GH1IznTbZUINfQ=",
+        "lastModified": 1795212000,
+        "narHash": "sha256-ZocCMAsjK0RdNY5xXMwrkdCBP6qEptwwUrDFBg9S/2U=",
         "owner": "4evy",
         "repo": "ndw",
-        "rev": "2599c77b121ab7a8f60daa25e3eceff043cc35d5",
+        "rev": "8fe177e736866a7cac8cfe9e7e5ee9ebeb7c0a24",
         "type": "github"
       },
       "original": {
