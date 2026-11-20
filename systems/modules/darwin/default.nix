@@ -40,6 +40,11 @@ in
 
   users.users.${config.system.primary.user}.shell = "/opt/homebrew/bin/zsh";
   programs = {
+    nh = {
+      enable = true;
+      # Prune old system generations without touching user profiles
+      clean.enable = true;
+    };
     nixcord.user = config.system.primary.user;
     bash = {
       enable = true;

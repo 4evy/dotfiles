@@ -120,7 +120,6 @@
             lib.attrsets.attrValues {
               inherit (pkgs)
                 deadnix
-                nh
                 nil
                 nix-output-monitor
                 nix-tree
@@ -129,6 +128,7 @@
                 statix
                 ;
             }
+            ++ lib.lists.optional isLinux pkgs.nh
             ++ lib.lists.optionals isDarwin (
               lib.attrsets.attrValues {
                 inherit (inputs.raycast.packages.${system}) raycast raycast-manager;
