@@ -135,28 +135,11 @@
     },
     {
       "customType": "regex",
-      "description": "Track the all-features BlueBuild main installer digest, since release installers omit recipe v2 and bootc",
-      "managerFilePatterns": [
-        "/^systems\\/spectrum\\/recipes\\/spectrum\\/stages\\/files\\.yml$/"
-      ],
-      "matchStrings": [
-        "COPY --from=(?<depName>ghcr\\.io/blue-build/cli):(?<currentValue>main-installer)@(?<currentDigest>sha256:[a-f0-9]+)"
-      ],
-      "datasourceTemplate": "docker",
-      "versioningTemplate": "docker"
-    },
-    {
-      "customType": "regex",
       "description": "Track the pinned Spectrum Bluefin base image",
-      "managerFilePatterns": [
-        "/^systems\\/spectrum\\/recipes\\/spectrum\\.yml$/",
-        "/^systems\\/spectrum\\/recipes\\/spectrum\\.lock$/"
-      ],
+      "managerFilePatterns": ["/^systems\\/spectrum\\/recipes\\/spectrum\\.yml$/"],
       "matchStrings": [
-        "registry:\\s+ghcr\\.io\\n\\s+repository:\\s+ublue-os/bluefin-nvidia-open\\n\\s+tag:\\s+\"?(?<currentValue>\\d+)\"?\\n\\s+digest:\\s+(?<currentDigest>sha256:[a-f0-9]+)",
-        "ghcr\\.io/ublue-os/bluefin-nvidia-open:(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]+)"
+        "base-image:\\s+(?<depName>[^\\s]+)\\s+image-version:\\s+\"(?<currentValue>\\d+)@(?<currentDigest>sha256:[a-f0-9]{64})\""
       ],
-      "depNameTemplate": "ghcr.io/ublue-os/bluefin-nvidia-open",
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
     },
@@ -167,8 +150,7 @@
         "/^systems\\/spectrum\\/recipes\\/spectrum\\/stages\\/.*\\.yml$/"
       ],
       "matchStrings": [
-        "from:\\s+(?<depName>[^\\s:@]+(?:/[^\\s:@]+)+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]+)",
-        "COPY --from=(?<depName>[^\\s:@]+(?:/[^\\s:@]+)+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]+)"
+        "from:\\s+(?<depName>[^\\s:@]+(?:/[^\\s:@]+)+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"

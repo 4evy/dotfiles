@@ -1,13 +1,13 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/stage-v1.json
 name: spectrum-files
-from: docker.io/oven/bun:1.4.5@sha256:3aa040e5445efa09d75bb428a64ba50db13e2b3ac9b6b0c7f145615f62b2ee18
+from: scratch
 modules:
   # Assemble local resources here, then copy one tree into the large final image
-  # Release installers omit the recipe-v2 and bootc features used on the host
-  - type: containerfile
-    snippets:
-      - COPY --from=ghcr.io/blue-build/cli:main-installer@sha256:e3a2445a70ea9b1d5a21113549b59db54dbe0272b8af0da6fc6ccf654788ec19 /out/bluebuild /out/usr/bin/bluebuild
+  - type: copy@v1
+    from: ghcr.io/blue-build/cli:v0.9.42-installer@sha256:2f0d6b4eafb9fa6abe702a6fe5357eab81f70c0276c621afaa2e51368c9c2af1
+    src: /out/bluebuild
+    dest: /out/usr/bin/bluebuild
 
   - type: copy@v1
     from: workstation

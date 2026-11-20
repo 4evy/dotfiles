@@ -7,6 +7,14 @@ import { Effect, FileSystem, Schema } from "effect";
 
 const ROOT = resolve(import.meta.dir, "../../../../..");
 const kanataHomebrewInput = "kanata-homebrew";
+const Base = Schema.Struct({
+  "base-image": Schema.String.check(
+    Schema.isPattern(/^[a-z0-9.-]+(:[0-9]+)?(\/[a-z0-9._-]+)+$/),
+  ),
+  "image-version": Schema.String.check(
+    Schema.isPattern(/^\w[\w.-]{0,127}@sha256:[a-f0-9]{64}$/),
+  ),
+});
 const Lock = Schema.Struct({
   root: Schema.String,
   nodes: Schema.Record(
@@ -82,6 +90,12 @@ const project = <A>(f: () => A) =>
 const main = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   yield* requireCommands("nix");
+  const recipe = yield* fs.readFileString(
+    join(ROOT, "systems/spectrum/recipes/spectrum.yml"),
+  );
+  const base = yield* Schema.decodeUnknownEffect(Base)(
+    yield* project(() => Bun.YAML.parse(recipe)),
+  );
   const lock = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(Lock))(
     yield* fs.readFileString(join(ROOT, "flake.lock")),
   );
@@ -145,6 +159,8 @@ const main = Effect.gen(function* () {
       2,
     )}\n`,
   );
+  // CI verifies this exact reference before letting BlueBuild resolve it
+  console.log(`${base["base-image"]}:${base["image-version"]}`);
 });
 
 if (import.meta.main) runMain(main);
