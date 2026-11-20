@@ -31,7 +31,6 @@ modules:
       disabled:
         - brew-update.timer
         - brew-upgrade.timer
-        - bootc-unified-storage.service
         - fedora-atomic-desktop-appstream-cache-refresh.service
     user:
       enabled:
@@ -73,8 +72,10 @@ modules:
         glib-compile-schemas
         /usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/schemas
       - systemd-sysusers /usr/lib/sysusers.d/uinput.conf
+      # Older Bluefin bases still ship the unified-storage migration unit
       - |
         for unit in \
+          bootc-unified-storage.service \
           zfs.target \
           zfs-import-cache.service \
           zfs-mount.service \
