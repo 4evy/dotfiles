@@ -5,6 +5,32 @@
   ...
 }:
 let
+  /**
+    Forward an upstream option to its local counterpart without warning
+
+    # Inputs
+
+    `from`
+    : Dot-separated path of the upstream option (required)
+
+    `to`
+    : Dot-separated path of the local option (required)
+
+    # Type
+
+    ```
+    alias :: String -> String -> Module
+    ```
+
+    # Examples
+
+    ```nix
+    alias "launchd.user.envVariables" "launchd.environment.variables"
+    => lib.modules.mkAliasOptionModule
+         [ "launchd" "user" "envVariables" ]
+         [ "launchd" "environment" "variables" ]
+    ```
+  */
   alias =
     from: to:
     lib.modules.mkAliasOptionModule (lib.strings.splitString "." from) (lib.strings.splitString "." to);

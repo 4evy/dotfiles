@@ -1,4 +1,15 @@
-{ lib, pkgs, ... }: {
+{ lib, pkgs, ... }:
+let
+  inherit (pkgs) coreutils;
+
+  jaq = lib.meta.getExe pkgs.jaq;
+  affinity = pkgs.writers.writePython3Bin "affinity-mcp" {
+    libraries = [ pkgs.python3Packages.mcp_1 ];
+    # Keep the source's 88-column formatting while checking other diagnostics
+    flakeIgnore = [ "E501" ];
+  } ./affinity.py;
+in
+{
   _class = "darwin";
 
   networking.hostName = "evy";
@@ -22,7 +33,7 @@
       (
         set -euo pipefail
         shopt -s nullglob
-        runtime="$(${lib.meta.getExe pkgs.jaq} --from toml '
+        runtime="$(${jaq} --from toml '
           .mcp_servers.node_repl |
           {
             CUA_REPL_NODE_REPL_PATH: .command,
@@ -34,12 +45,12 @@
           "$HOME"/.codex/plugins/cache/openai-bundled/unified-computer-use/*/.mcp.json; do
           [[ -f "$manifest" ]] || continue
           (
-            candidate="$(${pkgs.coreutils}/bin/mktemp "$manifest.XXXXXX")"
+            candidate="$(${lib.meta.getExe' coreutils "mktemp"} "$manifest.XXXXXX")"
             trap 'rm -f -- "$candidate"' EXIT
-            ${lib.meta.getExe pkgs.jaq} --argjson runtime "$runtime" \
+            ${jaq} --argjson runtime "$runtime" \
               '.mcpServers.cua_repl.env += $runtime' "$manifest" > "$candidate"
-            ${pkgs.coreutils}/bin/chmod --reference="$manifest" "$candidate"
-            ${pkgs.coreutils}/bin/mv -fT -- "$candidate" "$manifest"
+            ${lib.meta.getExe' coreutils "chmod"} --reference="$manifest" "$candidate"
+            ${lib.meta.getExe' coreutils "mv"} -fT -- "$candidate" "$manifest"
           )
         done
       )
@@ -48,8 +59,7 @@
 
   # Keep startup independent of Affinity's app-hosted SSE server
   programs.codex.settings.mcp_servers.affinity = {
-    command = lib.meta.getExe (pkgs.python3.withPackages (python: [ python.mcp_1 ]));
-    args = [ "${./affinity.py}" ];
+    command = lib.meta.getExe affinity;
     enabled = true;
   };
 

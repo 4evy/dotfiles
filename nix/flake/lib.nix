@@ -21,11 +21,20 @@ in
     flake = {
       patchStackSources = inputs.patches.stackSources;
       lib = {
-        # Keep config exports on the same followed inputs as the runtime
+        /**
+          Render AI configurations using the followed input and host metadata
+
+          # Type
+          `aiConfigs :: String -> Derivation`
+
+          # Examples
+          `aiConfigs ''{"system":"aarch64-darwin","hostFile":"/tmp/host.json"}''`
+          returns the package of generated configurations for that host file
+        */
         aiConfigs =
           runtimeJSON:
           let
-            runtime = builtins.fromJSON runtimeJSON;
+            runtime = lib.strings.fromJSON runtimeJSON;
           in
           inputs.ai.lib.mkConfigs {
             inherit (runtime) system;
