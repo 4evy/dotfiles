@@ -27,7 +27,6 @@
   libxrandr,
   libxcb,
   makeWrapper,
-  nix-update-script,
   nspr,
   nss,
   openssl,
@@ -111,19 +110,12 @@ let
     '';
 
     passthru = {
-      # Keep discovery as the public updater and hash repair available to it
+      # Keep RPM release discovery as the public updater
       updateScript = lib.meta.getExe (
         callPackage ./update.nix {
           chatgpt = finalAttrs.finalPackage;
         }
       );
-      hashUpdateScript = nix-update-script {
-        attrPath = "chatgpt.unwrapped";
-        extraArgs = [
-          "--flake"
-          "--version=skip"
-        ];
-      };
     };
 
     meta = {

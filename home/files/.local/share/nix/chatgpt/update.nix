@@ -6,11 +6,18 @@
   gzip,
   libxml2,
   nix,
+  nix-update,
   writeShellApplication,
+  writeText,
 }:
 let
   unwrapped = chatgpt.unwrapped or chatgpt;
-  inherit (unwrapped) hashUpdateScript;
+  # nix-update's flake mode uses a store path reported by metadata, which
+  # recent Nix can report without materializing it. Evaluate the current
+  # package through an explicit path flake, including after a version edit
+  packageSet = writeText "chatgpt-update-packages.nix" ''
+    _: (builtins.getFlake ("path:" + builtins.getEnv "PWD")).packages.''${builtins.currentSystem}
+  '';
 in
 writeShellApplication {
   name = "update-chatgpt";
@@ -20,6 +27,7 @@ writeShellApplication {
     gzip
     libxml2
     nix
+    nix-update
   ];
   text = ''
     # Both the owning flake directory and the repository root are supported
@@ -27,9 +35,15 @@ writeShellApplication {
       cd home/files/.local/share/nix/chatgpt
     fi
 
+    update_pin() {
+      nix-update --file ${packageSet} --override-filename package.nix \
+        --version="$1" chatgpt.unwrapped
+    }
+
     # Renovate has already selected a version, only its hash needs refreshing
     if [ "$#" = 1 ] && [ "$1" = "--version=skip" ]; then
-      exec ${lib.strings.escapeShellArgs hashUpdateScript}
+      update_pin skip
+      exit 0
     fi
 
     check_only=false
@@ -97,6 +111,6 @@ writeShellApplication {
     if [ "$version" = ${lib.strings.escapeShellArg unwrapped.version} ]; then
       version=skip
     fi
-    ${lib.strings.escapeShellArgs hashUpdateScript} --version="$version"
+    update_pin "$version"
   '';
 }
