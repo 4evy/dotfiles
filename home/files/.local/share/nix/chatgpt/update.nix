@@ -21,6 +21,7 @@ let
 in
 writeShellApplication {
   name = "update-chatgpt";
+  meta.mainProgram = "update-chatgpt";
   runtimeInputs = [
     coreutils
     curl

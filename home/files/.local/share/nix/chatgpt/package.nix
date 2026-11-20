@@ -149,6 +149,6 @@ runCommand unwrapped.name
       --replace-fail '@resources@' '${unwrapped}/lib/chatgpt/resources' \
       --replace-fail '@package@' "$(basename "$out")" \
       --replace-fail '@coreutils@' '${coreutils}/bin'
-    makeWrapper ${unwrapped}/bin/chatgpt "$out/bin/chatgpt" \
+    makeWrapper ${lib.meta.getExe unwrapped} "$out/bin/chatgpt" \
       --run "source \"$out/libexec/chatgpt-bundled-plugins.sh\""
   ''

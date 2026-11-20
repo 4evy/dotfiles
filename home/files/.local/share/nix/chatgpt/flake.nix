@@ -1,5 +1,5 @@
 {
-  description = "Record-managed ChatGPT package";
+  description = "ChatGPT desktop package for Linux";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
