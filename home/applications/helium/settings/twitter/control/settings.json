@@ -29,6 +29,7 @@
         "hideBookmarkMetrics": true,
         "hideBookmarksNav": false,
         "hideBusinessNav": true,
+        "hideCalls": true,
         "hideChatNav": true,
         "hideCommunitiesNav": true,
         "hideComposeTweet": true,
