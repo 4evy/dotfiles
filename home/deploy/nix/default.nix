@@ -13,6 +13,17 @@ let
     writeText
     ;
   home = environment.HOME or "";
+
+  /**
+    Resolve an XDG directory, falling back to a path relative to `HOME`
+
+    # Type
+    `xdg :: String -> String -> String`
+
+    # Examples
+    With `HOME = "/home/user"` and no `XDG_CONFIG_HOME`,
+    `xdg "XDG_CONFIG_HOME" ".config"` returns `"/home/user/.config"`
+  */
   xdg =
     name: fallback:
     let
@@ -52,7 +63,7 @@ assert lib.asserts.assertMsg (
   home != "" && lib.strings.hasPrefix "/" home
 ) "Hjem requires an absolute HOME in its runtime environment";
 {
-  packages = map toString packages;
+  packages = lib.lists.map toString packages;
   # Share public file validation and serialization with the main home manifest
   manifest = import ./manifest.nix {
     inherit pkgs inputs home;

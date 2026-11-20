@@ -1,4 +1,5 @@
 # Source inventory for the Nix home renderer, which emits runtime JSON
+{ lib }:
 {
   version = 1;
   files = [
@@ -393,7 +394,7 @@
       ];
     }
   ]
-  ++ (builtins.map
+  ++ (lib.lists.map
     (source: {
       inherit source;
       target = source;
@@ -446,12 +447,12 @@
       target = ".config/solaar/rules.yaml";
     }
   ]
-  ++ (builtins.map
+  ++ (lib.lists.map
     (target: {
       source = ".config/starship.toml";
       inherit target;
       nixGenerated = true;
-      variant = if builtins.match ".*-light\\.toml" target != null then "light" else "dark";
+      variant = if lib.strings.hasSuffix "-light.toml" target then "light" else "dark";
     })
     [
       ".config/starship-catppuccin-custom-dark.toml"

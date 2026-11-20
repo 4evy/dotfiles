@@ -19,7 +19,7 @@ let
             hjem.fileTypeRelativeTo {
               rootDir = home;
               inherit clobberDefault;
-              clobberDefaultText = builtins.toJSON clobberDefault;
+              clobberDefaultText = lib.strings.toJSON clobberDefault;
             }
           );
         };
@@ -31,16 +31,17 @@ let
       }
     ];
   };
-  targets = map (file: file.target) files;
+  targets = lib.lists.map (file: file.target) files;
 in
 # Discard context only for validation, not for the deployed file targets
 assert lib.asserts.assertMsg (
-  lib.lists.length targets
-  == lib.lists.length (lib.lists.uniqueStrings (map builtins.unsafeDiscardStringContext targets))
+  lib.lists.length targets == lib.lists.length (
+    lib.lists.uniqueStrings (lib.lists.map lib.strings.unsafeDiscardStringContext targets)
+  )
 ) "Duplicate public Hjem target";
 {
   version = 3;
-  files = map hjem.fileToJson (
+  files = lib.lists.map hjem.fileToJson (
     lib.lists.filter (file: file.enable) (lib.attrsets.attrValues evaluated.config.files)
   );
 }

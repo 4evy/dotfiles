@@ -16,27 +16,69 @@ let
     ;
   ompDependencies =
     (lib.trivial.importJSON "${inputs.ai}/apps/omp/runtime/upstream/package.json").dependencies;
-  manifest = import ../../manifest.nix;
+  manifest = import ../../manifest.nix { inherit lib; };
   normalizeFile = import ./file/entry.nix { inherit lib; };
   hexDigitsPerByte = 2;
   surfaceBackgroundPercent = 85;
   surfaceForegroundPercent = 15;
   percentScale = 100;
   nearestByteRounding = lib.trivial.div percentScale 2;
+
+  /**
+    Decode a `#rrggbb` color into its red, green, and blue byte values
+
+    # Type
+    `components :: String -> [Int]`
+
+    # Examples
+    `components "#ff0080"` returns `[ 255 0 128 ]`
+  */
   components =
     color:
-    map (offset: lib.trivial.fromHexString (lib.strings.substring offset hexDigitsPerByte color)) [
-      1
-      3
-      5
-    ];
+    lib.lists.map
+      (offset: lib.trivial.fromHexString (lib.strings.substring offset hexDigitsPerByte color))
+      [
+        1
+        3
+        5
+      ];
+
+  /**
+    Convert a `#rrggbb` color to CSS `rgb(...)` notation
+
+    # Type
+    `rgb :: String -> String`
+
+    # Examples
+    `rgb "#ff0080"` returns `"rgb(255, 0, 128)"`
+  */
   rgb = color: "rgb(${lib.strings.concatMapStringsSep ", " toString (components color)})";
+
+  /**
+    Format a byte as two lowercase hexadecimal digits
+
+    # Type
+    `byteHex :: Int -> String`
+
+    # Examples
+    `byteHex 10` returns `"0a"`
+  */
   byteHex =
     value:
     lib.strings.toLower (
       lib.strings.fixedWidthString hexDigitsPerByte "0" (lib.trivial.toHexString value)
     );
-  # Round the weighted channel average to the nearest byte
+
+  /**
+    Mix 85% of `colors.terminalBackground` with 15% of the foreground color,
+    rounding each channel to the nearest byte
+
+    # Type
+    `surfaceMix :: { terminalBackground: String, ... } -> String -> String`
+
+    # Examples
+    `surfaceMix { terminalBackground = "#000000"; } "#ffffff"` returns `"#262626"`
+  */
   surfaceMix =
     colors: color:
     let
@@ -72,7 +114,7 @@ let
           ]
         ) (lib.attrsets.attrNames palette.${variant})
         ++
-          map
+          lib.lists.map
             (role: {
               name = "@MIX_${lib.strings.toUpper variant}_${lib.strings.toUpper role}@";
               value = surfaceMix palette.${variant} palette.${variant}.${role};
@@ -86,16 +128,47 @@ let
         "light"
         "dark"
       ];
+
+  /**
+    Find the first existing path for a name in the supplied host `PATH`
+
+    # Type
+    `commandPath :: String -> (String | Null)`
+
+    # Examples
+    With an empty or missing `PATH`, `commandPath "ssh"` returns `null`
+  */
   commandPath =
     name:
     lib.lists.findFirst lib.trivial.pathExists null (
-      map (directory: "${directory}/${name}") (
+      lib.lists.map (directory: "${directory}/${name}") (
         lib.lists.filter (directory: directory != "") (lib.strings.splitString ":" (environment.PATH or ""))
       )
     );
+
+  /**
+    Return a command's path, or leave its name for runtime lookup
+
+    # Type
+    `findCommand :: String -> String`
+
+    # Examples
+    With an empty `PATH`, `findCommand "python3.15"` returns `"python3.15"`
+  */
   findCommand = name: lib.trivial.defaultTo name (commandPath name);
+
+  /**
+    Return the first resolved command from an ordered list, or the fallback
+
+    # Type
+    `firstCommand :: [String] -> String -> String`
+
+    # Examples
+    `firstCommand [ ] "clang-tidy"` returns `"clang-tidy"`
+  */
   firstCommand =
-    names: fallback: lib.lists.findFirst (path: path != null) fallback (map commandPath names);
+    names: fallback:
+    lib.lists.findFirst (path: path != null) fallback (lib.lists.map commandPath names);
   markers = colorMarkers ++ [
     {
       # Inherit the deployed extension dependency from the locked AI runtime
@@ -147,12 +220,43 @@ let
       ];
     }
   ];
+
+  /**
+    Expand color and runtime markers in a template
+
+    # Type
+    `replace :: String -> String`
+
+    # Examples
+    With `home = "/home/user"`, `replace "@HOME@"` returns `"/home/user"`
+  */
   replace = lib.strings.replaceStrings (lib.attrsets.catAttrs "name" markers) (
     lib.attrsets.catAttrs "value" markers
   );
+
+  /**
+    Check whether an inventory entry needs Nix rendering on this platform
+
+    # Type
+    `enabled :: { nixGenerated?: Bool, systems?: [String], ... } -> Bool`
+
+    # Examples
+    `enabled { nixGenerated = true; }` returns `true` on any platform
+  */
   enabled =
     entry:
     (entry.nixGenerated or false) && (entry.systems or [ ] == [ ] || lib.lists.elem os entry.systems);
+
+  /**
+    Render the platform template and palette variant into a Hjem file entry
+
+    # Type
+    `file :: AttrSet -> AttrSet`
+
+    # Examples
+    `(file { source = ".config/starship.toml"; target = ".config/starship.toml"; }).type`
+    returns `"symlink"` and its `text` uses the default dark variant
+  */
   file =
     entry:
     let
@@ -191,6 +295,16 @@ let
       else
         { inherit text; }
     );
+
+  /**
+    Render the Homebrew paths for the early or tail segment of the shell path
+
+    # Type
+    `homebrewPath :: Bool -> AttrSet`
+
+    # Examples
+    `(homebrewPath true).target` returns `".config/shell/homebrew-path-tail.sh"`
+  */
   homebrewPath =
     append:
     normalizeFile
@@ -206,14 +320,14 @@ let
             );
       };
 in
-map file (lib.lists.filter enabled manifest.files)
+lib.lists.map file (lib.lists.filter enabled manifest.files)
 ++ [
   (normalizeFile { target = ".local/bin/rex"; } {
     source = lib.meta.getExe pkgs.rex;
   })
 ]
 ++
-  map
+  lib.lists.map
     (
       target:
       normalizeFile { inherit target; } {
@@ -225,7 +339,7 @@ map file (lib.lists.filter enabled manifest.files)
       ".claude/skills/rex/SKILL.md"
     ]
 ++
-  map
+  lib.lists.map
     (
       entry:
       normalizeFile { target = ".terminfo/${entry}"; } {
@@ -242,7 +356,7 @@ map file (lib.lists.filter enabled manifest.files)
   (homebrewPath false)
   (homebrewPath true)
   (normalizeFile { target = ".config/rex/palette.json"; } {
-    text = builtins.toJSON {
+    text = lib.strings.toJSON {
       inherit (palette) light dark;
     };
   })

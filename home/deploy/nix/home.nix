@@ -12,6 +12,16 @@ let
     writeText
     writeShellApplication
     ;
+
+  /**
+    Read the provided runtime environment, treating empty values as missing
+
+    # Type
+    `configured :: String -> String -> String`
+
+    # Examples
+    If `HOME` is unset, `configured "HOME" "/Users/evy"` returns `"/Users/evy"`
+  */
   configured =
     name: fallback:
     let
@@ -26,19 +36,70 @@ let
   brewPrefix = configured "HOMEBREW_PREFIX" (
     if os == "darwin" then "/opt/homebrew" else "/home/linuxbrew/.linuxbrew"
   );
-  metadata = import ../../manifest.nix;
+  metadata = import ../../manifest.nix { inherit lib; };
+
+  /**
+    Check whether an inventory entry applies to the selected platform
+
+    # Type
+    `enabled :: { systems?: [String], ... } -> Bool`
+
+    # Examples
+    `enabled { }` returns `true` because no platform restriction was supplied
+  */
   enabled = entry: !(entry ? systems) || lib.lists.elem os entry.systems;
+
+  /**
+    Check for a name in the supplied host `PATH`, which defaults to `""`
+
+    # Type
+    `commandAvailable :: String -> Bool`
+
+    # Examples
+    With `PATH = "/usr/bin"` on macOS, `commandAvailable "ssh"` returns `true`
+  */
   commandAvailable =
     name:
     lib.lists.any (directory: lib.trivial.pathExists "${directory}/${name}") (
       lib.strings.splitString ":" (environment.PATH or "")
     );
+
+  /**
+    Expand public deployment markers using the selected host paths
+
+    # Type
+    `substitute :: String -> String`
+
+    # Examples
+    With `home = "/Users/evy"`, `substitute "@HOME@/.config"` returns
+    `"/Users/evy/.config"`
+  */
   substitute =
     lib.strings.replaceStrings
       [ "@HOME@" "@REPOSITORY@" "@OS@" "@HOMEBREW_PREFIX@" ]
       [ home repository os brewPrefix ];
+
+  /**
+    Read and expand a text source relative to `home/files`
+
+    # Type
+    `sourceText :: { source: String, ... } -> String`
+
+    # Examples
+    `sourceText { source = ".zshrc"; }` returns the rendered Zsh configuration
+  */
   sourceText = entry: substitute (lib.trivial.readFile (../../files + "/${entry.source}"));
   normalizeFile = import ./file/entry.nix { inherit lib; };
+
+  /**
+    Build a Hjem entry from a public source file, directory, or symlink recipe
+
+    # Type
+    `fileEntry :: AttrSet -> AttrSet`
+
+    # Examples
+    `(fileEntry { source = ".zshrc"; target = ".zshrc"; }).target` is `".zshrc"`
+  */
   fileEntry =
     entry:
     normalizeFile entry (
@@ -77,7 +138,19 @@ let
       environment
       ;
   };
-  # Resolve optional home-installed tools at activation time, not evaluation time
+  /**
+    Emit a shell snippet for a tool that may only be installed at activation
+
+    # Inputs
+    `name`: command name. `preferHome`: use its home path first (default `true`)
+
+    # Type
+    `optionalHomeCommand :: { name: String, preferHome?: Bool } -> String`
+
+    # Examples
+    `optionalHomeCommand { name = "tool"; }` emits shell that tries
+    `"$HJEM_HOME_DIR/.local/bin/tool"` before searching `PATH`
+  */
   optionalHomeCommand =
     {
       name,
@@ -93,6 +166,7 @@ let
         printf "%s\n" "$command skipped: command not found"
       fi
     '';
+
   # Inline bodies use stable manifest hook names, not source file paths
   shellHooks = {
     "rex_agents.sh" = {
@@ -359,25 +433,26 @@ let
     '';
   };
   # Include every platform so disabled hooks are not mistaken for dead code
-  shellHookNames = map (entry: entry.name) (
+  shellHookNames = lib.lists.map (entry: entry.name) (
     lib.lists.filter (entry: !(entry ? command)) metadata.hooks
   );
   missingShellHooks = lib.lists.subtractLists (lib.attrsets.attrNames shellHooks) shellHookNames;
   unusedShellHooks = lib.lists.subtractLists shellHookNames (lib.attrsets.attrNames shellHooks);
   # The runner in home/deploy/apply.ts executes these after Hjem switches
-  hooks = map (
+  hooks = lib.lists.map (
     entry:
     let
       inherit (entry) name;
       command =
         if entry ? command then
-          map substitute entry.command
+          lib.lists.map substitute entry.command
         else
           [
             (lib.meta.getExe (
               writeShellApplication (
                 {
                   name = "hjem-hook-${name}";
+                  meta.mainProgram = "hjem-hook-${name}";
                   # Optional apps and host/session tools still come from PATH
                   inheritPath = true;
                   passthru.updateScript = dotfilesPackageUpdaters.localWorkspace;
@@ -394,16 +469,16 @@ let
     {
       inherit name command;
       onchange = entry.onChange or false;
-      inputs = map substitute (entry.inputs or [ ]);
+      inputs = lib.lists.map substitute (entry.inputs or [ ]);
     }
   ) (lib.lists.filter enabled metadata.hooks);
   generators = lib.trivial.importJSON ../../generators.json;
   manifest = writeText "hjem-manifest.json" (
-    builtins.toJSON (
+    lib.strings.toJSON (
       import ./manifest.nix {
         inherit pkgs inputs home;
         files =
-          map fileEntry static
+          lib.lists.map fileEntry static
           ++ applicationFiles
           ++ import ./externals.nix {
             inherit inputs lib os;
@@ -411,8 +486,8 @@ let
       }
     )
   );
-  hookMetadata = writeText "hjem-hooks.json" (builtins.toJSON hooks);
-  generatorMetadata = writeText "hjem-generators.json" (builtins.toJSON generators);
+  hookMetadata = writeText "hjem-hooks.json" (lib.strings.toJSON hooks);
+  generatorMetadata = writeText "hjem-generators.json" (lib.strings.toJSON generators);
 in
 assert lib.asserts.assertMsg (
   home != "" && lib.strings.hasPrefix "/" home

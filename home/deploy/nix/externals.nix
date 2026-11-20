@@ -30,10 +30,21 @@ let
       target = ".fzf-tab-completion";
     }
   ];
-  # Preserve symlink leaves and omit empty directories, as Hjem needs files
+  /**
+    Map every leaf under `source` into a home-relative `target` directory
+
+    Symlink leaves are preserved and empty directories are omitted
+
+    # Type
+    `files :: Path -> String -> [{ source: Path, target: String }]`
+
+    # Examples
+    If `./plugin` contains only `init.zsh`, `files ./plugin ".plugin"` returns
+    `[ { source = ./plugin/init.zsh; target = ".plugin/init.zsh"; } ]`
+  */
   files =
     source: target:
-    map (path: {
+    lib.lists.map (path: {
       source = path;
       target = "${target}/${lib.strings.removePrefix "${toString source}/" (toString path)}";
     }) (lib.filesystem.listFilesRecursive source);

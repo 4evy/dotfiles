@@ -1,5 +1,19 @@
-# Normalize deployment policy once, leaving source/text handling to Hjem
 { lib }:
+/**
+  Pass a normalized file recipe to Hjem, leaving source and text handling there
+
+  # Inputs
+  `entry` supplies `target` and optional flags `private`, `mutable`, and
+  `executable`, all defaulting to `false`. `contents` supplies `source` or `text`
+
+  # Type
+  `normalizeFile :: AttrSet -> AttrSet -> AttrSet`
+
+  # Examples
+  `normalizeFile { target = ".config/tool"; private = true; } { text = ""; }`
+  returns `{ target = ".config/tool"; type = "copy"; permissions = "0600";
+  executable = false; text = ""; }`
+*/
 entry: contents:
 let
   private = entry.private or false;
