@@ -7,29 +7,61 @@
   git,
   nix,
   nixfmt,
-  python3,
   writeShellApplication,
+  writers,
 }:
+let
+  # The repository formats Python separately from the writer's 79-column check
+  writerOptions.flakeIgnore = [ "E501" ];
+  updateFlakeInputs =
+    writers.writePython3Bin "update-flake-inputs" writerOptions
+      ./update-flake-inputs.py;
+  updateBinaryPins =
+    writers.writePython3Bin "update-binary-pins" writerOptions
+      ../../packages/update-binary-pins.py;
+in
 {
-  # Flake inputs own upstream definitions, including explicitly pinned revisions
+  /**
+    Make an updater for the given owning input names, including explicit pins
+
+    # Type
+    `flakeInputs :: [String] -> String`
+
+    # Examples
+    `flakeInputs [ "nixpkgs" ]` returns the path to `update-inputs-nixpkgs`
+  */
   flakeInputs =
     names:
-    lib.meta.getExe (writeShellApplication {
+    let
       name = "update-inputs-${lib.strings.concatStringsSep "-" names}";
+    in
+    lib.meta.getExe (writeShellApplication {
+      inherit name;
+      meta.mainProgram = name;
       runtimeInputs = [
         git
         nix
-        python3
       ];
       text = ''
-        exec python3 ${./update-flake-inputs.py} ${lib.strings.escapeShellArgs names}
+        exec ${lib.meta.getExe updateFlakeInputs} ${lib.strings.escapeShellArgs names}
       '';
     });
 
+  /**
+    Make an updater with the given name that runs scripts or argv lists in order
+
+    # Type
+    `sequence :: String -> [(String | [String])] -> String`
+
+    # Examples
+    `sequence "update-all" [ [ "/bin/echo" "done" ] ]` returns the path to
+    `update-all`, which prints `done`
+  */
   sequence =
     name: scripts:
     lib.meta.getExe (writeShellApplication {
       inherit name;
+      meta.mainProgram = name;
       text = lib.strings.concatMapStringsSep "\n" (
         script: lib.strings.escapeShellArgs (lib.lists.toList script)
       ) scripts;
@@ -38,6 +70,7 @@
   # Local packages share the root workspace's actual dependency lock and cache
   localWorkspace = lib.meta.getExe (writeShellApplication {
     name = "update-dotfiles-workspace";
+    meta.mainProgram = "update-dotfiles-workspace";
     runtimeInputs = [
       bun
       bun2nix
@@ -52,17 +85,26 @@
     '';
   });
 
-  # These overrides, unlike input-owned packages, own their binary hashes here
+  /**
+    Make an updater for a binary pin owned by this repository
+
+    # Type
+    `binaryPin :: String -> String`
+
+    # Examples
+    `binaryPin "bun"` returns the path to `update-bun`
+  */
   binaryPin =
     name:
+    let
+      program = "update-${name}";
+    in
     lib.meta.getExe (writeShellApplication {
-      name = "update-${name}";
-      runtimeInputs = [
-        gh
-        python3
-      ];
+      name = program;
+      meta.mainProgram = program;
+      runtimeInputs = [ gh ];
       text = ''
-        exec python3 ${../../packages/update-binary-pins.py} ${lib.strings.escapeShellArg name} "$@"
+        exec ${lib.meta.getExe updateBinaryPins} ${lib.strings.escapeShellArg name} "$@"
       '';
     });
 }

@@ -18,20 +18,33 @@
         dotfiles-workstation
         helium-configured
         stdenv
-        writeShellScriptBin
+        writeShellApplication
         ;
       inherit (stdenv.hostPlatform) isDarwin isLinux system;
+
+      /**
+        Expose a repository-owned binary updater as a flake package
+
+        # Type
+        `binaryUpdater :: String -> Derivation`
+
+        # Examples
+        `(binaryUpdater "bun").meta.mainProgram` is `"update-bun"`
+      */
       binaryUpdater =
-        name:
+        pin:
         let
-          updateScript = dotfilesPackageUpdaters.binaryPin name;
+          name = "update-${pin}";
+          updateScript = dotfilesPackageUpdaters.binaryPin pin;
         in
-        (writeShellScriptBin "update-${name}" ''
-          exec ${lib.strings.escapeShellArg updateScript} "$@"
-        '').overrideAttrs
-          {
-            passthru = { inherit updateScript; };
-          };
+        writeShellApplication {
+          inherit name;
+          meta.mainProgram = name;
+          text = ''
+            exec ${lib.strings.escapeShellArg updateScript} "$@"
+          '';
+          passthru = { inherit updateScript; };
+        };
     in
     {
       packages = {

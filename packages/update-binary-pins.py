@@ -67,7 +67,7 @@ def main():
     if not tag.startswith(prefix):
         raise ValueError(f"Unexpected release tag: {tag}")
     if version is None:
-        version = tag[len(prefix) :]
+        version = tag.removeprefix(prefix)
     elif tag != f"{prefix}{version}":
         raise ValueError(f"Release tag does not match selected version: {tag}")
     if not re.fullmatch(r"[0-9]+(?:\.[0-9]+)+", version):
