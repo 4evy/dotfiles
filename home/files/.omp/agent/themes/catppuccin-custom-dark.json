@@ -161,6 +161,7 @@
     "thinkingMax": "blue",
     "bashMode": "green",
     "pythonMode": "yellow",
+    "btwMode": "mauve",
     "statusLineBg": "",
     "statusLineSep": "border",
     "statusLineModel": "blue",
