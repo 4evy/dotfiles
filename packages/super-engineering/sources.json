@@ -1,7 +1,7 @@
 {
   "linux": {
-    "version": "0-unstable-2026-11-12",
-    "rev": "b1d11339f356b5acaf1d119216c07e5879b6e953"
+    "version": "0-unstable-2026-11-20",
+    "rev": "e7a1b73593ca60ce5e6349d15afcd5e21b081064"
   },
   "darwin": {
     "version": "0-unstable-2026-11-20",
@@ -9,7 +9,7 @@
   },
   "hashes": {
     "aarch64-darwin": "sha256-oF5wo0c+sydZAcicD6vpyfEiIBLZNS749HaFwoQNhfA=",
-    "aarch64-linux": "sha256-n4tqXicr2w0jG6+FhL5xGPndELafO0yggU0PjZBgqDo=",
-    "x86_64-linux": "sha256-r8JrCtBvUv+qZSpO26hV0eBGqhkyj57jD+HnA4ARwkU="
+    "aarch64-linux": "sha256-fk9x2aYnMf3D8oNajOlDVHt8p07OEcYEErDr8GKwLWc=",
+    "x86_64-linux": "sha256-h05Otiy+0voitNtTcJlaeTREBhi1FHm/6Xtl9YsYxRk="
   }
 }
