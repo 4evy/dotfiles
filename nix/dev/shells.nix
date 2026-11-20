@@ -25,7 +25,7 @@
           lib.attrsets.attrValues {
             inherit (pkgs)
               actionlint
-              check-jsonschema
+              bun
               cosign
               hadolint
               jq
@@ -39,7 +39,7 @@
             inherit (unstable) uv;
           }
           # Use the host container engine with its matching storage and helpers
-          ++ lib.lists.optionals isLinux [ self'.packages.bluebuild ];
+          ++ lib.lists.optionals isLinux [ unstable.bluebuild ];
       };
 
     in

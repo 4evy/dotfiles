@@ -6,7 +6,7 @@ set default-list
 export BB_BUILD_DRIVER := "podman"
 export BB_RUN_DRIVER := "podman"
 
-# Validate the recipe and enforce the Renovate-managed base digest lock.
+# Validate the recipe and its pinned base with the upstream CLI.
 [group('spectrum')]
 [linux]
 validate: (_doctor 'nix')
@@ -14,53 +14,26 @@ validate: (_doctor 'nix')
       {{ just_command }} spectrum _validate
 
 [linux]
-_validate: (_doctor 'spectrum')
+_validate:
     generated=$(mktemp)
     trap 'rm -f "$generated"' EXIT
     {{ just_command }} spectrum generate "$generated"
-    locked=$(< systems/spectrum/recipes/spectrum.lock)
-    tagged=${locked%@*}
-    expected_arg="${tagged%:*}@${locked##*@}"
-    resolved=$(skopeo inspect --format '{{ "{{.Digest}}" }}' "docker://$expected_arg")
-    [[ "$locked" == *@$resolved ]] || {
-      printf 'base image lock mismatch: %s resolves to %s\n' "$locked" "$resolved" >&2
-      exit 1
-    }
 
-# Generate and validate the Containerfile used by local builds and CI.
+# Generate the Containerfile once, with BlueBuild's recursive recipe validation.
 [group('spectrum')]
 [linux]
-generate output:
+generate output: (_doctor 'spectrum')
     generated={{ quote(output) }}
-    bluebuild=${BLUEBUILD:-bluebuild}
-    validator=${CHECK_JSONSCHEMA:-check-jsonschema}
-    readonly schema_base_uri=https://schema.blue-build.org/
-    bun systems/spectrum/recipes/spectrum/sources/sources.ts
-    # Include nested stage and module files in schema validation
-    shopt -s globstar
-    "$validator" \
-      --base-uri "$schema_base_uri" \
-      --schemafile "${schema_base_uri}recipe-v2.json" \
-      systems/spectrum/recipes/spectrum.yml
-    "$validator" \
-      --base-uri "$schema_base_uri" \
-      --schemafile "${schema_base_uri}stage-v1.json" \
-      systems/spectrum/recipes/spectrum/stages/**/*.yml
-    "$validator" \
-      --base-uri "$schema_base_uri" \
-      --schemafile "${schema_base_uri}module-list-v1.json" \
-      systems/spectrum/recipes/spectrum/modules/**/*.yml
-    # Compare recipe data with the lock, independent of generated shell syntax
-    bun -e '
-      const recipe = Bun.YAML.parse(await Bun.file("systems/spectrum/recipes/spectrum.yml").text());
-      const { registry, repository, tag, digest } = recipe.base.image;
-      const expected = (await Bun.file("systems/spectrum/recipes/spectrum.lock").text()).trim();
-      if (`${registry}/${repository}:${tag}@${digest}` !== expected)
-        throw new Error("Recipe base image does not match spectrum.lock");
-    '
-    # BlueBuild's feature-gated v2 parser is ready, but its validate command
-    # still hardcodes the v1 schema. The official v2 schema is checked above.
-    "$bluebuild" generate --skip-validation --output "$generated" systems/spectrum/recipes/spectrum.yml
+    locked=$(bun systems/spectrum/recipes/spectrum/sources/sources.ts)
+    bluebuild generate --output "$generated" systems/spectrum/recipes/spectrum.yml
+    # BlueBuild resolves the recipe's tag@digest to a digest-only FROM
+    tagged=${locked%@*}
+    expected_ref="${tagged%:*}@${locked##*@}"
+    IFS= read -r base_arg <"$generated"
+    [[ $base_arg == "ARG BASE_IMAGE=\"$expected_ref\"" ]] || {
+      printf 'Expected generated base %s, got %s\n' "$expected_ref" "$base_arg" >&2
+      exit 1
+    }
 
 # Build public Spectrum and its private, machine-local recovery derivative.
 [group('spectrum')]
@@ -70,7 +43,7 @@ build profile="": (_doctor 'nix')
       {{ just_command }} spectrum _build {{ quote(profile) }}
 
 [linux]
-_build profile="": _validate
+_build profile="":
     generated=$(mktemp)
     sudo -v
     # Keep the ticket valid across long builds without changing sudo policy

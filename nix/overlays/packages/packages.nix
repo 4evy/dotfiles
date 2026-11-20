@@ -1,5 +1,5 @@
 { inputs, lib }:
-final: prev:
+final: _prev:
 let
   inherit (final)
     callPackage
@@ -87,24 +87,6 @@ packages
     }
   );
   bun2nix = withInputs [ "bun2nix" ] inputs.bun2nix.packages.${stdenv.hostPlatform.system}.default;
-  # Upstream schema downloads have no deadline, including recursive $ref fetches
-  check-jsonschema = prev.check-jsonschema.overridePythonAttrs (
-    old:
-    let
-      connectTimeoutSeconds = 10;
-      readTimeoutSeconds = 30;
-    in
-    {
-      postPatch = (old.postPatch or "") + ''
-        substituteInPlace src/check_jsonschema/cachedownloader.py \
-          --replace-fail 'requests.get(file_url, stream=True)' \
-            'requests.get(file_url, stream=True, timeout=(${toString connectTimeoutSeconds}, ${toString readTimeoutSeconds}))'
-      '';
-      passthru = (old.passthru or { }) // {
-        updateScript = dotfilesPackageUpdaters.flakeInputs [ "nixpkgs" ];
-      };
-    }
-  );
   inherit (unstable) gh;
   hyper-window-tiling-gnome = gnome;
   hyper-window-tiling-kde = kde;
