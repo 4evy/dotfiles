@@ -38,6 +38,16 @@ let
 
   bunDeps = import ../../nix/lib/bun/dependencies.nix { inherit lib bun2nix; };
 
+  /**
+    Generate a build phase for a named tiling workspace script
+
+    # Type
+    `buildPhaseFor :: String -> String`
+
+    # Examples
+    `buildPhaseFor "build:kde"` returns a phase that runs
+    `bun run --cwd tools/tiling build:kde` between the build hooks
+  */
   buildPhaseFor = script: ''
     runHook preBuild
 
@@ -46,6 +56,16 @@ let
     runHook postBuild
   '';
 
+  /**
+    Build a GNOME or KDE extension from the shared tiling workspace
+
+    # Type
+    `mkTilingExtension :: AttrSet -> Derivation`
+
+    # Examples
+    `(mkTilingExtension { pname = "my-tiling-extension"; }).version` returns
+    the version from the tiling workspace's `package.json`
+  */
   mkTilingExtension = lib.customisation.extendMkDerivation {
     # Both desktop extensions bundle JavaScript without a native compiler
     constructDrv = stdenvNoCC.mkDerivation;

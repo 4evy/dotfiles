@@ -6,16 +6,38 @@ let
     dotfilesPackageUpdaters
     eupkgs
     fetchurl
+    linkFarm
     nix-gl-host
     runCommand
     stdenv
     symlinkJoin
-    writeShellScript
+    writeShellApplication
     ;
-  inherit (eupkgs) helium-browser yt-dlp-script;
-  upstreamHelium = helium-browser;
+  inherit (eupkgs) yt-dlp-script;
+  upstreamHelium = eupkgs.helium-browser;
   system = stdenv.hostPlatform.system;
   patched = inputs.patches.packages.${system};
+
+  /**
+    Attach a flake-input updater without dropping the package's other passthru
+    attributes.
+
+    # Inputs
+
+    `names`: Upstream flake input names.
+    `package`: Derivation to override.
+
+    # Type
+
+    `withInputs :: [String] -> Derivation -> Derivation`
+
+    # Examples
+
+    ```nix
+    (withInputs [ "patches" ] jj).updateScript
+    => "/nix/store/…-update-inputs-patches/bin/update-inputs-patches"
+    ```
+  */
   withInputs =
     names: package:
     package.overrideAttrs (old: {
@@ -25,7 +47,7 @@ let
     });
   inherit (patched) jj kanata;
   inherit (inputs.nixcord.packages.${system}) discord equicord;
-  heliumDarwin = helium-browser.overrideAttrs (
+  heliumDarwin = upstreamHelium.overrideAttrs (
     finalAttrs: old: {
       version = "0.22.1.1";
       src = fetchurl {
@@ -38,24 +60,62 @@ let
       };
     }
   );
+
+  /**
+    Route the main program and selected aliases through the host graphics
+    launcher on Linux outside NixOS. Return the package unchanged on Darwin.
+
+    # Inputs
+
+    `package`: Derivation with `meta.mainProgram` and an updater.
+    `aliases`: Additional executable names to wrap.
+
+    # Type
+
+    `hostGraphics :: Derivation -> [String] -> Derivation`
+
+    # Examples
+
+    ```nix
+    (hostGraphics (withInputs [ "eupkgs" ] upstreamHelium) [ "helium" ]).meta.mainProgram
+    => "helium-browser"
+    ```
+  */
   hostGraphics =
-    package: commands:
+    package: aliases:
     if stdenv.hostPlatform.isDarwin then
       package
     else
+      let
+        executables = {
+          ${package.meta.mainProgram} = lib.meta.getExe package;
+        }
+        // lib.attrsets.genAttrs aliases (lib.meta.getExe' package);
+      in
       symlinkJoin {
         name = "${package.name}-host-graphics";
         paths = [ package ];
-        postBuild = lib.strings.concatMapStringsSep "\n" (command: ''
-          rm "$out/bin/${command}"
-          ln -s ${writeShellScript command ''
-            if [ -e /etc/NIXOS ]; then
-              exec ${package}/bin/${command} "$@"
-            fi
-            exec ${lib.meta.getExe nix-gl-host} --driver-directory /usr/lib64 \
-              ${package}/bin/${command} "$@"
-          ''} "$out/bin/${command}"
-        '') commands;
+        postBuild = lib.strings.concatMapAttrsStringSep "\n" (
+          command: executable:
+          let
+            wrapper = writeShellApplication {
+              name = command;
+              meta.mainProgram = command;
+              bashOptions = [ ];
+              text = ''
+                if [ -e /etc/NIXOS ]; then
+                  exec ${executable} "$@"
+                fi
+                exec ${lib.meta.getExe nix-gl-host} --driver-directory /usr/lib64 \
+                  ${executable} "$@"
+              '';
+            };
+          in
+          ''
+            rm "$out/bin/${command}"
+            ln -s ${lib.meta.getExe wrapper} "$out/bin/${command}"
+          ''
+        ) executables;
         inherit (package) meta;
         passthru = (package.passthru or { }) // {
           inherit (package) updateScript;
@@ -68,34 +128,38 @@ in
     if stdenv.hostPlatform.isDarwin then
       heliumDarwin
     else
-      hostGraphics (withInputs [ "eupkgs" ] helium-browser) [
-        "helium"
-        "helium-browser"
-      ];
+      hostGraphics (withInputs [ "eupkgs" ] upstreamHelium) [ "helium" ];
   helium-configured =
     let
       inherit (final) helium-browser;
-      launcher = writeShellScript "helium-configured" ''
-        launcher="$HOME/.local/bin/helium-browser"
-        if [ -x "$launcher" ]; then
-          exec "$launcher" "$@"
-        fi
-        exec ${lib.meta.getExe helium-browser} "$@"
+      launcher = writeShellApplication {
+        name = "helium-configured";
+        meta.mainProgram = "helium-configured";
+        bashOptions = [ ];
+        text = ''
+          launcher="$HOME/.local/bin/helium-browser"
+          if [ -x "$launcher" ]; then
+            exec "$launcher" "$@"
+          fi
+          exec ${lib.meta.getExe helium-browser} "$@"
+        '';
+      };
+      desktop = runCommand "helium.desktop" { } ''
+        substitute ${helium-browser}/share/applications/helium.desktop "$out" \
+          --replace-fail 'Exec=${lib.meta.getExe upstreamHelium}' 'Exec=helium'
       '';
     in
-    runCommand "helium-configured"
-      {
-        passthru = { inherit (helium-browser) updateScript; };
-      }
-      ''
-        mkdir -p "$out/bin" "$out/share/applications"
-        ln -s ${launcher} "$out/bin/helium"
-        ln -s ${launcher} "$out/bin/helium-browser"
-        substitute ${helium-browser}/share/applications/helium.desktop \
-          "$out/share/applications/helium.desktop" \
-          --replace-fail 'Exec=${lib.meta.getExe upstreamHelium}' 'Exec=helium'
-        ln -s helium.desktop "$out/share/applications/helium-browser.desktop"
-      '';
+    (linkFarm "helium-configured" {
+      "bin/helium" = lib.meta.getExe launcher;
+      "bin/helium-browser" = lib.meta.getExe launcher;
+      "share/applications/helium.desktop" = desktop;
+      "share/applications/helium-browser.desktop" = "helium.desktop";
+    }).overrideAttrs
+      (old: {
+        passthru = old.passthru // {
+          inherit (helium-browser) updateScript;
+        };
+      });
   mitos = withInputs [ "source-mitos" ] (
     (callPackage (inputs.source-mitos + "/default.nix") {
       gitRev = inputs.source-mitos.rev;
@@ -118,7 +182,24 @@ in
           }
         )
       ];
-      # These GitLab grammar repositories reject anonymous fetches
+      /**
+        Exclude grammars whose GitLab repositories reject anonymous fetches.
+
+        # Inputs
+
+        `grammar`: Upstream grammar descriptor with a `name`.
+
+        # Type
+
+        `includeGrammarIf :: { name :: String; ... } -> Bool`
+
+        # Examples
+
+        ```nix
+        includeGrammarIf { name = "lpf"; }
+        => false
+        ```
+      */
       includeGrammarIf =
         grammar:
         !(lib.lists.elem grammar.name [
@@ -146,7 +227,7 @@ in
         lib.trivial.importJSON ../../home/applications/discord/flags.json
       );
     }
-  )) [ "Discord" ];
+  )) [ ];
   jj-patched = withInputs [ "patches" ] jj;
   kanata-with-cmd = kanata.overrideAttrs (old: {
     cargoBuildFeatures = [ "cmd" ];

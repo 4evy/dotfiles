@@ -45,7 +45,7 @@ let
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
   sourceHash = pins.hashes.${stdenvNoCC.hostPlatform.system};
-  linuxSystems = builtins.filter (lib.strings.hasSuffix "-linux") (builtins.attrNames sources);
+  linuxSystems = lib.lists.filter (lib.strings.hasSuffix "-linux") (lib.attrsets.attrNames sources);
   meta = {
     description = "Workspace for coding agents, terminals, and Git worktrees";
     homepage = "https://super.engineering";
@@ -98,6 +98,25 @@ let
     fi
   '';
 
+  /**
+    Expose a Linux release's original binaries and share tree without fixups.
+
+    # Inputs
+
+    `finalAttrs`: Linux release attributes with `pname`, `version`, `src`, and
+    `meta`.
+
+    # Type
+
+    `unwrapped :: AttrSet -> Derivation`
+
+    # Examples
+
+    ```nix
+    (unwrapped (lib.fixedPoints.fix commonAttrs)).pname
+    => "super-engineering-unwrapped"
+    ```
+  */
   unwrapped =
     finalAttrs:
     stdenvNoCC.mkDerivation {
@@ -120,6 +139,26 @@ let
       '';
     };
 
+  /**
+    Package the Linux release with native runtime wrappers instead of an
+    FHS environment.
+
+    # Inputs
+
+    `finalAttrs`: Linux release attributes with the `unwrapped` package,
+    revision, and updater in `passthru`.
+
+    # Type
+
+    `mkNative :: AttrSet -> Derivation`
+
+    # Examples
+
+    ```nix
+    (mkNative (lib.fixedPoints.fix commonAttrs)).pname
+    => "super-engineering-native"
+    ```
+  */
   mkNative =
     finalAttrs:
     finalAttrs.passthru.unwrapped.overrideAttrs {
@@ -180,6 +219,25 @@ let
       };
     };
 
+  /**
+    Run the Linux release's standalone `sc` binary in an FHS environment.
+
+    # Inputs
+
+    `finalAttrs`: Linux release attributes with `pname`, `version`, `meta`, and
+    the `unwrapped` package in `passthru`.
+
+    # Type
+
+    `cli :: AttrSet -> Derivation`
+
+    # Examples
+
+    ```nix
+    (cli (lib.fixedPoints.fix commonAttrs)).meta.mainProgram
+    => "sc"
+    ```
+  */
   cli =
     finalAttrs:
     buildFHSEnv {
@@ -246,13 +304,32 @@ let
     '';
   });
 
+  /**
+    Define the Linux release attributes shared by the FHS and native packages.
+
+    # Inputs
+
+    `finalAttrs`: Final Linux release attributes, including overrides for the
+    revision and the package variants.
+
+    # Type
+
+    `commonAttrs :: AttrSet -> AttrSet`
+
+    # Examples
+
+    ```nix
+    (lib.fixedPoints.fix commonAttrs).meta.platforms
+    => [ "aarch64-linux" "x86_64-linux" ]
+    ```
+  */
   commonAttrs = finalAttrs: {
     pname = "super-engineering";
     inherit (pins.linux) version;
 
     src = fetchurl {
       url = "https://releases.super.engineering/linux/nightly/${finalAttrs.passthru.rev}/super-engineering-nightly-${
-        builtins.substring 0 artifactRevisionPrefixLength finalAttrs.passthru.rev
+        lib.strings.substring 0 artifactRevisionPrefixLength finalAttrs.passthru.rev
       }-linux-${source.arch}.tar.gz";
       hash = sourceHash;
     };
@@ -279,6 +356,24 @@ let
     finalAttrs:
     commonAttrs finalAttrs
     // {
+      /**
+        Select the runtime packages installed into the FHS environment.
+
+        # Inputs
+
+        `pkgs`: Package set for the target system.
+
+        # Type
+
+        `targetPkgs :: AttrSet -> [Derivation]`
+
+        # Examples
+
+        ```nix
+        lib.lists.length (targetPkgs pkgs)
+        => 11
+        ```
+      */
       targetPkgs =
         pkgs:
         lib.attrsets.attrVals [
@@ -312,7 +407,7 @@ let
 
     src = fetchurl {
       url = "https://releases.super.engineering/nightly/super.engineering-nightly-${
-        builtins.substring 0 artifactRevisionPrefixLength finalAttrs.passthru.rev
+        lib.strings.substring 0 artifactRevisionPrefixLength finalAttrs.passthru.rev
       }-${source.arch}.dmg";
       hash = sourceHash;
     };

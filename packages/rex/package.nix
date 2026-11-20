@@ -195,7 +195,7 @@ stdenvNoCC.mkDerivation {
     license = lib.licenses.unfree;
     sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
     maintainers = [ lib.maintainers._4evy ];
-    platforms = builtins.attrNames sources;
+    platforms = lib.attrsets.attrNames sources;
     mainProgram = "rex";
   };
 }

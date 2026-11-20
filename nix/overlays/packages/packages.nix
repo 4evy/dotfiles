@@ -9,6 +9,27 @@ let
     unstable
     ;
   aiPackages = inputs.ai.packages.${stdenv.hostPlatform.system};
+
+  /**
+    Attach a flake-input updater without dropping the package's other passthru
+    attributes.
+
+    # Inputs
+
+    `names`: Upstream flake input names.
+    `package`: Derivation to override.
+
+    # Type
+
+    `withInputs :: [String] -> Derivation -> Derivation`
+
+    # Examples
+
+    ```nix
+    (withInputs [ "ai" ] aiJavaScript).updateScript
+    => "/nix/store/…-update-inputs-ai/bin/update-inputs-ai"
+    ```
+  */
   withInputs =
     names: package:
     package.overrideAttrs (old: {
