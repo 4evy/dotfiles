@@ -37,7 +37,7 @@
               esac
             done
             if ((format_records)); then
-              ${builtins.readFile ./records.sh}
+              ${lib.trivial.readFile ./records.sh}
             fi
           '';
         };
@@ -84,12 +84,7 @@
 
           formatter = {
             whitespace = {
-              command = pkgs.writeShellApplication {
-                name = "whitespace-format";
-                text = ''
-                  exec ${lib.meta.getExe pkgs.python3} ${./whitespace.py} "$@"
-                '';
-              };
+              command = lib.meta.getExe (pkgs.writers.writePython3Bin "whitespace-format" { } ./whitespace.py);
               includes = [ "*" ];
               # Run after syntax formatters and preserve Markdown hard breaks
               priority = 1;

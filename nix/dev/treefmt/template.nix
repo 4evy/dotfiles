@@ -1,8 +1,7 @@
 { lib, pkgs }:
-pkgs.writeShellApplication {
-  name = "template-format";
-  text = ''
-    exec ${lib.meta.getExe pkgs.python3} ${./template.py} \
-      ${lib.meta.getExe pkgs.prettier} "$@"
-  '';
-}
+pkgs.writers.writePython3Bin "template-format" {
+  makeWrapperArgs = [
+    "--add-flag"
+    (lib.meta.getExe pkgs.prettier)
+  ];
+} ./template.py
