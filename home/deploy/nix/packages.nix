@@ -14,6 +14,7 @@ lib.attrsets.attrValues {
   inherit (unstable) just uv;
 
   # Shell tools and everyday command-line applications
+  inherit (unstable) forgejo-cli;
   inherit (pkgs)
     age
     broot

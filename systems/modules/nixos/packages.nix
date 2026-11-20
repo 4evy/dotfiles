@@ -80,6 +80,7 @@ in
         ffmpeg
         file
         findutils
+        forgejo-cli
         gawk
         gcc
         gh

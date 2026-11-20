@@ -53,6 +53,7 @@ brew("biome")
 brew("clang-format")
 brew("delve")
 brew("dockerfmt") if OS.linux?
+brew("forgejo-cli") if OS.mac?
 brew("gh") if OS.mac?
 brew("git") if OS.mac?
 brew("git-filter-repo") if OS.mac?
