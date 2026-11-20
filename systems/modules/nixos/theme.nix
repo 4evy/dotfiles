@@ -18,6 +18,6 @@ in
     flavor = "mocha";
     accent = "pink";
     tty.enable = true;
-    sources.palette = pkgs.writeTextDir "palette.json" (builtins.toJSON theme.ttyPalette);
+    sources.palette = pkgs.writeTextDir "palette.json" (lib.generators.toJSON { } theme.ttyPalette);
   };
 }

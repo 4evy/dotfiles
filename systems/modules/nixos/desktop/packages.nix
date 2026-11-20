@@ -5,10 +5,6 @@
   ...
 }:
 let
-  inherit (lib.attrsets) attrValues;
-  inherit (lib.modules) mkIf;
-  inherit (lib.strings) concatStringsSep;
-  inherit (lib.meta) getExe;
   inherit (pkgs)
     linkFarm
     unstable
@@ -34,8 +30,8 @@ let
 
   commandLineArgs = [
     "--enable-logging=stderr"
-    "--enable-features=${concatStringsSep "," chromiumFeatures}"
-    "--disable-features=${concatStringsSep "," chromiumDisabledFeatures}"
+    "--enable-features=${lib.strings.concatStringsSep "," chromiumFeatures}"
+    "--disable-features=${lib.strings.concatStringsSep "," chromiumDisabledFeatures}"
     "--omnibox-autocomplete-filtering=search"
     "--set-color-scheme=dark"
     "--set-color-variant=tonal_spot"
@@ -50,7 +46,7 @@ let
       app_dir = toString heliumAppDir;
       wrapper_flags = commandLineArgs;
     };
-    extension_settings.files = map (
+    extension_settings.files = lib.lists.map (
       path: "${../../../../home/applications/helium + "/${path}"}"
     ) heliumConfigSource.extension_settings.files;
   };
@@ -58,7 +54,7 @@ let
   heliumBrowser = helium-browser;
   heliumAppDir =
     (linkFarm "helium-browser-app" {
-      "helium-wrapper" = getExe heliumBrowser;
+      "helium-wrapper" = lib.meta.getExe heliumBrowser;
       "helium.desktop" = "${heliumBrowser}/share/applications/helium.desktop";
       "product_logo_256.png" = "${heliumBrowser}/share/icons/hicolor/256x256/apps/helium.png";
     }).overrideAttrs
@@ -68,11 +64,12 @@ let
 
   applyHelium = writeShellApplication {
     name = "apply-helium";
+    meta.mainProgram = "apply-helium";
     passthru.updateScript = pkgs.dotfilesPackageUpdaters.flakeInputs [
       "eupkgs"
       "tweezle"
     ];
-    runtimeInputs = attrValues {
+    runtimeInputs = lib.attrsets.attrValues {
       inherit (pkgs)
         coreutils
         curl
@@ -95,22 +92,22 @@ let
       input="$(jq -nc --arg token "$token" \
         '{extension_values: (if $token == "" then {} else {"refined-github-personal-token": $token} end)}')"
 
-      printf '%s' "$input" | ${getExe config.programs.tweezle.package} apply \
+      printf '%s' "$input" | ${lib.meta.getExe config.programs.tweezle.package} apply \
         '${config.programs.tweezle.configFile}' \
         --input -
     '';
   };
 in
 {
-  config = mkIf desktopEnabled {
+  config = lib.modules.mkIf desktopEnabled {
     programs.chromium.enable = true;
     programs.tweezle = {
       enable = true;
       activate = false;
-      settings.chromium = heliumConfig.browser // removeAttrs heliumConfig [ "browser" ];
+      settings.chromium = heliumConfig.browser // lib.attrsets.removeAttrs heliumConfig [ "browser" ];
     };
 
-    environment.systemPackages = attrValues {
+    environment.systemPackages = lib.attrsets.attrValues {
       inherit heliumBrowser;
 
       inherit (unstable)
@@ -128,7 +125,7 @@ in
       unitConfig.ConditionUser = config.local.user.name;
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = getExe applyHelium;
+        ExecStart = lib.meta.getExe applyHelium;
       };
     };
 

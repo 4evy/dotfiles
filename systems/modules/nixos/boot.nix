@@ -1,11 +1,11 @@
 { lib, ... }:
 {
   boot = {
-    consoleLogLevel = lib.mkDefault 3;
+    consoleLogLevel = lib.modules.mkDefault 3;
     kernelParams = [ "quiet" ];
-    plymouth.enable = lib.mkDefault false;
-    initrd.systemd.settings.Manager.ShowStatus = lib.mkDefault false;
+    plymouth.enable = lib.modules.mkDefault false;
+    initrd.systemd.settings.Manager.ShowStatus = lib.modules.mkDefault false;
   };
 
-  systemd.settings.Manager.ShowStatus = lib.mkDefault false;
+  systemd.settings.Manager.ShowStatus = lib.modules.mkDefault false;
 }

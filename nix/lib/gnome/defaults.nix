@@ -1,7 +1,18 @@
 { lib }:
 let
   inherit (lib.gvariant) mkEmptyArray type;
-  workspaceNumbers = map toString (lib.lists.range 1 9);
+  workspaceNumbers = lib.lists.map toString (lib.lists.range 1 9);
+
+  /**
+    Generate GNOME workspace shortcuts for a binding prefix and modifier string
+
+    # Type
+    `workspaceBindings :: String -> String -> AttrSet [String]`
+
+    # Examples
+    `(workspaceBindings "move-to-workspace" "<Shift>").move-to-workspace-1`
+    returns `[ "<Super><Shift>1" ]`
+  */
   workspaceBindings =
     prefix: modifiers:
     lib.attrsets.genAttrs' workspaceNumbers (
