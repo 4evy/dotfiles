@@ -130,6 +130,10 @@
     "sky": "share/farstep/sky",
     "receipt": "complete.json"
   },
+  "replayKit": {
+    "domain": "Library/Group Containers/group.com.apple.replayd/ScreenCaptureApprovals",
+    "suppressUntil": "2099-12-31 00:00:00 +0000"
+  },
   "sky": {
     "resources": ["/Applications/ChatGPT.app/Contents/Resources"],
     "apps": [

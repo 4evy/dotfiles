@@ -2,6 +2,7 @@
 import { output } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
+import policy from "@dotfiles/repo/data/macos/permissions";
 import { object, or } from "@optique/core/constructs";
 import { message } from "@optique/core/message";
 import { flag, option } from "@optique/core/primitives";
@@ -10,6 +11,7 @@ import { Effect } from "effect";
 import { parseDarwinOptions } from "../cli.ts";
 import { clients } from "./clients.ts";
 import { notificationPermissions } from "./notifications/notifications.ts";
+import { reconcileCaptureReminders } from "./replaykit.ts";
 import { applyTcc, inspectTcc, userDatabase } from "./tcc.ts";
 
 const rootUid = 0;
@@ -65,18 +67,20 @@ const reconcile = Effect.fn(function* (
   }
   const changes = yield* inspectTcc(installed, targets, userPath, mode);
   console.log(`${installed.length} clients, ${targets.length} AppleEvents targets`);
-  if (mode !== "apply" || changes.count === 0) {
-    const notificationCount = yield* notifications;
-    if (mode === "check" && changes.persistentCount + notificationCount > 0)
-      return yield* Effect.fail(
-        new DotfilesError(
-          `${changes.persistentCount} persistent TCC grants and ${notificationCount} notification grants differ. Run just permissions`,
-        ),
-      );
-    return;
-  }
-  yield* applyTcc(changes, uid);
-  yield* notifications;
+  if (mode === "apply" && changes.count > 0) yield* applyTcc(changes, uid);
+  const approvalCount = policy.services.system.includes("ScreenCapture")
+    ? yield* reconcileCaptureReminders(installed, home, uid, user, mode)
+    : 0;
+  const notificationCount = yield* notifications;
+  if (
+    mode === "check" &&
+    changes.persistentCount + approvalCount + notificationCount > 0
+  )
+    return yield* Effect.fail(
+      new DotfilesError(
+        `${changes.persistentCount} persistent TCC grants, ${approvalCount} screen capture reminders, and ${notificationCount} notification grants differ. Run just permissions`,
+      ),
+    );
 });
 
 const parser = object({

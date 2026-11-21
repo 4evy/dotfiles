@@ -10,7 +10,7 @@ const plistBuddy = "/usr/libexec/PlistBuddy";
 const bundleInfoPlist = "Contents/Info.plist";
 
 export type Client = {
-  path: string;
+  grantPaths: string[];
   identifier: string;
   type: number;
   requirement: Buffer | null;
@@ -50,6 +50,7 @@ const identity = Effect.fn(function* (
       )
     : undefined;
   const bundleIdentifier = info?.code === 0 ? info.stdout.trim() : undefined;
+  const grantPaths = grantPermissions ? [path] : [];
   const requirement = yield* run([codesign, "-d", "-r-", path], {
     capture: true,
     check: false,
@@ -73,7 +74,7 @@ const identity = Effect.fn(function* (
       : path;
     console.warn(`Trusting unsigned executable by path: ${executable}`);
     return {
-      path: executable,
+      grantPaths,
       identifier: executable,
       type: tccClientTypes.absolutePath,
       requirement: null,
@@ -95,7 +96,7 @@ const identity = Effect.fn(function* (
   if (!identifier)
     return yield* Effect.fail(new DotfilesError(`No executable identity: ${path}`));
   return {
-    path,
+    grantPaths,
     identifier,
     type: bundleIdentifier
       ? tccClientTypes.bundleIdentifier
@@ -192,21 +193,35 @@ const farstepResources = Effect.fn(function* (
 ) {
   const fs = yield* FileSystem.FileSystem;
   const packages = new Set(policy.farstep.packages.map(expand));
+  const capturePackages = new Set<string>();
+  // Activation runs before launchd installs the new plist
+  if (process.env.DOTFILES_FARSTEP_PACKAGE)
+    capturePackages.add(process.env.DOTFILES_FARSTEP_PACKAGE);
+  const suffix = `/${policy.farstep.app}/Contents/MacOS/Farstep`;
   for (const path of policy.farstep.launchAgents) {
     const plist = expand(path);
     if (!(yield* fs.exists(plist))) continue;
-    const executable = (yield* output([
-      plistBuddy,
-      "-c",
-      "Print :ProgramArguments:0",
+    const text = yield* output([
+      "/usr/bin/plutil",
+      "-extract",
+      "ProgramArguments",
+      "json",
+      "-o",
+      "-",
       plist,
-    ])).trim();
-    const marker = executable.indexOf(`/${policy.farstep.app}/`);
-    if (marker > 0) packages.add(executable.slice(0, marker));
+    ]);
+    const args = yield* Schema.decodeUnknownEffect(Schema.Array(Schema.String))(
+      yield* attempt(() => JSON.parse(text)),
+    );
+    const executable = args.find((arg) => isAbsolute(arg) && arg.endsWith(suffix));
+    if (!executable) continue;
+    const root = executable.slice(0, -suffix.length);
+    // Wrapped launch arguments discover the capture app, not additional Sky clients
+    (executable === args[0] ? packages : capturePackages).add(root);
   }
   const resources = new Set(policy.sky.resources.map(expand));
   for (const root of packages) {
-    apps.set(join(root, policy.farstep.app), true);
+    capturePackages.add(root);
     const sky = join(root, policy.farstep.sky);
     const receipt = join(sky, policy.farstep.receipt);
     if (!(yield* fs.exists(receipt))) continue;
@@ -218,11 +233,13 @@ const farstepResources = Effect.fn(function* (
     )(yield* attempt(() => JSON.parse(text)));
     resources.add(join(sky, metadata.artifact.resources));
   }
+  for (const root of capturePackages) apps.set(join(root, policy.farstep.app), true);
   return resources;
 });
 
 const mergeIdentity = Effect.fn(function* (existing: Client, client: Client) {
   existing.grantPermissions ||= client.grantPermissions;
+  existing.grantPaths.push(...client.grantPaths);
   if (
     client.expression &&
     existing.expression &&
