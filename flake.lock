@@ -674,11 +674,11 @@
     "source-mitos": {
       "flake": false,
       "locked": {
-        "lastModified": 1795266806,
-        "narHash": "sha256-NGfT1Y3bL6BXvME2mmcDoZZ+qwifWx0VaYf9HqPzDXY=",
+        "lastModified": 1795271595,
+        "narHash": "sha256-IC0QIhn9RaWlaxCBF2i2JdBceJKt8sbUYEH1Me6mumc=",
         "owner": "mitos-editor",
         "repo": "mitos",
-        "rev": "cc07976da4e3ddea0f3c465e1d2ed42b646d9bee",
+        "rev": "f66abf4323a959aef21a0678558da52ca3139bf4",
         "type": "github"
       },
       "original": {
