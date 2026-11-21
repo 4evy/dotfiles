@@ -6,10 +6,10 @@
   },
   "app": {
     "version": "0.1.0",
-    "build": "2077"
+    "build": "2080"
   },
   "hashes": {
-    "aarch64-darwin": "sha256-DYjZFwGh9rp8rFxoA5pZi+dD9mBJQMlrx1K4iwBcgGQ=",
+    "aarch64-darwin": "sha256-QHcjZYLky0LBXlJkBdXD5Z02qJNENgTjKKMvmgpITgE=",
     "aarch64-linux": "sha256-EScMxkMFkUqH4NGp1dnPRf2qhT5Lnlf+z2S1H7SiqdA=",
     "x86_64-linux": "sha256-dgAmnQTPGHQyZ4n4NnD893x3QhCqlnSQf+vHrg+msRE="
   }
