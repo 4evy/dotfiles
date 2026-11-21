@@ -41,12 +41,12 @@
 let
   unwrapped = stdenv.mkDerivation (finalAttrs: {
     pname = "chatgpt";
-    version = "26.1117.31558";
+    version = "26.1117.41037";
 
     src = fetchurl {
       url = "https://persistent.oaistatic.com/codex-app-prod/linux/rpm/x86_64/chatgpt-${finalAttrs.version}-1.x86_64.rpm";
       name = "chatgpt.x86_64.rpm";
-      hash = "sha256-mz8DW+HGZHFHdXLYkzSeaiDmGuGWQWJChej0I1GWuCw=";
+      hash = "sha256-9QOliJMdqwacAsyC3s1S5g/IgZqn2Zh9xPwtSf/Xf4g=";
     };
 
     nativeBuildInputs = lib.attrsets.attrValues {
