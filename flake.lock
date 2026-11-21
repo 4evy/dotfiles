@@ -19,11 +19,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795213048,
-        "narHash": "sha256-TZ+xkIrMbv0R50Pd2Oiw0uYIkxXM4C8OuUcWhAv9jSE=",
+        "lastModified": 1795266915,
+        "narHash": "sha256-1VG/TC9YWKu2dS9adSBpSNiy+NU3lvcHhodqIdb4XPE=",
         "owner": "4evy",
         "repo": "ai",
-        "rev": "246840d14dfb80fa69d47978e48fa2c03b16f85c",
+        "rev": "ee96fc259ecfd5831c05073a2c2493c299664b47",
         "type": "github"
       },
       "original": {
@@ -338,11 +338,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795215121,
-        "narHash": "sha256-YxcbpHvrOYWNE65gfQjNGX9RtDyjP/AfM5av8MsuWIQ=",
+        "lastModified": 1795261233,
+        "narHash": "sha256-x25TGJv1DcbduxECj3EVJ3UhyWQbqvZo2gtG6AHepdk=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "0ddb1c558973efc6a5b4be8960bdcffca7269dbb",
+        "rev": "2f56e7b17beedc6a02cca61322614755efa7aaac",
         "type": "github"
       },
       "original": {
@@ -415,11 +415,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1795219810,
-        "narHash": "sha256-LYiGJcien/uqrBjXUAPdz0lvJiP/EZyZJQavj+sx6sg=",
-        "rev": "56f282a6f4f274d1588f90f2c75288589689f922",
+        "lastModified": 1795251022,
+        "narHash": "sha256-HktP1U+GGf5qAo89M6Ev4yyHMV7oh23H45prjON9vpw=",
+        "rev": "d114a7aa9a8976cb42b67409932c5733689a80aa",
         "type": "tarball",
-        "url": "https://releases.nixos.org/nixos/unstable-small/nixos-26.11pre1125799.56f282a6f4f2/nixexprs.tar.zst"
+        "url": "https://releases.nixos.org/nixos/unstable-small/nixos-26.11pre1125914.d114a7aa9a89/nixexprs.tar.zst"
       },
       "original": {
         "type": "tarball",
@@ -674,11 +674,11 @@
     "source-mitos": {
       "flake": false,
       "locked": {
-        "lastModified": 1795199124,
-        "narHash": "sha256-SVMtNWQH7FS7PsRbROAj0hW8v5ashqCbSF7DGhlf2H8=",
+        "lastModified": 1795266806,
+        "narHash": "sha256-NGfT1Y3bL6BXvME2mmcDoZZ+qwifWx0VaYf9HqPzDXY=",
         "owner": "mitos-editor",
         "repo": "mitos",
-        "rev": "2948eff10a1d626146a2486557407b027ecfd952",
+        "rev": "cc07976da4e3ddea0f3c465e1d2ed42b646d9bee",
         "type": "github"
       },
       "original": {
