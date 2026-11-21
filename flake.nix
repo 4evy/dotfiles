@@ -85,7 +85,7 @@
         flake-parts.follows = "flake-parts";
         git-hooks-nix.follows = "git-hooks-nix";
       };
-      url = "https://flakehub.com/f/DeterminateSystems/determinate/=3.24.2";
+      url = "https://flakehub.com/f/DeterminateSystems/determinate/=3.24.3";
     };
 
     darwin = {
