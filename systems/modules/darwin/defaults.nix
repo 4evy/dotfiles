@@ -58,6 +58,18 @@ in
       FK_StandardViewSettings.IconViewSettings = iconViewSettings;
       DesktopViewSettings.IconViewSettings = iconViewSettings;
     };
+    CustomUserPreferences."com.superlogical.rex" = {
+      RexAppUpdateChannel = "snapshot";
+      "Workspace.appIcon" = "spook";
+      "Workspace.appIconVisibility" = "dockOnly";
+      # Rex stores Glass under its legacy blendTheme value
+      "Workspace.interfaceStyle" = "blendTheme";
+      "Workspace.paneDensity" = "compact";
+      "Workspace.tabBarEdge" = "bottom";
+      "Workspace.tabStyle" = "horizontal";
+      "Workspace.usesPaneGlass" = true;
+      "rex.agents.names-sessions" = true;
+    };
     dock = {
       autohide = true;
       magnification = false;

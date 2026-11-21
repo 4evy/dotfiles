@@ -175,7 +175,7 @@ let
         # Upstream merges only its own hooks and leaves managed stubs unchanged
         export HOME="''${HJEM_HOME_DIR:-$HOME}"
         rex skill setup --agent claude --agent codex --agent opencode --agent pi \
-          --session-naming=false
+          --session-naming=${lib.trivial.boolToString (os == "darwin")}
       '';
     };
     "antigravity_settings.sh" = {

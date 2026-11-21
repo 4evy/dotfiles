@@ -424,7 +424,14 @@ const prepareManifest = Effect.fn("prepareManifest")(function* (
     // Render upstream's Claude hook before Hjem fingerprints its managed settings
     // The activation hook can then update skills without changing managed bytes
     yield* runCommand(
-      [rex.source, "skill", "setup", "--agent", "claude", "--session-naming=false"],
+      [
+        rex.source,
+        "skill",
+        "setup",
+        "--agent",
+        "claude",
+        `--session-naming=${process.platform === "darwin"}`,
+      ],
       {
         env: { ...environment, HOME: join(output, "ai") },
         capture: true,

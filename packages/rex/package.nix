@@ -110,7 +110,7 @@ stdenvNoCC.mkDerivation {
 
       # Generate the upstream stub, not a copy of the version-specific guide
       HOME="$TMPDIR/rex-agent-home" "$out/bin/rex" skill setup \
-        --agent codex --session-naming=false
+        --agent codex --session-naming=${lib.trivial.boolToString isDarwin}
       install -Dm644 "$TMPDIR/rex-agent-home/.agents/skills/rex/SKILL.md" \
         "$out/share/rex/skills/rex/SKILL.md"
     ''}
