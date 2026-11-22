@@ -83,9 +83,6 @@ systems/spectrum/files/system/etc/ssh/authorized_keys/* linguist-language=Text l
 # describe local extension runtimes and should count with the package sources.
 tools/*/src/**/*.d.ts -linguist-vendored
 
-# Keep the upstream Fallow launcher and schema out of local source statistics
-tools/tiling/vendor/** linguist-vendored
-
 # These files are checked in generated/runtime artifacts built from package
 # sources, host discovery, encryption tools, dependency resolvers, or schemas.
 # Keep dependency locks out of Linguist statistics at every directory depth.

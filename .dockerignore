@@ -32,7 +32,6 @@
 !tools/tiling/package.json
 !tools/tiling/bindings.json
 !tools/tiling/scripts/**
-!tools/tiling/vendor/**
 !tools/tiling/tsconfig.json
 !tools/tiling/src/**
 !tools/tiling/gnome/**

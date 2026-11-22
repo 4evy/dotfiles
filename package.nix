@@ -21,7 +21,6 @@ stdenvNoCC.mkDerivation {
         ./home/package.json
         ./tools/workstation/package.json
         ./tools/tiling/package.json
-        ./tools/tiling/vendor/fallow
         ./lib/typescript
         ./home/files/.local/lib/package.json
         ./home/files/.local/lib/typescript/process.ts

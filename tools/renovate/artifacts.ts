@@ -1,10 +1,10 @@
 import { join } from "node:path";
 import { output, run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
-import { writeIfChanged } from "@dotfiles/core/files";
+import { writeIfChanged, writeJson } from "@dotfiles/core/files";
 import { runMain } from "@dotfiles/core/runtime";
-import bunProjects from "@dotfiles/repo/data/bun/projects";
 import { Effect, FileSystem, Schema } from "effect";
+import workspace from "../../package.json" with { type: "json" };
 import {
   updateBrowser,
   updateBunBootstrap,
@@ -13,10 +13,11 @@ import {
   updateReleaseAssets,
 } from "./checksums.ts";
 import { updateNixPackage } from "./nix.ts";
+import { readManifest } from "./npm.ts";
 import { updateOmpDependencies } from "./omp.ts";
 import { updateRenovatePatch } from "./patch.ts";
 import { root } from "./paths.ts";
-import { updateFallow, updatePalette } from "./vendor.ts";
+import { updatePalette } from "./vendor.ts";
 
 const chatgptDirectory = "home/files/.local/share/nix/chatgpt";
 const chatgptPackagePath = `${chatgptDirectory}/package.nix`;
@@ -34,7 +35,6 @@ const updatePins = Effect.fn(function* (changed: Set<string>) {
     { input: ".github/renovate/package.json", update: updateRenovatePatch },
     { input: "tools/setup/setup.sh", update: updateBunBootstrap },
     { input: "tools/setup/setup.ts", update: updateHomebrewBootstrap },
-    { input: "tools/tiling/vendor/fallow/package.json", update: updateFallow },
     {
       input: "packages/rex/sources.json",
       update: () => updateNixPackage("rex"),
@@ -84,15 +84,37 @@ const updatePins = Effect.fn(function* (changed: Set<string>) {
   }
 });
 
-const updateBiomeSchema = Effect.fn(function* () {
+const rootManifests = [
+  "package.json",
+  ...workspace.workspaces.packages.map((directory) => `${directory}/package.json`),
+];
+const dependencyPins = Schema.decodeUnknownEffect(
+  Schema.Record(Schema.String, Schema.String),
+);
+
+const updateRootPins = Effect.fn(function* () {
+  const rootPath = join(root, "package.json");
+  const manifest = yield* readManifest(rootPath);
+  const pins = yield* dependencyPins(manifest.devDependencies);
+  const { fallow } = pins;
+  if (!fallow) return yield* Effect.fail(new DotfilesError("Missing Fallow version"));
+
+  if (pins["fallow-type-aware"] !== fallow)
+    yield* writeJson(rootPath, {
+      ...manifest,
+      devDependencies: { ...pins, "fallow-type-aware": fallow },
+    });
+
+  const tilingPath = join(root, "tools/tiling/package.json");
+  const tiling = yield* readManifest(tilingPath);
+  const tilingPins = yield* dependencyPins(tiling.devDependencies);
+  if (tilingPins.fallow !== fallow)
+    yield* writeJson(tilingPath, {
+      ...tiling,
+      devDependencies: { ...tilingPins, fallow },
+    });
+
   const fs = yield* FileSystem.FileSystem;
-  const manifest = yield* Schema.decodeUnknownEffect(
-    Schema.fromJsonString(
-      Schema.Struct({
-        devDependencies: Schema.Record(Schema.String, Schema.String),
-      }),
-    ),
-  )(yield* fs.readFileString(join(root, "package.json")));
   const path = join(root, "biome.jsonc");
   const content = yield* fs.readFileString(path);
   const schema = /https:\/\/biomejs\.dev\/schemas\/[^/]+\/schema\.json/g;
@@ -100,7 +122,7 @@ const updateBiomeSchema = Effect.fn(function* () {
     return yield* Effect.fail(
       new DotfilesError("Expected one Biome schema version binding"),
     );
-  const version = manifest.devDependencies["@biomejs/biome"];
+  const version = pins["@biomejs/biome"];
   if (!version) return yield* Effect.fail(new DotfilesError("Missing Biome version"));
   yield* writeIfChanged(
     path,
@@ -196,48 +218,21 @@ const updateBunLocks = Effect.fn(function* (changed: Set<string>) {
         }),
     );
   }
-  // Workspace manifests refresh their owning lockfile, not a nested lockfile
-  for (const { directory, inputs, nix } of [
-    ...bunProjects.map(({ directory, manifests, nix }) => ({
-      directory,
-      inputs: [...manifests, join(directory, "bun.lock")],
-      nix,
-    })),
-    {
-      directory: ".github/renovate",
-      inputs: [".github/renovate/package.json", ".github/renovate/bun.lock"],
-      nix: false,
-    },
-  ]) {
-    if (!inputs.some((input) => changed.has(input))) continue;
+  // Workspace manifests refresh the root lockfile, not a nested lockfile
+  if (["bun.lock", ...rootManifests].some((path) => changed.has(path))) {
     yield* run(["bun", "install", "--ignore-scripts", "--lockfile-only"], {
-      cwd: join(root, directory),
-      capture: true,
-    });
-    if (!nix) continue;
-    const outputPath = `${directory}/bun.nix`;
-    yield* run(
-      [
-        "nix",
-        "run",
-        ".#bun2nix",
-        "--",
-        "--lock-file",
-        `${directory}/bun.lock`,
-        // Local dependencies resolve beside the generated bun.nix
-        "--copy-prefix",
-        "./",
-        "--output-file",
-        outputPath,
-      ],
-      { cwd: root, capture: true },
-    );
-    yield* run(["deadnix", "--edit", outputPath], {
       cwd: root,
       capture: true,
     });
-    yield* run(["nixfmt", outputPath], { cwd: root, capture: true });
+    yield* run(["bash", "tools/bun/generate-nix.sh"], { cwd: root, capture: true });
   }
+
+  const renovate = ".github/renovate";
+  if (["package.json", "bun.lock"].some((name) => changed.has(join(renovate, name))))
+    yield* run(["bun", "install", "--ignore-scripts", "--lockfile-only"], {
+      cwd: join(root, renovate),
+      capture: true,
+    });
 });
 
 // Every dependency update refreshes generated hashes and lockfiles before commit
@@ -246,7 +241,7 @@ runMain(
   Effect.gen(function* () {
     let changed = yield* changedPaths();
     yield* updatePins(changed);
-    if (changed.has("package.json")) yield* updateBiomeSchema();
+    if (changed.has("package.json")) yield* updateRootPins();
     yield* updateReleaseAssets({
       rustdesk: changed.has(spectrumSoftwareRecipe),
       karabiner: changed.has("flake.nix"),

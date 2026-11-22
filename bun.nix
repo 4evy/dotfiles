@@ -79,7 +79,6 @@
   "@dotfiles/home" = copyPathToStore ./home;
   "@dotfiles/runtime" = copyPathToStore ./home/files/.local/lib;
   "@dotfiles/tiling" = copyPathToStore ./tools/tiling;
-  "@dotfiles/tiling/fallow" = copyPathToStore ./tools/tiling/vendor/fallow;
   "@dotfiles/workstation" = copyPathToStore ./tools/workstation;
   "@effect/platform-bun@4.1.5" = fetchurl {
     url = "https://registry.npmjs.org/@effect/platform-bun/-/platform-bun-4.1.5.tgz";
@@ -641,10 +640,13 @@
     url = "https://registry.npmjs.org/escalade/-/escalade-3.2.0.tgz";
     hash = "sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA==";
   };
-  "fallow" = copyPathToStore ./tools/tiling/vendor/fallow;
   "fallow-type-aware@3.46.0" = fetchurl {
     url = "https://registry.npmjs.org/fallow-type-aware/-/fallow-type-aware-3.46.0.tgz";
     hash = "sha512-Yr8A/CNESRDYIl4+s79RFmqKtL3Y4k2jnXbFRebu/KYsA0E6Y1tORwJXL442bAnEyB7WpGOUWdwg7Un31hpbWw==";
+  };
+  "fallow@3.46.0" = fetchurl {
+    url = "https://registry.npmjs.org/fallow/-/fallow-3.46.0.tgz";
+    hash = "sha512-PXCxpJ45u6kcItpK+IDPCNvEdLRGZreFHBmNXcdNA3aaRfJrWq2qLjZLzWJLnSK16xdrrrMFIlsu6BSnxWB8gw==";
   };
   "fast-xml-builder@1.3.2" = fetchurl {
     url = "https://registry.npmjs.org/fast-xml-builder/-/fast-xml-builder-1.3.2.tgz";

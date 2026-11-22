@@ -32,11 +32,6 @@ modules:
     src: tools/tiling/package.json
     dest: /src/tools/tiling/package.json
 
-  # Fallow is a local file dependency with no install lifecycle scripts
-  - type: copy@v1
-    src: tools/tiling/vendor
-    dest: /src/tools/tiling/vendor
-
   - type: containerfile
     snippets:
       - |-

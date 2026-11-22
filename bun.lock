@@ -26,7 +26,7 @@
         "@types/bun": "catalog:",
         "@types/culori": "4.0.1",
         "culori": "4.0.2",
-        "fallow": "file:tools/tiling/vendor/fallow",
+        "fallow": "3.46.0",
         "fallow-type-aware": "3.46.0",
         "typescript": "catalog:",
       },
@@ -71,7 +71,7 @@
         "@girs/gjs": "5.6.0",
         "@girs/gnome-shell": "51.0.1",
         "@types/bun": "1.4.5",
-        "fallow": "file:vendor/fallow",
+        "fallow": "3.46.0",
         "typescript": "7.0.2",
       },
     },
@@ -424,7 +424,7 @@
 
     "escalade": ["escalade@3.2.0", "", {}, "sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA=="],
 
-    "fallow": ["fallow@file:tools/tiling/vendor/fallow", { "dependencies": { "detect-libc": "2.1.2" }, "optionalDependencies": { "@fallow-cli/darwin-arm64": "3.46.0", "@fallow-cli/darwin-x64": "3.46.0", "@fallow-cli/linux-arm64-gnu": "3.46.0", "@fallow-cli/linux-arm64-musl": "3.46.0", "@fallow-cli/linux-x64-gnu": "3.46.0", "@fallow-cli/linux-x64-musl": "3.46.0", "@fallow-cli/win32-arm64-msvc": "3.46.0", "@fallow-cli/win32-x64-msvc": "3.46.0" }, "bin": { "fallow": "bin/fallow", "fallow-lsp": "bin/fallow-lsp", "fallow-mcp": "bin/fallow-mcp" } }],
+    "fallow": ["fallow@3.46.0", "", { "dependencies": { "detect-libc": "2.1.2" }, "optionalDependencies": { "@fallow-cli/darwin-arm64": "3.46.0", "@fallow-cli/darwin-x64": "3.46.0", "@fallow-cli/linux-arm64-gnu": "3.46.0", "@fallow-cli/linux-arm64-musl": "3.46.0", "@fallow-cli/linux-x64-gnu": "3.46.0", "@fallow-cli/linux-x64-musl": "3.46.0", "@fallow-cli/win32-arm64-msvc": "3.46.0", "@fallow-cli/win32-x64-msvc": "3.46.0" }, "bin": { "fallow": "bin/fallow", "fallow-lsp": "bin/fallow-lsp", "fallow-mcp": "bin/fallow-mcp" } }, "sha512-PXCxpJ45u6kcItpK+IDPCNvEdLRGZreFHBmNXcdNA3aaRfJrWq2qLjZLzWJLnSK16xdrrrMFIlsu6BSnxWB8gw=="],
 
     "fallow-type-aware": ["fallow-type-aware@3.46.0", "", { "dependencies": { "typescript": "7.0.2" }, "peerDependencies": { "tsrs": "*" }, "optionalPeers": ["tsrs"], "bin": { "fallow-type-aware": "fallow-type-aware.mjs" } }, "sha512-Yr8A/CNESRDYIl4+s79RFmqKtL3Y4k2jnXbFRebu/KYsA0E6Y1tORwJXL442bAnEyB7WpGOUWdwg7Un31hpbWw=="],
 
@@ -499,8 +499,6 @@
     "yargs-parser": ["yargs-parser@22.0.0", "", {}, "sha512-rwu/ClNdSMpkSrUb+d6BRsSkLUq1fmfsY6TOpYzTwvwkg1/NRG85KBy3kq++A8LKQwX6lsu+aWad+2khvuXrqw=="],
 
     "zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
-
-    "@dotfiles/tiling/fallow": ["fallow@file:tools/tiling/vendor/fallow", { "dependencies": { "detect-libc": "2.1.2" }, "optionalDependencies": { "@fallow-cli/darwin-arm64": "3.46.0", "@fallow-cli/darwin-x64": "3.46.0", "@fallow-cli/linux-arm64-gnu": "3.46.0", "@fallow-cli/linux-arm64-musl": "3.46.0", "@fallow-cli/linux-x64-gnu": "3.46.0", "@fallow-cli/linux-x64-musl": "3.46.0", "@fallow-cli/win32-arm64-msvc": "3.46.0", "@fallow-cli/win32-x64-msvc": "3.46.0" }, "bin": { "fallow": "bin/fallow", "fallow-lsp": "bin/fallow-lsp", "fallow-mcp": "bin/fallow-mcp" } }],
 
     "cliui/string-width": ["string-width@7.2.0", "", { "dependencies": { "emoji-regex": "^10.3.0", "get-east-asian-width": "^1.0.0", "strip-ansi": "^7.1.0" } }, "sha512-tsaTIkKW9b4N+AEj+SVA+WhJzV7/zMhcSu78mLKWSk7cXMOSHsBKFWUs0fWwq8QyK3MgJBQRX6Gbi4kYbdvGkQ=="],
 

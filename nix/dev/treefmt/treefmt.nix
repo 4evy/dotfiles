@@ -78,8 +78,6 @@
             "LICENSE"
             # Records are formatted after decryption by the treefmt wrapper
             "secrets/**"
-            # Match the existing Biome and EditorConfig vendor exclusions
-            "tools/tiling/vendor/**"
           ];
 
           formatter = {

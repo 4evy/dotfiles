@@ -1,5 +1,6 @@
 {
   lib,
+  bash,
   bun,
   bun2nix,
   deadnix,
@@ -103,15 +104,13 @@ in
     meta.mainProgram = "update-dotfiles-workspace";
     runtimeInputs = [
       bun
-      bun2nix
       deadnix
-      nixfmt
     ];
     text = ''
       bun install --ignore-scripts --lockfile-only
-      bun2nix --lock-file bun.lock --copy-prefix ./ --output-file bun.nix
-      deadnix --edit bun.nix
-      nixfmt bun.nix
+      BUN_NIX_BUN2NIX=${lib.meta.getExe bun2nix} \
+        BUN_NIX_NIXFMT=${lib.meta.getExe nixfmt} \
+        ${lib.meta.getExe bash} ${../../tools/bun/generate-nix.sh}
     '';
   });
 

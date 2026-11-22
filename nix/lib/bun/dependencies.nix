@@ -12,7 +12,6 @@ let
       ../../../home/files/.local/lib/package.json
       ../../../tools/tiling/package.json
       ../../../tools/workstation/package.json
-      ../../../tools/tiling/vendor/fallow
     ];
   };
 in

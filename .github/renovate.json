@@ -127,14 +127,6 @@
     },
     {
       "customType": "regex",
-      "description": "Track the vendored Fallow launcher as well as its native dependencies",
-      "managerFilePatterns": ["/^tools/tiling/vendor/fallow/package\\.json$/"],
-      "matchStrings": ["\"version\":\\s*\"(?<currentValue>[^\"]+)\""],
-      "depNameTemplate": "fallow",
-      "datasourceTemplate": "npm"
-    },
-    {
-      "customType": "regex",
       "description": "Track the pinned Spectrum Bluefin base image",
       "managerFilePatterns": ["/^systems\\/spectrum\\/recipes\\/spectrum\\.yml$/"],
       "matchStrings": [
@@ -298,13 +290,15 @@
   ],
   "packageRules": [
     {
-      "description": "The vendored launcher owns its matching native binary release",
-      "matchFileNames": ["tools/tiling/vendor/fallow/package.json"],
-      "matchPackageNames": ["@fallow-cli/**"],
+      "description": "Update the tiling launcher from the root Fallow pin",
+      "matchManagers": ["npm", "bun"],
+      "matchFileNames": ["tools/tiling/package.json"],
+      "matchPackageNames": ["fallow"],
       "enabled": false
     },
     {
-      "description": "The vendored Fallow updater owns the matching semantic companion",
+      "description": "Update the semantic companion from the root Fallow pin",
+      "matchManagers": ["npm", "bun"],
       "matchFileNames": ["package.json"],
       "matchPackageNames": ["fallow-type-aware"],
       "enabled": false
@@ -376,7 +370,6 @@
       "home/files/.local/share/nix/chatgpt/*",
       "tools/setup/setup.sh",
       "tools/setup/setup.ts",
-      "tools/tiling/vendor/fallow/**",
       "home/theme/palette/palette.json",
       "systems/spectrum/recipes/spectrum/modules/software.yml",
       "biome.jsonc",

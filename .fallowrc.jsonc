@@ -28,7 +28,6 @@
     "!home/files/.omp/**",
     ".jj/**",
     ".venv/**",
-    ".cache/**",
-    "tools/tiling/vendor/**"
+    ".cache/**"
   ]
 }

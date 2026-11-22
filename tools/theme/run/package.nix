@@ -23,7 +23,6 @@ stdenvNoCC.mkDerivation {
       ../../tiling/package.json
       ../../../home/files/.local/lib/typescript/process.ts
       ../../../home/files/.local/lib/typescript/runtime.ts
-      ../../tiling/vendor/fallow
       ./main.ts
       ./config.ts
       ./launch.ts

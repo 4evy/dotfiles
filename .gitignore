@@ -21,8 +21,6 @@ Thumbs.db
 .pre-commit-config.yaml
 .fallow/
 fallow/
-!/tools/tiling/vendor/fallow/
-!/tools/tiling/vendor/fallow/**
 
 # Local secrets
 .env

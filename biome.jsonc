@@ -10,7 +10,6 @@
     "includes": [
       "**",
       "!!systems/spectrum/files/system/usr/lib/systemd",
-      "!!tools/tiling/vendor",
       "!!**/*.md",
       "!!**/*.yaml",
       "!!**/*.yml",

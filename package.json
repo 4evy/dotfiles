@@ -44,7 +44,7 @@
     "@types/bun": "catalog:",
     "@types/culori": "4.0.1",
     "culori": "4.0.2",
-    "fallow": "file:tools/tiling/vendor/fallow",
+    "fallow": "3.46.0",
     "fallow-type-aware": "3.46.0",
     "typescript": "catalog:"
   },

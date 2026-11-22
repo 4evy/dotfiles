@@ -32,7 +32,6 @@ let
       (packageRoot + /scripts)
       (packageRoot + /src)
       (packageRoot + /tsconfig.json)
-      (packageRoot + /vendor)
     ];
   };
 
