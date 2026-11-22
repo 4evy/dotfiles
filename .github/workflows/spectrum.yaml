@@ -19,8 +19,6 @@ on:
       - systems/spectrum/recipes/**
       - home/package.json
       - home/files/.local/lib/**
-      - home/generators.json
-      - home/deploy/schema.ts
       - home/theme/palette/palette.json
       - recipes
       - flake.lock

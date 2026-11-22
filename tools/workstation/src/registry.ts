@@ -15,7 +15,6 @@ import { kmsconTheme } from "./kmscon/theme.ts";
 import { terminalProfile } from "./macos/terminal.ts";
 import { phoneEnvironment, phoneUsage } from "./phone/config.ts";
 import { phoneMirror } from "./phone/phone.ts";
-import { shellCompletions } from "./shell/completions.ts";
 
 type Action = (
   args: string[],
@@ -49,11 +48,6 @@ export const commands = {
     run: kmsconRefresh,
     usage: "CONFIG [--state PATH]",
     environment: [],
-  },
-  "extra-shell-completions": {
-    run: noArguments(shellCompletions),
-    usage: "",
-    environment: ["HJEM_HOME_DIR", "XDG_CACHE_HOME", "XDG_DATA_HOME"],
   },
   "sync-equicord-settings": {
     run: noArguments(syncEquicordSettings),

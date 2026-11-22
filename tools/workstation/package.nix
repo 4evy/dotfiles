@@ -50,8 +50,6 @@ stdenvNoCC.mkDerivation {
       ../../lib/typescript
       ../../home/package.json
       ../../home/theme/palette/palette.json
-      ../../home/generators.json
-      ../../home/deploy/schema.ts
       ../../home/files/.local/lib/package.json
       ../../home/files/.local/lib/typescript/process.ts
       ../../home/files/.local/lib/typescript/runtime.ts

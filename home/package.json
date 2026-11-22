@@ -5,7 +5,6 @@
   "files": [
     "deploy",
     "theme/palette/palette.json",
-    "generators.json",
     "data"
   ],
   "exports": {
@@ -13,7 +12,6 @@
     "./schema": "./deploy/schema.ts",
     "./nix": "./deploy/nix.ts",
     "./palette": "./theme/palette/palette.json",
-    "./generators": "./generators.json",
     "./data/*": "./data/*.json"
   },
   "scripts": {

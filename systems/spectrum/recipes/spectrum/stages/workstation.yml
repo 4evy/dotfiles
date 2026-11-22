@@ -33,15 +33,6 @@ modules:
     dest: /src/home/theme/palette/palette.json
 
   - type: copy@v1
-    src: home/generators.json
-    dest: /src/home/generators.json
-
-  - type: copy@v1
-    src: home/deploy/schema.ts
-    dest: /src/home/deploy/schema.ts
-
-  # Keep the runtime source closure aligned with install.ts's source fingerprint
-  - type: copy@v1
     src: home/files/.local/lib/typescript/process.ts
     dest: /src/home/files/.local/lib/typescript/process.ts
 

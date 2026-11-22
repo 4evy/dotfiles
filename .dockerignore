@@ -16,8 +16,6 @@
 !.bluebuild-scripts_*/**
 
 !home/package.json
-!home/generators.json
-!home/deploy/schema.ts
 !home/files/.local/lib/package.json
 !home/files/.local/lib/typescript/process.ts
 !home/files/.local/lib/typescript/runtime.ts
