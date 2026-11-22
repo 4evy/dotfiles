@@ -4,11 +4,11 @@
     "rev": "e7a1b73593ca60ce5e6349d15afcd5e21b081064"
   },
   "darwin": {
-    "version": "0-unstable-2026-11-20",
-    "rev": "e7a1b73593ca60ce5e6349d15afcd5e21b081064"
+    "version": "0-unstable-2026-11-21",
+    "rev": "dc0520a9a661f8fd36e44331727ee3ce4afdde63"
   },
   "hashes": {
-    "aarch64-darwin": "sha256-oF5wo0c+sydZAcicD6vpyfEiIBLZNS749HaFwoQNhfA=",
+    "aarch64-darwin": "sha256-LsD4emuBXQJuSSHOPtGSHoD+5ZL24CPJ5jbgU8xzQTQ=",
     "aarch64-linux": "sha256-fk9x2aYnMf3D8oNajOlDVHt8p07OEcYEErDr8GKwLWc=",
     "x86_64-linux": "sha256-h05Otiy+0voitNtTcJlaeTREBhi1FHm/6Xtl9YsYxRk="
   }
