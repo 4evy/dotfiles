@@ -45,15 +45,21 @@ export default class HyperWindowTilingExtension extends Extension {
           const window = yield* focusedWindow;
           if (!window || !(yield* canMoveResizeWindow(window))) return;
 
-          const now = yield* Clock.currentTimeMillis;
           const layout =
             typeof preset === "string"
               ? preset
-              : preset[advanceCycle(cycle, bindingName, preset.length, now)];
+              : preset[
+                  advanceCycle(
+                    cycle,
+                    bindingName,
+                    preset.length,
+                    yield* Clock.currentTimeMillis,
+                  )
+                ];
           yield* moveResizeWindow(window, yield* resolveLayout(window, layout));
         });
 
-        yield* Effect.forEach(BINDING_NAMES, (bindingName) => {
+        for (const bindingName of BINDING_NAMES) {
           const binding = BINDINGS[bindingName];
           const handler = () => {
             // GNOME invokes this synchronous foreign-runtime callback
@@ -64,7 +70,7 @@ export default class HyperWindowTilingExtension extends Extension {
               ).pipe(Effect.provideService(Scheduler.PreventSchedulerYield, true)),
             );
           };
-          return Effect.acquireRelease(
+          yield* Effect.acquireRelease(
             native("register window tiling binding", () =>
               wm.addKeybinding(
                 bindingName,
@@ -79,7 +85,7 @@ export default class HyperWindowTilingExtension extends Extension {
                 wm.removeKeybinding(bindingName),
               ).pipe(Effect.orDie),
           );
-        });
+        }
       }).pipe(
         Scope.provide(scope),
         Effect.onError((cause) => Scope.close(scope, Exit.failCause(cause))),

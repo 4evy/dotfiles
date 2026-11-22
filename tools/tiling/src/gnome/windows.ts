@@ -8,18 +8,17 @@ import { native } from "./native.js";
 const MOVE_RESIZE_RETRY_DELAY_MS = 75;
 const IGNORED_WINDOW_TYPES = new Set([Meta.WindowType.DESKTOP, Meta.WindowType.DOCK]);
 
+function isUnavailableForTiling(window: Meta.Window): boolean {
+  return (
+    window.is_override_redirect() || window.is_fullscreen() || window.is_skip_taskbar()
+  );
+}
+
 export const focusedWindow = native("read focused window", () => {
   const window = global.display.focus_window;
-  if (!window) return null;
-
-  return [
-    window.is_override_redirect(),
-    window.is_fullscreen(),
-    window.is_skip_taskbar(),
-    IGNORED_WINDOW_TYPES.has(window.get_window_type()),
-  ].some(Boolean)
-    ? null
-    : window;
+  if (!window || isUnavailableForTiling(window)) return null;
+  if (IGNORED_WINDOW_TYPES.has(window.get_window_type())) return null;
+  return window;
 });
 
 export function canMoveResizeWindow(window: Meta.Window) {
@@ -36,8 +35,11 @@ export const createWindowOperations = Effect.gen(function* () {
   const sources = yield* Effect.acquireRelease(
     Effect.sync(() => new Set<number>()),
     (pending) =>
-      Effect.forEach(pending, (source) =>
-        native("remove pending window resize", () => GLib.Source.remove(source)),
+      Effect.forEach(
+        pending,
+        (source) =>
+          native("remove pending window resize", () => GLib.Source.remove(source)),
+        { discard: true },
       ).pipe(Effect.orDie),
   );
 
