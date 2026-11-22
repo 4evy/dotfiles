@@ -12,7 +12,7 @@ const FORCE_KILL_AFTER_MS = 3000;
 
 runMain(
   Effect.gen(function* () {
-    const server = yield* Effect.sync(() => Bun.which("just-lsp"));
+    const server = Bun.which("just-lsp");
     if (!server)
       return yield* Effect.fail(
         new Error("just-lsp is not installed or is missing from PATH"),

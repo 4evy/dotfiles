@@ -21,12 +21,11 @@ const SIGTERM_EXIT_STATUS = 143;
 
 const JsonObject = Schema.fromJsonString(Schema.Record(Schema.String, Schema.Unknown));
 const decodeObject = Schema.decodeUnknownOption(JsonObject);
+const utf8 = new TextDecoder("utf-8", { fatal: true });
 
 function jsonObject(body: Buffer): Record<string, unknown> | undefined {
   try {
-    return Option.getOrUndefined(
-      decodeObject(new TextDecoder("utf-8", { fatal: true }).decode(body)),
-    );
+    return Option.getOrUndefined(decodeObject(utf8.decode(body)));
   } catch {
     return undefined;
   }
