@@ -149,48 +149,48 @@ export const inspectTcc = Effect.fn(function* (
   mode: "apply" | "check" | "dry-run",
 ) {
   const plans = plansFor(installed, targets, userPath);
-  const databases: Database[] = [];
-  yield* Effect.addFinalizer(() =>
-    Effect.sync(() => {
-      for (const db of databases) db.close();
-    }),
-  );
-  const changes: TccPlan[] = yield* attempt(() =>
-    plans.map((plan) => {
-      // Only describe tccd's existing schema, never create or migrate it
-      const db = drizzle({
-        connection: {
-          source: plan.path,
-          create: false,
-          ...(mode === "apply" ? { readwrite: true } : { readonly: true }),
-        },
-      });
-      databases.push(db.$client);
-      // Preparing every modeled column rejects incompatible schemas before writes
-      const select = db
-        .select()
-        .from(access)
-        .where(
-          and(
-            eq(access.service, placeholder("service")),
-            eq(access.client, placeholder("client")),
-            eq(access.clientType, placeholder("clientType")),
-            eq(access.indirectObjectIdentifier, placeholder("target")),
-          ),
-        )
-        .prepare();
-      let deletions: Access[] = [];
-      if (plan.path === userPath) {
-        addExistingTargetGrants(db, plan.grants, installed);
-        deletions = obsoleteRows(select, installed);
-      }
-      const pending = pendingGrants(select, plan.grants);
-      const ephemeral = pending.filter((grant) => !grant.persistent).length;
-      console.log(
-        `${plan.path}: ${pending.length - ephemeral} persistent grants differ, ` +
-          `${ephemeral} expiring grants to refresh, ${deletions.length} obsolete rows`,
+  const changes: TccPlan[] = yield* Effect.forEach(plans, (plan) =>
+    Effect.gen(function* () {
+      // Keep each existing database open through backup and apply
+      const db = yield* Effect.acquireRelease(
+        attempt(() =>
+          drizzle({
+            connection: {
+              source: plan.path,
+              create: false,
+              ...(mode === "apply" ? { readwrite: true } : { readonly: true }),
+            },
+          }),
+        ),
+        (db) => Effect.sync(() => db.$client.close()),
       );
-      return { ...plan, db, select, pending, deletions };
+      return yield* attempt(() => {
+        // Preparing every modeled column rejects incompatible schemas before writes
+        const select = db
+          .select()
+          .from(access)
+          .where(
+            and(
+              eq(access.service, placeholder("service")),
+              eq(access.client, placeholder("client")),
+              eq(access.clientType, placeholder("clientType")),
+              eq(access.indirectObjectIdentifier, placeholder("target")),
+            ),
+          )
+          .prepare();
+        let deletions: Access[] = [];
+        if (plan.path === userPath) {
+          addExistingTargetGrants(db, plan.grants, installed);
+          deletions = obsoleteRows(select, installed);
+        }
+        const pending = pendingGrants(select, plan.grants);
+        const ephemeral = pending.filter((grant) => !grant.persistent).length;
+        console.log(
+          `${plan.path}: ${pending.length - ephemeral} persistent grants differ, ` +
+            `${ephemeral} expiring grants to refresh, ${deletions.length} obsolete rows`,
+        );
+        return { ...plan, db, select, pending, deletions };
+      });
     }),
   );
   const count = changes.reduce(

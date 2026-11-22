@@ -20,11 +20,26 @@ export type Client = {
   grantPermissions: boolean;
 };
 
-const attempt = <A>(action: () => A) =>
-  Effect.try({
-    try: action,
-    catch: (cause) => new DotfilesError(String(cause)),
-  });
+const caskInventory = Schema.fromJsonString(
+  Schema.Struct({
+    casks: Schema.Array(
+      Schema.Struct({
+        token: Schema.String,
+        full_token: Schema.String,
+        artifacts: Schema.Array(
+          Schema.Struct({
+            app: Schema.optional(Schema.Array(Schema.Unknown)),
+          }),
+        ),
+      }),
+    ),
+  }),
+);
+const programArguments = Schema.fromJsonString(Schema.Array(Schema.String));
+const resourceReceipt = Schema.fromJsonString(
+  Schema.Struct({ artifact: Schema.Struct({ resources: Schema.String }) }),
+);
+
 const compileRequirement = Effect.fn(function* (expression: string) {
   const fs = yield* FileSystem.FileSystem;
   const directory = yield* fs.makeTempDirectoryScoped({
@@ -137,22 +152,9 @@ const homebrewCasks = Effect.fn(function* (expand: ExpandPath, user: string) {
     ]);
     for (const token of casks.trim().split(/\s+/).filter(Boolean)) declared.add(token);
   }
-  const text = yield* output([...brew, "info", "--json=v2", "--cask", "--installed"]);
-  const installed = yield* Schema.decodeUnknownEffect(
-    Schema.Struct({
-      casks: Schema.Array(
-        Schema.Struct({
-          token: Schema.String,
-          full_token: Schema.String,
-          artifacts: Schema.Array(
-            Schema.Struct({
-              app: Schema.optional(Schema.Array(Schema.Unknown)),
-            }),
-          ),
-        }),
-      ),
-    }),
-  )(yield* attempt(() => JSON.parse(text)));
+  const installed = yield* Schema.decodeEffect(caskInventory)(
+    yield* output([...brew, "info", "--json=v2", "--cask", "--installed"]),
+  );
   return { installed, declared };
 });
 
@@ -210,9 +212,7 @@ const farstepResources = Effect.fn(function* (
       "-",
       plist,
     ]);
-    const args = yield* Schema.decodeUnknownEffect(Schema.Array(Schema.String))(
-      yield* attempt(() => JSON.parse(text)),
-    );
+    const args = yield* Schema.decodeEffect(programArguments)(text);
     const executable = args.find((arg) => isAbsolute(arg) && arg.endsWith(suffix));
     if (!executable) continue;
     const root = executable.slice(0, -suffix.length);
@@ -225,12 +225,9 @@ const farstepResources = Effect.fn(function* (
     const sky = join(root, policy.farstep.sky);
     const receipt = join(sky, policy.farstep.receipt);
     if (!(yield* fs.exists(receipt))) continue;
-    const text = yield* fs.readFileString(receipt);
-    const metadata = yield* Schema.decodeUnknownEffect(
-      Schema.Struct({
-        artifact: Schema.Struct({ resources: Schema.String }),
-      }),
-    )(yield* attempt(() => JSON.parse(text)));
+    const metadata = yield* Schema.decodeEffect(resourceReceipt)(
+      yield* fs.readFileString(receipt),
+    );
     resources.add(join(sky, metadata.artifact.resources));
   }
   for (const root of capturePackages) apps.set(join(root, policy.farstep.app), true);

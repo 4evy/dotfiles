@@ -1,79 +1,59 @@
+import { Schema, SchemaTransformation } from "effect";
+
 export type Action = "inspect" | "synchronize" | "apply" | "verify";
-export type Grant = {
-  requiresAuth: bigint;
-  setFlags: bigint;
-  clearFlags: bigint;
-};
-export type Input = {
-  suite: string;
-  container: string;
-  identifiers: string[];
-  grants: Grant[];
-  baseline: string | undefined;
-};
 
 const flagBits = 64;
 const uint64Max = (1n << BigInt(flagBits)) - 1n;
 
-function object(value: unknown, label: string): Record<string, unknown> {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error(`${label} must be an object`);
-  }
-  return value as Record<string, unknown>;
-}
+const cString = Schema.String.check(
+  Schema.makeFilter((value) => value.length > 0 && !value.includes("\0"), {
+    message: "Expected a nonempty string without NUL characters",
+  }),
+);
+const isCString = Schema.is(cString);
+const mask = Schema.String.check(
+  Schema.isPattern(/^\d+$/, { message: "Expected a decimal uint64 string" }),
+).pipe(
+  Schema.decodeTo(
+    Schema.BigInt.check(
+      Schema.isLessThanOrEqualToBigInt(uint64Max, { message: "Exceeds uint64" }),
+    ),
+    SchemaTransformation.bigintFromString,
+  ),
+);
+const grantSchema = Schema.Struct({
+  requiresAuth: mask,
+  setFlags: mask,
+  clearFlags: mask,
+});
+const inputSchema = Schema.Struct({
+  suite: cString,
+  container: cString,
+  identifiers: Schema.UniqueArray(cString),
+  grants: Schema.Array(grantSchema),
+  baseline: Schema.optional(cString),
+});
+
+export type Input = typeof inputSchema.Type;
 
 export function string(value: unknown, label: string): string {
-  if (typeof value !== "string" || value.length === 0 || value.includes("\0")) {
+  if (!isCString(value)) {
     throw new Error(`${label} must be a nonempty string without NUL characters`);
   }
   return value;
 }
 
-function mask(value: unknown, label: string): bigint {
-  if (typeof value !== "string" || !/^[0-9]+$/.test(value)) {
-    throw new Error(`${label} must be a decimal uint64 string`);
-  }
-  const result = BigInt(value);
-  if (result > uint64Max) throw new Error(`${label} exceeds uint64`);
-  return result;
-}
-
 export function parseInput(value: unknown, action: Action): Input {
-  const input = object(value, "Input");
-  if (!Array.isArray(input.identifiers) || !Array.isArray(input.grants)) {
-    throw new Error("identifiers and grants must be arrays");
-  }
-  const identifiers = input.identifiers.map((value, index) =>
-    string(value, `identifiers[${index}]`),
-  );
-  if (new Set(identifiers).size !== identifiers.length) {
-    throw new Error("identifiers must be distinct");
-  }
-  const grants = input.grants.map((value, index) => {
-    const grant = object(value, `grants[${index}]`);
-    return {
-      requiresAuth: mask(grant.requiresAuth, `grants[${index}].requiresAuth`),
-      setFlags: mask(grant.setFlags, `grants[${index}].setFlags`),
-      clearFlags: mask(grant.clearFlags, `grants[${index}].clearFlags`),
-    };
-  });
-  const baseline =
-    input.baseline === undefined ? undefined : string(input.baseline, "baseline");
-  if (action === "verify" && baseline === undefined) {
+  const input = Schema.decodeUnknownSync(inputSchema)(value);
+  if (action === "verify" && input.baseline === undefined) {
     throw new Error("verify requires a baseline path");
   }
-  return {
-    suite: string(input.suite, "suite"),
-    container: string(input.container, "container"),
-    identifiers,
-    grants,
-    baseline,
-  };
+  return input;
 }
 
 export function wantedFlags(
   app: { flags: bigint; auth: bigint },
-  grants: Grant[],
+  grants: Input["grants"],
 ): bigint {
   let flags = app.flags;
   for (const grant of grants) {

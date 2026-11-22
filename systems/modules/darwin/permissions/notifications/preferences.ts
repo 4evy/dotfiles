@@ -25,7 +25,7 @@ baseline. Run inspect/synchronize/apply as the target user. Stop usernoted
 and await its exit before synchronize or apply.`,
   );
   if (action === undefined) return;
-  const input = parseInput(JSON.parse(await Bun.stdin.text()), action);
+  const input = parseInput(await Bun.stdin.json(), action);
   run(action, input);
 }
 

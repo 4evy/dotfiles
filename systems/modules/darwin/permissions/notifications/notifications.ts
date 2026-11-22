@@ -11,30 +11,23 @@ const backupDirectoryMode = 0o700;
 const backupFileMode = 0o600;
 const launchctl = "/bin/launchctl";
 
-const reportSchema = Schema.Struct({
-  pending: Schema.Number,
-  registered: Schema.Number,
-  unregistered: Schema.Array(Schema.String),
-  changes: Schema.Array(
-    Schema.Struct({
-      identifier: Schema.String,
-      beforeFlags: Schema.String,
-      afterFlags: Schema.String,
-    }),
-  ),
-});
-const verificationSchema = Schema.Struct({
-  outOfScopeChanges: Schema.Number,
-  managedChanges: Schema.Number,
-});
-
-const parse = Effect.fn(function* (text: string) {
-  return yield* Effect.try({
-    try: () => JSON.parse(text) as unknown,
-    catch: (cause) =>
-      new DotfilesError("Invalid native notification response", { cause }),
-  });
-});
+const reportSchema = Schema.fromJsonString(
+  Schema.Struct({
+    pending: Schema.Number,
+    registered: Schema.Number,
+    unregistered: Schema.Array(Schema.String),
+    changes: Schema.Array(
+      Schema.Struct({
+        identifier: Schema.String,
+        beforeFlags: Schema.String,
+        afterFlags: Schema.String,
+      }),
+    ),
+  }),
+);
+const verificationSchema = Schema.fromJsonString(
+  Schema.Struct({ outOfScopeChanges: Schema.Number, managedChanges: Schema.Number }),
+);
 
 const waitForExit = Effect.fn(function* (pid: number) {
   const deadline = Date.now() + daemonExitTimeoutMs;
@@ -98,7 +91,7 @@ export const notificationPermissions = Effect.fn(function* (
       input: JSON.stringify(request),
       timeout: helperTimeoutSeconds,
     });
-    return yield* Schema.decodeUnknownEffect(reportSchema)(yield* parse(text));
+    return yield* Schema.decodeEffect(reportSchema)(text);
   });
   const initial = yield* inspect("inspect");
   console.log(
@@ -163,9 +156,7 @@ export const notificationPermissions = Effect.fn(function* (
           input: JSON.stringify({ ...request, baseline }),
           timeout: helperTimeoutSeconds,
         });
-        const verified = yield* Schema.decodeUnknownEffect(verificationSchema)(
-          yield* parse(text),
-        );
+        const verified = yield* Schema.decodeEffect(verificationSchema)(text);
         if (verified.outOfScopeChanges !== 0)
           return yield* Effect.fail(
             new DotfilesError("Unrelated notification preferences changed"),
