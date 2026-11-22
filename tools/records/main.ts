@@ -25,11 +25,8 @@ type Operation = (
 ) => Effect.Effect<void, DotfilesError | PlatformError.PlatformError, RuntimeServices>;
 
 function selectOperation(args: string[]) {
-  let operation: Operation | undefined;
   let stdout = "";
   let stderr = "";
-  let status = 0;
-  let completed = false;
   const path = optional(argument(string({ metavar: "PATH" })));
   const parser = or(
     command(
@@ -118,23 +115,17 @@ function selectOperation(args: string[]) {
     help: {
       option: { names: ["-h", "--help"] },
       command: true,
-      onShow: () => {
-        completed = true;
-      },
+      onShow: (code) => code,
     },
-    onError: () => {
-      completed = true;
-      status = 1;
-    },
+    onError: (code) => code,
     stdout: (text) => {
       stdout += `${text}\n`;
     },
     stderr: (text) => {
       stderr += `${text}\n`;
     },
-  });
-  if (!completed) operation = selected;
-  return { operation, stdout, stderr, status };
+  }) as Operation | number;
+  return { selected, stdout, stderr };
 }
 
 const main = Effect.gen(function* () {
@@ -144,13 +135,11 @@ const main = Effect.gen(function* () {
   });
   if (selection.stdout) yield* writeOutput("stdout", selection.stdout);
   if (selection.stderr) yield* writeOutput("stderr", selection.stderr);
-  if (selection.status !== 0) {
-    yield* Effect.sync(() => {
-      process.exitCode = selection.status;
-    });
-    return;
+  if (typeof selection.selected === "number") {
+    process.exitCode = selection.selected;
+  } else {
+    yield* selection.selected(yield* Vault.create());
   }
-  if (selection.operation) yield* selection.operation(yield* Vault.create());
 }).pipe(
   Effect.catch((error) =>
     Effect.gen(function* () {
