@@ -408,10 +408,6 @@ const workstation = Effect.gen(function* () {
     installUserland,
     installNix,
     configureHost,
-    installWorkstation: () =>
-      command(["sh", join(root, "tools/workstation/install.sh")], {
-        env: { ...env, BUN_EXE: process.execPath },
-      }),
     installAntigravity: () =>
       command([process.execPath, join(root, "tools/setup/antigravity.ts")]),
     applyDotfiles: () => command(["just", "apply"]),
@@ -451,11 +447,6 @@ const setupSteps: Step[] = [
     name: "userland",
     description: "Install Homebrew tools and Rust",
     action: (host) => host.installUserland(),
-  },
-  {
-    name: "workstation",
-    description: "Install the Bun workstation commands",
-    action: (host) => host.installWorkstation(),
   },
   {
     name: "antigravity",

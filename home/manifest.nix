@@ -1025,37 +1025,6 @@
       name = "super_engineering_settings.sh";
     }
     {
-      command = [
-        "sh"
-        "@REPOSITORY@/tools/workstation/install.sh"
-      ];
-      systems = [
-        "darwin"
-        "linux"
-      ];
-      onChange = true;
-      inputs = [
-        "tools/workstation/src"
-        "tools/workstation/assets"
-        "tools/workstation/package.json"
-        "tools/workstation/build.ts"
-        "tools/workstation/tsconfig.json"
-        "tsconfig.json"
-        "package.json"
-        "bun.lock"
-        "home/package.json"
-        "home/files/.local/lib/package.json"
-        "lib/typescript"
-        "home/theme/palette/palette.json"
-        "home/generators.json"
-        "home/deploy/schema.ts"
-        "home/files/.local/lib/typescript/process.ts"
-        "tools/workstation/install.sh"
-        "tools/workstation/install.ts"
-      ];
-      name = "80_repository_workstation_tool.sh";
-    }
-    {
       onChange = true;
       inputs = [
         "home/theme/palette/palette.json"

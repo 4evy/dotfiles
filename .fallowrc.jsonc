@@ -2,7 +2,6 @@
   "$schema": "./node_modules/fallow/schema.json",
   "entry": [
     "tools/{setup,renovate}/**/*.ts",
-    "tools/workstation/install.ts",
     "tools/workstation/src/cli.ts",
     "tools/workstation/build.ts",
     "tools/tiling/src/{gnome/extension,kde/main}.ts",

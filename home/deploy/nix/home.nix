@@ -139,33 +139,22 @@ let
       ;
   };
   /**
-    Emit a shell snippet for a tool that may only be installed at activation
-
-    # Inputs
-    `name`: command name. `preferHome`: use its home path first (default `true`)
+    Emit a shell snippet that runs an installed command when it is on PATH
 
     # Type
-    `optionalHomeCommand :: { name: String, preferHome?: Bool } -> String`
+    `optionalCommand :: String -> String`
 
     # Examples
-    `optionalHomeCommand { name = "tool"; }` emits shell that tries
-    `"$HJEM_HOME_DIR/.local/bin/tool"` before searching `PATH`
+    `optionalCommand "tool"` emits shell that runs `tool` if it is available
   */
-  optionalHomeCommand =
-    {
-      name,
-      preferHome ? true,
-    }:
-    ''
-      ${lib.strings.toShellVar "command" name}
-      if [ -x "$HJEM_HOME_DIR/.local/bin/$command" ]; then
-        ${if preferHome then ''"$HJEM_HOME_DIR/.local/bin/$command"'' else ''"$command"''}
-      elif command -v "$command" >/dev/null 2>&1; then
-        "$command"
-      else
-        printf "%s\n" "$command skipped: command not found"
-      fi
-    '';
+  optionalCommand = name: ''
+    ${lib.strings.toShellVar "command" name}
+    if command -v "$command" >/dev/null 2>&1; then
+      "$command"
+    else
+      printf "%s\n" "$command skipped: command not found"
+    fi
+  '';
 
   # Inline bodies use stable manifest hook names, not source file paths
   shellHooks = {
@@ -256,15 +245,14 @@ let
         batcat cache --build >/dev/null
       fi
     '';
-    "discord_equicord.sh".text = optionalHomeCommand { name = "sync-equicord-settings"; };
+    "discord_equicord.sh".text = optionalCommand "sync-equicord-settings";
     "gnome_catppuccin_custom_accent.sh".text = lib.strings.concatLines [
-      (optionalHomeCommand { name = "gnome-catppuccin-custom-accent"; })
+      (optionalCommand "gnome-catppuccin-custom-accent")
       ''
         if command -v systemctl >/dev/null 2>&1 &&
           systemctl --user show-environment >/dev/null 2>&1; then
           systemctl --user daemon-reload
           systemctl --user enable gnome-catppuccin-custom-accent.service
-          # Pick up the rebuilt workstation executable even if already running
           systemctl --user restart gnome-catppuccin-custom-accent.service
         fi
       ''
@@ -415,10 +403,7 @@ let
         mv "$temporary/updated" "$settings"
       '';
     };
-    "terminal_app_catppuccin_custom.sh".text = optionalHomeCommand {
-      name = "terminal-catppuccin-custom";
-      preferHome = false;
-    };
+    "terminal_app_catppuccin_custom.sh".text = optionalCommand "terminal-catppuccin-custom";
     "yazi_init.sh".text = ''
       if ! command -v ya >/dev/null 2>&1; then
         printf '%s\n' 'Yazi plugin install skipped: ya not found'

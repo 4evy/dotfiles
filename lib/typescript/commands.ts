@@ -133,8 +133,7 @@ export function output(
   );
 }
 
-// Keep POSIX quoting stable for exact legacy launcher recognition
-export function shellQuote(value: string): string {
+function shellQuote(value: string): string {
   return /^[A-Za-z0-9_@%+=:,./-]+$/.test(value)
     ? value
     : `'${value.replaceAll("'", "'\\''")}'`;

@@ -8,7 +8,6 @@ modules:
     src: lib/typescript
     dest: /src/lib/typescript
 
-  # Build entrypoint and compiler configs are also source fingerprint inputs
   - type: copy@v1
     src: tsconfig.json
     dest: /src/tsconfig.json
@@ -50,14 +49,6 @@ modules:
     src: home/files/.local/lib/typescript/runtime.ts
     dest: /src/home/files/.local/lib/typescript/runtime.ts
 
-  - type: copy@v1
-    src: tools/workstation/install.ts
-    dest: /src/tools/workstation/install.ts
-
-  - type: copy@v1
-    src: tools/workstation/install.sh
-    dest: /src/tools/workstation/install.sh
-
   - type: containerfile
     snippets:
       - |-
@@ -68,6 +59,4 @@ modules:
           bun -e 'import { commandNames } from "./src/registry.ts"; console.log(commandNames.join("\n"))' | \
           while IFS= read -r command; do \
             ln -s workstation "/out/usr/bin/$command"; \
-          done; \
-          mkdir -p /out/usr/share/dotfiles; \
-          bun /src/tools/workstation/install.ts --fingerprint > /out/usr/share/dotfiles/workstation.sha256
+          done
