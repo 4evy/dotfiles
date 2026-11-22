@@ -30,16 +30,6 @@ modules:
     dest: /out/usr/share/gnome-shell/extensions/hyper-window-tiling@4evy.local/schemas/org.gnome.shell.extensions.hyper-window-tiling.gschema.xml
 
   - type: copy@v1
-    from: hyper-window-tiling
-    src: /src/tools/tiling/kde/metadata.json
-    dest: /out/usr/share/kwin/scripts/hyper-window-tiling/metadata.json
-
-  - type: copy@v1
-    from: hyper-window-tiling
-    src: /src/tools/tiling/dist/kde/contents/code/main.js
-    dest: /out/usr/share/kwin/scripts/hyper-window-tiling/contents/code/main.js
-
-  - type: copy@v1
     from: kanata
     src: /out/usr
     dest: /out/usr

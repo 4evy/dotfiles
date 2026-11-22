@@ -23,10 +23,6 @@ modules:
     src: tools/tiling/gnome
     dest: /src/tools/tiling/gnome
 
-  - type: copy@v1
-    src: tools/tiling/kde
-    dest: /src/tools/tiling/kde
-
   - type: containerfile
     snippets:
-      - RUN cd /src/tools/tiling && bun run build
+      - RUN cd /src/tools/tiling && bun run typecheck && bun run build:gnome
