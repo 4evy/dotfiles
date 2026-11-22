@@ -713,41 +713,36 @@
       source = ".local/lib/typescript/compiler.mts";
       target = ".local/lib/typescript/compiler.mts";
     }
-    {
-      source = ".local/lib/typescript/runtime.sh";
-      target = ".local/bin/node";
-      executable = true;
-    }
-    {
-      source = ".local/lib/typescript/runtime.sh";
-      target = ".local/bin/bun";
-      executable = true;
-    }
-    {
-      source = ".local/lib/typescript/runtime.sh";
-      target = ".local/bin/bunx";
-      executable = true;
-    }
-    {
-      source = ".local/lib/typescript/tsrs.sh";
-      target = ".local/bin/tsrs";
-      executable = true;
-    }
-    {
-      source = ".local/lib/typescript/tsrs.sh";
-      target = ".local/bin/tsc";
-      executable = true;
-    }
-    {
-      source = ".local/lib/typescript/tsrs.sh";
-      target = ".local/bin/tsgo";
-      executable = true;
-    }
-    {
-      source = ".local/lib/typescript/tsrs.sh";
-      target = ".local/lib/typescript/tsdk/tsgo";
-      executable = true;
-    }
+  ]
+  ++ (lib.lists.concatMap
+    (
+      { source, targets }:
+      lib.lists.map (target: {
+        inherit source target;
+        executable = true;
+      }) targets
+    )
+    [
+      {
+        source = ".local/lib/typescript/runtime.sh";
+        targets = [
+          ".local/bin/node"
+          ".local/bin/bun"
+          ".local/bin/bunx"
+        ];
+      }
+      {
+        source = ".local/lib/typescript/tsrs.sh";
+        targets = [
+          ".local/bin/tsrs"
+          ".local/bin/tsc"
+          ".local/bin/tsgo"
+          ".local/lib/typescript/tsdk/tsgo"
+        ];
+      }
+    ]
+  )
+  ++ [
     {
       source = ".local/lib/typescript/runtime.ts";
       target = ".local/lib/typescript/runtime.ts";
