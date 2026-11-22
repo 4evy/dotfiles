@@ -69,7 +69,7 @@ const settingsSchema = Schema.StructWithRest(
   [Schema.Record(Schema.String, Schema.Unknown)],
 );
 
-export const configureGPU = Effect.fn("configureGPU")(function* (directory: string) {
+const configureGPU = Effect.fn("configureGPU")(function* (directory: string) {
   const fs = yield* FileSystem.FileSystem;
   const path = join(directory, "settings.json");
   const input = (yield* fs.exists(path)) ? yield* fs.readFileString(path) : "{}";
@@ -111,9 +111,6 @@ export const discord = Effect.fn("discord")(function* (args: string[]) {
       new DotfilesError("Discord on macOS is managed by Nixcord"),
     );
   const fs = yield* FileSystem.FileSystem;
-  const config = yield* configHome();
-  yield* configureGPU(join(config, "discord"));
-  if (parsed.value.configureOnly) return 0;
   const state = process.env.XDG_STATE_HOME ?? join(homedir(), ".local/state");
   const executable = yield* Effect.findFirst(
     [
@@ -123,10 +120,15 @@ export const discord = Effect.fn("discord")(function* (args: string[]) {
     ],
     isExecutable,
   );
-  if (Option.isNone(executable))
+  if (Option.isNone(executable)) {
+    if (parsed.value.configureOnly) return 0;
     return yield* Effect.fail(
       new DotfilesError("Nix-managed Discord was not found, run just nix"),
     );
+  }
+  const config = yield* configHome();
+  yield* configureGPU(join(config, "discord"));
+  if (parsed.value.configureOnly) return 0;
   const path = join(config, "discord-flags.conf");
   const text = (yield* fs.exists(path)) ? yield* fs.readFileString(path) : "";
   const flags = yield* Effect.try({

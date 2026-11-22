@@ -4,6 +4,7 @@
   home,
   repository,
   os,
+  platform,
   environment ? { },
 }:
 let
@@ -18,6 +19,10 @@ let
     (lib.trivial.importJSON "${inputs.ai}/apps/omp/runtime/upstream/package.json").dependencies;
   manifest = import ../../manifest.nix { inherit lib; };
   normalizeFile = import ./file/entry.nix { inherit lib; };
+  configHome = environment.XDG_CONFIG_HOME or "";
+  equicordSettings = pkgs.callPackage ../../applications/discord/equicord/package.nix {
+    inherit inputs;
+  };
   hexDigitsPerByte = 2;
   surfaceBackgroundPercent = 85;
   surfaceForegroundPercent = 15;
@@ -352,6 +357,27 @@ lib.lists.map file (lib.lists.filter enabled manifest.files)
       "r/rex"
       "72/rex"
     ]
+++ lib.lists.optionals (platform == "linux") (
+  # Nixcord owns this projection on NixOS. On standalone Linux Equicord
+  # writes both files in place, so install writable copies rather than links
+  lib.lists.map
+    (
+      name:
+      normalizeFile
+        {
+          target = "Equicord/settings/${name}";
+          mutable = true;
+        }
+        {
+          relativeTo = if lib.strings.hasPrefix "/" configHome then configHome else "${home}/.config";
+          source = "${equicordSettings}/${name}";
+        }
+    )
+    [
+      "settings.json"
+      "quickCss.css"
+    ]
+)
 ++ lib.lists.optionals (os == "darwin") [
   (homebrewPath false)
   (homebrewPath true)

@@ -972,7 +972,7 @@
         "linux"
       ];
       onChange = false;
-      name = "discord_equicord.sh";
+      name = "discord_gpu.sh";
     }
     {
       command = [

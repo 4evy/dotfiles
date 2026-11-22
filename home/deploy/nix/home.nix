@@ -28,7 +28,8 @@ let
       value = environment.${name} or "";
     in
     if value != "" then value else fallback;
-  os = configured "HJEM_PLATFORM" (if stdenv.hostPlatform.isDarwin then "darwin" else "linux");
+  platform = configured "HJEM_PLATFORM" (if stdenv.hostPlatform.isDarwin then "darwin" else "linux");
+  os = if platform == "nixos" then "linux" else platform;
   home = configured "HOME" (if os == "darwin" then "/Users/evy" else "/var/home/evy");
   repository = configured "HJEM_WORKING_TREE" (
     if os == "darwin" then "/Users/evy/Developer/dotfiles" else "/var/home/evy/dotfiles"
@@ -135,6 +136,7 @@ let
       home
       repository
       os
+      platform
       environment
       ;
   };
@@ -245,7 +247,11 @@ let
         batcat cache --build >/dev/null
       fi
     '';
-    "discord_equicord.sh".text = optionalCommand "sync-equicord-settings";
+    "discord_gpu.sh".text = ''
+      if command -v discord-equicord >/dev/null 2>&1; then
+        discord-equicord --configure-only
+      fi
+    '';
     "gnome_catppuccin_custom_accent.sh".text = lib.strings.concatLines [
       (optionalCommand "gnome-catppuccin-custom-accent")
       ''

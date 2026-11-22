@@ -6,7 +6,6 @@ import { constant } from "@optique/core/primitives";
 import type { Scope } from "effect";
 import { Effect } from "effect";
 import { discord } from "./apps/discord/discord.ts";
-import { syncEquicordSettings } from "./apps/discord/settings.ts";
 import { desktopAudit } from "./desktop/audit.ts";
 import { gnomeAccent } from "./desktop/gnome.ts";
 import { jjDiff } from "./jj/diff.ts";
@@ -47,11 +46,6 @@ export const commands = {
   "kmscon-refresh": {
     run: kmsconRefresh,
     usage: "CONFIG [--state PATH]",
-    environment: [],
-  },
-  "sync-equicord-settings": {
-    run: noArguments(syncEquicordSettings),
-    usage: "",
     environment: [],
   },
   "desktop-perf-audit": {

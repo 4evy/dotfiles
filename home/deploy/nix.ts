@@ -1,6 +1,6 @@
 import { arch } from "node:os";
 import { output as commandOutput } from "@dotfiles/core/commands";
-import { Effect } from "effect";
+import { Effect, FileSystem } from "effect";
 
 // Supply public host paths to Nix without the full process environment
 export const buildHjemOutput = Effect.fn("buildHjemOutput")(function* (
@@ -9,20 +9,27 @@ export const buildHjemOutput = Effect.fn("buildHjemOutput")(function* (
   environment: NodeJS.ProcessEnv,
   outLink?: string,
 ) {
+  let platform = environment.HJEM_PLATFORM;
+  if (!platform && process.platform === "linux") {
+    const fs = yield* FileSystem.FileSystem;
+    platform = (yield* fs.exists("/etc/NIXOS")) ? "nixos" : "linux";
+  }
   const runtime = {
     system: `${arch() === "arm64" ? "aarch64" : arch() === "x64" ? "x86_64" : arch()}-${process.platform}`,
-    environment: Object.fromEntries(
-      [
-        "HOME",
-        "PATH",
-        "HOMEBREW_PREFIX",
-        "HJEM_WORKING_TREE",
-        "HJEM_PLATFORM",
-        "XDG_CONFIG_HOME",
-        "XDG_DATA_HOME",
-        "XDG_STATE_HOME",
-      ].map((name) => [name, environment[name] || ""]),
-    ),
+    environment: {
+      ...Object.fromEntries(
+        [
+          "HOME",
+          "PATH",
+          "HOMEBREW_PREFIX",
+          "HJEM_WORKING_TREE",
+          "XDG_CONFIG_HOME",
+          "XDG_DATA_HOME",
+          "XDG_STATE_HOME",
+        ].map((name) => [name, environment[name] || ""]),
+      ),
+      HJEM_PLATFORM: platform || "",
+    },
   };
   const argument = JSON.stringify(JSON.stringify(runtime)).replaceAll("${", "\\${");
   const options = {

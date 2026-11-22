@@ -1,5 +1,4 @@
 {
-  equicord,
   inputs,
   lib,
   ...
@@ -111,8 +110,7 @@
             );
         };
         equicord-settings = callPackage ../../home/applications/discord/equicord/package.nix {
-          inherit (equicord) quickCss;
-          settings = equicord.settings.jsonConfig;
+          inherit inputs;
         };
       }
       // lib.attrsets.optionalAttrs isLinux {

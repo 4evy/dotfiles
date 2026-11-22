@@ -1,17 +1,17 @@
 {
   formats,
+  inputs,
   lib,
   linkFarm,
-  quickCss,
-  settings,
   writeText,
   dotfilesPackageUpdaters,
 }:
 let
+  inherit (import ./. { inherit inputs lib; }) quickCss settings;
   quickCssFile = writeText "equicord-quick-css" quickCss;
-  settingsFile = (formats.json { }).generate "equicord-settings.json" settings;
+  settingsFile = (formats.json { }).generate "equicord-settings.json" settings.jsonConfig;
 in
-# Share immutable JSON/CSS store files with the byte-reading deployer
+# Bundle the sources for the standalone Hjem deployment
 (linkFarm "equicord-settings" {
   "settings.json" = settingsFile;
   "quickCss.css" = quickCssFile;
