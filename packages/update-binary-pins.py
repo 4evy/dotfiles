@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 import subprocess
 import tempfile
 from pathlib import Path
@@ -55,13 +56,10 @@ def main():
     version = current[0] if args.version == "skip" else args.version
     endpoint = "latest" if version is None else f"tags/{prefix}{version}"
     release = json.loads(
-        subprocess.run(
+        subprocess.check_output(
             ["gh", "api", f"repos/{repository}/releases/{endpoint}"],
-            check=True,
-            text=True,
-            stdout=subprocess.PIPE,
             env=environment,
-        ).stdout
+        )
     )
     tag = release["tag_name"]
     if not tag.startswith(prefix):
@@ -120,9 +118,9 @@ def main():
         "w", prefix=f".{path.name}.", dir=path.parent, delete_on_close=False
     ) as output:
         output.write(updated)
+        os.fchmod(output.fileno(), stat.S_IMODE(path.stat().st_mode))
         output.close()
-        os.chmod(output.name, path.stat().st_mode)
-        os.replace(output.name, path)
+        Path(output.name).replace(path)
 
 
 if __name__ == "__main__":

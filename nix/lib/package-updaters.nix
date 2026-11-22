@@ -19,8 +19,38 @@ let
   updateBinaryPins =
     writers.writePython3Bin "update-binary-pins" writerOptions
       ../../packages/update-binary-pins.py;
+
+  /**
+    Package the updater for a binary pin owned by this repository
+
+    # Inputs
+    `name`: binary pin name, either `"bun"` or `"helium-darwin"`
+
+    # Type
+    `binaryPinPackage :: String -> Derivation`
+
+    # Examples
+    `(binaryPinPackage "bun").meta.mainProgram` returns `"update-bun"`
+  */
+  binaryPinPackage =
+    name:
+    let
+      program = "update-${name}";
+      application = writeShellApplication {
+        name = program;
+        meta.mainProgram = program;
+        passthru.updateScript = lib.meta.getExe application;
+        runtimeInputs = [ gh ];
+        text = ''
+          exec ${lib.meta.getExe updateBinaryPins} ${lib.strings.escapeShellArg name} "$@"
+        '';
+      };
+    in
+    application;
 in
 {
+  inherit binaryPinPackage;
+
   /**
     Make an updater for the given owning input names, including explicit pins
 
@@ -94,17 +124,5 @@ in
     # Examples
     `binaryPin "bun"` returns the path to `update-bun`
   */
-  binaryPin =
-    name:
-    let
-      program = "update-${name}";
-    in
-    lib.meta.getExe (writeShellApplication {
-      name = program;
-      meta.mainProgram = program;
-      runtimeInputs = [ gh ];
-      text = ''
-        exec ${lib.meta.getExe updateBinaryPins} ${lib.strings.escapeShellArg name} "$@"
-      '';
-    });
+  binaryPin = name: lib.meta.getExe (binaryPinPackage name);
 }
