@@ -1,5 +1,5 @@
 import { join, posix } from "node:path";
-import { output, run } from "@dotfiles/core/commands";
+import { run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { writeIfChanged, writeJson } from "@dotfiles/core/files";
 import { download } from "@dotfiles/core/http";
@@ -24,40 +24,18 @@ const manifestSchema = Schema.Struct({
 const sidecar = (name: string) =>
   name === companionPackage || name.startsWith(`@${companionPackage}/`);
 
-type FallowArchive = { path: string; members: Set<string> };
-
-const openFallowArchive = Effect.fn(function* (archive: Uint8Array) {
-  const fs = yield* FileSystem.FileSystem;
-  const staging = yield* fs.makeTempDirectoryScoped({ prefix: "fallow-vendor-" });
-  const path = join(staging, "source.tar.gz");
-  yield* fs.writeFile(path, archive);
-  const members = new Set(
-    (yield* output(["tar", "-tzf", path], { cwd: root }))
-      .split("\n")
-      .filter((entry) => entry.startsWith(npmArchivePrefix) && !entry.endsWith("/"))
-      .map((entry) => entry.slice(npmArchivePrefix.length)),
-  );
-  return { path, members };
-});
-
-const readArchiveMember = Effect.fn(function* (archive: FallowArchive, name: string) {
-  if (
-    !archive.members.has(name) ||
+const readArchiveMember = (archive: Map<string, Blob>, name: string) => {
+  const file = archive.get(`${npmArchivePrefix}${name}`);
+  return !file ||
     posix.normalize(name) !== name ||
     name.startsWith("../") ||
     posix.isAbsolute(name)
-  )
-    return yield* Effect.fail(
-      new DotfilesError(`Missing or unsafe Fallow archive member: ${name}`),
-    );
-  return (yield* run(["tar", "-xOzf", archive.path, `${npmArchivePrefix}${name}`], {
-    cwd: root,
-    capture: true,
-  })).stdout;
-});
+    ? Effect.fail(new DotfilesError(`Missing or unsafe Fallow archive member: ${name}`))
+    : Effect.tryPromise(() => file.text());
+};
 
 const resolveLauncherDependency = Effect.fn(function* (
-  archive: FallowArchive,
+  archive: Map<string, Blob>,
   name: string,
   specifier: string,
 ) {
@@ -68,7 +46,7 @@ const resolveLauncherDependency = Effect.fn(function* (
     `${resolved}.cjs`,
     `${resolved}.json`,
     `${resolved}/index.js`,
-  ].find((candidate) => archive.members.has(candidate));
+  ].find((candidate) => archive.has(`${npmArchivePrefix}${candidate}`));
   if (!dependency)
     return yield* Effect.fail(
       new DotfilesError(`Unresolved Fallow launcher dependency: ${name}: ${specifier}`),
@@ -77,7 +55,7 @@ const resolveLauncherDependency = Effect.fn(function* (
 });
 
 const readLauncherSources = Effect.fn(function* (
-  archive: FallowArchive,
+  archive: Map<string, Blob>,
   launchers: Set<string>,
 ) {
   // Keep the launcher runtime closure, not npm's skills, types, docs or tests
@@ -152,8 +130,9 @@ export const updateFallow = Effect.fn(function* () {
   );
   if (metadata.version !== local.version)
     return yield* Effect.fail(new DotfilesError("Fallow registry version mismatch"));
-  const archive = yield* openFallowArchive(
-    yield* downloadArchive(metadata.dist, "Fallow"),
+  const bytes = yield* downloadArchive(metadata.dist, "Fallow");
+  const archive = yield* Effect.tryPromise(() =>
+    new Bun.Archive(bytes).files(`${npmArchivePrefix}**`),
   );
   const upstream = yield* Schema.decodeUnknownEffect(
     Schema.fromJsonString(manifestSchema),
