@@ -19,6 +19,7 @@ import { object } from "@optique/core/constructs";
 import { runParser } from "@optique/core/facade";
 import { withDefault } from "@optique/core/modifiers";
 import { flag } from "@optique/core/primitives";
+import { HttpClientResponse } from "effect/http";
 
 const START_TIMEOUT_MS = 15_000;
 const POLL_INTERVAL_MS = 25;
@@ -26,8 +27,6 @@ const FORCE_KILL_AFTER_MS = 3000;
 const PRIVATE_FILE_MODE = 0o600;
 const MAX_TCP_PORT = 65_535;
 const MS_PER_SECOND = 1000;
-const HTTP_SUCCESS_MIN = 200;
-const HTTP_SUCCESS_LIMIT = 300;
 const DEVTOOLS_PORT_FILE = "DevToolsActivePort";
 const CACHE_FILE_NAME = "helium-user-agent.json";
 const CacheEntry = Schema.fromJsonString(
@@ -36,7 +35,9 @@ const CacheEntry = Schema.fromJsonString(
     userAgent: Schema.String,
   }),
 );
+const decodeCacheEntry = Schema.decodeUnknownOption(CacheEntry);
 const BrowserMetadata = Schema.Struct({ "User-Agent": Schema.String });
+const decodeBrowserMetadata = HttpClientResponse.schemaBodyJson(BrowserMetadata);
 class HeliumError extends Data.TaggedError("HeliumError")<{
   readonly message: string;
 }> {}
@@ -81,14 +82,13 @@ const readBrowserVersion = Effect.fn(function* (launcher: string) {
 
 const readCachedUserAgent = Effect.fn(function* (path: string, browserVersion: string) {
   const fs = yield* FileSystem.FileSystem;
-  const text = yield* fs.readFileString(path).pipe(
-    Effect.catchIf(
-      (error) => error.reason._tag === "NotFound",
-      () => Effect.succeed(undefined),
-    ),
-  );
+  const text = yield* fs
+    .readFileString(path)
+    .pipe(
+      Effect.catchReason("PlatformError", "NotFound", () => Effect.succeed(undefined)),
+    );
   if (text === undefined) return undefined;
-  const entry = yield* Schema.decodeUnknownEffect(CacheEntry)(text).pipe(Effect.option);
+  const entry = decodeCacheEntry(text);
   return entry._tag === "Some" && entry.value.browserVersion === browserVersion
     ? entry.value.userAgent
     : undefined;
@@ -122,9 +122,9 @@ const writeCachedUserAgent = Effect.fn(function* (
 const probeUserAgent = Effect.fn(function* (launcher: string) {
   const fs = yield* FileSystem.FileSystem;
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-  const client = yield* HttpClient.HttpClient;
   return yield* Effect.scoped(
     Effect.gen(function* () {
+      const client = HttpClient.withScope(yield* HttpClient.HttpClient);
       const profile = yield* fs.makeTempDirectoryScoped({
         prefix: "helium-user-agent-",
       });
@@ -147,12 +147,13 @@ const probeUserAgent = Effect.fn(function* (launcher: string) {
       );
       const port = yield* Effect.gen(function* () {
         while (true) {
-          const text = yield* fs.readFileString(join(profile, DEVTOOLS_PORT_FILE)).pipe(
-            Effect.catchIf(
-              (error) => error.reason._tag === "NotFound",
-              () => Effect.succeed(undefined),
-            ),
-          );
+          const text = yield* fs
+            .readFileString(join(profile, DEVTOOLS_PORT_FILE))
+            .pipe(
+              Effect.catchReason("PlatformError", "NotFound", () =>
+                Effect.succeed(undefined),
+              ),
+            );
           const candidate = Number(text?.split("\n", 1)[0]);
           if (Number.isInteger(candidate) && candidate > 0 && candidate <= MAX_TCP_PORT)
             return candidate;
@@ -180,14 +181,15 @@ const probeUserAgent = Effect.fn(function* (launcher: string) {
       );
       return yield* Effect.gen(function* () {
         const response = yield* client.get(`http://127.0.0.1:${port}/json/version`);
-        if (response.status < HTTP_SUCCESS_MIN || response.status >= HTTP_SUCCESS_LIMIT)
-          return yield* Effect.fail(
-            new HeliumError({
-              message: `Helium DevTools returned HTTP ${response.status}`,
-            }),
-          );
-        const metadata = yield* response.json.pipe(
-          Effect.flatMap(Schema.decodeUnknownEffect(BrowserMetadata)),
+        yield* HttpClientResponse.filterStatusOk(response).pipe(
+          Effect.mapError(
+            () =>
+              new HeliumError({
+                message: `Helium DevTools returned HTTP ${response.status}`,
+              }),
+          ),
+        );
+        const metadata = yield* decodeBrowserMetadata(response).pipe(
           Effect.mapError(
             () =>
               new HeliumError({
@@ -213,7 +215,7 @@ runMain(
         onError: process.exit,
       },
     );
-    const launcher = yield* Effect.sync(() => Bun.which("helium-browser"));
+    const launcher = Bun.which("helium-browser");
     if (!launcher)
       return yield* Effect.fail(
         new HeliumError({
