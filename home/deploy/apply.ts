@@ -210,27 +210,20 @@ function preparedAiPermissions(privateFile: boolean | undefined, executable: boo
 const prepareAiEntry = Effect.fn("prepareAiEntry")(function* (
   entry: PreparedAiEntry,
   directory: string,
-  output: string,
 ) {
   const fs = yield* FileSystem.FileSystem;
   const target = yield* homeTarget(entry.path);
-  const original = join(directory, relative(home, target));
+  const source = join(directory, relative(home, target));
   if (entry.type === "symlink") {
-    const link = yield* fs.readLink(original);
+    const link = yield* fs.readLink(source);
     return {
       type: "symlink",
-      source: resolve(dirname(original), link),
+      source: resolve(dirname(source), link),
       target,
       clobber: true,
     } satisfies Entry;
   }
-  const source = join(output, "ai", relative(home, target));
-  yield* fs.makeDirectory(dirname(source), {
-    recursive: true,
-    mode: PRIVATE_DIRECTORY_MODE,
-  });
-  yield* fs.copyFile(original, source);
-  const executable = ((yield* fs.stat(original)).mode & EXECUTABLE_BITS) !== 0;
+  const executable = ((yield* fs.stat(source)).mode & EXECUTABLE_BITS) !== 0;
   const permissions = preparedAiPermissions(entry.private, executable);
   yield* fs.chmod(source, Number.parseInt(permissions, 8));
   return {
@@ -242,12 +235,8 @@ const prepareAiEntry = Effect.fn("prepareAiEntry")(function* (
   } satisfies Entry;
 });
 
-const preparedAi = Effect.fn("preparedAi")(function* (
-  output: string,
-  managesAi: boolean,
-) {
-  if (!managesAi) return [] as Entry[];
-  const directory = join(repository, ".generated/ai-configs");
+const preparedAi = Effect.fn("preparedAi")(function* (directory: string) {
+  yield* run(["bun", "tools/setup/ai/ai.ts", "generate", directory]);
   const metadata = yield* Schema.decodeUnknownEffect(PreparedAiManifestSchema)(
     yield* readJson(join(directory, MANIFEST_FILE)),
   );
@@ -257,7 +246,7 @@ const preparedAi = Effect.fn("preparedAi")(function* (
     );
   const files: Entry[] = [];
   for (const entry of metadata.files)
-    files.push(yield* prepareAiEntry(entry, directory, output));
+    files.push(yield* prepareAiEntry(entry, directory));
   return files;
 });
 
@@ -398,8 +387,6 @@ const prepareManifest = Effect.fn("prepareManifest")(function* (
   output: string,
   managesAi: boolean,
 ) {
-  if (managesAi && process.env.DOTFILES_AI_PREPARED !== "1")
-    yield* run(["bun", "tools/setup/ai/ai.ts", "generate"]);
   const manifest = yield* publicFiles(output);
   const privateText = yield* run(
     ["bun", "tools/records/main.ts", "deploy", "--directory", join(output, "records")],
@@ -413,7 +400,7 @@ const prepareManifest = Effect.fn("prepareManifest")(function* (
     yield* Schema.decodeUnknownEffect(ManifestSchema)(privateJson);
   manifest.files.push(
     ...privateManifest.files,
-    ...(yield* preparedAi(output, managesAi)),
+    ...(managesAi ? yield* preparedAi(join(output, "ai")) : []),
   );
   if (managesAi) {
     const rex = manifest.files.find(

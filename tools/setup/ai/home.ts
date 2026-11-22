@@ -196,12 +196,11 @@ const prepareExportedFile = Effect.fn("prepareExportedAiFile")(function* (
 });
 
 export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
-  source: string,
+  runtime: string,
   exported: string,
   destination: string,
   nativeCli: string,
-  omp: string,
-  farstep = join(source, "farstep/farstep"),
+  farstep: string,
 ) {
   const fs = yield* FileSystem.FileSystem;
   const home = homedir();
@@ -228,14 +227,14 @@ export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
   for (const file of manifest.files) {
     files.push(yield* prepareExportedFile(file, exported, destination, home));
   }
+  const source = join(runtime, "lib/ai-tools");
   const links = {
-    ".local/bin/ai": "tools/scripts/cli/ai.sh",
-    ".local/bin/claude": "apps/claude/claude.ts",
-    ".local/bin/codex": "apps/codex/codex.ts",
+    ".local/bin/ai": join(runtime, "bin/ai"),
+    ".local/bin/claude": join(runtime, "bin/claude"),
+    ".local/bin/codex": join(runtime, "bin/codex"),
     ".local/bin/farstep": farstep,
-    // Use the followed runtime without re-evaluating the source's standalone lock
-    ".local/bin/omp": omp,
-    ".local/bin/opencode": "apps/opencode/opencode.ts",
+    ".local/bin/omp": join(runtime, "bin/omp"),
+    ".local/bin/opencode": join(runtime, "bin/opencode"),
     ".omp/agent/lib/schema": "apps/omp/lib/schema",
     ".omp/agent/lib/sky": "farstep/sky",
     // Match the packaged Mac runtime's compact footer presentation

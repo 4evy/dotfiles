@@ -8,7 +8,7 @@ import { object, or } from "@optique/core/constructs";
 import { runParser } from "@optique/core/facade";
 import { map, withDefault } from "@optique/core/modifiers";
 import { argument, command, constant, passThrough } from "@optique/core/primitives";
-import { choice } from "@optique/core/valueparser";
+import { choice, string } from "@optique/core/valueparser";
 import { Effect, FileSystem, Schema } from "effect";
 import { prepareAiHome } from "./home.ts";
 
@@ -25,19 +25,6 @@ const parseJson = (text: string) =>
     try: () => JSON.parse(text) as unknown,
     catch: (error) => new DotfilesError(`Invalid AI setup JSON: ${error}`),
   });
-const LockSchema = Schema.Struct({
-  root: Schema.String,
-  nodes: Schema.Record(
-    Schema.String,
-    Schema.Struct({
-      inputs: Schema.optionalKey(Schema.Record(Schema.String, Schema.Unknown)),
-      locked: Schema.optionalKey(
-        Schema.Struct({ rev: Schema.optionalKey(Schema.String) }),
-      ),
-    }),
-  ),
-});
-const PrefetchSchema = Schema.Struct({ storePath: Schema.String });
 const HostSchema = Schema.StructWithRest(
   Schema.Struct({
     farstep: Schema.mutableKey(Schema.optionalKey(Schema.String)),
@@ -45,13 +32,6 @@ const HostSchema = Schema.StructWithRest(
   }),
   [Schema.Record(Schema.String, Schema.Unknown)],
 );
-const actions = {
-  apply: { generate: true, provisionFarstep: true },
-  generate: { generate: true, provisionFarstep: true },
-  setup: { generate: false, provisionFarstep: true },
-  configure: { generate: false, provisionFarstep: false },
-  activate: { generate: false, provisionFarstep: false },
-};
 const selected = runParser(
   withDefault(
     or(
@@ -62,12 +42,18 @@ const selected = runParser(
           setupArguments: passThrough({ format: "greedy" }),
         }),
       ),
-      map(
-        argument(choice(["apply", "generate", "configure", "activate"])),
-        (action) => ({ action, setupArguments: [] }),
+      command(
+        "generate",
+        object({
+          action: constant("generate"),
+          destination: argument(string({ metavar: "DIRECTORY" })),
+        }),
       ),
+      map(argument(choice(["apply", "configure", "activate"])), (action) => ({
+        action,
+      })),
     ),
-    { action: "apply", setupArguments: [] },
+    { action: "apply" },
   ),
   "ai.ts",
   Bun.argv.slice(2),
@@ -108,145 +94,57 @@ const activateAi = Effect.gen(function* () {
   }
 });
 
-const installAiSource = Effect.gen(function* () {
-  const fs = yield* FileSystem.FileSystem;
-  const lock = yield* Schema.decodeUnknownEffect(LockSchema)(
-    yield* parseJson(yield* fs.readFileString(join(root, "flake.lock"))),
-  );
-  const ai = lock.nodes[lock.root]?.inputs?.ai;
-  const revision = typeof ai === "string" ? lock.nodes[ai]?.locked?.rev : undefined;
-  if (typeof revision !== "string" || !/^[a-f0-9]{40}$/.test(revision))
-    return yield* Effect.fail(
-      new DotfilesError("The AI input must lock a GitHub revision"),
-    );
-  const parent = join(
-    process.env.XDG_DATA_HOME ?? join(homedir(), ".local/share"),
-    "dotfiles/ai",
-  );
-  const source = join(parent, revision);
-  const missingSource = !(yield* fs.exists(join(source, "flake.nix")));
-  if (missingSource) {
-    const prefetched = yield* Schema.decodeUnknownEffect(PrefetchSchema)(
-      yield* parseJson(
-        yield* run(["nix", "flake", "prefetch", "--json", "--inputs-from", root, "ai"]),
-      ),
-    );
-    yield* fs.makeDirectory(parent, { recursive: true });
-    yield* Effect.scoped(
-      Effect.gen(function* () {
-        const staging = yield* fs.makeTempDirectoryScoped({
-          directory: parent,
-          prefix: ".install-",
-        });
-        yield* fs.copy(prefetched.storePath, staging, { overwrite: true });
-        yield* run(["chmod", "-R", "u+w", staging]);
-        yield* fs.rename(staging, source);
-      }),
-    );
-  }
-  yield* run(
-    [process.execPath, "install", "--frozen-lockfile", "--ignore-scripts"],
-    source,
-  );
-  return source;
-});
+const buildPackage = (name: "ai-tools" | "farstep", outLink: string) =>
+  run(["nix", "build", `${root}#${name}`, "--out-link", outLink, "--print-out-paths"]);
 
-const provisionFarstep = Effect.fn(function* (enabled: boolean) {
+const provisionFarstep = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
-  if (process.platform !== "linux" || (yield* fs.exists("/etc/NIXOS")) || !enabled)
-    return "";
+  if (process.platform !== "linux" || (yield* fs.exists("/etc/NIXOS"))) return;
   const state = join(
     process.env.XDG_STATE_HOME ?? join(homedir(), ".local/state"),
     "farstep",
   );
   yield* fs.makeDirectory(state, { recursive: true });
-  return yield* run([
-    "nix",
-    "build",
-    `${root}#farstep`,
-    "--out-link",
-    join(state, "package"),
-    "--print-out-paths",
-  ]);
+  yield* buildPackage("farstep", join(state, "package"));
 });
 
-const publishAiConfigs = (
-  source: string,
-  exported: string,
-  nativeCli: string,
-  omp: string,
-  farstep: string,
-) =>
+const generateAiConfigs = (destination: string) =>
   Effect.scoped(
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
-      const generated = join(root, ".generated");
-      yield* fs.makeDirectory(generated, {
-        recursive: true,
-        mode: privateDirectoryMode,
-      });
-      const staging = yield* fs.makeTempDirectoryScoped({
-        directory: generated,
-        prefix: ".ai-configs-",
-      });
-      yield* prepareAiHome(source, exported, staging, nativeCli, omp, farstep);
-      const destination = join(generated, "ai-configs");
-      const backup = join(generated, "ai-configs.previous");
-      yield* fs.remove(backup, { recursive: true, force: true });
-      // Once moved aside, restore the previous generation on rename failure
-      yield* Effect.uninterruptible(
-        Effect.gen(function* () {
-          const previous = yield* fs.exists(destination);
-          if (previous) yield* fs.rename(destination, backup);
-          yield* fs.rename(staging, destination).pipe(
-            Effect.catch((error) =>
-              Effect.gen(function* () {
-                if (previous) yield* fs.rename(backup, destination);
-                return yield* Effect.fail(error);
-              }),
-            ),
-          );
-          yield* fs.remove(backup, { recursive: true, force: true });
-        }),
-      );
-    }),
-  );
-
-const generateAiConfigs = (source: string, farstepPackage: string) =>
-  Effect.scoped(
-    Effect.gen(function* () {
-      const fs = yield* FileSystem.FileSystem;
+      yield* fs.makeDirectory(destination, { mode: privateDirectoryMode });
+      // The generation must keep its immutable launcher targets alive
+      const runtime = yield* buildPackage("ai-tools", join(destination, ".runtime"));
+      const source = join(runtime, "lib/ai-tools");
       const temporary = yield* fs.makeTempDirectoryScoped({
         prefix: "dotfiles-ai-configs-",
       });
       const hostFile = join(temporary, "host.json");
-      const runtime = yield* run([
-        "nix",
-        "build",
-        `${root}#ai-tools`,
-        "--no-link",
-        "--print-out-paths",
-      ]);
+      const systemFarstep =
+        process.platform === "darwin" || (yield* fs.exists("/etc/NIXOS"));
+      const farstep =
+        (systemFarstep && Bun.which("/run/current-system/sw/bin/farstep")) ||
+        join(
+          yield* buildPackage("farstep", join(destination, ".farstep")),
+          "bin/farstep",
+        );
       // Keep unknown host fields, which are inputs to the pinned AI renderer
       const host = yield* Schema.decodeUnknownEffect(HostSchema)(
         yield* parseJson(
           yield* run(
-            [process.execPath, "config/settings/generate/generate.ts", "--print-host"],
+            [process.execPath, "config/settings/generate/generate.js", "--print-host"],
             source,
           ),
         ),
       );
-      host.farstep =
-        (farstepPackage && join(farstepPackage, "bin/farstep")) ||
-        (process.platform === "linux" &&
-          Bun.which("/run/current-system/sw/bin/farstep")) ||
-        join(source, "farstep/farstep");
+      host.farstep = farstep;
       if (process.platform === "linux")
         host.codexCli = yield* run(
           [
             process.execPath,
             "--eval",
-            'import { findBinary } from "./tools/scripts/setup/binary.ts"; console.log(findBinary("codex"));',
+            'import { findBinary } from "./tools/scripts/setup/binary.js"; console.log(findBinary("codex", Bun.argv[1]));',
+            join(runtime, "bin/codex"),
           ],
           source,
         );
@@ -273,64 +171,58 @@ const generateAiConfigs = (source: string, farstepPackage: string) =>
         "--no-link",
         "--print-out-paths",
       ]);
-      yield* publishAiConfigs(
-        source,
+      yield* prepareAiHome(
+        runtime,
         exported,
+        destination,
         host.codexCli ?? "",
-        join(runtime, "bin/omp"),
-        host.farstep,
+        farstep,
       );
     }),
   );
 
 runMain(
-  Effect.gen(function* () {
-    const { action, setupArguments } = selected;
-    const rules = actions[action];
-    if (action === "activate") {
-      yield* activateAi;
-      return;
-    }
+  Effect.scoped(
+    Effect.gen(function* () {
+      if (selected.action === "activate") return yield* activateAi;
+      if (selected.action === "generate")
+        return yield* generateAiConfigs(resolve(selected.destination));
+      if (selected.action === "apply") {
+        // Darwin activates user settings through its native module
+        if (process.platform === "linux")
+          yield* run([process.execPath, "home/deploy/apply.ts", "apply"]);
+        return;
+      }
 
-    // Darwin activates user settings through its native module
-    if (action === "apply" && process.platform !== "linux") return;
-    const source = yield* installAiSource;
-    const farstepPackage = yield* provisionFarstep(rules.provisionFarstep);
-    if (action === "setup") {
-      // The pinned AI checkout owns this SDK entry and its Promise-based API
-      yield* run(
-        [
-          process.execPath,
-          "--eval",
-          'import { setup } from "./tools/scripts/setup/setup.ts"; await setup(Bun.argv.slice(1), { background: process.env.HJEM_ACTIVATING === "1" });',
-          "codex",
-          "claude",
-          "opencode",
-          ...setupArguments,
-        ],
-        source,
-        { ...process.env, AI_TOOLS_FLAKE: root },
-      );
-    } else if (action === "configure") {
-      yield* run(
-        [process.execPath, "tools/scripts/cli/cli.ts", "chatgpt", "configure"],
-        source,
-        {
-          ...process.env,
-          // Keep the patcher on the same revision as the configure command
-          PATCH_CHATGPT_COMPUTER_USE:
-            process.env.PATCH_CHATGPT_COMPUTER_USE ??
-            join(source, "apps/chatgpt/policy/policy.ts"),
-        },
-      );
-    } else if (rules.generate) {
-      yield* generateAiConfigs(source, farstepPackage);
-      if (action === "apply")
+      const fs = yield* FileSystem.FileSystem;
+      // Setup and app configuration do not deploy links into this package
+      const temporary = yield* fs.makeTempDirectoryScoped({ prefix: "dotfiles-ai-" });
+      const runtime = yield* buildPackage("ai-tools", join(temporary, "runtime"));
+      if (selected.action === "setup") {
+        yield* provisionFarstep;
         yield* run(
-          [process.execPath, join(root, "home/deploy/apply.ts"), "apply"],
-          root,
-          { ...process.env, DOTFILES_AI_PREPARED: "1" },
+          [
+            process.execPath,
+            "--eval",
+            'import { setup } from "./tools/scripts/setup/setup.js"; await setup(Bun.argv.slice(1), { background: process.env.HJEM_ACTIVATING === "1" });',
+            "codex",
+            "claude",
+            "opencode",
+            ...selected.setupArguments,
+          ],
+          join(runtime, "lib/ai-tools"),
+          { ...process.env, AI_TOOLS_FLAKE: root },
         );
-    }
-  }),
+      } else {
+        yield* run(
+          [
+            process.execPath,
+            join(runtime, "lib/ai-tools/apps/chatgpt/configure/configure.js"),
+          ],
+          root,
+          { ...process.env, AI_TOOLS_WRAPPER_BIN: join(runtime, "bin/ai") },
+        );
+      }
+    }),
+  ),
 );
