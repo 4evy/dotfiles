@@ -26,7 +26,7 @@ import type { HttpClientError } from "effect/http";
 // setup.sh prepares the frozen workspace dependencies before importing this file
 const root = resolve(import.meta.dir, "../..");
 const minimumMacOSMajor = 27;
-const homebrewRevision = "eaa2af62ca1d5349c9743f82b1b0c4e5d365fb2d";
+const homebrewRevision = "c9c975046f78e6e6d662deb801bd461ebd6a54ed";
 const homebrewURL = `https://raw.githubusercontent.com/Homebrew/install/${homebrewRevision}/install.sh`;
 const homebrewSHA256 =
   "8fd2f1a5287a7c2e3d7362924c677edcc04c5a0e16448c77132d056bc88cf1ed";
