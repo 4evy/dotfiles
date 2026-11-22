@@ -9,8 +9,7 @@ cask_args(appdir: "/Applications") if OS.mac?
 
 tap("4evy/hide-disply-audio", "https://github.com/4evy/hide-disply-audio", trusted: true)
 
-# Linux shell and everyday CLI packages are declared in modules/hjem/packages.nix
-# Bootstrap installs only the tools needed before Hjem can run
+# Linux shell and everyday CLI packages are declared in home/deploy/nix/packages.nix
 brew("bash") if OS.mac?
 brew("bash-completion@2") if OS.mac?
 brew("uv") if OS.mac?

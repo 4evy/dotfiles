@@ -17,11 +17,7 @@ let
       ../../../data/homebrew/tools.json
     ];
   };
-  homebrewPath = lib.strings.concatStringsSep ":" [
-    "/opt/homebrew/bin"
-    "/opt/homebrew/sbin"
-    "${config.users.users.${config.system.primary.user}.home}/.local/bin"
-  ];
+  homebrewUser = lib.strings.escapeShellArg config.homebrew.user;
   ghidraEntitlements = (formats.plist { }).generate "ghidra-entitlements.plist" {
     "com.apple.security.cs.disable-library-validation" = true;
   };
@@ -46,18 +42,44 @@ in
   system.activation.steps = {
     homebrew = {
       deps = lib.modules.mkForce [ "users" ];
+      functions = ''
+        dotfiles_homebrew_mode=no-upgrade
+        dotfiles_homebrew_askpass=
+        dotfiles_homebrew_password=
+        # Setup opens this dedicated pipe after sudo, before ndw clears the environment
+        if [[ -p /dev/fd/8 ]] &&
+          IFS= read -r -n 21 -t 1 dotfiles_homebrew_header <&8 &&
+          [[ $dotfiles_homebrew_header == dotfiles-homebrew-v1 ]]; then
+          if ! IFS= read -r -n 11 -t 1 dotfiles_homebrew_mode <&8 ||
+            ! IFS= read -r -d "" -t 1 dotfiles_homebrew_askpass <&8 ||
+            ! IFS= read -r -d "" -t 1 dotfiles_homebrew_password <&8; then
+            printf 'Incomplete dotfiles Homebrew activation options\n' >&2
+            exit 1
+          fi
+          exec 8<&-
+          case "$dotfiles_homebrew_mode" in
+            no-upgrade|upgrade) ;;
+            *)
+              printf 'Invalid dotfiles Homebrew activation mode\n' >&2
+              exit 1
+              ;;
+          esac
+        fi
+      '';
       text = lib.modules.mkForce ''
         (
-          set -e
-          trap '/usr/bin/sudo -H -u ${config.system.primary.user} ${homebrewHelper} restore' EXIT
-          /usr/bin/sudo -H -u ${config.system.primary.user} \
-            ${homebrewHelper} sandbox
-          /bin/launchctl asuser "$(/usr/bin/id -u ${config.system.primary.user})" \
-            /usr/bin/sudo --preserve-env=PATH,SUDO_ASKPASS,DOTFILES_SUDO_PASSWORD -H -u ${config.system.primary.user} \
-            /usr/bin/env -u SUDO_USER -u HOMEBREW_SUDO_USER -u SSH_TTY -u HOMEBREW_SSH_TTY \
-            PATH=${lib.strings.escapeShellArg homebrewPath}:"$PATH" HOMEBREW_NO_AUTO_UPDATE=1 \
-            /opt/homebrew/bin/brew bundle install --no-upgrade --file ${config.system.build.brewfile}
+          if [[ -n $dotfiles_homebrew_askpass ]]; then
+            export SUDO_ASKPASS="$dotfiles_homebrew_askpass"
+            export DOTFILES_SUDO_PASSWORD="$dotfiles_homebrew_password"
+          fi
+          set -- bundle --prefix ${lib.strings.escapeShellArg config.homebrew.prefix} \
+            --file ${config.system.build.brewfile} --user ${homebrewUser}
+          if [[ $dotfiles_homebrew_mode == upgrade ]]; then
+            set -- "$@" --upgrade
+          fi
+          ${homebrewHelper} "$@"
         )
+        unset dotfiles_homebrew_askpass dotfiles_homebrew_password
       '';
     };
 
@@ -84,14 +106,6 @@ in
             -f "$source"
           /usr/bin/mdimport -i "$source"
         done
-        private_bundle=${lib.strings.escapeShellArg "${config.users.users.${config.system.primary.user}.home}/.config/homebrew/Brewfile.private"}
-        if [ -f "$private_bundle" ]; then
-          /bin/launchctl asuser "$(/usr/bin/id -u ${config.system.primary.user})" \
-            /usr/bin/sudo --preserve-env=PATH,SUDO_ASKPASS,DOTFILES_SUDO_PASSWORD -H -u ${config.system.primary.user} \
-            /usr/bin/env -u SUDO_USER -u HOMEBREW_SUDO_USER -u SSH_TTY -u HOMEBREW_SSH_TTY \
-            PATH=${lib.strings.escapeShellArg homebrewPath}:"$PATH" HOMEBREW_NO_AUTO_UPDATE=1 \
-            /opt/homebrew/bin/brew bundle install --no-upgrade --file "$private_bundle"
-        fi
       '';
     };
     launchd.deps = [ "dotfiles-applications" ];

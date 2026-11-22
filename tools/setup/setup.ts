@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { createHash } from "node:crypto";
 import { homedir, userInfo } from "node:os";
-import { delimiter, join, resolve } from "node:path";
+import { delimiter, dirname, join, resolve } from "node:path";
 import { type RunOptions, run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { isExecutable } from "@dotfiles/core/files";
@@ -22,9 +22,11 @@ import {
   Terminal,
 } from "effect";
 import type { HttpClientError } from "effect/http";
+import { darwinBundleCommand } from "./homebrew.ts";
 
 // setup.sh prepares the frozen workspace dependencies before importing this file
 const root = resolve(import.meta.dir, "../..");
+const macOS = process.platform === "darwin";
 const minimumMacOSMajor = 27;
 const homebrewRevision = "c9c975046f78e6e6d662deb801bd461ebd6a54ed";
 const homebrewURL = `https://raw.githubusercontent.com/Homebrew/install/${homebrewRevision}/install.sh`;
@@ -35,6 +37,15 @@ const sudoRefreshInterval = "45 seconds";
 const privateExecutableMode = 0o700;
 const installerDownloadRetries = 3;
 const installerRetryInterval = "1 second";
+const darwinActivationLauncher = `
+  brew_mode=$1
+  shift
+  # ndw clears the environment at its shebang, but preserves open descriptors
+  exec "$@" 8< <(
+    printf '%s\\n' dotfiles-homebrew-v1 "$brew_mode"
+    printf '%s\\0' "\${SUDO_ASKPASS-}" "\${DOTFILES_SUDO_PASSWORD-}"
+  )
+`;
 
 const log = (message: string) => Effect.sync(() => console.log(`\n==> ${message}`));
 
@@ -64,7 +75,7 @@ const workstation = Effect.gen(function* () {
   const nixos = process.platform === "linux" && (yield* fs.exists("/etc/NIXOS"));
   const userBin = join(homedir(), ".local/bin");
   const brewPrefix = yield* workstationBrewPrefix(nixos);
-  const paths: string[] = [];
+  const paths = [dirname(process.execPath)];
   if (process.platform === "linux" && !nixos)
     paths.push(
       join(
@@ -93,6 +104,8 @@ const workstation = Effect.gen(function* () {
     UV_TOOL_BIN_DIR: userBin,
   };
   let sudoReady = false;
+  let darwinActivated = false;
+  let packagesSwitched = false;
 
   const command = (args: string[], options: RunOptions & { quiet?: boolean } = {}) =>
     run(args, {
@@ -288,18 +301,28 @@ const workstation = Effect.gen(function* () {
 
   const installUserland = () =>
     Effect.gen(function* () {
-      if (nixos) return;
-      yield* ensureSudo;
-      // Sudo is ready, so Brew and its helpers need no terminal input
-      yield* command(
-        [
+      if (!darwinActivated) {
+        yield* ensureSudo;
+        const bundle = [
           process.execPath,
           join(root, "tools/setup/homebrew.ts"),
           "bundle",
           ...(env.DOTFILES_HOMEBREW_UPGRADE === "1" ? ["--upgrade"] : []),
-        ],
-        { stdin: "ignore" },
-      );
+        ];
+        if (macOS) {
+          const { uid, username } = userInfo();
+          yield* command(
+            [
+              "sudo",
+              "--preserve-env=DOTFILES_SUDO_PASSWORD,SUDO_ASKPASS",
+              ...darwinBundleCommand(String(uid), username, bundle),
+            ],
+            { stdin: "ignore" },
+          );
+        } else {
+          yield* command(bundle, { stdin: "ignore" });
+        }
+      }
       yield* command([
         join(brewPrefix, "bin/rustup"),
         "toolchain",
@@ -322,12 +345,16 @@ const workstation = Effect.gen(function* () {
     Effect.gen(function* () {
       if (nixos) return;
       yield* ensureSudo;
-      if (!(yield* isExecutable(join(brewPrefix, "bin/just"))))
-        yield* command([join(brewPrefix, "bin/brew"), "install", "just", "jq"]);
-      yield* command([join(brewPrefix, "bin/just"), "nix", "_ensure"]);
-      yield* command([process.execPath, join(root, "tools/setup/nix.ts")]);
-      if (process.platform === "linux")
-        yield* command([join(brewPrefix, "bin/just"), "nix"]);
+      if (macOS && !(yield* which("just")))
+        yield* command([join(brewPrefix, "bin/brew"), "install", "just"], {
+          env: { ...env, HOMEBREW_NO_AUTO_UPDATE: "1", HOMEBREW_NO_ASK: "1" },
+        });
+      yield* command(["just", "nix", "_ensure"]);
+      if (!macOS) {
+        yield* command([process.execPath, join(root, "tools/setup/nix.ts")]);
+        yield* command(["just", "hjem", "_packages", "switch"]);
+        packagesSwitched = true;
+      }
     });
 
   const configureBootc = Effect.gen(function* () {
@@ -391,10 +418,17 @@ const workstation = Effect.gen(function* () {
         yield* command([
           "sudo",
           "--preserve-env=DOTFILES_SUDO_PASSWORD,SUDO_ASKPASS",
+          "/bin/bash",
+          "-p",
+          "-c",
+          darwinActivationLauncher,
+          "dotfiles-activate",
+          env.DOTFILES_HOMEBREW_UPGRADE === "1" ? "upgrade" : "no-upgrade",
           join(system, "activate"),
           "--profile",
           "/nix/var/nix/profiles/system",
         ]);
+        darwinActivated = true;
       } else {
         if (!nixos) yield* configureBootc;
         yield* command([process.execPath, join(root, "tools/setup/toshy.ts")]);
@@ -411,6 +445,8 @@ const workstation = Effect.gen(function* () {
     installAntigravity: () =>
       command([process.execPath, join(root, "tools/setup/antigravity.ts")]),
     applyDotfiles: () => command(["just", "apply"]),
+    refreshPackages: () =>
+      packagesSwitched ? command(["just", "hjem", "_refresh-packages"]) : Effect.void,
   };
 });
 
@@ -428,21 +464,31 @@ type Step = {
   >;
   nixos?: boolean;
 };
-const bootstrapSteps: Step[] = [
-  {
-    name: "homebrew",
-    description: "Prepare Homebrew",
-    action: (host) => host.prepareHomebrew(),
-  },
-  { name: "uv", description: "Install uv", action: (host) => host.installUv() },
-];
+const homebrewStep: Step = {
+  name: "homebrew",
+  description: "Prepare Homebrew",
+  action: (host) => host.prepareHomebrew(),
+};
+const bootstrapSteps: Step[] = macOS
+  ? [
+      homebrewStep,
+      { name: "uv", description: "Install uv", action: (host) => host.installUv() },
+    ]
+  : [homebrewStep];
+const hostStep: Step = {
+  name: "host",
+  description: "Configure platform services",
+  action: (host) => host.configureHost(),
+  nixos: true,
+};
 const setupSteps: Step[] = [
-  ...bootstrapSteps,
+  homebrewStep,
   {
     name: "nix",
     description: "Prepare Nix",
     action: (host) => host.installNix(),
   },
+  ...(macOS ? [hostStep] : []),
   {
     name: "userland",
     description: "Install Homebrew tools and Rust",
@@ -453,12 +499,7 @@ const setupSteps: Step[] = [
     description: "Install Antigravity App and CLI",
     action: (host) => host.installAntigravity(),
   },
-  {
-    name: "host",
-    description: "Configure platform services",
-    action: (host) => host.configureHost(),
-    nixos: true,
-  },
+  ...(macOS ? [] : [hostStep]),
   {
     name: "dotfiles",
     description: "Apply Hjem dotfiles",
@@ -529,6 +570,7 @@ if (import.meta.main) {
           }),
         { discard: true },
       );
+      if (!selected.plan) yield* host.refreshPackages();
     }).pipe(
       Effect.catch((error) =>
         Effect.sync(() => {

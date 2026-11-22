@@ -48,19 +48,19 @@ helium: (_doctor 'reconcile')
     fi
     bun home/applications/helium/apply.ts
 
-# Prepare Homebrew and uv for workstation setup
+# Prepare Homebrew (and uv on macOS) without configuring the workstation
 [group('setup')]
 [positional-arguments]
 bootstrap *args:
     tools/setup/setup.sh bootstrap "$@"
 
-[doc('Install userland, apply dotfiles, then configure the host.')]
+[doc('Provision the workstation, then apply the Hjem home generation.')]
 [group('setup')]
 [positional-arguments]
 setup *args:
     tools/setup/setup.sh setup "$@"
 
-# Refresh userland, dotfiles, and host stages on an already-bootstrapped machine
+# Upgrade the Homebrew bundle and refresh the workstation and Hjem
 [env('DOTFILES_HOMEBREW_UPGRADE', '1')]
 [group('setup')]
 update:

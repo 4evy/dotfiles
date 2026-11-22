@@ -13,12 +13,19 @@ _hjem-platform platform:
 # Build or activate the Hjem home environment
 [arg('action', pattern=['switch', 'build'], help='switch to activate, or build to prepare without activating')]
 [group('setup')]
-_activate action:
+_activate action: (_packages action)
+    bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} {{ quote(if action == 'switch' { 'apply' } else { 'build' }) }}
+    if [[ {{ quote(action) }} == switch ]]; then
+      {{ just_command }} hjem _refresh-packages
+    fi
+
+_packages action:
     if [[ {{ quote(host_os) }} == linux && ! -e /etc/NIXOS ]]; then
       bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} {{ quote('packages-' + action) }}
     fi
-    bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} {{ quote(if action == 'switch' { 'apply' } else { 'build' }) }}
-    if [[ {{ quote(action) }} == switch && {{ quote(host_os) }} == linux && ! -e /etc/NIXOS ]]; then
+
+_refresh-packages:
+    if [[ {{ quote(host_os) }} == linux && ! -e /etc/NIXOS ]]; then
       profile="${XDG_STATE_HOME:-$HOME/.local/state}/hjem/standalone/current-profile"
       if command -v systemctl >/dev/null 2>&1 && systemctl --user show-environment >/dev/null 2>&1; then
         systemctl --user daemon-reload
