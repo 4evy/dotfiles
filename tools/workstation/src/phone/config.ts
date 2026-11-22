@@ -4,9 +4,10 @@ import { object, or } from "@optique/core/constructs";
 import { formatMessage } from "@optique/core/message";
 import { map, multiple } from "@optique/core/modifiers";
 import { parseSync } from "@optique/core/parser";
-import { argument, flag, option, passThrough } from "@optique/core/primitives";
+import { flag, option } from "@optique/core/primitives";
 import { string } from "@optique/core/valueparser";
-import { Effect, Schema, SchemaTransformation } from "effect";
+import { Effect, Schema, SchemaIssue, SchemaTransformation } from "effect";
+import { forwardedArguments } from "../lib/arguments.ts";
 import defaults from "./defaults.json";
 
 const IPV4_VERSION = 4;
@@ -14,32 +15,31 @@ const IPV6_VERSION = 6;
 const MAX_TCP_PORT = 65535;
 
 export function normalizeIP(value: string): string {
-  const [address = "", scope] = value.split("%");
+  const [address = "", scope, extra] = value.split("%", 3);
   const version = isIP(address);
   if (
     !version ||
-    (scope !== undefined &&
-      (version !== IPV6_VERSION || !scope || value.split("%").length !== 2))
+    (scope !== undefined && (version !== IPV6_VERSION || !scope || extra !== undefined))
   )
     throw new UsageError("Invalid IP address");
   if (version === IPV4_VERSION) return address;
   const canonical = new URL(`http://[${address}]`).hostname.slice(1, -1);
   return `${canonical}${scope === undefined ? "" : `%${scope}`}`;
 }
-const ip = Schema.String.check(
-  Schema.makeFilter((value: string) => {
-    try {
-      normalizeIP(value);
-      return true;
-    } catch {
-      return "Invalid IP address";
-    }
-  }),
-).pipe(
+const ip = Schema.String.pipe(
   Schema.decode(
-    SchemaTransformation.transform({
-      decode: normalizeIP,
-      encode: (value: string) => value,
+    SchemaTransformation.transformEffect<string, string>({
+      decode: (value, options) =>
+        Effect.try({
+          try: () => normalizeIP(value),
+          catch: () =>
+            new SchemaIssue.InvalidValue(
+              { message: "Invalid IP address" },
+              value,
+              options,
+            ),
+        }),
+      encode: Effect.succeed,
     }),
   ),
 );
@@ -190,15 +190,7 @@ const phoneParser = object({
       ]),
     ),
   ),
-  scrcpyArgs: map(
-    multiple(
-      or(
-        map(argument(string()), (value) => [value]),
-        passThrough({ format: "nextToken" }),
-      ),
-    ),
-    (values) => values.flat(),
-  ),
+  scrcpyArgs: map(forwardedArguments, (values) => values.flat()),
 });
 export const phoneConfig = Effect.fn("phoneConfig")(function* (args: string[]) {
   const parsed = parseSync(phoneParser, args);
