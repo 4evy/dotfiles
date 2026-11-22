@@ -13,15 +13,19 @@ runMain(
       if (typeof uri !== "string") return false;
       const path = yield* Effect.try(() => fileURLToPath(uri)).pipe(Effect.option);
       if (path._tag === "None") return false;
-      const document = (yield* fs.exists(path.value))
-        ? yield* fs.realPath(path.value)
-        : path.value;
+      const document = yield* fs
+        .realPath(path.value)
+        .pipe(
+          Effect.catchReason("PlatformError", "NotFound", () =>
+            Effect.succeed(path.value),
+          ),
+        );
       const difference = relative(temporaryDirectory, document);
       return (
         difference !== ".." && !difference.startsWith("../") && !isAbsolute(difference)
       );
     });
-    const server = yield* Effect.sync(() => Bun.which("rumdl"));
+    const server = Bun.which("rumdl");
     if (!server)
       return yield* Effect.fail(
         new Error("rumdl is not installed or is missing from PATH"),
