@@ -1,9 +1,9 @@
 import '../common.just'
 
 set working-directory := '../..'
-# Render every supported host variant and validate the generated home files
+# Validate generated home files for both renderer platforms
 [group('check')]
-check: _secrets *(_hjem-platform *['darwin', 'fedora', 'nixos'])
+check: _secrets *(_hjem-platform *['darwin', 'linux'])
 
 _secrets:
     {{ just_command }} sops check

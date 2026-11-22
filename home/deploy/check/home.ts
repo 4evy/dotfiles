@@ -112,7 +112,7 @@ const checkGeneratedFile = Effect.fn("checkGeneratedFile")(function* (
 runMain(
   Effect.gen(function* () {
     const platform = runParser(
-      argument(choice(["darwin", "fedora", "nixos"])),
+      argument(choice(["darwin", "linux"])),
       "home/deploy/check/home.ts",
       Bun.argv.slice(2),
       {
@@ -123,7 +123,7 @@ runMain(
     const output = yield* buildHjemOutput(repository, "hjemHome", {
       ...process.env,
       HJEM_WORKING_TREE: repository,
-      HJEM_PLATFORM: platform === "darwin" ? "darwin" : "linux",
+      HJEM_PLATFORM: platform,
     });
     const manifest = yield* readJsonFile(join(output, "manifest.json"), ManifestSchema);
     const hooks = yield* readJsonFile(join(output, "hooks.json"), HooksSchema);
