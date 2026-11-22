@@ -9,6 +9,7 @@ import quotaToast from "@dotfiles/home/data/opencode/quota/toast";
 import {
   type PreparedAiManifest,
   PreparedAiManifestSchema,
+  readJsonFile,
 } from "@dotfiles/home/schema";
 import { Effect, FileSystem, Predicate, Schema } from "effect";
 
@@ -204,13 +205,10 @@ export const prepareAiHome = Effect.fn("prepareAiHome")(function* (
 ) {
   const fs = yield* FileSystem.FileSystem;
   const home = homedir();
-  const manifestText = yield* fs.readFileString(join(exported, manifestFilename));
-  const manifestJson = yield* Effect.try({
-    try: () => JSON.parse(manifestText) as unknown,
-    catch: (error) => new DotfilesError(`Invalid AI export manifest: ${error}`),
-  });
-  const manifest =
-    yield* Schema.decodeUnknownEffect(ExportManifestSchema)(manifestJson);
+  const manifest = yield* readJsonFile(
+    join(exported, manifestFilename),
+    ExportManifestSchema,
+  );
   const files: PreparedAiManifest["files"] = [];
   const write = Effect.fn("writePreparedAiFile")(function* (
     path: string,

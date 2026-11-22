@@ -1,4 +1,17 @@
-import { Schema, Struct } from "effect";
+import { DotfilesError } from "@dotfiles/core/errors";
+import { Effect, FileSystem, Schema, Struct } from "effect";
+
+export function readJsonFile<S extends Schema.Constraint>(path: string, schema: S) {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const text = yield* fs.readFileString(path);
+    return yield* Schema.decodeUnknownEffect(Schema.fromJsonString(schema))(text).pipe(
+      Effect.mapError(
+        (cause) => new DotfilesError(`Invalid JSON in ${path}: ${cause}`),
+      ),
+    );
+  });
+}
 
 const CommandSchema = Schema.Array(Schema.String)
   .check(Schema.isMinLength(1))

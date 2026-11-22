@@ -4,11 +4,11 @@ import { run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { type RuntimeServices, runMain } from "@dotfiles/core/runtime";
 import { buildHjemOutput } from "@dotfiles/home/nix";
-import { HooksSchema, ManifestSchema } from "@dotfiles/home/schema";
+import { HooksSchema, ManifestSchema, readJsonFile } from "@dotfiles/home/schema";
 import { runParser } from "@optique/core/facade";
 import { argument } from "@optique/core/primitives";
 import { choice } from "@optique/core/valueparser";
-import { Effect, FileSystem, Schema } from "effect";
+import { Effect, FileSystem } from "effect";
 import { validateXML } from "./xml.ts";
 
 const repository = resolve(import.meta.dir, "../../..");
@@ -91,11 +91,7 @@ const checkGeneratedFile = Effect.fn("checkGeneratedFile")(function* (
   const info = yield* fs
     .stat(source)
     .pipe(
-      Effect.catch((error) =>
-        error.reason._tag === "NotFound"
-          ? Effect.succeed(undefined)
-          : Effect.fail(error),
-      ),
+      Effect.catchReason("PlatformError", "NotFound", () => Effect.succeed(undefined)),
     );
   if (info?.type !== "File") return false;
   const contents = yield* fs.readFileString(source);
@@ -115,7 +111,6 @@ const checkGeneratedFile = Effect.fn("checkGeneratedFile")(function* (
 
 runMain(
   Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem;
     const platform = runParser(
       argument(choice(["darwin", "fedora", "nixos"])),
       "home/deploy/check/home.ts",
@@ -130,19 +125,8 @@ runMain(
       HJEM_WORKING_TREE: repository,
       HJEM_PLATFORM: platform === "darwin" ? "darwin" : "linux",
     });
-    const readJson = Effect.fn("readGeneratedJson")(function* (name: string) {
-      const text = yield* fs.readFileString(join(output, name));
-      return yield* Effect.try({
-        try: () => JSON.parse(text) as unknown,
-        catch: (error) => new DotfilesError(`Invalid ${name}: ${error}`),
-      });
-    });
-    const manifest = yield* Schema.decodeUnknownEffect(ManifestSchema)(
-      yield* readJson("manifest.json"),
-    );
-    const hooks = yield* Schema.decodeUnknownEffect(HooksSchema)(
-      yield* readJson("hooks.json"),
-    );
+    const manifest = yield* readJsonFile(join(output, "manifest.json"), ManifestSchema);
+    const hooks = yield* readJsonFile(join(output, "hooks.json"), HooksSchema);
     const paths = [
       // Only Nix-generated home sources need this check, not external packages
       ...manifest.files.filter(({ source }) => HJEM_SOURCE_NAME.test(basename(source))),

@@ -18,6 +18,7 @@ import {
   type Manifest,
   ManifestSchema,
   PreparedAiManifestSchema,
+  readJsonFile,
 } from "./schema.ts";
 
 const PRIVATE_DIRECTORY_MODE = 0o700;
@@ -37,45 +38,23 @@ const FINGERPRINT_IGNORED_DIRECTORIES = ["node_modules", "__pycache__", ".git", 
 const repository = resolve(import.meta.dir, "../..");
 const home = homedir();
 const state = join(process.env.XDG_STATE_HOME || join(home, ".local/state"), "hjem");
+const targetCommand = <const A extends string>(action: A) =>
+  command(
+    action,
+    object({
+      action: constant(action),
+      targets: multiple(argument(string({ metavar: "TARGET" }))),
+    }),
+  );
 const { action, targets } = runParser(
   withDefault(
     or(
       command("apply", object({ action: constant("apply"), targets: constant([]) })),
-      command(
-        "build",
-        object({
-          action: constant("build"),
-          targets: multiple(argument(string({ metavar: "TARGET" }))),
-        }),
-      ),
-      command(
-        "diff",
-        object({
-          action: constant("diff"),
-          targets: multiple(argument(string({ metavar: "TARGET" }))),
-        }),
-      ),
-      command(
-        "status",
-        object({
-          action: constant("status"),
-          targets: multiple(argument(string({ metavar: "TARGET" }))),
-        }),
-      ),
-      command(
-        "packages-switch",
-        object({
-          action: constant("packages-switch"),
-          targets: multiple(argument(string({ metavar: "TARGET" }))),
-        }),
-      ),
-      command(
-        "packages-build",
-        object({
-          action: constant("packages-build"),
-          targets: multiple(argument(string({ metavar: "TARGET" }))),
-        }),
-      ),
+      targetCommand("build"),
+      targetCommand("diff"),
+      targetCommand("status"),
+      targetCommand("packages-switch"),
+      targetCommand("packages-build"),
     ),
     { action: "apply", targets: [] },
   ),
@@ -106,25 +85,16 @@ const run = (command: readonly string[], capture = false, cwd = repository) =>
     stderr: "inherit",
   }).pipe(Effect.map((result) => result.stdout.trim()));
 
-const readJson = Effect.fn("readJson")(function* (path: string) {
-  const fs = yield* FileSystem.FileSystem;
-  const text = yield* fs.readFileString(path);
-  return yield* Effect.try({
-    try: () => JSON.parse(text) as unknown,
-    catch: (error) => new DotfilesError(`Invalid JSON in ${path}: ${error}`),
-  });
-});
-
 // Unlike access(), lstat also recognizes dangling managed symlinks
-const exists = Effect.fn("exists")(function* (path: string) {
+const linkInfo = Effect.fn("linkInfo")(function* (path: string) {
   const fs = yield* FileSystem.FileSystem;
-  return yield* fs.lstat(path).pipe(
-    Effect.as(true),
-    Effect.catch((error) =>
-      error.reason._tag === "NotFound" ? Effect.succeed(false) : Effect.fail(error),
-    ),
-  );
+  return yield* fs
+    .lstat(path)
+    .pipe(
+      Effect.catchReason("PlatformError", "NotFound", () => Effect.succeed(undefined)),
+    );
 });
+const exists = (path: string) => linkInfo(path).pipe(Effect.map(Boolean));
 
 function expand(value: string, output: string) {
   return value
@@ -153,15 +123,14 @@ const publicFiles = Effect.fn("publicFiles")(function* (output: string) {
       new DotfilesError("Nix did not return a Hjem home output"),
     );
   yield* fs.copyFile(join(built, HOOKS_FILE), join(output, HOOKS_FILE));
-  const manifest = yield* Schema.decodeUnknownEffect(ManifestSchema)(
-    yield* readJson(join(built, MANIFEST_FILE)),
-  );
+  const manifest = yield* readJsonFile(join(built, MANIFEST_FILE), ManifestSchema);
   manifest.files = manifest.files.filter(
     (entry) => !entry.requireCommand || Bun.which(entry.requireCommand),
   );
   for (const entry of manifest.files) delete entry.requireCommand;
-  const generators = yield* Schema.decodeUnknownEffect(GeneratorsSchema)(
-    yield* readJson(join(built, GENERATORS_FILE)),
+  const generators = yield* readJsonFile(
+    join(built, GENERATORS_FILE),
+    GeneratorsSchema,
   );
   for (const generator of generators) {
     if (generator.systems && !generator.systems.includes(process.platform)) continue;
@@ -237,8 +206,9 @@ const prepareAiEntry = Effect.fn("prepareAiEntry")(function* (
 
 const preparedAi = Effect.fn("preparedAi")(function* (directory: string) {
   yield* run(["bun", "tools/setup/ai/ai.ts", "generate", directory]);
-  const metadata = yield* Schema.decodeUnknownEffect(PreparedAiManifestSchema)(
-    yield* readJson(join(directory, MANIFEST_FILE)),
+  const metadata = yield* readJsonFile(
+    join(directory, MANIFEST_FILE),
+    PreparedAiManifestSchema,
   );
   if (metadata.platform && metadata.platform !== process.platform)
     return yield* Effect.fail(
@@ -259,9 +229,7 @@ function selected(target: string) {
 
 const activeManifest = Effect.fn("activeManifest")(function* () {
   const path = join(state, "dotfiles/current", MANIFEST_FILE);
-  return (yield* exists(path))
-    ? yield* Schema.decodeUnknownEffect(ManifestSchema)(yield* readJson(path))
-    : undefined;
+  return (yield* exists(path)) ? yield* readJsonFile(path, ManifestSchema) : undefined;
 });
 
 const generationReferenced = Effect.fn("generationReferenced")(function* (
@@ -279,9 +247,7 @@ const generationReferenced = Effect.fn("generationReferenced")(function* (
           if (yield* visit(path)) return true;
         } else if (name.endsWith(".json")) {
           const referenced = yield* Effect.gen(function* () {
-            const manifest = yield* Schema.decodeUnknownEffect(ManifestSchema)(
-              yield* readJson(path),
-            );
+            const manifest = yield* readJsonFile(path, ManifestSchema);
             return manifest.files.some(
               (file) => file.source === output || file.source.startsWith(`${output}/`),
             );
@@ -335,13 +301,13 @@ function fingerprintInput(
   return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     fingerprint.update(path);
-    if (!(yield* exists(path))) {
+    const link = yield* linkInfo(path);
+    if (!link) {
       fingerprint.update("missing");
       return;
     }
-    const link = yield* fs.lstat(path);
     if (link.type === "SymbolicLink") fingerprint.update(yield* fs.readLink(path));
-    const info = yield* fs.stat(path);
+    const info = link.type === "SymbolicLink" ? yield* fs.stat(path) : link;
     fingerprint.update(String(info.mode & ACCESS_PERMISSION_BITS));
     if (info.type !== "Directory") {
       fingerprint.update(yield* fs.readFile(path));
@@ -359,9 +325,7 @@ function fingerprintInput(
 
 const hooks = Effect.fn("hooks")(function* (output: string) {
   const fs = yield* FileSystem.FileSystem;
-  const entries = yield* Schema.decodeUnknownEffect(HooksSchema)(
-    yield* readJson(join(output, HOOKS_FILE)),
-  );
+  const entries = yield* readJsonFile(join(output, HOOKS_FILE), HooksSchema);
   const hashes = join(state, "hook-state");
   yield* fs.makeDirectory(hashes, { recursive: true, mode: PRIVATE_DIRECTORY_MODE });
   for (const hook of entries.sort((a, b) => a.name.localeCompare(b.name))) {
@@ -392,12 +356,11 @@ const prepareManifest = Effect.fn("prepareManifest")(function* (
     ["bun", "tools/records/main.ts", "deploy", "--directory", join(output, "records")],
     true,
   );
-  const privateJson = yield* Effect.try({
-    try: () => JSON.parse(privateText) as unknown,
-    catch: (error) => new DotfilesError(`Invalid private manifest: ${error}`),
-  });
-  const privateManifest =
-    yield* Schema.decodeUnknownEffect(ManifestSchema)(privateJson);
+  const privateManifest = yield* Schema.decodeUnknownEffect(
+    Schema.fromJsonString(ManifestSchema),
+  )(privateText).pipe(
+    Effect.mapError(() => new DotfilesError("Invalid private manifest")),
+  );
   manifest.files.push(
     ...privateManifest.files,
     ...(managesAi ? yield* preparedAi(join(output, "ai")) : []),
@@ -620,9 +583,7 @@ const LockSchema = Schema.Struct({
 
 runMain(
   Effect.gen(function* () {
-    const lockFile = yield* Schema.decodeUnknownEffect(LockSchema)(
-      yield* readJson(join(repository, "flake.lock")),
-    );
+    const lockFile = yield* readJsonFile(join(repository, "flake.lock"), LockSchema);
     const managesAi =
       process.platform === "linux" &&
       Boolean(lockFile.nodes[lockFile.root]?.inputs?.ai);

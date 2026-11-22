@@ -2,6 +2,7 @@ import { dirname, extname, join, resolve } from "node:path";
 import { output, run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
+import { readJsonFile } from "@dotfiles/home/schema";
 import { Effect, FileSystem, Schema } from "effect";
 
 const root = resolve(import.meta.dir, "../../..");
@@ -70,10 +71,10 @@ runMain(
       sources.set(target, file);
       yield* stageSource(original, join(staging, target));
     }
-    const text = yield* fs.readFileString(join(source, "tsconfig.json"));
-    const config = yield* Schema.decodeUnknownEffect(
-      Schema.fromJsonString(Schema.Record(Schema.String, Schema.Unknown)),
-    )(text);
+    const config = yield* readJsonFile(
+      join(source, "tsconfig.json"),
+      Schema.Record(Schema.String, Schema.Unknown),
+    );
     yield* fs.writeFileString(
       join(staging, "tsconfig.json"),
       JSON.stringify({
