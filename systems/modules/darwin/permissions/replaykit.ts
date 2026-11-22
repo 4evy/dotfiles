@@ -10,6 +10,30 @@ const lastAlerted = "kScreenCaptureApprovalLastAlerted";
 const lastUsed = "kScreenCaptureApprovalLastUsed";
 const privacyHint = "kScreenCapturePrivacyHintDate";
 
+const captureReminderKeys = Effect.fn(function* (clients: readonly Client[]) {
+  const fs = yield* FileSystem.FileSystem;
+  const keys = new Set<string>();
+  for (const { bundle, bundleIdentifier, grantPaths } of clients) {
+    for (const path of grantPaths) {
+      if (!bundle) {
+        keys.add(path);
+        continue;
+      }
+      const canonical = yield* fs.realPath(path);
+      // ReplayKit uses bundle IDs in the standard app directories and URLs elsewhere
+      const standard =
+        canonical.startsWith("/Applications/") ||
+        canonical.startsWith("/System/Applications/");
+      keys.add(
+        standard && bundleIdentifier
+          ? bundleIdentifier
+          : pathToFileURL(`${canonical}/`).href,
+      );
+    }
+  }
+  return keys;
+});
+
 export const reconcileCaptureReminders = Effect.fn(function* (
   clients: readonly Client[],
   home: string,
@@ -31,26 +55,7 @@ export const reconcileCaptureReminders = Effect.fn(function* (
     user,
     "/usr/bin/defaults",
   ];
-  const fs = yield* FileSystem.FileSystem;
-  const keys = new Set<string>();
-  for (const { bundle, bundleIdentifier, grantPaths } of clients) {
-    for (const path of grantPaths) {
-      if (!bundle) {
-        keys.add(path);
-        continue;
-      }
-      const canonical = yield* fs.realPath(path);
-      // ReplayKit uses bundle IDs in the standard app directories and URLs elsewhere
-      const standard =
-        canonical.startsWith("/Applications/") ||
-        canonical.startsWith("/System/Applications/");
-      keys.add(
-        standard && bundleIdentifier
-          ? bundleIdentifier
-          : pathToFileURL(`${canonical}/`).href,
-      );
-    }
-  }
+  const keys = yield* captureReminderKeys(clients);
 
   const isCurrent = Effect.fn(function* (key: string) {
     const { code, stdout, stderr } = yield* run([...defaults, "read", path, key], {
