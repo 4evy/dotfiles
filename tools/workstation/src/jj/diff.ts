@@ -156,20 +156,15 @@ const cleanup = Effect.fn("jjDiff.cleanup")(function* (workspaces: string[]) {
       new DotfilesError(`Failed to remove plaintext workspace: ${failures.join(", ")}`),
     );
 });
-function lines(text: string): string[] {
-  return text.match(/[^\n]*\n|[^\n]+$/g) ?? [];
-}
 function rewritePaths(patch: string, left: string, right: string): string {
-  return lines(patch)
-    .map((line) => {
-      if (!/^(?:diff --git |--- |\+\+\+ |Binary files )/.test(line)) return line;
-      let rendered = line;
-      for (const prefix of ["a", "b"])
-        for (const snapshot of [left, right])
-          rendered = rendered.replaceAll(`${prefix}/${snapshot}/`, `${prefix}/`);
-      return rendered;
-    })
-    .join("");
+  return patch.replace(/[^\n]+/g, (line) => {
+    if (!/^(?:diff --git |--- |\+\+\+ |Binary files )/.test(line)) return line;
+    let rendered = line;
+    for (const prefix of ["a", "b"])
+      for (const snapshot of [left, right])
+        rendered = rendered.replaceAll(`${prefix}/${snapshot}/`, `${prefix}/`);
+    return rendered;
+  });
 }
 // Node Readable.pipe initializes Bun's process.stderr and makes its inherited
 // pipe nonblocking, breaking jj's concurrent writes to the same pager pipe
@@ -238,20 +233,18 @@ const gitDiff = Effect.fn("jjDiff.gitDiff")(function* (
 });
 function annotateStatuses(patch: string): string {
   let status = "M";
-  return lines(patch)
-    .map((line) => {
-      if (line.startsWith("diff --git ")) status = "M";
-      else if (line.startsWith("new file mode ")) status = "A";
-      else if (line.startsWith("deleted file mode ")) status = "D";
-      if (line.startsWith("--- a/")) return line.replace("--- a/", `--- a/${status} `);
-      if (line.startsWith("+++ b/")) return line.replace("+++ b/", `+++ b/${status} `);
-      if (line.startsWith("Binary files a/"))
-        return line
-          .replace("Binary files a/", `Binary files a/${status} `)
-          .replace(" and b/", ` and b/${status} `);
-      return line;
-    })
-    .join("");
+  return patch.replace(/[^\n]+/g, (line) => {
+    if (line.startsWith("diff --git ")) status = "M";
+    else if (line.startsWith("new file mode ")) status = "A";
+    else if (line.startsWith("deleted file mode ")) status = "D";
+    if (line.startsWith("--- a/")) return line.replace("--- a/", `--- a/${status} `);
+    if (line.startsWith("+++ b/")) return line.replace("+++ b/", `+++ b/${status} `);
+    if (line.startsWith("Binary files a/"))
+      return line
+        .replace("Binary files a/", `Binary files a/${status} `)
+        .replace(" and b/", ` and b/${status} `);
+    return line;
+  });
 }
 const diffstat = Effect.fn("jjDiff.diffstat")(function* (
   patch: string,
@@ -278,14 +271,12 @@ const diffstat = Effect.fn("jjDiff.diffstat")(function* (
         `Failed to generate diffstat${result.stderr.trim() ? `: ${result.stderr.trim()}` : ""}`,
       ),
     );
-  return lines(result.stdout)
-    .map((line) => {
-      const match = /^ ([AMD]) (.*?)( \|.*)(\n?)$/.exec(line);
-      if (!match) return line;
-      const [, status, path, suffix, ending] = match;
-      return `${color ? styles[status ?? ""] : ""}${status} ${path}${color ? ANSI_RESET : ""}${suffix}${ending}`;
-    })
-    .join("");
+  return result.stdout.replace(/[^\n]+/g, (line) => {
+    const match = /^ ([AMD]) (.*?)( \|.*)$/.exec(line);
+    if (!match) return line;
+    const [, status, path, suffix] = match;
+    return `${color ? styles[status ?? ""] : ""}${status} ${path}${color ? ANSI_RESET : ""}${suffix}`;
+  });
 });
 export const jjDiff = Effect.fn("jjDiff")(function* (args: string[]) {
   const fs = yield* FileSystem.FileSystem;
