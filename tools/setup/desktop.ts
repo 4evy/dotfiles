@@ -21,8 +21,9 @@ const gnome = Effect.gen(function* () {
   ];
   if (!(yield* fs.exists("/etc/NIXOS")))
     wanted.push("window-calls-extended@hseliger.eu", "xremap@k0kubun.com");
+  const extensions = new Set(installed.stdout.trim().split("\n"));
   for (const extension of wanted) {
-    if (!installed.stdout.trim().split("\n").includes(extension))
+    if (!extensions.has(extension))
       return yield* Effect.fail(
         new DotfilesError(
           `Required system extension ${extension} is missing; rebuild the platform configuration`,
@@ -86,12 +87,13 @@ const copyFontFragments = Effect.fn(function* (target: string, fragments: string
 const clearFontCache = Effect.fn(function* (directory: string) {
   const fs = yield* FileSystem.FileSystem;
   for (const cache of yield* children(directory)) {
-    const entry = yield* fs.lstat(cache).pipe(
-      Effect.catchIf(
-        (error) => error.reason._tag === "NotFound",
-        () => Effect.succeed(undefined),
-      ),
-    );
+    const entry = yield* fs
+      .lstat(cache)
+      .pipe(
+        Effect.catchReason("PlatformError", "NotFound", () =>
+          Effect.succeed(undefined),
+        ),
+      );
     if (
       basename(cache).includes("cache-") &&
       (entry?.type === "File" || entry?.type === "SymbolicLink")

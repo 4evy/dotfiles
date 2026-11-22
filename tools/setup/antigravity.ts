@@ -10,6 +10,7 @@ import { runMain } from "@dotfiles/core/runtime";
 import { object } from "@optique/core/constructs";
 import { runParser } from "@optique/core/facade";
 import { Effect, FileSystem, Schema } from "effect";
+import { HttpClientResponse } from "effect/http";
 
 const installedExecutableMode = 0o755;
 
@@ -41,12 +42,11 @@ export const installAntigravity = Effect.fn(function* () {
 
   const bin = join(homedir(), ".local/bin");
   const target = join(bin, "agy");
-  const installed = yield* fs.lstat(target).pipe(
-    Effect.catchIf(
-      (error) => error.reason._tag === "NotFound",
-      () => Effect.succeed(undefined),
-    ),
-  );
+  const installed = yield* fs
+    .lstat(target)
+    .pipe(
+      Effect.catchReason("PlatformError", "NotFound", () => Effect.succeed(undefined)),
+    );
   if (installed) {
     if (installed.type !== "File")
       return yield* Effect.fail(
@@ -72,8 +72,7 @@ export const installAntigravity = Effect.fn(function* () {
       const platform = `${process.platform}_${arch}`;
       const manifest = yield* download(
         `${releases}/manifests/${platform}.json`,
-        (response) =>
-          Effect.flatMap(response.json, Schema.decodeUnknownEffect(manifestSchema)),
+        HttpClientResponse.schemaBodyJson(manifestSchema),
       );
       const payload = join(workspace, "payload");
       const bytes = new Uint8Array(

@@ -53,12 +53,11 @@ const linkRustdesk = Effect.fn(function* (home: string) {
   const link = join(home, ".local/bin/rustdesk");
   const target = "/Applications/RustDesk.app/Contents/MacOS/RustDesk";
   if (!(yield* fs.exists(target))) return;
-  const state = yield* fs.lstat(link).pipe(
-    Effect.catchIf(
-      (error) => error.reason._tag === "NotFound",
-      () => Effect.succeed(undefined),
-    ),
-  );
+  const state = yield* fs
+    .lstat(link)
+    .pipe(
+      Effect.catchReason("PlatformError", "NotFound", () => Effect.succeed(undefined)),
+    );
   if (state?.type === "SymbolicLink" && (yield* fs.readLink(link)) === target) return;
   yield* fs.makeDirectory(dirname(link), { recursive: true });
   yield* fs.remove(link, { force: true });

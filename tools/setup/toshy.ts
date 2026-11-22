@@ -43,12 +43,11 @@ runpy.run_path(str(source), run_name="__main__")
 
 const statIfExists = Effect.fn(function* (path: string) {
   const fs = yield* FileSystem.FileSystem;
-  return yield* fs.stat(path).pipe(
-    Effect.catchIf(
-      (error) => error.reason._tag === "NotFound",
-      () => Effect.succeed(undefined),
-    ),
-  );
+  return yield* fs
+    .stat(path)
+    .pipe(
+      Effect.catchReason("PlatformError", "NotFound", () => Effect.succeed(undefined)),
+    );
 });
 
 export const readSlices = Effect.fn(function* (sliceDir: string) {
@@ -318,12 +317,11 @@ export const provisionToshy = Effect.fn(function* () {
   yield* run(["systemctl", "--user", "is-active", "--quiet", toshyConfigService]);
 
   const device = "/run/kanata-main/main";
-  const deviceInfo = yield* fs.lstat(device).pipe(
-    Effect.catchIf(
-      (error) => error.reason._tag === "NotFound",
-      () => Effect.succeed(undefined),
-    ),
-  );
+  const deviceInfo = yield* fs
+    .lstat(device)
+    .pipe(
+      Effect.catchReason("PlatformError", "NotFound", () => Effect.succeed(undefined)),
+    );
   if (
     deviceInfo?.type !== "SymbolicLink" ||
     !(yield* fs.readLink(device)).startsWith("/dev/input/event")

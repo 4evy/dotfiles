@@ -2,7 +2,6 @@
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { output } from "@dotfiles/core/commands";
-import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
 import { object, or } from "@optique/core/constructs";
 import { runParser } from "@optique/core/facade";
@@ -20,17 +19,17 @@ const run = (argv: readonly string[], cwd = root, env = process.env) =>
   output(argv, { cwd, env, stderr: "inherit", stdin: "ignore" }).pipe(
     Effect.map((value) => value.trim()),
   );
-const parseJson = (text: string) =>
-  Effect.try({
-    try: () => JSON.parse(text) as unknown,
-    catch: (error) => new DotfilesError(`Invalid AI setup JSON: ${error}`),
-  });
-const HostSchema = Schema.StructWithRest(
-  Schema.Struct({
-    farstep: Schema.mutableKey(Schema.optionalKey(Schema.String)),
-    codexCli: Schema.mutableKey(Schema.optionalKey(Schema.String)),
-  }),
-  [Schema.Record(Schema.String, Schema.Unknown)],
+const decodeCliPath = Schema.decodeUnknownEffect(Schema.fromJsonString(Schema.String));
+const decodeHost = Schema.decodeUnknownEffect(
+  Schema.fromJsonString(
+    Schema.StructWithRest(
+      Schema.Struct({
+        farstep: Schema.mutableKey(Schema.optionalKey(Schema.String)),
+        codexCli: Schema.mutableKey(Schema.optionalKey(Schema.String)),
+      }),
+      [Schema.Record(Schema.String, Schema.Unknown)],
+    ),
+  ),
 );
 const selected = runParser(
   withDefault(
@@ -77,9 +76,7 @@ const activateAi = Effect.gen(function* () {
       const value = (yield* fs.readFileString(environment))
         .trim()
         .slice(codexCliAssignment.length);
-      const cli = yield* Schema.decodeUnknownEffect(Schema.String)(
-        yield* parseJson(value),
-      );
+      const cli = yield* decodeCliPath(value);
       const command = Bun.which("dbus-update-activation-environment")
         ? [
             "dbus-update-activation-environment",
@@ -129,12 +126,10 @@ const generateAiConfigs = (destination: string) =>
           "bin/farstep",
         );
       // Keep unknown host fields, which are inputs to the pinned AI renderer
-      const host = yield* Schema.decodeUnknownEffect(HostSchema)(
-        yield* parseJson(
-          yield* run(
-            [process.execPath, "config/settings/generate/generate.js", "--print-host"],
-            source,
-          ),
+      const host = yield* decodeHost(
+        yield* run(
+          [process.execPath, "config/settings/generate/generate.js", "--print-host"],
+          source,
         ),
       );
       host.farstep = farstep;
