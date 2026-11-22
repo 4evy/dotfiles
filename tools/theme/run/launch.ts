@@ -49,9 +49,11 @@ function expandPath(value: string, env: Variables): string {
 
 function executableCandidate(path: string, skipPaths: string[]) {
   return Effect.gen(function* () {
+    if (!(yield* isExecutable(path))) return undefined;
+    if (!skipPaths.length) return path;
     const fs = yield* FileSystem.FileSystem;
     const info = yield* fs.stat(path);
-    if (info.type !== "File" || !(yield* isExecutable(path))) return undefined;
+    if (info.type !== "File") return undefined;
     for (const skipped of skipPaths) {
       const other = yield* fs
         .stat(skipped)

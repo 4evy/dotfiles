@@ -23,28 +23,21 @@ const signalExitStatusBase = 128;
 const terminalReadBytes = 4096;
 const terminalResponseLimitBytes = 8192;
 const terminalPollIntervalMs = 5;
+const themeModes = ["dark", "light"] as const;
 
 function modeFromText(runtime: Runtime, text: string): Theme | undefined {
-  let normalized = text.trim();
-  const lower = normalized.toLowerCase();
-  for (const mode of ["dark", "light"] as const) {
-    if (lower.includes(mode)) return mode;
-  }
+  let normalized = text.trim().toLowerCase();
+  const explicitMode = themeModes.find((mode) => normalized.includes(mode));
+  if (explicitMode) return explicitMode;
   if (
     normalized.length >= 2 &&
     ((normalized.startsWith("'") && normalized.endsWith("'")) ||
       (normalized.startsWith('"') && normalized.endsWith('"')))
   )
     normalized = normalized.slice(1, -1);
-  for (const mode of ["dark", "light"] as const) {
-    if (
-      runtime.theme_aliases[mode].some(
-        (alias) => alias.toLowerCase() === normalized.toLowerCase(),
-      )
-    )
-      return mode;
-  }
-  return undefined;
+  return themeModes.find((mode) =>
+    runtime.theme_aliases[mode].some((alias) => alias.toLowerCase() === normalized),
+  );
 }
 
 function terminalQueries(runtime: Runtime, env: Variables): string[] {

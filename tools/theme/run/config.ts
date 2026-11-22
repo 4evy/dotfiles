@@ -14,59 +14,15 @@ const themePlaceholder = "{theme}";
 const configFilename = "config.toml";
 export type Theme = "dark" | "light";
 export type Variables = Record<string, string>;
-export interface Platform {
-  commands: string[][];
-  fallback: Theme;
-}
-export interface Runtime {
-  theme_environment: string[];
-  theme_aliases: Record<Theme, string[]>;
-  theme_terminal_program_environment: string;
-  theme_terminal_queries: Record<string, "background" | "color-scheme">;
-  theme_platforms: Record<string, Platform>;
-  theme_probe_timeout_ms: number;
-  helper_timeout_ms: number;
-  helper_output_limit_bytes: number;
-}
-export interface Interpreter {
-  name: string;
-  shebang_commands: string[];
-  shebang_arguments: string[];
-  programs: string[];
-}
-export interface Runner {
-  name: string;
-  aliases: string[];
-  programs: string[];
-  skip_env: string[];
-  default_args: string[];
-  env: Variables;
-  env_unset: string[];
-  integration: string;
-  interpreter: string;
-}
-export interface Integration {
-  name: string;
-  strategy: "arguments" | "config" | "environment";
-  dark_theme: string;
-  light_theme: string;
-  arguments: string[];
-  env: Variables;
-  default_config: string;
-  assignment: string;
-  config_flags: string[];
-  config_output_flag: string;
-  temporary_prefix: string;
-  temporary_location: string;
-  cache_subdirectory: string;
-  quote: string;
-}
-interface Fragment {
-  runtime?: Runtime;
-  interpreter: Interpreter[];
-  runner: Runner[];
-  integration: Integration[];
-}
+type Fragment = v.InferOutput<typeof fragmentSchema>;
+export type Runtime = NonNullable<v.InferOutput<typeof fragmentSchema.entries.runtime>>;
+export type Interpreter = v.InferOutput<
+  typeof fragmentSchema.entries.interpreter
+>[number];
+export type Runner = v.InferOutput<typeof fragmentSchema.entries.runner>[number];
+export type Integration = v.InferOutput<
+  typeof fragmentSchema.entries.integration
+>[number];
 
 const text = v.string();
 const requiredText = v.pipe(text, v.minLength(1));
@@ -242,7 +198,7 @@ const fragmentSchema = v.strictObject({
     ),
     () => [],
   ),
-}) satisfies v.GenericSchema<unknown, Fragment>;
+});
 
 function systemErrorCode(reason: object): string | undefined {
   if ("_tag" in reason) {

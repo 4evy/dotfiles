@@ -3,9 +3,10 @@ import { or, seq } from "@optique/core/constructs";
 import { runParser } from "@optique/core/facade";
 import { message } from "@optique/core/message";
 import { map } from "@optique/core/modifiers";
+import type { InferValue } from "@optique/core/parser";
 import { argument, flag, passThrough } from "@optique/core/primitives";
 import { string } from "@optique/core/valueparser";
-import { Config, ConfigProvider, Effect, Runtime, Schema, Stdio, Stream } from "effect";
+import { Effect, Runtime, Stdio, Stream } from "effect";
 import { Manifest, name, version } from "./config.ts";
 import {
   execUnknown,
@@ -51,47 +52,33 @@ export function run(args: string[]) {
         }),
       ),
     );
-    let status: number | undefined;
     const options = runParser(parser, name, args.length ? args : ["--help"], {
       brief: message`Run a command with terminal theme integration`,
       help: {
         option: { names: ["-h", "--help"] },
-        onShow: () => {
-          status = 0;
-        },
+        onShow: () => 0,
       },
       version: {
         option: true,
         value: `${name} version ${version}`,
-        onShow: () => {
-          status = 0;
-        },
+        onShow: () => 0,
       },
-      onError: () => {
-        status = usageErrorStatus;
-      },
+      onError: () => usageErrorStatus,
       stdout: (text) => {
         output.push({ text: `${text}\n`, error: false });
       },
       stderr: (text) => {
         output.push({ text: `${name}: ${text}\n`, error: true });
       },
-    });
+    }) as InferValue<typeof parser> | number;
     for (const entry of output) yield* write(entry.text, entry.error);
-    if (status !== undefined) return status;
-    const printTheme = options.printTheme !== undefined;
-    const command = options.command;
+    if (typeof options === "number") return options;
+    const { command, printTheme } = options;
     // Read the exact environment, including empty values and underscore keys
-    const provider = yield* Effect.sync(() =>
-      ConfigProvider.fromUnknown(
-        Object.fromEntries(
-          Object.entries(process.env).filter((entry) => entry[1] !== undefined),
-        ),
-        { preserveEmptyStrings: true },
+    const env = Object.fromEntries(
+      Object.entries(process.env).filter(
+        (entry): entry is [string, string] => entry[1] !== undefined,
       ),
-    );
-    const env = yield* Config.schema(Schema.Record(Schema.String, Schema.String)).parse(
-      provider,
     );
     const manifest = yield* Manifest.load(env).pipe(
       Effect.catch((error) =>
@@ -101,8 +88,8 @@ export function run(args: string[]) {
       ),
     );
     if (!manifest) return 1;
-    if (printTheme) {
-      yield* write(`${yield* detect(manifest.runtime, env, !!options.printTheme)}\n`);
+    if (printTheme !== undefined) {
+      yield* write(`${yield* detect(manifest.runtime, env, printTheme)}\n`);
       return 0;
     }
     const requested = command[0];
