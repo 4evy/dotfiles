@@ -75,25 +75,16 @@ function renderSchema(schemaId: string, bindings: typeof policy.Type): string {
     const accelerator = gnome.accelerator
       .replaceAll("\\", "\\\\")
       .replaceAll("'", "\\'");
-    return `    <key name="${escapeXml(name)}" type="as">
-      <default>${escapeXml(`['${accelerator}']`)}</default>
-      <summary>${escapeXml(gnome.summary)}</summary>
+    return `    <key name="${Bun.escapeHTML(name)}" type="as">
+      <default>${Bun.escapeHTML(`['${accelerator}']`)}</default>
+      <summary>${Bun.escapeHTML(gnome.summary)}</summary>
     </key>`;
   });
   return `<?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-  <schema id="${escapeXml(schemaId)}" path="${escapeXml(schemaPath)}">
+  <schema id="${Bun.escapeHTML(schemaId)}" path="${Bun.escapeHTML(schemaPath)}">
 ${keys.join("\n")}
   </schema>
 </schemalist>
 `;
-}
-
-function escapeXml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
 }
