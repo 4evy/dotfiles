@@ -52,6 +52,7 @@ local bindings = {
 local forwarded_keys = {
 	{ "cmd+c", "ctrl+c" },
 	{ "cmd+v", "ctrl+v" },
+	{ { "cmd+r", "ctrl+r" }, "ctrl+r" },
 	{ { "cmd+enter", "ctrl+shift+enter" }, "ctrl+shift+enter" },
 	{ { "cmd+left", "ctrl+left" }, "home" },
 	{ { "cmd+right", "ctrl+right" }, "end" },
