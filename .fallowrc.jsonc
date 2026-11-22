@@ -22,6 +22,7 @@
   // Shell entrypoints use these outside the TypeScript import graph
   // tools/setup/setup.sh imports platform-bun and tsrs.sh launches tsrs
   "ignoreDependencies": ["@effect/platform-bun", "tsrs"],
+  "ignoreBinaries": ["just"],
   "ignorePatterns": [
     "!home/files/.config/rex/**",
     "!home/files/.local/**",
@@ -29,9 +30,6 @@
     ".jj/**",
     ".venv/**",
     ".cache/**",
-    "target/**",
-    "zig-pkg/**",
-    "zig-out/**",
     "tools/tiling/vendor/**"
   ]
 }
