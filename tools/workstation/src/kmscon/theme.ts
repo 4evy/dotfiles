@@ -13,7 +13,14 @@ import { formatMessage } from "@optique/core/message";
 import { parseSync } from "@optique/core/parser";
 import { argument } from "@optique/core/primitives";
 import { string } from "@optique/core/valueparser";
-import { Clock, Config, Effect, FileSystem, Schema } from "effect";
+import {
+  Clock,
+  Config,
+  Effect,
+  FileSystem,
+  Schema,
+  SchemaTransformation,
+} from "effect";
 
 import defaults from "./defaults.json";
 
@@ -28,18 +35,13 @@ const coordinate = Effect.fn("kmscon.coordinate")(function* (
 ) {
   const value = yield* Config.String(name).pipe(Config.withDefault(""));
   if (!value) return undefined;
-  const validCoordinate = Schema.String.check(
-    Schema.makeFilter<string>((input) => {
-      const number = Number(input);
-      return (
-        Boolean(input.trim()) &&
-        Number.isFinite(number) &&
-        number >= minimum &&
-        number <= maximum
-      );
-    }),
+  const validCoordinate = Schema.String.check(Schema.isPattern(/\S/)).pipe(
+    Schema.decodeTo(
+      Schema.Finite.check(Schema.isBetween({ minimum, maximum })),
+      SchemaTransformation.numberFromString,
+    ),
   );
-  yield* Schema.decodeUnknownEffect(validCoordinate)(value).pipe(
+  return yield* Schema.decodeEffect(validCoordinate)(value).pipe(
     Effect.mapError(
       () =>
         new DotfilesError(
@@ -47,7 +49,6 @@ const coordinate = Effect.fn("kmscon.coordinate")(function* (
         ),
     ),
   );
-  return Number(value);
 });
 
 const theme = Effect.fn("kmscon.theme")(function* (now: Date) {
