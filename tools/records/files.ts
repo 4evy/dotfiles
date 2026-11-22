@@ -1,13 +1,11 @@
-import { chmodSync } from "node:fs";
-import { open, rmdir } from "node:fs/promises";
-import { dirname, isAbsolute, join, relative, sep } from "node:path";
+import { rmdir } from "node:fs/promises";
+import { dirname, isAbsolute, relative, sep } from "node:path";
 import { DotfilesError } from "@dotfiles/core/errors";
+import { writeAtomicFile, writeExclusiveFile } from "@dotfiles/core/files";
 import { Effect, FileSystem, Predicate, Stdio, Stream } from "effect";
 import { visit } from "jsonc-parser";
-import writeFileAtomic from "write-file-atomic";
 
 const privateFileMode = 0o600;
-const privateDirectoryMode = 0o700;
 const executableBits = 0o111;
 const permissionBits = 0o777;
 const jsonIndentSpaces = 2;
@@ -25,12 +23,30 @@ export function validate<A>(calculation: () => A) {
 export function pathInfo(path: string) {
   return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    return yield* fs.lstat(path).pipe(
-      Effect.catchIf(
-        (error) => error.reason._tag === "NotFound",
-        () => Effect.succeed(undefined),
-      ),
-    );
+    return yield* fs
+      .lstat(path)
+      .pipe(
+        Effect.catchReason("PlatformError", "NotFound", () =>
+          Effect.succeed(undefined),
+        ),
+      );
+  });
+}
+
+export function validateDirectoryChain(path: string, message: string) {
+  return Effect.gen(function* () {
+    const directories = [path];
+    for (let current = path; ; ) {
+      const parent = dirname(current);
+      if (parent === current) break;
+      directories.push(parent);
+      current = parent;
+    }
+    for (const directory of directories.reverse()) {
+      const info = yield* pathInfo(directory);
+      if (info !== undefined && info.type !== "Directory")
+        return yield* Effect.fail(new DotfilesError(message));
+    }
   });
 }
 
@@ -70,17 +86,7 @@ export function validatePathOverlaps(
 }
 
 export function writePrivate(path: string, content: string | Uint8Array) {
-  return Effect.scoped(
-    Effect.gen(function* () {
-      // FileSystem.File has no descriptor chmod, which must not follow symlinks
-      const file = yield* Effect.acquireRelease(
-        Effect.tryPromise(() => open(path, "wx", privateFileMode)),
-        (descriptor) => Effect.promise(() => descriptor.close()),
-      );
-      yield* Effect.tryPromise(() => file.chmod(privateFileMode));
-      yield* Effect.tryPromise(() => file.writeFile(content));
-    }),
-  ).pipe(
+  return writeExclusiveFile(path, content, privateFileMode).pipe(
     Effect.mapError(() => new DotfilesError(`could not write private file: ${path}`)),
   );
 }
@@ -90,33 +96,9 @@ export function replaceTextFile(
   content: string | Uint8Array,
   mode: number,
 ) {
-  return Effect.scoped(
-    Effect.gen(function* () {
-      const fs = yield* FileSystem.FileSystem;
-      const directory = yield* fs.makeTempDirectoryScoped({
-        directory: dirname(path),
-        prefix: ".records-write-",
-      });
-      yield* fs.chmod(directory, privateDirectoryMode);
-      const replacement = join(directory, "replacement");
-      const permission = mode & permissionBits;
-      // Stage privately so the atomic-write library cannot follow a symlink
-      // Let the library settle before scope cleanup, even on interruption
-      yield* Effect.tryPromise(() =>
-        writeFileAtomic(
-          replacement,
-          typeof content === "string" ? content : Buffer.from(content),
-          {
-            mode: permission,
-            tmpfileCreated: (temporary) => chmodSync(temporary, permission),
-          },
-        ),
-      ).pipe(Effect.uninterruptible);
-      // The library skips its final chmod when the requested mode is zero
-      yield* fs.chmod(replacement, permission);
-      yield* fs.rename(replacement, path);
-    }),
-  ).pipe(Effect.mapError(() => new DotfilesError(`could not replace file: ${path}`)));
+  return writeAtomicFile(path, content, mode & permissionBits).pipe(
+    Effect.mapError(() => new DotfilesError(`could not replace file: ${path}`)),
+  );
 }
 
 export function removeEmptyDirectory(path: string) {

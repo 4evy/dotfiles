@@ -199,8 +199,6 @@ export function readWorkspace(root: string) {
     const fs = yield* FileSystem.FileSystem;
     yield* assertEntries(root, [formatFilename, ...collectionNames]);
     const formatPath = join(root, formatFilename);
-    if (!(yield* isRegular(formatPath)))
-      return yield* Effect.fail(new DotfilesError("missing workspace format"));
     const format = yield* parseJSONObject(formatPath, "workspace format");
     if (Object.keys(format).some((key) => key !== "collections" && key !== "version"))
       return yield* Effect.fail(

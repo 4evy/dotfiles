@@ -10,6 +10,7 @@ import {
   pathInfo,
   replaceTextFile,
   validate,
+  validateDirectoryChain,
   validatePathOverlaps,
 } from "./files.ts";
 import {
@@ -153,22 +154,10 @@ function privateSubdirectories(root: string, path: string) {
 }
 
 function validateDeploymentDirectory(path: string) {
-  return Effect.gen(function* () {
-    const directories: string[] = [];
-    for (let current = path; ; current = dirname(current)) {
-      directories.push(current);
-      if (dirname(current) === current) break;
-    }
-    for (const directory of directories.reverse()) {
-      const info = yield* pathInfo(directory);
-      if (info !== undefined && info.type !== "Directory")
-        return yield* Effect.fail(
-          new DotfilesError(
-            "runtime record directories must not contain symlinks or non-directories",
-          ),
-        );
-    }
-  });
+  return validateDirectoryChain(
+    path,
+    "runtime record directories must not contain symlinks or non-directories",
+  );
 }
 
 function validateDeploymentFile(root: string, path: string) {

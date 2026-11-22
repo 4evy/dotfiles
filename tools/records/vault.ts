@@ -1,4 +1,5 @@
 import { basename, dirname, join, resolve } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { exitCode } from "@dotfiles/runtime/process";
 import { Effect, FileSystem, Stream } from "effect";
@@ -179,29 +180,14 @@ export function equalCollections(left: CollectionSet, right: CollectionSet): boo
       leftRecords.every((record, index) => {
         const other = rightRecords[index];
         if (!other) return false;
-        const variants = record.variants ?? [];
-        const otherVariants = other.variants ?? [];
         return (
           record.body === other.body &&
           record.executable === other.executable &&
           record.private === other.private &&
           record.render === other.render &&
-          record.paths.length === other.paths.length &&
-          record.paths.every((path, pathIndex) => path === other.paths[pathIndex]) &&
-          record.systems.length === other.systems.length &&
-          record.systems.every(
-            (system, systemIndex) => system === other.systems[systemIndex],
-          ) &&
-          variants.length === otherVariants.length &&
-          variants.every((variant, variantIndex) => {
-            const otherVariant = otherVariants[variantIndex];
-            return (
-              otherVariant !== undefined &&
-              variant.system === otherVariant.system &&
-              (variant.hostname ?? "") === (otherVariant.hostname ?? "") &&
-              variant.body === otherVariant.body
-            );
-          })
+          isDeepStrictEqual(record.paths, other.paths) &&
+          isDeepStrictEqual(record.systems, other.systems) &&
+          isDeepStrictEqual(record.variants ?? [], other.variants ?? [])
         );
       })
     );

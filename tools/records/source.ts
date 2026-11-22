@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
-import { run } from "@dotfiles/core/commands";
+import { output, run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { Effect, Exit, FileSystem } from "effect";
 import { split } from "shellwords-ts";
@@ -11,11 +11,11 @@ import {
   marshalJSON,
   parseJSON,
   pathExists,
-  pathInfo,
   readUTF8,
   removeEmptyDirectory,
   replaceTextFile,
   validate,
+  validateDirectoryChain,
   validatePathOverlaps,
   writePrivate,
 } from "./files.ts";
@@ -148,22 +148,10 @@ function sourceFiles(v: Vault, value: CollectionSet): SourceFile[] {
 }
 
 function validateSourceParents(path: string) {
-  return Effect.gen(function* () {
-    const parents: string[] = [];
-    for (let current = dirname(path); ; current = dirname(current)) {
-      parents.push(current);
-      if (dirname(current) === current) break;
-    }
-    for (const parent of parents.reverse()) {
-      const info = yield* pathInfo(parent);
-      if (info !== undefined && info.type !== "Directory")
-        return yield* Effect.fail(
-          new DotfilesError(
-            "plaintext record directories must not contain symlinks or non-directories",
-          ),
-        );
-    }
-  });
+  return validateDirectoryChain(
+    dirname(path),
+    "plaintext record directories must not contain symlinks or non-directories",
+  );
 }
 
 export function unpackSource(v: Vault) {
@@ -475,11 +463,7 @@ function pruneSourceDirectories(v: Vault, paths: string[]) {
 }
 
 function runGit(v: Vault, ...args: string[]) {
-  return run(["git", "-C", v.repository, ...args], {
-    capture: true,
-    stdin: "ignore",
-  }).pipe(
-    Effect.map((result) => result.stdout),
+  return output(["git", "-C", v.repository, ...args], { stdin: "ignore" }).pipe(
     Effect.mapError(
       (cause) => new DotfilesError(`git command failed: ${cause.message}`),
     ),

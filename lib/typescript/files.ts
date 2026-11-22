@@ -1,8 +1,7 @@
 import { constants } from "node:fs";
 import { access, open } from "node:fs/promises";
-import { basename, dirname, normalize } from "node:path";
+import { basename, dirname, join, normalize } from "node:path";
 import { Effect, FileSystem } from "effect";
-import { SecureRandom } from "effect/crypto";
 import { DotfilesError } from "./errors.ts";
 
 const DEFAULT_FILE_MODE = 0o644;
@@ -66,53 +65,69 @@ export function ensureDirectory(path: string, mode?: number | string) {
   );
 }
 
+// Set the mode on the exclusive descriptor, independent of umask
+export function writeExclusiveFile(
+  path: string,
+  content: string | Uint8Array,
+  mode: number,
+  durable = false,
+) {
+  return Effect.tryPromise(async () => {
+    await using file = await open(path, "wx", mode);
+    await file.chmod(mode);
+    await file.writeFile(content);
+    if (durable) await file.sync();
+  }).pipe(Effect.uninterruptible);
+}
+
+// Publish a fully written file without mutating the previous inode
+export function writeAtomicFile(
+  path: string,
+  content: string | Uint8Array,
+  mode: number,
+) {
+  return Effect.scoped(
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const staging = yield* fs.makeTempDirectoryScoped({
+        directory: dirname(path),
+        prefix: ".dotfiles-write-",
+      });
+      const temporary = join(staging, "file");
+      yield* writeExclusiveFile(temporary, content, mode, true);
+      yield* fs.rename(temporary, path);
+    }),
+  );
+}
+
 export function writeIfChanged(
   path: string,
   content: string | Uint8Array,
   mode: number | string = DEFAULT_FILE_MODE,
 ) {
-  return Effect.scoped(
-    Effect.gen(function* () {
-      const destination = yield* Effect.try(() => safePath(path));
-      const permission = yield* Effect.try(() => octalMode(mode));
-      const data = typeof content === "string" ? Buffer.from(content) : content;
-      const fs = yield* FileSystem.FileSystem;
-      const status = yield* fs.stat(destination).pipe(
-        Effect.catchIf(
-          (error) => error.reason._tag === "NotFound",
-          () => Effect.succeed(undefined),
-        ),
-      );
-      if (
-        status?.type === "File" &&
-        Buffer.compare(yield* fs.readFile(destination), data) === 0
-      ) {
-        if ((status.mode & PERMISSION_BITS) === permission) return false;
-        yield* fs.chmod(destination, permission);
-        return true;
-      }
-      yield* ensureDirectory(dirname(destination));
-      const random = yield* SecureRandom.SecureRandom;
-      const temporary = `${destination}.${yield* random.uuidV4()}`;
-      yield* Effect.addFinalizer(() =>
-        fs.remove(temporary, { force: true }).pipe(Effect.orDie),
-      );
-      yield* Effect.scoped(
-        Effect.gen(function* () {
-          // FileSystem.File lacks fchmod, which must target the open descriptor
-          const descriptor = yield* Effect.acquireRelease(
-            Effect.tryPromise(() => open(temporary, "wx", permission)),
-            (file) => Effect.promise(() => file.close()),
-          );
-          yield* Effect.tryPromise(() => descriptor.chmod(permission));
-          yield* Effect.tryPromise(() => descriptor.writeFile(data));
-          yield* Effect.tryPromise(() => descriptor.sync());
-        }),
-      );
-      yield* fs.rename(temporary, destination);
+  return Effect.gen(function* () {
+    const destination = yield* Effect.try(() => safePath(path));
+    const permission = yield* Effect.try(() => octalMode(mode));
+    const data = typeof content === "string" ? Buffer.from(content) : content;
+    const fs = yield* FileSystem.FileSystem;
+    const status = yield* fs.stat(destination).pipe(
+      Effect.catchIf(
+        (error) => error.reason._tag === "NotFound",
+        () => Effect.succeed(undefined),
+      ),
+    );
+    if (
+      status?.type === "File" &&
+      Buffer.compare(yield* fs.readFile(destination), data) === 0
+    ) {
+      if ((status.mode & PERMISSION_BITS) === permission) return false;
+      yield* fs.chmod(destination, permission);
       return true;
-    }),
-  ).pipe(
+    }
+    yield* ensureDirectory(dirname(destination));
+    yield* writeAtomicFile(destination, data, permission);
+    return true;
+  }).pipe(
     Effect.mapError(
       (cause) =>
         new DotfilesError(`Could not write ${path}: ${cause.message}`, {
