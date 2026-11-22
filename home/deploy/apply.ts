@@ -33,11 +33,15 @@ const AI_FILE_PERMISSIONS = {
 const MANIFEST_FILE = "manifest.json";
 const HOOKS_FILE = "hooks.json";
 const GENERATORS_FILE = "generators.json";
+const GENERATION_PREFIX = "generation-";
+const KEEP_GENERATIONS = 10;
 const FINGERPRINT_IGNORED_DIRECTORIES = ["node_modules", "__pycache__", ".git", ".jj"];
 
 const repository = resolve(import.meta.dir, "../..");
 const home = homedir();
 const state = join(process.env.XDG_STATE_HOME || join(home, ".local/state"), "hjem");
+const hjemState = join(state, "dotfiles");
+const rendered = join(state, "rendered");
 const targetCommand = <const A extends string>(action: A) =>
   command(
     action,
@@ -50,6 +54,7 @@ const { action, targets } = runParser(
   withDefault(
     or(
       command("apply", object({ action: constant("apply"), targets: constant([]) })),
+      command("prune", object({ action: constant("prune"), targets: constant([]) })),
       targetCommand("build"),
       targetCommand("diff"),
       targetCommand("status"),
@@ -228,39 +233,96 @@ function selected(target: string) {
 }
 
 const activeManifest = Effect.fn("activeManifest")(function* () {
-  const path = join(state, "dotfiles/current", MANIFEST_FILE);
+  const path = join(hjemState, "current", MANIFEST_FILE);
   return (yield* exists(path)) ? yield* readJsonFile(path, ManifestSchema) : undefined;
 });
 
-const generationReferenced = Effect.fn("generationReferenced")(function* (
-  output: string,
+function rememberRender(references: Set<string>, source: string) {
+  const prefix = `${rendered}/`;
+  if (!source.startsWith(prefix)) return;
+  const [generation] = source.slice(prefix.length).split("/", 1);
+  if (generation) references.add(generation);
+}
+
+const recordedRenders = Effect.fn("recordedRenders")(function* () {
+  const fs = yield* FileSystem.FileSystem;
+  const references = new Set<string>();
+  function rememberFiles(manifest: Manifest | undefined) {
+    for (const { source } of manifest?.files ?? []) rememberRender(references, source);
+  }
+
+  rememberFiles(yield* activeManifest());
+  const generations = join(hjemState, "generations");
+  if (yield* exists(generations))
+    for (const name of yield* fs.readDirectory(generations)) {
+      if (!name.startsWith(GENERATION_PREFIX)) continue;
+      const path = join(generations, name, MANIFEST_FILE);
+      rememberFiles(yield* readJsonFile(path, ManifestSchema));
+    }
+  const builds = join(hjemState, "builds");
+  if (yield* exists(builds))
+    for (const name of yield* fs.readDirectory(builds)) {
+      if (!name.endsWith(".json")) continue;
+      rememberFiles(yield* readJsonFile(join(builds, name), ManifestSchema));
+    }
+  const lastSource = join(hjemState, "last-source");
+  if (yield* exists(lastSource)) {
+    const source = yield* fs.readFileString(lastSource);
+    if (source.startsWith("manifest="))
+      rememberRender(references, source.slice("manifest=".length).trimEnd());
+  }
+  return references;
+});
+
+const rememberLiveLinks = Effect.fn("rememberLiveLinks")(function* (
+  manifest: Manifest,
+  inspectedTargets: Set<string>,
+  references: Set<string>,
 ) {
   const fs = yield* FileSystem.FileSystem;
-  const visit = (
-    directory: string,
-  ): Effect.Effect<boolean, PlatformError.PlatformError, FileSystem.FileSystem> =>
-    Effect.gen(function* () {
-      if (!(yield* exists(directory))) return false;
-      for (const name of yield* fs.readDirectory(directory)) {
-        const path = join(directory, name);
-        if ((yield* fs.lstat(path)).type === "Directory") {
-          if (yield* visit(path)) return true;
-        } else if (name.endsWith(".json")) {
-          const referenced = yield* Effect.gen(function* () {
-            const manifest = yield* readJsonFile(path, ManifestSchema);
-            return manifest.files.some(
-              (file) => file.source === output || file.source.startsWith(`${output}/`),
-            );
-          }).pipe(
-            // Retain prepared sources when existing state cannot be inspected
-            Effect.catch(() => Effect.succeed(true)),
-          );
-          if (referenced) return true;
-        }
-      }
-      return false;
-    });
-  return yield* visit(join(state, "dotfiles"));
+  for (const { target, type } of manifest.files) {
+    if (type !== "symlink" || inspectedTargets.has(target)) continue;
+    inspectedTargets.add(target);
+    if ((yield* linkInfo(target))?.type === "SymbolicLink")
+      rememberRender(references, resolve(dirname(target), yield* fs.readLink(target)));
+  }
+});
+
+const pruneGenerations = Effect.fn("pruneGenerations")(function* (hjem: string) {
+  const fs = yield* FileSystem.FileSystem;
+  yield* run([
+    hjem,
+    "standalone",
+    "expire-generations",
+    "--state-dir",
+    hjemState,
+    "--keep-last",
+    String(KEEP_GENERATIONS),
+  ]);
+  if (!(yield* exists(rendered))) return;
+  const references = yield* recordedRenders();
+
+  const candidates: string[] = [];
+  const inspectedTargets = new Set<string>();
+  for (const name of yield* fs.readDirectory(rendered)) {
+    if (!/^generation-[a-zA-Z0-9]{6}$/.test(name) || references.has(name)) continue;
+    const path = join(rendered, name);
+    if ((yield* fs.lstat(path)).type !== "Directory") continue;
+    candidates.push(name);
+    const manifestPath = join(path, MANIFEST_FILE);
+    if (!(yield* exists(manifestPath))) continue;
+    // A failed switch may have installed links before recording the generation
+    const manifest = yield* readJsonFile(manifestPath, ManifestSchema);
+    yield* rememberLiveLinks(manifest, inspectedTargets, references);
+  }
+
+  let removed = 0;
+  for (const name of candidates) {
+    if (references.has(name)) continue;
+    yield* fs.remove(join(rendered, name), { recursive: true });
+    removed++;
+  }
+  if (removed) console.error(`Removed ${removed} unreferenced Hjem renders`);
 });
 
 const same = Effect.fn("same")(function* (entry: Entry) {
@@ -508,7 +570,7 @@ const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
   yield* fs.makeDirectory(state, { recursive: true, mode: PRIVATE_DIRECTORY_MODE });
   const lock = join(state, "dotfiles.lock");
   let generated: string | undefined;
-  let activationStarted = false;
+  let handedToHjem = false;
   yield* Effect.scoped(
     Effect.gen(function* () {
       yield* Effect.acquireRelease(
@@ -523,25 +585,24 @@ const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
           ),
         () => fs.remove(lock, { recursive: true, force: true }).pipe(Effect.orDie),
       );
+      if (action === "prune") {
+        yield* pruneGenerations(yield* hjemExecutable());
+        return;
+      }
       yield* Effect.addFinalizer(() =>
         Effect.gen(function* () {
-          if (
-            generated &&
-            action !== "build" &&
-            !activationStarted &&
-            !(yield* generationReferenced(generated))
-          )
+          if (generated && !handedToHjem)
             yield* fs.remove(generated, { recursive: true, force: true });
         }).pipe(Effect.orDie),
       );
-      const rendered = join(state, "rendered");
+
       yield* fs.makeDirectory(rendered, {
         recursive: true,
         mode: PRIVATE_DIRECTORY_MODE,
       });
       const output = yield* fs.makeTempDirectory({
         directory: rendered,
-        prefix: "generation-",
+        prefix: GENERATION_PREFIX,
       });
       generated = output;
       const manifest = yield* prepareManifest(output, managesAi);
@@ -555,7 +616,7 @@ const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
         return;
       }
       const hjem = yield* hjemExecutable();
-      activationStarted = action === "apply";
+      handedToHjem = true;
       yield* run([
         hjem,
         "standalone",
@@ -563,10 +624,20 @@ const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
         "--manifest",
         manifestPath,
         "--state-dir",
-        join(state, "dotfiles"),
+        hjemState,
         "--impure",
       ]);
-      if (action === "apply") yield* completeActivation(output, managesAi);
+      if (action === "apply") {
+        yield* completeActivation(output, managesAi);
+        yield* pruneGenerations(hjem).pipe(
+          Effect.tapError((error) =>
+            Effect.sync(() =>
+              console.error("Hjem activated, but cleanup failed:", error),
+            ),
+          ),
+          Effect.ignore,
+        );
+      }
     }),
   );
 });
@@ -583,6 +654,7 @@ const LockSchema = Schema.Struct({
 
 runMain(
   Effect.gen(function* () {
+    if (action === "prune") return yield* main(false);
     const lockFile = yield* readJsonFile(join(repository, "flake.lock"), LockSchema);
     const managesAi =
       process.platform === "linux" &&

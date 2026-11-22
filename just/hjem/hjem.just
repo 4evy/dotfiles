@@ -10,6 +10,13 @@ _secrets:
 
 _hjem-platform platform:
     bun home/deploy/check/home.ts {{ quote(platform) }}
+
+# Keep the latest 10 home-file generations and remove unreferenced renders
+[confirm('Expire old Hjem home-file generations and remove unreferenced renders?')]
+[group('setup')]
+prune:
+    bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} prune
+
 # Build or activate the Hjem home environment
 [arg('action', pattern=['switch', 'build'], help='switch to activate, or build to prepare without activating')]
 [group('setup')]
