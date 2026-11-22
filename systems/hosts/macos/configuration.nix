@@ -1,4 +1,9 @@
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   inherit (pkgs) coreutils;
 
@@ -8,6 +13,10 @@ let
     # Keep the source's 88-column formatting while checking other diagnostics
     flakeIgnore = [ "E501" ];
   } ./affinity.py;
+  primaryUser = config.system.primary.user;
+  primaryHome = config.users.users.${primaryUser}.home;
+  mediaAnalysisLabel = "com.apple.mediaanalysisd";
+  mediaAnalysisCache = "${primaryHome}/Library/Containers/${mediaAnalysisLabel}/Data/Library/Caches";
 in
 {
   _class = "darwin";
@@ -15,6 +24,24 @@ in
   networking.hostName = "evy";
   system.primary.user = "evy";
   users.users.evy.home = "/Users/evy";
+
+  # Disable the Apple job without modifying the system volume or Photos library
+  system.activation.steps.mediaanalysisd = {
+    deps = [ "extra" ];
+    text = ''
+      (
+        set -e
+        user=${lib.strings.escapeShellArg primaryUser}
+        uid=$(/usr/bin/id -u "$user")
+        job="gui/$uid/${mediaAnalysisLabel}"
+        /bin/launchctl disable "$job"
+        if /bin/launchctl print "$job" >/dev/null 2>&1; then
+          /bin/launchctl bootout "$job"
+        fi
+        /usr/bin/sudo -u "$user" /bin/rm -rf -- ${lib.strings.escapeShellArg mediaAnalysisCache}
+      )
+    '';
+  };
 
   home.file = {
     # Hjem owns the shared command files
