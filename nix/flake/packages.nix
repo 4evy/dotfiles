@@ -137,7 +137,6 @@
           solaar
           super-engineering-native
           toshy-runtime
-          uresourced
           ;
       };
     };

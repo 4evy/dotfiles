@@ -182,11 +182,6 @@
       url = "github:RedBearAK/Toshy/Toshy_v26.11.0";
     };
 
-    source-uresourced = {
-      flake = false;
-      url = "git+https://gitlab.freedesktop.org/benzea/uresourced.git?ref=refs/tags/v0.5.5";
-    };
-
     bun2nix = {
       inputs = {
         flake-parts.follows = "flake-parts";

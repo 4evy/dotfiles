@@ -51,7 +51,6 @@ let
     super-engineering = ../../../packages/super-engineering/package.nix;
     theme-run = ../../../tools/theme/run/package.nix;
     toshy-runtime = ../../../packages/toshy/runtime/package.nix;
-    uresourced = ../../../packages/uresourced/package.nix;
   };
 
   packageArgs = {

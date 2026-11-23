@@ -19,8 +19,8 @@ let
     # Examples
 
     ```nix
-    version "source-uresourced"
-    => "refs/tags/v0.5.5"
+    version "source-toshy"
+    => "Toshy_v26.11.0"
     ```
   */
   version =
@@ -32,7 +32,7 @@ let
     # Inputs
 
     `final`: Package set providing the updater's builder and commands.
-    `name`: Name of the Git or GitHub flake input to update.
+    `name`: Name of the GitHub flake input to update.
 
     # Type
 
@@ -79,21 +79,9 @@ let
           exit 1
         fi
         prefix=''${BASH_REMATCH[1]}
-        case $(jq -r '.type' <<< "$original") in
-          github)
-            repository=$(jq -r '.owner + "/" + .repo' <<< "$original")
-            remote="https://github.com/$repository.git"
-            base="github:$repository/"
-            ;;
-          git)
-            remote=$(jq -er '.url' <<< "$original")
-            base="git+$remote?ref="
-            ;;
-          *)
-            echo "Unsupported release input: $input" >&2
-            exit 1
-            ;;
-        esac
+        repository=$(jq -er '.owner + "/" + .repo' <<< "$original")
+        base="github:$repository/"
+        remote="https://github.com/$repository.git"
         refs=$(git ls-remote --tags --refs "$remote" |
           sort -t $'\t' -k2,2Vr)
         latest=
@@ -146,12 +134,7 @@ final: _prev: {
           )
           {
             updateScript =
-              if
-                lib.lists.elem name [
-                  "source-toshy"
-                  "source-uresourced"
-                ]
-              then
+              if name == "source-toshy" then
                 taggedUpdater final name
               else
                 final.dotfilesPackageUpdaters.flakeInputs [ name ];

@@ -231,17 +231,6 @@
     },
     {
       "customType": "regex",
-      "description": "Track uresourced release tags instead of silently refreshing the same tag",
-      "managerFilePatterns": ["/^flake\\.nix$/"],
-      "matchStrings": [
-        "git\\+https://gitlab\\.freedesktop\\.org/benzea/uresourced\\.git\\?ref=refs/tags/(?<currentValue>[^\"\\s]+)"
-      ],
-      "depNameTemplate": "uresourced",
-      "packageNameTemplate": "https://gitlab.freedesktop.org/benzea/uresourced.git",
-      "datasourceTemplate": "git-tags"
-    },
-    {
-      "customType": "regex",
       "description": "Track the checksum-verified Translate Web Pages extension",
       "managerFilePatterns": ["/^home/applications/helium/config\\.toml$/"],
       "matchStrings": [
@@ -323,7 +312,7 @@
     {
       "description": "Let release managers own tag and explicitly pinned revision changes",
       "matchManagers": ["nix"],
-      "matchDepNames": ["source-toshy", "source-uresourced", "determinate"],
+      "matchDepNames": ["source-toshy", "determinate"],
       "enabled": false
     },
     {

@@ -543,7 +543,6 @@
         "source-oh-my-bash": "source-oh-my-bash",
         "source-oh-my-zsh": "source-oh-my-zsh",
         "source-toshy": "source-toshy",
-        "source-uresourced": "source-uresourced",
         "source-zsh-autosuggestions": "source-zsh-autosuggestions",
         "source-zsh-syntax-highlighting": "source-zsh-syntax-highlighting",
         "treefmt-nix": "treefmt-nix",
@@ -765,23 +764,6 @@
         "ref": "Toshy_v26.11.0",
         "repo": "Toshy",
         "type": "github"
-      }
-    },
-    "source-uresourced": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1789895330,
-        "narHash": "sha256-S5bqEFG/L7zoMhhoZIKr1a1gaurLtJDzsd67RzGomLI=",
-        "ref": "refs/tags/v0.5.5",
-        "rev": "3fab695d9cfed98d3b07666a4eb0c19c3361d544",
-        "revCount": 71,
-        "type": "git",
-        "url": "https://gitlab.freedesktop.org/benzea/uresourced.git"
-      },
-      "original": {
-        "ref": "refs/tags/v0.5.5",
-        "type": "git",
-        "url": "https://gitlab.freedesktop.org/benzea/uresourced.git"
       }
     },
     "source-zsh-autosuggestions": {
