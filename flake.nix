@@ -159,7 +159,7 @@
     source-karabiner-vhid-package = {
       flake = false;
       # Upstream's tagged copy avoids the unreliable release download route
-      url = "file+https://raw.githubusercontent.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v8.8.0/dist/Karabiner-DriverKit-VirtualHIDDevice-8.8.0.pkg";
+      url = "file+https://raw.githubusercontent.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v8.9.0/dist/Karabiner-DriverKit-VirtualHIDDevice-8.9.0.pkg";
     };
 
     source-kmscon = {

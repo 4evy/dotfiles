@@ -627,13 +627,13 @@
     "source-karabiner-vhid-package": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-A5MIueeFB4JntourVDuToFaB+7zhvjzP4QXquJCVfls=",
+        "narHash": "sha256-YiRfENhb85QzJgonq/EFUauEydh4oJwX1tn9pZXWcLo=",
         "type": "file",
-        "url": "https://raw.githubusercontent.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v8.8.0/dist/Karabiner-DriverKit-VirtualHIDDevice-8.8.0.pkg"
+        "url": "https://raw.githubusercontent.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v8.9.0/dist/Karabiner-DriverKit-VirtualHIDDevice-8.9.0.pkg"
       },
       "original": {
         "type": "file",
-        "url": "https://raw.githubusercontent.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v8.8.0/dist/Karabiner-DriverKit-VirtualHIDDevice-8.8.0.pkg"
+        "url": "https://raw.githubusercontent.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice/v8.9.0/dist/Karabiner-DriverKit-VirtualHIDDevice-8.9.0.pkg"
       }
     },
     "source-kmscon": {
