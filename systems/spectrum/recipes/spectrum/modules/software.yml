@@ -21,6 +21,11 @@ modules:
       keys:
         - https://downloads.1password.com/linux/keys/1password.asc
       nonfree: rpmfusion
+    # Remove the RPM if the Bluefin base already includes it
+    remove:
+      auto-remove: false
+      packages:
+        - uresourced
     install:
       install-weak-deps: false
       packages:
@@ -80,7 +85,6 @@ modules:
         - systemd-libs
         - tailscale
         - telegram-desktop
-        - uresourced
         - vim-enhanced
         - vicinae
         - vulkan-tools

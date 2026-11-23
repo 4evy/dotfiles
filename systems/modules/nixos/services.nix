@@ -18,10 +18,22 @@ let
     name = "spectrum-rootfs";
   };
 
-  # System and user units, native drop-ins, and their shared canonical policy
-  # files stay one tree consumed directly by both NixOS and BlueBuild.
-  # Root at usr to retain lib/systemd without a copy-and-prune derivation
-  spectrumSystemdUnits =
+  # Keep the same drop-ins as Spectrum, but resolve Fedora's /usr links into
+  # the Nix store so the generated system and user unit trees can load them
+  spectrumSystemdUnits = pkgs.runCommand "spectrum-systemd-units" { } ''
+    cp -R ${spectrumSystemdSource} "$out"
+    chmod -R u+w "$out/lib/systemd"
+    while IFS= read -r -d "" link; do
+      target=$(readlink "$link")
+      case "$target" in
+        /usr/lib/systemd/spectrum/*)
+          ln -sfn "$out''${target#/usr}" "$link"
+          ;;
+      esac
+    done < <(find "$out/lib/systemd" -type l -print0)
+  '';
+
+  spectrumSystemdSource =
     let
       usr = ../../spectrum/files/system/usr;
       units = usr + "/lib/systemd";
@@ -46,19 +58,14 @@ in
     "modprobe.d/60-spectrum-bluetooth.conf".source =
       rootfs + "/usr/lib/modprobe.d/60-spectrum-bluetooth.conf";
     "systemd/system.conf.d/60-spectrum-resource-accounting.conf".source =
-      spectrumSystemdUnits + "/lib/systemd/system.conf.d/60-spectrum-resource-accounting.conf";
+      "${spectrumSystemdUnits}/lib/systemd/system.conf.d/60-spectrum-resource-accounting.conf";
     "systemd/user.conf.d/60-spectrum-resource-accounting.conf".source =
-      spectrumSystemdUnits + "/lib/systemd/user.conf.d/60-spectrum-resource-accounting.conf";
-    "uresourced.conf".source = rootfs + "/etc/uresourced.conf";
+      "${spectrumSystemdUnits}/lib/systemd/user.conf.d/60-spectrum-resource-accounting.conf";
   };
 
   fonts.packages = attrValues { inherit (nerd-fonts) jetbrains-mono; };
 
   services = {
-    # The system daemon still supplies ancestor allocations to whichever user
-    # owns the active graphical session. Spectrum's shared user-unit drop-in
-    # keeps the separate --user app-management daemon disabled by default.
-    dbus.packages = attrValues { inherit (pkgs) uresourced; };
     flatpak.enable = true;
 
     kmscon = {
@@ -87,11 +94,7 @@ in
 
   systemd = {
     oomd.enable = true;
-    packages = attrValues {
-      inherit (pkgs) uresourced;
-      inherit spectrumSystemdUnits;
-    };
-    services."user@".wants = [ "uresourced.service" ];
+    packages = [ spectrumSystemdUnits ];
     services.rustdesk = {
       description = "RustDesk remote desktop service";
       wantedBy = [ "multi-user.target" ];

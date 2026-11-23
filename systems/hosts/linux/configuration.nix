@@ -233,6 +233,8 @@ in
     users = {
       ${name} = {
         isNormalUser = true;
+        # Match the shared desktop protection drop-in for user-1000.slice
+        uid = 1000;
         group = name;
         extraGroups = [
           "wheel"
