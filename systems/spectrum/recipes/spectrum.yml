@@ -3,7 +3,7 @@
 name: spectrum
 description: Evy's Bluefin workstation image
 base-image: ghcr.io/ublue-os/bluefin-nvidia-open
-image-version: "45@sha256:0418aa045322803f76117762f9cab9f64da62041f2d753c06e213fedb0527aef"
+image-version: "45@sha256:0948485de3489fecd504f16d7ccb9b2bdddb8458c16d45ca042a55a1fd11880b"
 labels:
   org.opencontainers.image.source: https://github.com/4evy/dotfiles
 # The files stage copies the release installer by digest
