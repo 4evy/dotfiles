@@ -680,9 +680,9 @@
     url = "https://registry.npmjs.org/kwin-api/-/kwin-api-6.8.1.tgz";
     hash = "sha512-PIrZTxQL8EvNCGFiR124HEYpFS/QK6oD6sTvEVp2RoCJH6FVtIzdPd8632qErz1K8LfSJnEpzpWZjwKw1V4c1Q==";
   };
-  "lucide-react@1.77.0" = fetchurl {
-    url = "https://registry.npmjs.org/lucide-react/-/lucide-react-1.77.0.tgz";
-    hash = "sha512-VS6sOi8ZUH1qm6swBL/tpI4xAhB6pFTdHvw3pfCJD+DaTJwpyynVzfOS6mdyMZ+OCdY/GMSQbqinOMOPbNSrQA==";
+  "lucide-react@1.78.0" = fetchurl {
+    url = "https://registry.npmjs.org/lucide-react/-/lucide-react-1.78.0.tgz";
+    hash = "sha512-61NFdT5ZfAY8xs3LWKkB78GVeuiCcjYFEXeHWxWP+mQhP+UWLGsA9hJZQPtIyXRDhOvT8kgmWwAIyH5L7RIhAA==";
   };
   "mitt@3.0.1" = fetchurl {
     url = "https://registry.npmjs.org/mitt/-/mitt-3.0.1.tgz";
