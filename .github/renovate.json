@@ -127,13 +127,13 @@
     },
     {
       "customType": "regex",
-      "description": "Track the pinned Spectrum Bluefin base image",
+      "description": "Refresh the pinned Spectrum base from Bluefin Classic stable",
       "managerFilePatterns": ["/^systems\\/spectrum\\/recipes\\/spectrum\\.yml$/"],
       "matchStrings": [
-        "base-image:\\s+(?<depName>[^\\s]+)\\s+image-version:\\s+\"(?<currentValue>\\d+)@(?<currentDigest>sha256:[a-f0-9]{64})\""
+        "base-image:\\s+(?<depName>[^\\s]+)\\s+image-version:\\s+\"(?<currentValue>stable)@(?<currentDigest>sha256:[a-f0-9]{64})\""
       ],
       "datasourceTemplate": "docker",
-      "versioningTemplate": "docker"
+      "versioningTemplate": "exact"
     },
     {
       "customType": "regex",
