@@ -640,11 +640,11 @@
     "source-kmscon": {
       "flake": false,
       "locked": {
-        "lastModified": 1795184465,
-        "narHash": "sha256-odzq/DhnITzomVe7+MKJq38ZVxCC7Wwh52GNZH5WITc=",
+        "lastModified": 1795429124,
+        "narHash": "sha256-cwOjDkdD6p+49CRtAMg1qbiHUyWfWXhqB+4qPGLBZdE=",
         "owner": "kmscon",
         "repo": "kmscon",
-        "rev": "8533759de18b52a020b389005a19f314746ce587",
+        "rev": "95624aa3f56a672d4faef43c923aae5293cf2eeb",
         "type": "github"
       },
       "original": {
