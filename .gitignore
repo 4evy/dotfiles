@@ -28,6 +28,11 @@ fallow/
 !.env.example
 !.env.*.example
 
+# Keep plaintext edits out of snapshots while allowing the local search overlay
+/.records-unpacked
+/home/records/**
+!/home/records/**/
+
 # Dependencies
 **/packages/
 !/packages/
