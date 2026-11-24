@@ -112,7 +112,7 @@ const checkGeneratedFile = Effect.fn("checkGeneratedFile")(function* (
 runMain(
   Effect.gen(function* () {
     const platform = runParser(
-      argument(choice(["darwin", "linux"])),
+      argument(choice(["darwin", "linux", "nixos"])),
       "home/deploy/check/home.ts",
       Bun.argv.slice(2),
       {
