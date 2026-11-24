@@ -16,7 +16,6 @@ modules:
         - brew-setup.service
         - fedora-atomic-desktop-appstream-cache-refresh.timer
         - kanata-main.service
-        - kmscon-theme-refresh.timer
         - kmsconvt@.service
         - pcscd.socket
         - podman.socket

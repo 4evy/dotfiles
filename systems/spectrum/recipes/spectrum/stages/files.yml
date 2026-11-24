@@ -55,9 +55,5 @@ modules:
     dest: /out/usr/libexec/dotfiles/kanata/kanata.kbd
 
   - type: copy@v1
-    src: home/theme/palette/palette.json
-    dest: /out/usr/share/dotfiles/catppuccin_custom_palette.json
-
-  - type: copy@v1
     src: data/rustdesk/options.json
     dest: /out/usr/share/dotfiles/rustdesk-options.json

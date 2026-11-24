@@ -42,6 +42,8 @@ let
       root = usr;
       fileset = lib.fileset.difference units (
         lib.fileset.unions [
+          # NixOS supplies its own executable and configuration directory
+          (units + "/system/kmsconvt@.service.d/10-spectrum-config.conf")
           (units + "/system/rustdesk.service.d")
           (units + "/system/tailscaled.service.d")
           (units + "/system/spectrum-rustdesk-prepare.service")
