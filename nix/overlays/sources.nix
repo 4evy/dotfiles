@@ -56,9 +56,11 @@ let
         sd
         writeShellApplication
         ;
+      program = "update-${name}";
     in
     lib.meta.getExe (writeShellApplication {
-      name = "update-${name}";
+      name = program;
+      meta.mainProgram = program;
       runtimeInputs = [
         coreutils
         git

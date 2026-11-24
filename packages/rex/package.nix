@@ -131,6 +131,7 @@ stdenvNoCC.mkDerivation {
     inherit serverVersion appBuild support;
     updateScript = lib.meta.getExe (writeShellApplication {
       name = "update-rex";
+      meta.mainProgram = "update-rex";
       runtimeInputs = [
         coreutils
         curl

@@ -1,4 +1,4 @@
-import { output, run } from "@dotfiles/core/commands";
+import { run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
 import { Effect } from "effect";
@@ -14,26 +14,20 @@ export const updateNixPackage = Effect.fn(function* (
       flake = builtins.getFlake ${JSON.stringify(root)};
       system = builtins.currentSystem;
       pkgs = import flake.inputs.nixpkgs { inherit system; };
+      inherit (pkgs) lib writeShellApplication;
       package = builtins.getAttr ${JSON.stringify(name)} flake.packages.\${system};
-    in pkgs.writeShellScript "update-package" (
-      pkgs.lib.escapeShellArgs (pkgs.lib.toList package.updateScript) + " \\"$@\\""
-    )
+    in {
+      updater = writeShellApplication {
+        name = "update-package";
+        meta.mainProgram = "update-package";
+        text = "exec " + lib.strings.escapeShellArgs (lib.lists.toList package.updateScript) + " \\"$@\\"";
+      };
+    }
   `;
-  const script = yield* output(
-    [
-      "nix",
-      "build",
-      "--impure",
-      "--no-link",
-      "--print-out-paths",
-      "--expr",
-      expression,
-    ],
-    { cwd: root },
+  yield* run(
+    ["nix", "run", "--impure", "--expr", expression, "updater", "--", ...args],
+    { cwd: root, capture: true },
   );
-  if (!script.startsWith("/nix/store/") || script.includes("\n"))
-    return yield* Effect.fail(new DotfilesError(`Invalid updater path for ${name}`));
-  yield* run([script, ...args], { cwd: root, capture: true });
 });
 
 if (import.meta.main)

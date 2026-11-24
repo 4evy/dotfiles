@@ -17,6 +17,7 @@
         projectRootFile = "flake.nix";
         build.wrapper = pkgs.writeShellApplication {
           name = "treefmt";
+          meta.mainProgram = "treefmt";
           runtimeInputs = [
             pkgs.flock
             pkgs.git
@@ -88,24 +89,27 @@
               priority = 1;
             };
             biome-extensions = {
-              command = pkgs.writeShellApplication {
-                name = "biome-extensions-format";
-                text = ''
-                  temporary_file=$(mktemp)
-                  trap 'rm -f "$temporary_file"' EXIT
-                  for file in "$@"; do
-                    case "$file" in
-                      *.gjs) parser_path="$file.js" ;;
-                      *) parser_path="$file.jsonc" ;;
-                    esac
-                    ${lib.meta.getExe pkgs.biome} format --vcs-enabled=false \
-                      --stdin-file-path "$parser_path" < "$file" > "$temporary_file"
-                    if ! cmp -s "$file" "$temporary_file"; then
-                      cat "$temporary_file" > "$file"
-                    fi
-                  done
-                '';
-              };
+              command = lib.meta.getExe (
+                pkgs.writeShellApplication {
+                  name = "biome-extensions-format";
+                  meta.mainProgram = "biome-extensions-format";
+                  text = ''
+                    temporary_file=$(mktemp)
+                    trap 'rm -f "$temporary_file"' EXIT
+                    for file in "$@"; do
+                      case "$file" in
+                        *.gjs) parser_path="$file.js" ;;
+                        *) parser_path="$file.jsonc" ;;
+                      esac
+                      ${lib.meta.getExe pkgs.biome} format --vcs-enabled=false \
+                        --stdin-file-path "$parser_path" < "$file" > "$temporary_file"
+                      if ! cmp -s "$file" "$temporary_file"; then
+                        cat "$temporary_file" > "$file"
+                      fi
+                    done
+                  '';
+                }
+              );
               includes = [
                 "*.gjs"
                 "*.jsonc.darwin"

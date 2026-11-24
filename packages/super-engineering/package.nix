@@ -58,6 +58,7 @@ let
   # Isolate strict manifest generation from the FHS launcher's shell options
   nvidiaIcd = writeShellApplication {
     name = "super-engineering-nvidia-icd";
+    meta.mainProgram = "super-engineering-nvidia-icd";
     runtimeInputs = [
       coreutils
       jq
@@ -254,6 +255,7 @@ let
   # Run from the repository root to refresh every platform, including same-day builds
   updateScript = lib.meta.getExe (writeShellApplication {
     name = "update-super-engineering";
+    meta.mainProgram = "update-super-engineering";
     runtimeInputs = [
       coreutils
       curl
