@@ -32,8 +32,8 @@
   openssl,
   pango,
   rpmextract,
-  runCommand,
   stdenv,
+  symlinkJoin,
   systemd,
   tpm2-tss,
   wrapGAppsHook3,
@@ -128,21 +128,16 @@ let
     };
   });
 in
-runCommand unwrapped.name
-  {
-    nativeBuildInputs = [ makeWrapper ];
-    inherit (unwrapped) meta;
-    passthru = {
-      inherit unwrapped;
-      inherit (unwrapped) updateScript;
-    };
-  }
-  ''
-    mkdir -p "$out"
-    ln -s ${unwrapped}/* "$out/"
-    rm "$out/bin"
-    mkdir -p "$out/bin" "$out/libexec"
-    ln -s ${unwrapped}/bin/* "$out/bin/"
+symlinkJoin {
+  inherit (unwrapped) name meta;
+  paths = [ unwrapped ];
+  nativeBuildInputs = [ makeWrapper ];
+  passthru = {
+    inherit unwrapped;
+    inherit (unwrapped) updateScript;
+  };
+  postBuild = ''
+    mkdir -p "$out/libexec"
     rm "$out/bin/chatgpt"
     substitute ${./prepare-bundled-plugins.sh} \
       "$out/libexec/chatgpt-bundled-plugins.sh" \
@@ -151,4 +146,5 @@ runCommand unwrapped.name
       --replace-fail '@coreutils@' '${coreutils}/bin'
     makeWrapper ${lib.meta.getExe unwrapped} "$out/bin/chatgpt" \
       --run "source \"$out/libexec/chatgpt-bundled-plugins.sh\""
-  ''
+  '';
+}
