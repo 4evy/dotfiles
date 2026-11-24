@@ -9,8 +9,6 @@ import { discord } from "./apps/discord/discord.ts";
 import { desktopAudit } from "./desktop/audit.ts";
 import { gnomeAccent } from "./desktop/gnome.ts";
 import { jjDiff } from "./jj/diff.ts";
-import { kmsconRefresh } from "./kmscon/refresh.ts";
-import { kmsconTheme } from "./kmscon/theme.ts";
 import { terminalProfile } from "./macos/terminal.ts";
 import { phoneEnvironment, phoneUsage } from "./phone/config.ts";
 import { phoneMirror } from "./phone/phone.ts";
@@ -34,20 +32,6 @@ function noArguments<E, R>(action: () => Effect.Effect<void, E, R>) {
     });
 }
 export const commands = {
-  "kmscon-theme-config": {
-    run: kmsconTheme,
-    usage: "PALETTE_JSON OUTPUT_CONFIG",
-    environment: [
-      "DOTFILES_KMSCON_THEME",
-      "DOTFILES_KMSCON_LATITUDE",
-      "DOTFILES_KMSCON_LONGITUDE",
-    ],
-  },
-  "kmscon-refresh": {
-    run: kmsconRefresh,
-    usage: "CONFIG [--state PATH]",
-    environment: [],
-  },
   "desktop-perf-audit": {
     run: noArguments(desktopAudit),
     usage: "",

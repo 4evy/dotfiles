@@ -7,10 +7,8 @@
     "./package.json": "./package.json",
     "./desktop": "./src/linux/desktop.ts",
     "./theme": "./src/lib/theme.ts",
-    "./solar": "./src/lib/solar.ts",
     "./assets/gtk4": "./assets/desktop/gtk/gtk.css.in",
     "./assets/gtk3": "./assets/desktop/gtk/legacy.css.in",
-    "./assets/kmscon": "./assets/kmscon/defaults.conf",
     "./assets/desktop": "./assets/linux/desktop.gjs"
   },
   "scripts": {
@@ -26,8 +24,7 @@
     "@optique/core": "1.4.0",
     "effect": "4.1.5",
     "fast-xml-parser": "5.12.1",
-    "fast-xml-validator": "1.4.4",
-    "suncalc": "2.1.4"
+    "fast-xml-validator": "1.4.4"
   },
   "devDependencies": {
     "@types/bun": "1.4.5",

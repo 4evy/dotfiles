@@ -736,10 +736,6 @@
     url = "https://registry.npmjs.org/strnum/-/strnum-2.5.1.tgz";
     hash = "sha512-UM4nTLWzQiDBseVxUGxN0wJzIk0UU89Qi7pKXz9qISo+lhviJikTuikBsK/oFRlpvYHvSdz0TVoLyQ+sEpYwxA==";
   };
-  "suncalc@2.1.4" = fetchurl {
-    url = "https://registry.npmjs.org/suncalc/-/suncalc-2.1.4.tgz";
-    hash = "sha512-V7oSdbSezigEpbqnNWKujDlZaE/QA/0w5IbP/vXX+eIF+EtiE8e9BkSapsOFZc84jJkI3QlklYTWtMqzj9tZQg==";
-  };
   "tsrs@7.1.0-beta.tsrs4" = fetchurl {
     url = "https://registry.npmjs.org/tsrs/-/tsrs-7.1.0-beta.tsrs4.tgz";
     hash = "sha512-tPeUolNTUDJFk1Fc660PyFGUK/epGbuQVoo+2GnCIWkNDWp8i1DMI5n2X8pxxevi/3zbO8UvIKjWgE4T7OOCeA==";
