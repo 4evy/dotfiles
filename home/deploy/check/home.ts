@@ -21,10 +21,7 @@ type Validator = (
 ) => Effect.Effect<unknown, DotfilesError, RuntimeServices>;
 const bash: Validator = (_, path) => run(["bash", "-n", path], { cwd: repository });
 const zsh: Validator = (_, path) => run(["zsh", "-n", path], { cwd: repository });
-const js = new Bun.Transpiler({ loader: "js" });
-const ts = new Bun.Transpiler({ loader: "ts" });
-const jsx = new Bun.Transpiler({ loader: "jsx" });
-const tsx = new Bun.Transpiler({ loader: "tsx" });
+const transpiler = new Bun.Transpiler();
 // Transpilers and parsers are synchronous foreign-library validation boundaries
 const syntax =
   (parse: (contents: string) => unknown): Validator =>
@@ -33,15 +30,19 @@ const syntax =
       try: () => parse(contents),
       catch: (error) => new DotfilesError(String(error)),
     });
+const transpile = (loader: Bun.JavaScriptLoader) =>
+  syntax((contents) => transpiler.transformSync(contents, loader));
+const js = transpile("js");
+const ts = transpile("ts");
 const scripts: Record<string, Validator> = {
-  ".js": syntax((contents) => js.transformSync(contents)),
-  ".mjs": syntax((contents) => js.transformSync(contents)),
-  ".cjs": syntax((contents) => js.transformSync(contents)),
-  ".ts": syntax((contents) => ts.transformSync(contents)),
-  ".mts": syntax((contents) => ts.transformSync(contents)),
-  ".cts": syntax((contents) => ts.transformSync(contents)),
-  ".jsx": syntax((contents) => jsx.transformSync(contents)),
-  ".tsx": syntax((contents) => tsx.transformSync(contents)),
+  ".js": js,
+  ".mjs": js,
+  ".cjs": js,
+  ".ts": ts,
+  ".mts": ts,
+  ".cts": ts,
+  ".jsx": transpile("jsx"),
+  ".tsx": transpile("tsx"),
   ".bash": bash,
   ".sh": bash,
   ".zsh": zsh,

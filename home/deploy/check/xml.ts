@@ -8,12 +8,14 @@ import { string } from "@optique/core/valueparser";
 import { Effect, FileSystem } from "effect";
 import { SyntaxValidator } from "fast-xml-validator";
 
+const validator = new SyntaxValidator({
+  invalidCharSequence: { comment: true, tagValue: true, attrLt: true },
+});
+
 export function validateXML(contents: string): void {
   if (/<!ENTITY\s/i.test(contents))
     throw new Error("XML entity declarations are forbidden");
-  SyntaxValidator.validate(contents, {
-    invalidCharSequence: { comment: true, tagValue: true, attrLt: true },
-  });
+  validator.validate(contents);
 }
 
 if (import.meta.main)

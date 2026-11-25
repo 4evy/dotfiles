@@ -81,7 +81,10 @@ runMain(
         ...config,
         extends: join(source, "tsconfig.json"),
         include: [],
-        files: [...sources.keys()].filter((path) => scriptExtensions[extname(path)]),
+        files: sources
+          .keys()
+          .filter((path) => scriptExtensions[extname(path)])
+          .toArray(),
       }),
     );
     // Deployed package checks use the workspace's development dependencies
@@ -105,9 +108,10 @@ runMain(
       },
     );
     process.stdout.write(
-      compiler.stdout.replace(/^(.+?)(\(\d+,\d+\):)/gm, (line, file, location) =>
-        sources.has(file) ? `${sources.get(file)}${location}` : line,
-      ),
+      compiler.stdout.replace(/^(.+?)(\(\d+,\d+\):)/gm, (line, file, location) => {
+        const source = sources.get(file);
+        return source === undefined ? line : `${source}${location}`;
+      }),
     );
     process.exitCode = compiler.code;
   }),

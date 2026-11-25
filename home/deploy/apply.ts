@@ -219,10 +219,9 @@ const preparedAi = Effect.fn("preparedAi")(function* (directory: string) {
     return yield* Effect.fail(
       new DotfilesError("Prepared AI configuration belongs to another platform"),
     );
-  const files: Entry[] = [];
-  for (const entry of metadata.files)
-    files.push(yield* prepareAiEntry(entry, directory));
-  return files;
+  return yield* Effect.forEach(metadata.files, (entry) =>
+    prepareAiEntry(entry, directory),
+  );
 });
 
 function selected(target: string) {
@@ -454,37 +453,38 @@ const prepareManifest = Effect.fn("prepareManifest")(function* (
   return manifest;
 });
 
-const resolveAliases = Effect.fn("resolveAliases")(function* (files: Entry[]) {
+const resolveAliases = Effect.fn("resolveAliases")(function* (
+  byTarget: ReadonlyMap<string, Entry>,
+) {
   // Resolve aliases to prepared sources so activation order cannot break links
-  const byTarget = new Map(files.map((entry) => [entry.target, entry]));
-  for (const entry of files) {
+  for (const entry of byTarget.values()) {
     if (entry.type !== "symlink") continue;
     entry.source = resolve(entry.source);
     const visited = new Set([entry.target]);
-    while (byTarget.has(entry.source)) {
+    while (true) {
+      const source = byTarget.get(entry.source);
+      if (!source) break;
       if (visited.has(entry.source))
         return yield* Effect.fail(
           new DotfilesError(`Circular Hjem alias: ${entry.target}`),
         );
       visited.add(entry.source);
-      const source = byTarget.get(entry.source);
-      if (!source) break;
       entry.source = source.source;
     }
   }
 });
 
 const prepareTargets = Effect.fn("prepareTargets")(function* (files: Entry[]) {
-  const targets = new Set<string>();
+  const targets = new Map<string, Entry>();
   for (const entry of files) {
     if (targets.has(entry.target))
       return yield* Effect.fail(
         new DotfilesError(`Duplicate Hjem target: ${entry.target}`),
       );
-    targets.add(entry.target);
+    targets.set(entry.target, entry);
     entry.clobber = true;
   }
-  yield* resolveAliases(files);
+  yield* resolveAliases(targets);
   return targets;
 });
 
@@ -515,7 +515,7 @@ const showFileDiff = Effect.fn("showFileDiff")(function* (
 
 const showChanges = Effect.fn("showChanges")(function* (
   manifest: Manifest,
-  targets: Set<string>,
+  targets: ReadonlyMap<string, Entry>,
   output: string,
 ) {
   let changed = 0;
@@ -569,8 +569,6 @@ const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
   const fs = yield* FileSystem.FileSystem;
   yield* fs.makeDirectory(state, { recursive: true, mode: PRIVATE_DIRECTORY_MODE });
   const lock = join(state, "dotfiles.lock");
-  let generated: string | undefined;
-  let handedToHjem = false;
   yield* Effect.scoped(
     Effect.gen(function* () {
       yield* Effect.acquireRelease(
@@ -589,22 +587,18 @@ const main = Effect.fn("applyHome")(function* (managesAi: boolean) {
         yield* pruneGenerations(yield* hjemExecutable());
         return;
       }
-      yield* Effect.addFinalizer(() =>
-        Effect.gen(function* () {
-          if (generated && !handedToHjem)
-            yield* fs.remove(generated, { recursive: true, force: true });
-        }).pipe(Effect.orDie),
-      );
-
       yield* fs.makeDirectory(rendered, {
         recursive: true,
         mode: PRIVATE_DIRECTORY_MODE,
       });
-      const output = yield* fs.makeTempDirectory({
-        directory: rendered,
-        prefix: GENERATION_PREFIX,
-      });
-      generated = output;
+      let handedToHjem = false;
+      const output = yield* Effect.acquireRelease(
+        fs.makeTempDirectory({ directory: rendered, prefix: GENERATION_PREFIX }),
+        (path) =>
+          handedToHjem
+            ? Effect.void
+            : fs.remove(path, { recursive: true, force: true }).pipe(Effect.orDie),
+      );
       const manifest = yield* prepareManifest(output, managesAi);
       const targets = yield* prepareTargets(manifest.files);
       const manifestPath = join(output, MANIFEST_FILE);

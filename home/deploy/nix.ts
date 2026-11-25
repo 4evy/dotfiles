@@ -1,4 +1,3 @@
-import { arch } from "node:os";
 import { output as commandOutput } from "@dotfiles/core/commands";
 import { Effect, FileSystem } from "effect";
 
@@ -14,8 +13,9 @@ export const buildHjemOutput = Effect.fn("buildHjemOutput")(function* (
     const fs = yield* FileSystem.FileSystem;
     platform = (yield* fs.exists("/etc/NIXOS")) ? "nixos" : "linux";
   }
+  const architecture = process.arch;
   const runtime = {
-    system: `${arch() === "arm64" ? "aarch64" : arch() === "x64" ? "x86_64" : arch()}-${process.platform}`,
+    system: `${architecture === "arm64" ? "aarch64" : architecture === "x64" ? "x86_64" : architecture}-${process.platform}`,
     environment: {
       ...Object.fromEntries(
         [

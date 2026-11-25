@@ -162,18 +162,6 @@ let
   */
   findCommand = name: lib.trivial.defaultTo name (commandPath name);
 
-  /**
-    Return the first resolved command from an ordered list, or the fallback
-
-    # Type
-    `firstCommand :: [String] -> String -> String`
-
-    # Examples
-    `firstCommand [ ] "clang-tidy"` returns `"clang-tidy"`
-  */
-  firstCommand =
-    names: fallback:
-    lib.lists.findFirst (path: path != null) fallback (lib.lists.map commandPath names);
   markers = colorMarkers ++ [
     {
       # Inherit the deployed extension dependency from the locked AI runtime
@@ -186,12 +174,12 @@ let
     }
     {
       name = "@CLANG_TIDY@";
-      value = firstCommand [ "clang-tidy" ] (
+      value = lib.trivial.defaultTo (
         if lib.trivial.pathExists "/opt/homebrew/opt/llvm/bin/clang-tidy" then
           "/opt/homebrew/opt/llvm/bin/clang-tidy"
         else
           "clang-tidy"
-      );
+      ) (commandPath "clang-tidy");
     }
     {
       name = "@HOME@";
