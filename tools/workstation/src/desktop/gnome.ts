@@ -66,7 +66,7 @@ export const gnomeAccent = Effect.fn("gnomeAccent")(function* (args: string[]) {
         Stream.splitLines,
         Stream.runForEach(apply),
       );
-      return Number(yield* exitCode(child));
+      return yield* exitCode(child);
     }),
   );
 });

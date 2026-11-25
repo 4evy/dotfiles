@@ -15,7 +15,6 @@ function section(name: string) {
 const printCommand = Effect.fn("desktopAudit.printCommand")(function* (args: string[]) {
   const result = yield* run(args, { check: false, capture: true });
   if (result.stdout) yield* Console.log(result.stdout.trimEnd());
-  return result.stdout;
 });
 const available = (command: string) => Effect.sync(() => Boolean(Bun.which(command)));
 const printIfAvailable = Effect.fn("desktopAudit.printIfAvailable")(function* (
@@ -31,11 +30,13 @@ function matchingLines(
   pattern: RegExp,
   limit?: number,
   tail = false,
-): string {
-  const lines = text.split(/\r?\n/).filter((line) => pattern.test(line));
-  return (
-    limit === undefined ? lines : tail ? lines.slice(-limit) : lines.slice(0, limit)
-  ).join("\n");
+): string[] {
+  const lines = text
+    .split(/\r?\n/)
+    .values()
+    .filter((line) => pattern.test(line));
+  if (limit === undefined) return lines.toArray();
+  return tail ? lines.toArray().slice(-limit) : lines.take(limit).toArray();
 }
 const auditSystem = Effect.fn("desktopAudit.system")(function* () {
   yield* section("system");
@@ -61,7 +62,7 @@ const auditGraphics = Effect.fn("desktopAudit.graphics")(function* () {
       matchingLines(
         yield* output(["lsmod"], { check: false }),
         /^(nvidia|nouveau|amdgpu|i915)/i,
-      ),
+      ).join("\n"),
     );
   if (yield* fs.exists("/sys/class/drm"))
     for (const device of yield* fs.glob("/sys/class/drm/card[0-9]/device"))
@@ -75,7 +76,6 @@ const auditGraphics = Effect.fn("desktopAudit.graphics")(function* () {
         yield* output(["rpm", "-qa"], { check: false }),
         /^(nvidia|kmod-nvidia|akmod-nvidia|xorg-x11-nvidia|libnvidia|libva-nvidia|libva-utils|egl-wayland|egl-wayland2|ublue-os-nvidia|vulkan-loader|vulkan-tools)/i,
       )
-        .split("\n")
         .sort()
         .join("\n"),
     );
@@ -144,7 +144,7 @@ const auditPowerAndDesktop = Effect.fn("desktopAudit.powerAndDesktop")(function*
         /gnome-shell|mutter|extension|clutter|st_widget|g_closure|gpu|egl|vulkan|wayland/i,
         DESKTOP_WARNING_LINE_LIMIT,
         true,
-      ),
+      ).join("\n"),
     );
 });
 const auditProcessesAndLogs = Effect.fn("desktopAudit.processesAndLogs")(function* () {
@@ -157,7 +157,7 @@ const auditProcessesAndLogs = Effect.fn("desktopAudit.processesAndLogs")(functio
         }),
         /helium|chrom|electron|discord/i,
         CHROMIUM_PROCESS_LINE_LIMIT,
-      ),
+      ).join("\n"),
     );
   yield* section("kernel-gpu");
   if (yield* available("journalctl"))
@@ -169,7 +169,7 @@ const auditProcessesAndLogs = Effect.fn("desktopAudit.processesAndLogs")(functio
         /nouveau|nvidia|amdgpu|i915|drm|gpu|xid|timeout|hang|stall|firmware/i,
         KERNEL_GPU_LOG_LINE_LIMIT,
         true,
-      ),
+      ).join("\n"),
     );
   yield* section("hot-processes");
   if (yield* available("ps"))
