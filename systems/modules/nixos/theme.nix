@@ -1,13 +1,14 @@
 {
+  config,
   inputs,
   lib,
-  pkgs,
   ...
 }:
 let
   theme = import ../../../home/theme/palette {
     inherit inputs lib;
   };
+  palette = theme.ttyPalette.${config.catppuccin.flavor}.colors;
 in
 {
   # Keep application templates, mode switching, icons, and cursors under Hjem
@@ -17,7 +18,27 @@ in
     autoEnable = false;
     flavor = "mocha";
     accent = "pink";
-    tty.enable = true;
-    sources.palette = pkgs.writeTextDir "palette.json" (lib.generators.toJSON { } theme.ttyPalette);
   };
+
+  # Set the same ANSI slots as Catppuccin's TTY module without importing a build
+  console.colors = lib.modules.mkIf (config.catppuccin.enable && config.console.enable) (
+    map (name: lib.strings.removePrefix "#" palette.${name}.hex) [
+      "base"
+      "red"
+      "green"
+      "yellow"
+      "blue"
+      "pink"
+      "teal"
+      "subtext1"
+      "surface2"
+      "red"
+      "green"
+      "yellow"
+      "blue"
+      "pink"
+      "teal"
+      "subtext0"
+    ]
+  );
 }
