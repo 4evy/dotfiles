@@ -38,7 +38,7 @@ if [[ ! -f $repository/Justfile || ! -f $package_source ]]; then
 fi
 
 (cd "$(dirname "$package_source")" && nix run .#update-chatgpt)
-just --justfile "$repository/Justfile" apply
+just --justfile "$repository/Justfile" dotfiles apply
 
 if [[ ! -e /etc/NIXOS ]]; then
 	just --justfile "$repository/Justfile" hjem

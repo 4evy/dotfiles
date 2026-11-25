@@ -1,7 +1,6 @@
-import '../common.just'
+import '../module.just'
 import '../nix/ensure.just'
 
-set working-directory := '../..'
 set default-list
 # Replace incorrect Nix expression hashes, prompting before each edit by default
 [arg('args', help='Arguments forwarded to determinate-nixd fix hashes')]

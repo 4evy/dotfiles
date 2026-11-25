@@ -9,8 +9,7 @@ _lint-xml: (_run-files 'bun' ['*.plist', '*.xml'] ['home/deploy/check/xml.ts'])
 
 # These substitution templates are build inputs, outside the managed home tree
 _lint-input-templates:
-    temporary_dir=$(mktemp -d)
-    trap 'rm -rf "$temporary_dir"' EXIT
+    temporary_dir="${0%/*}/rendered"
     for file in {{ quote(git_files(['*.plist.in', '*.xml.in'])) }}; do
       [[ -f $file && ! -L $file ]] || continue
       rendered_file="$temporary_dir/${file%.in}"

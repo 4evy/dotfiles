@@ -82,7 +82,7 @@ jobs:
       - name: Discover Native Checks
         id: native-inputs
         run: |
-          checks=$(just --quiet nix native checks)
+          checks=$(just --quiet nix checks list)
           echo "checks=$checks" >> "$GITHUB_OUTPUT"
 
   # Omit `name` so skipped matrices do not expose an unevaluated matrix expression.
@@ -114,7 +114,7 @@ jobs:
       - name: Build Native Check
         env:
           CHECK: ${{ matrix.check }}
-        run: just nix build check "$CHECK"
+        run: just nix checks build "$CHECK"
 
       - name: Export Nix Build Cache
         if: steps.nix.outputs.cache-hit != 'true'

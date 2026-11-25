@@ -37,6 +37,10 @@ git_files(patterns) := nul_split(shell('git ls-files -z --deduplicate --cached -
 _run executable +arguments:
     {{ quote([executable, arguments]) }}
 
+# Just dependencies can target child modules, not sibling modules
+_just +args:
+    {{ just_command }} {{ quote(args) }}
+
 _run-files executable patterns arguments=[]:
     printf '==> %s\n' {{ quote(join_list([executable, arguments])) }}
     files=()
@@ -56,9 +60,6 @@ doctor_all_commands := doctor_lint_commands ++ doctor_sops_commands ++ ['bun', '
 
 doctor_commands(profile) := if profile == 'status' { if host_os == 'linux' { ['bootc', 'sudo'] } } else if profile == 'reboot' { if host_os == 'linux' { ['systemctl'] } } else if profile == 'install' { if host_os == 'linux' { ['bootc', 'sudo'] } } else if profile == 'spectrum' { ['bluebuild', 'bun', 'jq', 'nix'] } else if profile == 'setup' { doctor_setup_commands } else if profile == 'reconcile' { ['nix', 'bash'] } else if profile == 'apply' { ['bun', 'nix', 'jq'] ++ doctor_records_commands } else if profile == 'records' { doctor_records_commands } else if profile == 'sops' { doctor_sops_commands } else if profile == 'shell' { ['shellcheck', 'shfmt'] } else if profile == 'fmt' { doctor_format_commands } else if profile == 'lint' || profile == 'check' { doctor_lint_commands } else if profile == 'bun' { ['bun'] } else if profile == 'nix' { ['bash', 'curl', 'jq', 'sudo'] } else if profile == 'watch' { ['watchexec'] } else if profile == 'all' { doctor_all_commands ++ (if host_os == 'linux' { ['bootc', 'systemctl'] }) }
 
-# Check one workflow's commands, or every workflow when omitted.
-[arg('profile', pattern=['status', 'reboot', 'install', 'build', 'setup', 'reconcile', 'apply', 'records', 'sops', 'shell', 'spectrum', 'fmt', 'lint', 'bun', 'nix', 'watch', 'check', 'all'], help='Workflow to check')]
-[group('system')]
 _doctor $profile="all":
     host_os={{ quote(host_os) }}
     commands=({{ quote(doctor_commands(profile)) }})
@@ -80,7 +81,7 @@ _doctor $profile="all":
       fi
     done
     if ((missing)); then
-      printf 'Install the missing commands, then rerun `just doctor %q`.\n' "$profile" >&2
+      printf 'Install the missing commands, then rerun `just system doctor %q`.\n' "$profile" >&2
       exit 1
     fi
     printf 'Ready: all commands for the %s workflow are available.\n' "$profile"

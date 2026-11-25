@@ -1,8 +1,7 @@
-import '../common.just'
+import '../module.just'
 import '../nix/ensure.just'
 mod fix 'fix.just'
 
-set working-directory := '../..'
 set default-list
 # Show the installed distribution, enabled features, and daemon status
 [group('system')]

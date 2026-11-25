@@ -98,12 +98,15 @@ tools/setup/setup.sh setup
 
 Run from `nix develop` for pinned tool versions
 
+Use `just --list --list-submodules` to list commands and `just --usage` followed
+by a recipe path for its arguments. Preview setup with `just setup run --plan`
+
 | Command                          | Purpose                                                                 |
 | -------------------------------- | ----------------------------------------------------------------------- |
-| `just fmt`                       | Format repository files and available encrypted records through treefmt |
+| `just dev fmt`                   | Format repository files and available encrypted records through treefmt |
 | `just check format`              | Check formatting without changing files                                 |
 | `bun run lint:fix`               | Apply Biome lint fixes                                                  |
-| `just lint`                      | Run repository-wide validation                                          |
+| `just check lint`                | Run repository-wide validation                                          |
 | `bun run check`                  | Run Biome, TypeScript, builds, and Fallow                               |
 | `bun tools/renovate/nix.ts rex`  | Update a custom Nix package pin                                         |
 | `nix run .#update-helium-darwin` | Refresh the Darwin Helium pin, including from Linux                     |

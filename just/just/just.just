@@ -1,6 +1,5 @@
-import '../common.just'
+import '../module.just'
 
-set working-directory := '../..'
 set default-list
 # Format Just files through treefmt
 [group('dev')]

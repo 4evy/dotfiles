@@ -1,7 +1,6 @@
-import '../common.just'
+import '../module.just'
 import '../nix/system.just'
 
-set working-directory := '../..'
 # Check formatting in Nix's sandbox without rewriting the worktree
 [group('check')]
 format: (_doctor 'fmt')
@@ -9,10 +8,8 @@ format: (_doctor 'fmt')
 
 # Run the complete repository validation suite
 [default]
-all: _lint _nix
+all: lint (_just ['nix', 'check'])
 
-_lint:
-    {{ just_command }} lint
-
-_nix:
-    {{ just_command }} nix check
+# Run formatting, dependency, and source validation
+[group('check')]
+lint: (_just ['_lint'])

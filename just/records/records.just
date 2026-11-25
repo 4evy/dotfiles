@@ -1,7 +1,7 @@
-import '../common.just'
+import '../module.just'
 import '../sops/vaults.just'
+import 'run.just'
 
-set working-directory := '../..'
 set default-list
 # Materialize records at their native source paths, or pass an external workspace.
 [arg('workspace', max='1', help='Optional protected workspace outside the repository')]
@@ -30,6 +30,3 @@ layout: (_records ['layout'])
 # Decrypt records into protected runtime files and emit a Hjem manifest
 [group('secrets')]
 deploy *args: (_records ['deploy', args])
-[env('SOPS_AGE_KEY_CACHE', 'records')]
-_records +args: (_doctor 'records')
-    bun tools/records/main.ts {{ quote(args) }}

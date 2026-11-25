@@ -61,7 +61,7 @@ brewup() {
 # syntax and lint validation.
 
 update() {
-	just --justfile "$_dotfiles_repo_path/Justfile" update "$@"
+	just --justfile "$_dotfiles_repo_path/Justfile" setup update "$@"
 }
 
 check() {
@@ -70,7 +70,7 @@ check() {
 
 if [[ $(uname -s) == Darwin ]]; then
 	rebuild() {
-		just --justfile "$_dotfiles_repo_path/Justfile" darwin "$@"
+		just --justfile "$_dotfiles_repo_path/Justfile" setup darwin "$@"
 	}
 
 	micfix() {

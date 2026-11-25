@@ -1,10 +1,8 @@
-import '../common.just'
+import '../module.just'
 import 'ensure.just'
-mod build 'build.just'
+mod checks 'checks.just'
 mod ci 'ci.just'
-mod native 'native.just'
 
-set working-directory := '../..'
 # Evaluate every flake output without building package derivations.
 [group('check')]
 check: (_doctor 'fmt') ci::_eval-system
@@ -20,7 +18,7 @@ update *inputs: (_doctor 'nix')
 [group('setup')]
 install: (_doctor 'nix') _ensure
     if [[ {{ quote(host_os) }} == macos ]]; then
-      printf '%s\n' 'Darwin owns these tools, use just darwin to rebuild them.'
+      printf '%s\n' 'Darwin owns these tools, use just setup darwin to rebuild them.'
       exit 0
     fi
     if [[ -e /etc/NIXOS ]]; then

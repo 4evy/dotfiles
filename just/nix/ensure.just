@@ -27,9 +27,7 @@ _ensure:
 [macos]
 _ensure:
     if ! command -v nix >/dev/null 2>&1; then
-      scratch=$(mktemp -d "${TMPDIR:-/tmp}/determinate.XXXXXXXXXX")
-      trap 'rm -rf "$scratch"' EXIT
-      pkg="$scratch/Determinate.pkg"
+      pkg="${0%/*}/Determinate.pkg"
 
       curl --proto '=https' --tlsv1.2 -fsSL \
         {{ quote(determinate_nix_pkg_url) }} \

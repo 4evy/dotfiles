@@ -76,7 +76,9 @@ export const notificationPermissions = Effect.fn(function* (
   const fs = yield* FileSystem.FileSystem;
   if (!(yield* fs.exists(helper)))
     return yield* Effect.fail(
-      new DotfilesError("Native notification helper is missing. Run just permissions"),
+      new DotfilesError(
+        "Native notification helper is missing. Run just setup permissions",
+      ),
     );
   const container = settings.container.replaceAll("{home}", home);
   const request = {

@@ -17,8 +17,6 @@ _check-worktree-paths:
         fi
         printf 'broken symlink: %s\n' "$file" >&2
         broken=1
-      elif [[ ! -e $file ]]; then
-        printf 'tracked path missing from worktree: %s\n' "$file" >&2
       fi
     done
     exit "$broken"

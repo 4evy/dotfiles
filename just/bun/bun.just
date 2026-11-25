@@ -1,7 +1,6 @@
-import '../common.just'
+import '../module.just'
 mod nix 'nix.just'
 
-set working-directory := '../..'
 set default-list
 [group('check')]
 check: (_doctor 'bun')

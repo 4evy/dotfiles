@@ -1,4 +1,14 @@
-import 'checks.just'
-import 'format.just'
-import 'repository.just'
-import 'source.just'
+import '../module.just'
+
+set default-list
+
+# Format the repository through treefmt
+[group('dev')]
+fmt:
+    nix fmt .
+
+# Rerun a recipe when files change.
+[arg('args', help='Recipe and arguments to rerun on file changes')]
+[group('dev')]
+watch +args=['check']: (_doctor 'watch')
+    watchexec --clear --restart --shell=none -- {{ just_command }} {{ quote(args) }}

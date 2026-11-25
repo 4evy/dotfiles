@@ -1,6 +1,5 @@
-import '../common.just'
+import '../module.just'
 
-set working-directory := '../..'
 set default-list
 [group('check')]
 [working-directory('.github/renovate')]

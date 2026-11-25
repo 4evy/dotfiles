@@ -1,6 +1,5 @@
-import '../common.just'
+import '../module.just'
 
-set working-directory := '../..'
 set default-list
 
 export BB_BUILD_DRIVER := "podman"
@@ -15,9 +14,7 @@ validate: (_doctor 'nix')
 
 [linux]
 _validate:
-    generated=$(mktemp)
-    trap 'rm -f "$generated"' EXIT
-    {{ just_command }} spectrum generate "$generated"
+    {{ just_command }} spectrum generate "${0%/*}/Containerfile"
 
 # Generate the Containerfile once, with BlueBuild's recursive recipe validation.
 [group('spectrum')]
@@ -44,12 +41,12 @@ build profile="": (_doctor 'nix')
 
 [linux]
 _build profile="":
-    generated=$(mktemp)
+    generated="${0%/*}/Containerfile"
     sudo -v
     # Keep the ticket valid across long builds without changing sudo policy
     (while sleep 60; do sudo -n -v || exit; done) &
     sudo_keepalive=$!
-    trap 'rm -f "$generated"; kill "$sudo_keepalive" 2>/dev/null || :; wait "$sudo_keepalive" 2>/dev/null || :' EXIT
+    trap 'kill "$sudo_keepalive" 2>/dev/null || :; wait "$sudo_keepalive" 2>/dev/null || :' EXIT
     trap 'exit 130' INT
     trap 'exit 143' TERM
     {{ just_command }} spectrum generate "$generated"

@@ -161,7 +161,7 @@ runMain(
           if (latest !== original)
             return yield* Effect.fail(
               new DotfilesError(
-                "Antigravity MCP settings changed during apply, run just apply again",
+                "Antigravity MCP settings changed during apply, run just dotfiles apply again",
               ),
             );
           yield* fs.rename(staging, target);

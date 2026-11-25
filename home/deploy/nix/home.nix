@@ -224,7 +224,7 @@ let
             if { [ "$existed" = true ] &&
                  ! cmp -s "$settings" "$temporary/original"; } ||
                { [ "$existed" = false ] && [ -e "$settings" ]; }; then
-              printf '%s\n' 'Antigravity settings changed during apply, run just apply again' >&2
+              printf '%s\n' 'Antigravity settings changed during apply, run just dotfiles apply again' >&2
               exit 1
             fi
             # CLI atomically rewrites this private, mutable file at startup
@@ -314,8 +314,8 @@ let
           exit 1
         }
 
-        [ -d "$source" ] || fail "missing Nix app $source, run just darwin"
-        [ -x "$manager" ] || fail "missing Nix manager $manager, run just darwin"
+        [ -d "$source" ] || fail "missing Nix app $source, run just setup darwin"
+        [ -x "$manager" ] || fail "missing Nix manager $manager, run just setup darwin"
         [ -f "$config" ] || fail "missing configuration $config"
 
         if [ -L "$target" ]; then
@@ -403,7 +403,7 @@ let
 
         # Refuse to overwrite settings saved by the running app during the merge
         if ! cmp -s "$settings" "$temporary/original"; then
-          printf '%s\n' 'super.engineering settings changed during apply, run just apply again' >&2
+          printf '%s\n' 'super.engineering settings changed during apply, run just dotfiles apply again' >&2
           exit 1
         fi
         mv "$temporary/updated" "$settings"

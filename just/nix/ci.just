@@ -1,14 +1,13 @@
-import '../common.just'
+import '../module.just'
 import 'system.just'
 
-set working-directory := '../..'
 set default-list
 # Evaluate the system configuration before the flake's import-from-derivation
 # checks, then build the repository lint and formatting checks.
 [group('check')]
 check: _eval-system
     nix flake check --keep-going --no-build
-    nix build --keep-going --print-build-logs \
+    nix build --no-link --keep-going --print-build-logs \
       .#checks.{{ nix_system }}.pre-commit .#checks.{{ nix_system }}.treefmt
 
 _eval-system:

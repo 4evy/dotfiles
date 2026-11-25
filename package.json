@@ -31,7 +31,7 @@
     "check": "bun run check:biome && bun run check:fallow && bun run tsc -p tsconfig.json && bun run --sequential --workspaces check",
     "check:biome": "bun run biome check .",
     "check:fallow": "bun run fallow dead-code --type-aware && bun run fallow health --complexity --max-crap 0 && bun run fallow dupes --fail-on-issues",
-    "format": "just fmt",
+    "format": "just dev fmt",
     "lint": "bun run biome lint .",
     "lint:fix": "bun run biome lint --write .",
     "sync:omp": "bun tools/renovate/omp.ts",

@@ -1,6 +1,5 @@
-import '../common.just'
+import '../module.just'
 
-set working-directory := '../..'
 set default-list
 [env('HOMEBREW_NO_AUTO_UPDATE', '1')]
 [group('check')]

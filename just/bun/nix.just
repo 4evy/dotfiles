@@ -1,6 +1,5 @@
-import '../common.just'
+import '../module.just'
 
-set working-directory := '../..'
 set default-list
 
 # Keep the workspace's generated Nix dependency cache in sync

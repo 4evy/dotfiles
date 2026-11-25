@@ -444,9 +444,9 @@ const workstation = Effect.gen(function* () {
     configureHost,
     installAntigravity: () =>
       command([process.execPath, join(root, "tools/setup/antigravity.ts")]),
-    applyDotfiles: () => command(["just", "apply"]),
+    applyDotfiles: () => command(["just", "dotfiles", "apply"]),
     refreshPackages: () =>
-      packagesSwitched ? command(["just", "hjem", "_refresh-packages"]) : Effect.void,
+      packagesSwitched ? command(["just", "hjem", "_refresh"]) : Effect.void,
   };
 });
 

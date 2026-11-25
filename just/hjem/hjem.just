@@ -1,12 +1,8 @@
-import '../common.just'
+import '../module.just'
 
-set working-directory := '../..'
 # Validate generated home files for Darwin, Fedora, and NixOS
 [group('check')]
-check: _secrets *(_hjem-platform *['darwin', 'linux', 'nixos'])
-
-_secrets:
-    {{ just_command }} sops check
+check: (_just ['sops', 'check']) *(_hjem-platform *['darwin', 'linux', 'nixos'])
 
 _hjem-platform platform:
     bun home/deploy/check/home.ts {{ quote(platform) }}
@@ -17,21 +13,12 @@ _hjem-platform platform:
 prune:
     bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} prune
 
-# Build or activate the Hjem home environment
-[arg('action', pattern=['switch', 'build'], help='switch to activate, or build to prepare without activating')]
-[group('setup')]
-_activate action: (_packages action)
-    bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} {{ quote(if action == 'switch' { 'apply' } else { 'build' }) }}
-    if [[ {{ quote(action) }} == switch ]]; then
-      {{ just_command }} hjem _refresh-packages
-    fi
-
 _packages action:
     if [[ {{ quote(host_os) }} == linux && ! -e /etc/NIXOS ]]; then
       bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} {{ quote('packages-' + action) }}
     fi
 
-_refresh-packages:
+_refresh:
     if [[ {{ quote(host_os) }} == linux && ! -e /etc/NIXOS ]]; then
       profile="${XDG_STATE_HOME:-$HOME/.local/state}/hjem/standalone/current-profile"
       if command -v systemctl >/dev/null 2>&1 && systemctl --user show-environment >/dev/null 2>&1; then
@@ -82,7 +69,9 @@ _refresh-packages:
 
 # Activate the complete Hjem home environment
 [default]
-switch: (_activate 'switch')
+switch: (_packages 'switch') && _refresh
+    bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} apply
 
 # Prepare the Hjem home environment without activating it
-build: (_activate 'build')
+build: (_packages 'build')
+    bun {{ quote(repo_dir / 'home/deploy/apply.ts') }} build
