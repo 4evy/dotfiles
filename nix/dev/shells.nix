@@ -36,9 +36,8 @@
               syft
               yamllint
               yq-go
-              zizmor
               ;
-            inherit (unstable) uv;
+            inherit (unstable) uv zizmor;
           }
           # Use the host container engine with its matching storage and helpers
           ++ lib.lists.optionals isLinux [ unstable.bluebuild ];

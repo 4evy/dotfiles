@@ -3,7 +3,7 @@
   _class = "flake";
 
   imports = [ inputs.git-hooks-nix.flakeModule ];
-  perSystem = {
+  perSystem = { pkgs, ... }: {
     pre-commit.settings.hooks = {
       actionlint.enable = true;
       biome.enable = true;
@@ -29,6 +29,7 @@
       yamllint.enable = true;
       zizmor = {
         enable = true;
+        package = pkgs.unstable.zizmor;
         args = [
           "--offline"
           "--persona=pedantic"
