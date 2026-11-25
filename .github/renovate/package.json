@@ -1,9 +1,9 @@
 {
   "devDependencies": {
-    "renovate": "44.257.9"
+    "renovate": "44.262.2"
   },
   "patchedDependencies": {
-    "renovate@44.257.9": "patches/renovate@44.257.9.patch"
+    "renovate@44.262.2": "patches/renovate@44.262.2.patch"
   },
   "name": "dotfiles-renovate",
   "private": true,
@@ -13,5 +13,8 @@
     "renovate": "renovate",
     "validate": "bun run validate:global && renovate-config-validator --strict --no-global ../renovate.json",
     "validate:global": "renovate-config-validator --strict src/config.cjs"
-  }
+  },
+  "trustedDependencies": [
+    "re2"
+  ]
 }
