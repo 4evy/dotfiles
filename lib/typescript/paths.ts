@@ -5,8 +5,7 @@ import { Config, Effect, Option } from "effect";
 function environmentDirectory(name: string, darwin: string, linux: string) {
   return Effect.gen(function* () {
     const configured = yield* Config.option(Config.String(name));
-    if (Option.isSome(configured)) return configured.value;
-    return yield* Effect.sync(() =>
+    return Option.getOrElse(configured, () =>
       join(homedir(), process.platform === "darwin" ? darwin : linux),
     );
   });

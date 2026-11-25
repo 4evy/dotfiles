@@ -43,7 +43,7 @@ export function isExecutable(path: string) {
     // The platform service has no executable-access check
     yield* Effect.tryPromise(() => access(path, constants.X_OK));
     return (yield* fs.stat(path)).type === "File";
-  }).pipe(Effect.catch(() => Effect.succeed(false)));
+  }).pipe(Effect.orElseSucceed(() => false));
 }
 
 export function ensureDirectory(path: string, mode?: number | string) {
@@ -110,12 +110,13 @@ export function writeIfChanged(
     const permission = yield* Effect.try(() => octalMode(mode));
     const data = typeof content === "string" ? Buffer.from(content) : content;
     const fs = yield* FileSystem.FileSystem;
-    const status = yield* fs.stat(destination).pipe(
-      Effect.catchIf(
-        (error) => error.reason._tag === "NotFound",
-        () => Effect.succeed(undefined),
-      ),
-    );
+    const status = yield* fs
+      .stat(destination)
+      .pipe(
+        Effect.catchReason("PlatformError", "NotFound", () =>
+          Effect.succeed(undefined),
+        ),
+      );
     if (
       status?.type === "File" &&
       Buffer.compare(yield* fs.readFile(destination), data) === 0

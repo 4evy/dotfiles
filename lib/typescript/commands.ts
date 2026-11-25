@@ -138,25 +138,3 @@ function shellQuote(value: string): string {
     ? value
     : `'${value.replaceAll("'", "'\\''")}'`;
 }
-
-export function execProcess(
-  path: string,
-  args: string[],
-  env: NodeJS.ProcessEnv = process.env,
-  argumentZero = path,
-) {
-  return Effect.try({
-    try: (): never => {
-      const executable = Bun.which(path);
-      if (!executable) throw new DotfilesError(`Command is not available: ${path}`);
-      if (!process.execve)
-        throw new DotfilesError("This Bun version does not support process.execve");
-      process.execve(executable, [argumentZero, ...args], env);
-      throw new DotfilesError(`Could not execute ${path}`);
-    },
-    catch: (cause) =>
-      cause instanceof DotfilesError
-        ? cause
-        : new DotfilesError(`Could not execute ${path}`, { cause }),
-  });
-}
