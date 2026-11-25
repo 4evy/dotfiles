@@ -147,20 +147,26 @@ function loadHidapi() {
   throw new Error("could not load libhidapi; install Homebrew package 'hidapi'");
 }
 
+const usagePagePriority = new Map<number, number>([
+  [HID_USAGE_PAGE.logitechHidpp, 0],
+  [HID_USAGE_PAGE.logitechVendor, 1],
+  [HID_USAGE_PAGE.genericDesktop, 2],
+  [HID_USAGE_PAGE.consumer, 3],
+]);
+
 function choosePath(devices: Device[], productName?: string): string | undefined {
-  const priority = new Map<number, number>([
-    [HID_USAGE_PAGE.logitechHidpp, 0],
-    [HID_USAGE_PAGE.logitechVendor, 1],
-    [HID_USAGE_PAGE.genericDesktop, 2],
-    [HID_USAGE_PAGE.consumer, 3],
-  ]);
-  return devices
-    .filter((device) => !productName || device.product === productName)
-    .sort(
-      (left, right) =>
-        (priority.get(left.usagePage) ?? UNKNOWN_USAGE_PAGE_PRIORITY) -
-        (priority.get(right.usagePage) ?? UNKNOWN_USAGE_PAGE_PRIORITY),
-    )[0]?.path;
+  let path: string | undefined;
+  let bestPriority = Infinity;
+  for (const device of devices) {
+    if (productName && device.product !== productName) continue;
+    const priority =
+      usagePagePriority.get(device.usagePage) ?? UNKNOWN_USAGE_PAGE_PRIORITY;
+    if (priority < bestPriority) {
+      path = device.path;
+      bestPriority = priority;
+    }
+  }
+  return path;
 }
 
 const request = Effect.fn(function* (
