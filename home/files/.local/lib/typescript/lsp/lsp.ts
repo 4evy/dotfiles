@@ -187,14 +187,9 @@ function messages<E, R>(chunks: Stream.Stream<Uint8Array, E, R>) {
     return chunks.pipe(
       Stream.concat(Stream.make(undefined)),
       Stream.flatMap((chunk) =>
-        Stream.unfold(parse(chunk), (iterator) =>
-          Effect.try({
-            try: () => {
-              const next = iterator.next();
-              return next.done ? undefined : ([next.value, iterator] as const);
-            },
-            catch: protocolError,
-          }),
+        // Emit each complete frame before attempting to parse the next one
+        Stream.fromIteratorSucceed(parse(chunk), 1).pipe(
+          Stream.catchDefect((cause) => Stream.fail(protocolError(cause))),
         ),
       ),
     );
