@@ -203,10 +203,10 @@ const configurationUpdate = Effect.fn(function* (options: {
   filename: string;
   python: string;
 }) {
-  const text = Buffer.from(options.current)
+  const { current } = options;
+  const text = Buffer.from(current.buffer, current.byteOffset, current.byteLength)
     .toString("utf-8")
-    .replaceAll("\r\n", "\n")
-    .replaceAll("\r", "\n");
+    .replaceAll(/\r\n?/g, "\n");
   const merged = yield* mergeSlices(text, options.slices, {
     upstreamConfig: options.upstreamConfig,
     resetSlices: ["keymapper_api"],
@@ -223,7 +223,7 @@ const configurationUpdate = Effect.fn(function* (options: {
   const encoded = Buffer.from(merged, "utf-8");
   return {
     encoded,
-    restartNeeded: Buffer.compare(options.current, encoded) !== 0,
+    restartNeeded: Buffer.compare(current, encoded) !== 0,
   };
 });
 

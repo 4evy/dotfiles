@@ -25,8 +25,8 @@ run_setup() {
 	fi
 	"$bun" "$script_dir/setup.ts" "$@"
 }
-if command -v bun >/dev/null 2>&1; then
-	run_setup "$(command -v bun)" "$@"
+if bun=$(command -v bun 2>/dev/null); then
+	run_setup "$bun" "$@"
 	exit "$?"
 fi
 

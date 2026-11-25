@@ -1,5 +1,4 @@
 #!/usr/bin/env bun
-import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { run } from "@dotfiles/core/commands";
@@ -78,7 +77,7 @@ export const installAntigravity = Effect.fn(function* () {
       const bytes = new Uint8Array(
         yield* download(manifest.url, (response) => response.arrayBuffer),
       );
-      if (createHash("sha512").update(bytes).digest("hex") !== manifest.sha512)
+      if (Bun.CryptoHasher.hash("sha512", bytes, "hex") !== manifest.sha512)
         return yield* Effect.fail(
           new DotfilesError("Antigravity CLI checksum mismatch"),
         );

@@ -1,5 +1,4 @@
 #!/usr/bin/env bun
-import { createHash } from "node:crypto";
 import { homedir, userInfo } from "node:os";
 import { delimiter, dirname, join, resolve } from "node:path";
 import { type RunOptions, run } from "@dotfiles/core/commands";
@@ -257,7 +256,7 @@ const workstation = Effect.gen(function* () {
             }),
             Effect.map((buffer) => new Uint8Array(buffer)),
           );
-          if (createHash("sha256").update(content).digest("hex") !== checksum)
+          if (Bun.CryptoHasher.hash("sha256", content, "hex") !== checksum)
             return yield* Effect.fail(
               new DotfilesError("Homebrew installer checksum mismatch"),
             );
@@ -380,9 +379,8 @@ const workstation = Effect.gen(function* () {
       "/usr/local/bin/farstep-desktop",
     ]);
     const user = userInfo().username;
-    yield* Effect.forEach(["input", "uinput"], (group) =>
-      command(["sudo", "usermod", "--append", "--groups", group, user]),
-    );
+    for (const group of ["input", "uinput"])
+      yield* command(["sudo", "usermod", "--append", "--groups", group, user]);
     yield* command(["sudo", "usermod", "--shell", "/bin/zsh", user]);
     yield* command(["sudo", "modprobe", "uinput"]);
     if (
@@ -554,22 +552,15 @@ if (import.meta.main) {
           new DotfilesError("Do not run as root; privileged tasks use sudo"),
         );
       const host = yield* workstation;
-      yield* Effect.forEach(
-        selected.steps,
-        (step) =>
-          Effect.gen(function* () {
-            if (host.nixos && !step.nixos) return;
-            if (selected.plan)
-              yield* Effect.sync(() =>
-                console.log(`${step.name}: ${step.description}`),
-              );
-            else {
-              yield* log(step.description);
-              yield* step.action(host);
-            }
-          }),
-        { discard: true },
-      );
+      for (const step of selected.steps) {
+        if (host.nixos && !step.nixos) continue;
+        if (selected.plan)
+          yield* Effect.sync(() => console.log(`${step.name}: ${step.description}`));
+        else {
+          yield* log(step.description);
+          yield* step.action(host);
+        }
+      }
       if (!selected.plan) yield* host.refreshPackages();
     }).pipe(
       Effect.catch((error) =>
