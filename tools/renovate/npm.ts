@@ -19,8 +19,8 @@ export const downloadArchive = Effect.fn(function* (
   const archive = new Uint8Array(
     yield* download(dist.tarball, (response) => response.arrayBuffer),
   );
-  const integrity = `${archiveIntegrityAlgorithm}-${new Bun.CryptoHasher(archiveIntegrityAlgorithm).update(archive).digest("base64")}`;
-  if (integrity !== dist.integrity)
+  const digest = Bun.CryptoHasher.hash(archiveIntegrityAlgorithm, archive, "base64");
+  if (`${archiveIntegrityAlgorithm}-${digest}` !== dist.integrity)
     return yield* Effect.fail(
       new DotfilesError(`${name} archive integrity check failed`),
     );

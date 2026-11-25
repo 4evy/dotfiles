@@ -21,11 +21,10 @@ export const updateRenovatePatch = Effect.fn(function* () {
     }),
   )(raw);
   const version = manifest.devDependencies.renovate;
-  const previousPatches = Object.entries(manifest.patchedDependencies).filter(
-    ([name]) => name.startsWith(patchedPackagePrefix),
-  );
-  const [previousPatch] = previousPatches;
-  if (previousPatches.length !== 1 || !previousPatch)
+  const [previousPatch, duplicate] = Object.entries(manifest.patchedDependencies)
+    .values()
+    .filter(([name]) => name.startsWith(patchedPackagePrefix));
+  if (!previousPatch || duplicate)
     return yield* Effect.fail(
       new DotfilesError("Expected one commits-only Renovate patch"),
     );

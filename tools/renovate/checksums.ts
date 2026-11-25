@@ -16,10 +16,8 @@ function parseChecksums(content: string): Map<string, string> {
     const match = line.match(/^[ \t]*([a-f\d]{64})[ \t]+\*?(?:\.\/)?(.+?)\s*$/i);
     if (!match?.[1] || !match[2]) continue;
     const hash = match[1].toLowerCase();
-    const previous = checksums.get(match[2]);
-    if (previous && previous !== hash)
+    if (checksums.getOrInsert(match[2], hash) !== hash)
       throw new Error(`Conflicting checksums for ${match[2]}`);
-    checksums.set(match[2], hash);
   }
   return checksums;
 }
@@ -36,10 +34,10 @@ function replaceOnce(
   replacement: (match: RegExpMatchArray) => string,
   description: string,
 ): string {
-  const matches = [...content.matchAll(pattern)];
-  const [match] = matches;
-  if (matches.length !== 1 || !match) throw new Error(`Expected one ${description}`);
-  return content.replace(pattern, () => replacement(match));
+  const [match, duplicate] = content.matchAll(pattern);
+  if (!match || duplicate) throw new Error(`Expected one ${description}`);
+  const end = match.index + match[0].length;
+  return content.slice(0, match.index) + replacement(match) + content.slice(end);
 }
 
 // TOML/YAML parsers and pure pin rewrites throw, so adapt those boundaries only
@@ -99,7 +97,7 @@ export const updateBunBootstrap = Effect.fn(function* () {
         return `${prefix}${checksumFor(checksums, `${asset}.zip`)}`;
       },
     );
-    if (!count || count !== [...content.matchAll(/^[ \t]*archive=/gm)].length)
+    if (!count || count !== content.match(/^[ \t]*archive=/gm)?.length)
       throw new Error("Missing Bun bootstrap checksum bindings");
     return updated;
   });
@@ -117,7 +115,7 @@ export const updateHomebrewBootstrap = Effect.fn(function* () {
     `https://raw.githubusercontent.com/Homebrew/install/${revision}/install.sh`,
     (response) => response.arrayBuffer,
   );
-  const hash = new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+  const hash = Bun.CryptoHasher.hash("sha256", bytes, "hex");
   const updated = yield* transform(() =>
     replaceOnce(
       content,
@@ -183,18 +181,18 @@ export const updateReleaseAssets = Effect.fn(function* (options: {
     const path = join(root, pin.path);
     const content = yield* fs.readFileString(path);
     const tag = yield* transform(() => {
-      const matches = [...content.matchAll(pin.pattern)];
-      if (matches.length !== 1 || !matches[0]?.[1])
+      const [match, duplicate] = content.matchAll(pin.pattern);
+      if (!match?.[1] || duplicate)
         throw new Error(`Expected one ${pin.repository} release URL`);
-      return matches[0][1];
+      return match[1];
     });
     const release = yield* releaseAt(pin.repository, tag);
     const url = yield* transform(() => {
       const name = pin.assetName(tag);
-      const assets = release.assets.filter((asset) => asset.name === name);
-      const [asset] = assets;
-      if (assets.length !== 1 || !asset)
-        throw new Error(`Expected one ${name} release asset`);
+      const [asset, duplicate] = release.assets
+        .values()
+        .filter((asset) => asset.name === name);
+      if (!asset || duplicate) throw new Error(`Expected one ${name} release asset`);
       const url = new URL(asset.browser_download_url);
       if (
         url.origin !== "https://github.com" ||
@@ -225,13 +223,12 @@ export const updateMise = Effect.fn(function* () {
       }),
     }),
   )(yield* transform(() => Bun.YAML.parse(content)));
-  const installers = action.runs.steps.filter(
-    (step) => step.env?.MISE_VERSION !== undefined,
-  );
-  const [installer] = installers;
-  if (installers.length !== 1)
+  const [installer, duplicateInstaller] = action.runs.steps
+    .values()
+    .filter((step) => step.env?.MISE_VERSION !== undefined);
+  if (!installer || duplicateInstaller)
     return yield* Effect.fail(new DotfilesError("Expected one mise install step"));
-  const version = installer?.env?.MISE_VERSION;
+  const version = installer.env?.MISE_VERSION;
   if (typeof version !== "string" || !/^v\S+$/.test(version))
     return yield* Effect.fail(new DotfilesError("Missing mise bootstrap version"));
   const checksums = yield* checksumsAt("jdx/mise", version);
@@ -278,9 +275,10 @@ export const updateBrowser = Effect.fn(function* () {
   const config = yield* Schema.decodeUnknownEffect(browserConfig)(
     yield* transform(() => Bun.TOML.parse(content)),
   );
-  const pins = config.extensions.crx.filter((entry) => entry.id === twpExtensionId);
-  const [pin] = pins;
-  if (pins.length !== 1 || !pin)
+  const [pin, duplicatePin] = config.extensions.crx
+    .values()
+    .filter((entry) => entry.id === twpExtensionId);
+  if (!pin || duplicatePin)
     return yield* Effect.fail(new DotfilesError("Expected one browser TWP CRX pin"));
   const version = pin.version;
   // Retain the pinned Chromium variant rather than switching MV2/MV3 assets
@@ -292,17 +290,16 @@ export const updateBrowser = Effect.fn(function* () {
       new DotfilesError("Unsupported browser TWP CRX asset name"),
     );
   const release = yield* releaseAt(twpRepository, `v${version}`);
-  const assets = release.assets.filter(
-    (asset) => asset.name === `TWP_${version}_${variant}.crx`,
-  );
-  const [asset] = assets;
-  if (assets.length !== 1 || !asset)
+  const [asset, duplicateAsset] = release.assets
+    .values()
+    .filter((asset) => asset.name === `TWP_${version}_${variant}.crx`);
+  if (!asset || duplicateAsset)
     return yield* Effect.fail(
       new DotfilesError(`Expected one ${variant} CRX asset for TWP ${version}`),
     );
   const url = asset.browser_download_url;
   const bytes = yield* releaseAsset(twpRepository, `v${version}`, asset.name);
-  const hash = `sha256-${new Bun.CryptoHasher("sha256").update(bytes).digest("base64")}`;
+  const hash = `sha256-${Bun.CryptoHasher.hash("sha256", bytes, "base64")}`;
   // Parse each table through Schema before applying the textual, comment-preserving rewrite
   const pattern = /^\[\[extensions\.crx\]\][^\r\n]*\r?\n(?:(?!^\[)[\s\S])*/gm;
   let updated = content;

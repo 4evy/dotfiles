@@ -118,7 +118,8 @@ const updateRootPins = Effect.fn(function* () {
   const path = join(root, "biome.jsonc");
   const content = yield* fs.readFileString(path);
   const schema = /https:\/\/biomejs\.dev\/schemas\/[^/]+\/schema\.json/g;
-  if ([...content.matchAll(schema)].length !== 1)
+  const [binding, duplicate] = content.matchAll(schema);
+  if (!binding || duplicate)
     return yield* Effect.fail(
       new DotfilesError("Expected one Biome schema version binding"),
     );
