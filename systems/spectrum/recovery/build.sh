@@ -24,32 +24,35 @@ fi
 ssh-keygen -y -f "$state/ssh_host_ed25519_key" >"$state/ssh_host_ed25519_key.pub"
 
 if [[ -z $profile ]]; then
+	active_connections=$(nmcli --escape no -t -f UUID,TYPE connection show --active)
 	while IFS=: read -r uuid type; do
 		if [[ $type == 802-11-wireless ]]; then
 			profile=$uuid
 			break
 		fi
-	done < <(nmcli --escape no -t -f UUID,TYPE connection show --active)
+	done <<<"$active_connections"
 fi
 if [[ -z $profile ]]; then
 	printf 'No active Wi-Fi profile, pass one explicitly\n' >&2
 	exit 1
 fi
 uuid=$(nmcli -g connection.uuid connection show "$profile")
+permissions=$(nmcli -g connection.permissions connection show uuid "$uuid")
 if [[ $(nmcli -g connection.type connection show uuid "$uuid") != 802-11-wireless ||
 $(nmcli -g connection.autoconnect connection show uuid "$uuid") != yes ||
--n $(nmcli -g connection.permissions connection show uuid "$uuid") ||
+-n $permissions ||
 $(nmcli -g 802-11-wireless-security.psk-flags connection show uuid "$uuid") != 0 ]]; then
 	printf 'Recovery needs a system-owned, autoconnect Wi-Fi profile with a stored PSK\n' >&2
 	exit 1
 fi
 wifi_file=
+connections=$(nmcli --escape no -t -f UUID,FILENAME connection show)
 while IFS=: read -r candidate path; do
 	if [[ $candidate == "$uuid" ]]; then
 		wifi_file=$path
 		break
 	fi
-done < <(nmcli --escape no -t -f UUID,FILENAME connection show)
+done <<<"$connections"
 if [[ ! -f $wifi_file ]]; then
 	printf 'Selected Wi-Fi profile has no readable keyfile\n' >&2
 	exit 1

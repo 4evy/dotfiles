@@ -15,26 +15,42 @@ const Base = Schema.Struct({
     Schema.isPattern(/^\w[\w.-]{0,127}@sha256:[a-f0-9]{64}$/),
   ),
 });
-const Lock = Schema.Struct({
-  root: Schema.String,
-  nodes: Schema.Record(
-    Schema.String,
-    Schema.Struct({
-      inputs: Schema.optionalKey(
-        Schema.Record(
-          Schema.String,
-          Schema.Union([Schema.String, Schema.Array(Schema.String)]),
+const Lock = Schema.fromJsonString(
+  Schema.Struct({
+    root: Schema.String,
+    nodes: Schema.Record(
+      Schema.String,
+      Schema.Struct({
+        inputs: Schema.optionalKey(
+          Schema.Record(
+            Schema.String,
+            Schema.Union([Schema.String, Schema.Array(Schema.String)]),
+          ),
         ),
-      ),
-      locked: Schema.optionalKey(Schema.Unknown),
-    }),
-  ),
-});
+        locked: Schema.optionalKey(Schema.Unknown),
+      }),
+    ),
+  }),
+);
 const GitHubPin = Schema.Struct({
   owner: Schema.String,
   repo: Schema.String,
   rev: Schema.String,
 });
+const BuildData = Schema.fromJsonString(
+  Schema.Struct({
+    stackSources: Schema.Struct({
+      kanata: Schema.Struct({
+        canonical: Schema.String,
+        revision: Schema.String,
+      }),
+    }),
+    config: Schema.Struct({
+      nixCustomConf: Schema.String,
+      dconf: Schema.String,
+    }),
+  }),
+);
 
 function patchesPin(lock: typeof Lock.Type): unknown {
   const rootInputs = lock.nodes[lock.root]?.inputs;
@@ -57,29 +73,15 @@ const main = Effect.gen(function* () {
       catch: (cause) => new DotfilesError("Invalid Spectrum recipe", { cause }),
     }),
   );
-  const lock = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(Lock))(
+  const lock = yield* Schema.decodeEffect(Lock)(
     yield* fs.readFileString(join(ROOT, "flake.lock")),
   );
-  const evaluation = yield* output(
-    ["nix", "eval", ".#lib.spectrumBuildData", "--json", "--no-write-lock-file"],
-    { cwd: ROOT, stderr: "inherit" },
-  );
-  const buildData = yield* Schema.decodeUnknownEffect(
-    Schema.fromJsonString(
-      Schema.Struct({
-        stackSources: Schema.Struct({
-          kanata: Schema.Struct({
-            canonical: Schema.String,
-            revision: Schema.String,
-          }),
-        }),
-        config: Schema.Struct({
-          nixCustomConf: Schema.String,
-          dconf: Schema.String,
-        }),
-      }),
+  const buildData = yield* Schema.decodeEffect(BuildData)(
+    yield* output(
+      ["nix", "eval", ".#lib.spectrumBuildData", "--json", "--no-write-lock-file"],
+      { cwd: ROOT, stderr: "inherit" },
     ),
-  )(evaluation);
+  );
   const { kanata } = buildData.stackSources;
   const [, owner, repo] =
     kanata.canonical.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/) ??

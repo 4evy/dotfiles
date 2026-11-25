@@ -4,9 +4,7 @@ set -euo pipefail
 readonly runtime_dir=/var/lib/rustdesk/dotfiles
 source=$(readlink -f /usr/bin/rustdesk)
 install -d -m 0755 "$runtime_dir" /root/.config/rustdesk
-if ! cmp -s "$source" "$runtime_dir/rustdesk"; then
-  install -m 0755 "$source" "$runtime_dir/rustdesk"
-fi
+install -C -m 0755 "$source" "$runtime_dir/rustdesk"
 ln -sfn "$(dirname "$source")/lib" "$runtime_dir/lib"
 
 /usr/bin/python3.15 - <<'PY'
