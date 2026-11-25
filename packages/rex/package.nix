@@ -103,10 +103,10 @@ stdenvNoCC.mkDerivation {
     install -Dm644 "${support}/50-rex.conf" "$out/share/rex/ssh_config.d/50-rex.conf"
 
     ${lib.strings.optionalString (stdenvNoCC.buildPlatform.canExecute stdenvNoCC.hostPlatform) ''
-      installShellCompletion --cmd rex \
-        --bash <("$out/bin/rex" completion bash) \
-        --fish <("$out/bin/rex" completion fish) \
-        --zsh <("$out/bin/rex" completion zsh)
+      for shell in bash fish zsh; do
+        "$out/bin/rex" completion "$shell" > "$TMPDIR/rex.$shell"
+      done
+      installShellCompletion --cmd rex "$TMPDIR"/rex.{bash,fish,zsh}
 
       # Generate the upstream stub, not a copy of the version-specific guide
       HOME="$TMPDIR/rex-agent-home" "$out/bin/rex" skill setup \
