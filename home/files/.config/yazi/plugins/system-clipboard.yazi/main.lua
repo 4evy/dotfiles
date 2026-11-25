@@ -96,11 +96,8 @@ function M.wayland_backend(args)
 	local desktop = M.desktop()
 	if M.desktop_matches(desktop, { "gnome", "cinnamon", "mate", "pantheon", "budgie", "unity" }) then
 		return "gnome"
-	elseif M.desktop_matches(desktop, { "kde", "plasma", "lxqt" }) then
-		return "uri-list"
-	else
-		return "uri-list"
 	end
+	return "uri-list"
 end
 
 function M.percent_encode(path)
@@ -233,25 +230,16 @@ function M.copy_linux(paths, args)
 	local operation = M.has_arg(args, "cut") and "cut" or "copy"
 	local attempts = {}
 
-	local wayland = M.env("WAYLAND_DISPLAY") ~= ""
-	local x11 = M.env("DISPLAY") ~= ""
-	-- Try the active display protocol first. Trying both also handles XWayland and
-	-- sparse environments where the session variables were not propagated.
-	local protocols = wayland and { "wayland", "x11" } or { "x11", "wayland" }
-	if not wayland and not x11 then
-		protocols = { "wayland", "x11" }
-	end
+	-- Try the active protocol first, defaulting to Wayland when neither is set
+	local wayland_first = M.env("WAYLAND_DISPLAY") ~= "" or M.env("DISPLAY") == ""
+	local protocols = wayland_first and { "wayland", "x11" } or { "x11", "wayland" }
 
 	for _, protocol in ipairs(protocols) do
 		local status, err, label = M.copy_display(paths, backend, operation, protocol)
-		if not M.success(status) then
-			attempts[#attempts + 1] = label .. ": " .. M.status_error(status, err)
-			status = nil
-		end
-
-		if status then
+		if M.success(status) then
 			return status, label
 		end
+		attempts[#attempts + 1] = label .. ": " .. M.status_error(status, err)
 	end
 
 	return nil, table.concat(attempts, "; ")
