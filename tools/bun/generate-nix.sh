@@ -13,5 +13,6 @@ fi
 
 # Local dependencies resolve beside the generated bun.nix
 "${bun2nix[@]}" --lock-file bun.lock --copy-prefix ./ --output-file "$output"
-deadnix --edit "$output"
+# Normalize the generator's unconditional fetcher arguments
+deadnix --edit --quiet "$output"
 "${formatter[@]}" "$output"
