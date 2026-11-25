@@ -84,7 +84,6 @@ _dotfiles_start_ghidra_mcp_for_cxg() {
 
 cxg() (
 	local -a codex_args
-	local cmd_status
 	case "${1:-}" in
 		-h | --help | -V | --version | help)
 			cx "$@"
@@ -97,9 +96,5 @@ cxg() (
 	if command -v lldb-mcp-launcher >/dev/null 2>&1; then
 		codex_args+=(-c mcp_servers.lldb.enabled=true)
 	fi
-	_dotfiles_disable_terminal_focus_reporting
-	theme-run codex "${codex_args[@]}" "$@"
-	cmd_status=$?
-	_dotfiles_disable_terminal_focus_reporting
-	exit "$cmd_status"
+	cx "${codex_args[@]}" "$@"
 )

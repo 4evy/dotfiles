@@ -92,13 +92,13 @@ neofetch() { pfetch "$@"; }
 #      m4a ─┐  mp3 ─┐  mp4 ─┐
 #           └─ cut variants share one yt-dlp runner
 
-_dotfiles_ytdlp() {
+_media_ytdlp() {
 	env -u PROMPT_MULTILINE_INDICATOR yt-dlp-script "$@"
 }
 
-m4a() { _dotfiles_ytdlp m4a "$@"; }
-m4a-cut() { _dotfiles_ytdlp m4a-cut "$@"; }
-mp3() { _dotfiles_ytdlp mp3 "$@"; }
-mp3-cut() { _dotfiles_ytdlp mp3-cut "$@"; }
-mp4() { _dotfiles_ytdlp mp4 "$@"; }
-mp4-cut() { _dotfiles_ytdlp mp4-cut "$@"; }
+m4a() { _media_ytdlp m4a "$@"; }
+m4a-cut() { _media_ytdlp m4a-cut "$@"; }
+mp3() { _media_ytdlp mp3 "$@"; }
+mp3-cut() { _media_ytdlp mp3-cut "$@"; }
+mp4() { _media_ytdlp mp4 "$@"; }
+mp4-cut() { _media_ytdlp mp4-cut "$@"; }

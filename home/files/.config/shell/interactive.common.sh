@@ -31,31 +31,41 @@
 _dotfiles_interactive_module_dir="$HOME/.config/shell/interactive.d"
 _dotfiles_interactive_local_dir="$HOME/.config/shell/interactive.local.d"
 _dotfiles_interactive_nullglob_was_set=0
+_dotfiles_interactive_failglob_was_set=0
 
 if [[ -n "${ZSH_VERSION:-}" ]]; then
 	[[ -o nullglob ]] && _dotfiles_interactive_nullglob_was_set=1
 	setopt nullglob
 else
 	shopt -q nullglob && _dotfiles_interactive_nullglob_was_set=1
+	shopt -q failglob && _dotfiles_interactive_failglob_was_set=1
+	shopt -u failglob
 	shopt -s nullglob
 fi
 
-for _dotfiles_interactive_module in \
-	"$_dotfiles_interactive_module_dir"/*.sh \
-	"$_dotfiles_interactive_local_dir"/*.sh; do
-	[[ -r "$_dotfiles_interactive_module" ]] || continue
-	# shellcheck source=/dev/null
-	source "$_dotfiles_interactive_module"
-done
+# Expand optional directories before sourcing modules with the caller's options
+_dotfiles_interactive_modules=(
+	"$_dotfiles_interactive_module_dir"/*.sh
+	"$_dotfiles_interactive_local_dir"/*.sh
+)
 
 if [[ -n "${ZSH_VERSION:-}" ]]; then
 	((_dotfiles_interactive_nullglob_was_set)) || unsetopt nullglob
 else
 	((_dotfiles_interactive_nullglob_was_set)) || shopt -u nullglob
+	((! _dotfiles_interactive_failglob_was_set)) || shopt -s failglob
 fi
+
+for _dotfiles_interactive_module in "${_dotfiles_interactive_modules[@]}"; do
+	[[ -f "$_dotfiles_interactive_module" && -r "$_dotfiles_interactive_module" ]] || continue
+	# shellcheck source=/dev/null
+	source "$_dotfiles_interactive_module"
+done
 
 unset \
 	_dotfiles_interactive_module \
 	_dotfiles_interactive_module_dir \
 	_dotfiles_interactive_local_dir \
+	_dotfiles_interactive_modules \
+	_dotfiles_interactive_failglob_was_set \
 	_dotfiles_interactive_nullglob_was_set

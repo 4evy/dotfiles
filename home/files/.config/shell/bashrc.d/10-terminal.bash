@@ -23,11 +23,15 @@
 # OSC detection when no theme environment is available.
 if [[ -z "${TERMINAL_THEME:-}" ]] &&
 	command -v theme-run >/dev/null 2>&1; then
-	_dotfiles_terminal_theme="$(theme-run --print-theme-no-terminal 2>/dev/null)" || _dotfiles_terminal_theme=
-	case "$_dotfiles_terminal_theme" in
-		dark | light) export TERMINAL_THEME="$_dotfiles_terminal_theme" ;;
-	esac
-	unset _dotfiles_terminal_theme
+	_terminal_detect_theme() {
+		local detected_theme
+		detected_theme="$(theme-run --print-theme-no-terminal 2>/dev/null)" || detected_theme=
+		case "$detected_theme" in
+			dark | light) export TERMINAL_THEME="$detected_theme" ;;
+		esac
+	}
+	_terminal_detect_theme
+	unset -f _terminal_detect_theme
 fi
 
 # OpenSSH and Tailscale SSH accept LC_* environment variables. Mirror the

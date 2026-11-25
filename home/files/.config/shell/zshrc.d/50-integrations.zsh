@@ -49,10 +49,7 @@ _fzf_init() {
     return
   fi
 
-  init="$(
-    setopt pipefail
-    bash "$HOME/.config/shell/generate-init.sh" fzf zsh
-  )" || return
+  init="$(bash "$HOME/.config/shell/generate-init.sh" fzf zsh)" || return
 
   eval "$init"
 }
@@ -144,8 +141,8 @@ if [[ $OSTYPE == darwin* ]]; then
 # Register after integrations have captured command status and duration
 # Starship reads the refreshed profile when it renders the prompt
 autoload -Uz add-zsh-hook
-add-zsh-hook -d precmd _dotfiles_refresh_terminal_theme
-add-zsh-hook -d preexec _dotfiles_refresh_terminal_theme
-add-zsh-hook precmd _dotfiles_refresh_terminal_theme
-add-zsh-hook preexec _dotfiles_refresh_terminal_theme
+add-zsh-hook -d precmd _terminal_theme_refresh
+add-zsh-hook -d preexec _terminal_theme_refresh
+add-zsh-hook precmd _terminal_theme_refresh
+add-zsh-hook preexec _terminal_theme_refresh
 fi

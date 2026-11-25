@@ -54,6 +54,9 @@ if [[ -r "$HOME/.config/op/plugins.sh" ]]; then
 	source "$HOME/.config/op/plugins.sh"
 fi
 
+# Replace the alias before either shell parses the function definition
+unalias gh 2>/dev/null || true
+
 # Compose optional theming and 1Password injection once instead of replacing
 # one wrapper with another based on startup-time availability.
 gh() {
@@ -69,7 +72,9 @@ gh() {
 }
 
 if command -v op >/dev/null 2>&1; then
-	brew() {
+	# The whole conditional is parsed before unalias runs
+	unalias brew 2>/dev/null || true
+	function brew {
 		HOMEBREW_GITHUB_API_TOKEN='op://Personal/GitHub Token/token' command op run -- brew "$@"
 	}
 fi
