@@ -12,10 +12,9 @@ import {
 import * as Clock from "effect/Clock";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
-import * as Scheduler from "effect/Scheduler";
 import * as Scope from "effect/Scope";
 import { resolveLayout } from "./layouts.js";
-import { native } from "./native.js";
+import { native, runNativeSync } from "./native.js";
 import {
   canMoveResizeWindow,
   createWindowOperations,
@@ -28,9 +27,7 @@ export default class HyperWindowTilingExtension extends Extension {
   enable() {
     const scope = Scope.makeUnsafe();
     const extension = this;
-    // GJS owns the event loop. Disabling cooperative yields keeps runSync off
-    // Effect's Promise/timer dispatcher, including during scope finalization
-    Effect.runSync(
+    runNativeSync(
       Effect.gen(function* () {
         const settings = yield* native("load extension settings", () =>
           extension.getSettings(),
@@ -62,12 +59,11 @@ export default class HyperWindowTilingExtension extends Extension {
         for (const bindingName of BINDING_NAMES) {
           const binding = BINDINGS[bindingName];
           const handler = () => {
-            // GNOME invokes this synchronous foreign-runtime callback
-            Effect.runSync(
+            runNativeSync(
               applyLayout(
                 binding.action === "cycle" ? binding.presets : "maximize",
                 bindingName,
-              ).pipe(Effect.provideService(Scheduler.PreventSchedulerYield, true)),
+              ),
             );
           };
           yield* Effect.acquireRelease(
@@ -89,7 +85,6 @@ export default class HyperWindowTilingExtension extends Extension {
       }).pipe(
         Scope.provide(scope),
         Effect.onError((cause) => Scope.close(scope, Exit.failCause(cause))),
-        Effect.provideService(Scheduler.PreventSchedulerYield, true),
       ),
     );
     this.scope = scope;
@@ -100,10 +95,6 @@ export default class HyperWindowTilingExtension extends Extension {
     this.scope = null;
     if (!scope) return;
 
-    Effect.runSync(
-      Scope.close(scope, Exit.void).pipe(
-        Effect.provideService(Scheduler.PreventSchedulerYield, true),
-      ),
-    );
+    runNativeSync(Scope.close(scope, Exit.void));
   }
 }

@@ -9,8 +9,8 @@ export type ShortcutHandlers = {
 export function registerTilingShortcuts(handlers: ShortcutHandlers) {
   for (const bindingName of BINDING_NAMES) {
     const binding = BINDINGS[bindingName];
-    registerTilingShortcut(
-      bindingName,
+    registerShortcut(
+      `hyper-window-tiling-${bindingName}`,
       binding.kde.title,
       binding.kde.accelerator,
       binding.action === "cycle"
@@ -18,13 +18,4 @@ export function registerTilingShortcuts(handlers: ShortcutHandlers) {
         : handlers.maximizeFocusedWindow,
     );
   }
-}
-
-function registerTilingShortcut(
-  bindingName: BindingName,
-  title: string,
-  shortcut: string,
-  handler: () => void,
-) {
-  registerShortcut(`hyper-window-tiling-${bindingName}`, title, shortcut, handler);
 }

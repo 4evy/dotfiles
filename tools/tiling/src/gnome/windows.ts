@@ -2,8 +2,7 @@ import GLib from "gi://GLib";
 import Meta from "gi://Meta";
 import type Mtk from "gi://Mtk";
 import * as Effect from "effect/Effect";
-import * as Scheduler from "effect/Scheduler";
-import { native } from "./native.js";
+import { native, runNativeSync } from "./native.js";
 
 const MOVE_RESIZE_RETRY_DELAY_MS = 75;
 const IGNORED_WINDOW_TYPES = new Set([Meta.WindowType.DESKTOP, Meta.WindowType.DOCK]);
@@ -62,8 +61,7 @@ export const createWindowOperations = Effect.gen(function* () {
     yield* moveResizeFrame(window, rect);
     const source = yield* native("schedule window resize retry", () =>
       GLib.timeout_add(GLib.PRIORITY_DEFAULT, MOVE_RESIZE_RETRY_DELAY_MS, () => {
-        // Native callbacks are synchronous. Never use Effect.sleep or fork here
-        Effect.runSync(
+        runNativeSync(
           Effect.gen(function* () {
             const alive = yield* native(
               "read retry window state",
@@ -72,10 +70,7 @@ export const createWindowOperations = Effect.gen(function* () {
             if (alive && serials.get(window) === serial) {
               yield* moveResizeFrame(window, rect);
             }
-          }).pipe(
-            Effect.ensuring(Effect.sync(() => sources.delete(source))),
-            Effect.provideService(Scheduler.PreventSchedulerYield, true),
-          ),
+          }).pipe(Effect.ensuring(Effect.sync(() => sources.delete(source)))),
         );
         return GLib.SOURCE_REMOVE;
       }),
