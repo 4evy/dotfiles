@@ -50,7 +50,8 @@ const compileRequirement = Effect.fn(function* (expression: string) {
     input: expression,
     capture: true,
   });
-  return Buffer.from(yield* fs.readFile(file));
+  const bytes = yield* fs.readFile(file);
+  return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 });
 
 const identity = Effect.fn(function* (
@@ -250,7 +251,6 @@ const mergeIdentity = Effect.fn(function* (existing: Client, client: Client) {
 
 const bundleClients = Effect.fn(function* (apps: Map<string, boolean>) {
   const fs = yield* FileSystem.FileSystem;
-  const result: Client[] = [];
   const identifiers = new Map<string, Client>();
   for (const [path, grantPermissions] of [...apps].sort(([left], [right]) =>
     left.localeCompare(right),
@@ -265,15 +265,10 @@ const bundleClients = Effect.fn(function* (apps: Map<string, boolean>) {
       }),
     );
     if (!client) continue;
-    const existing = identifiers.get(client.identifier);
-    if (existing) {
-      yield* mergeIdentity(existing, client);
-    } else {
-      identifiers.set(client.identifier, client);
-      result.push(client);
-    }
+    const existing = identifiers.getOrInsert(client.identifier, client);
+    if (existing !== client) yield* mergeIdentity(existing, client);
   }
-  return result;
+  return [...identifiers.values()];
 });
 
 const addExecutableClients = Effect.fn(function* (
