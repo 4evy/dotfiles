@@ -882,11 +882,11 @@
         "nixpkgs": []
       },
       "locked": {
-        "lastModified": 1795551600,
-        "narHash": "sha256-pMumq3necnxNGUxYCRcJA7JESET0VSag/OksM7qblPs=",
+        "lastModified": 1795608000,
+        "narHash": "sha256-CRo0lDxG0mq+CshuSSnUOHelbg/8ImaAgbUTrqLafAU=",
         "owner": "4evy",
         "repo": "tweezle",
-        "rev": "a7bc3af5b4ccfcde96fa5011ce3883539240cb0a",
+        "rev": "1649799cfd878df2d41ef47c7ee57e9fc35325f0",
         "type": "github"
       },
       "original": {
