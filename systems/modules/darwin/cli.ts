@@ -10,20 +10,16 @@ export function parseDarwinOptions<P extends Parser<"sync", unknown, unknown>>(
   brief: Message,
   description?: Message,
 ): InferValue<P> | undefined {
-  let helpShown = false;
-  const values = runParser(parser, programName, args, {
+  return runParser(parser, programName, args, {
     brief,
     ...(description === undefined ? {} : { description }),
     help: {
       option: { names: ["-h", "--help"] },
-      onShow: () => {
-        helpShown = true;
-      },
+      onShow: () => undefined,
     },
     stderr: () => {},
     onError: (_code, error) => {
       throw new Error(formatMessage(error));
     },
   });
-  return helpShown ? undefined : values;
 }

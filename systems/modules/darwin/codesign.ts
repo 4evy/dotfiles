@@ -17,6 +17,7 @@ const security = "/usr/bin/security";
 const systemKeychain = "/Library/Keychains/System.keychain";
 const certificateKeySpec = "rsa:3072";
 const certificateValidityDays = 3650;
+const signingIdentityLine = /^\s*\d+\) [0-9A-F]{40} "(.*)"$/;
 
 export const signingIdentityAvailable = Effect.fn(function* (
   identity: string,
@@ -28,7 +29,9 @@ export const signingIdentityAvailable = Effect.fn(function* (
   );
   return (
     result.code === 0 &&
-    result.stdout.split("\n").some((line) => line.includes(identity))
+    result.stdout
+      .split("\n")
+      .some((line) => line.match(signingIdentityLine)?.[1] === identity)
   );
 });
 
@@ -115,6 +118,17 @@ basicConstraints = critical, CA:false
   return true;
 });
 
+const bundleAuthorityMatches = Effect.fn(function* (bundle: string, identity: string) {
+  const result = yield* run([codesign, "-dvv", bundle], {
+    check: false,
+    capture: true,
+  });
+  return (
+    result.code === 0 &&
+    result.stderr.split("\n").some((line) => line.trim() === `Authority=${identity}`)
+  );
+});
+
 export const bundleHasSigningIdentity = Effect.fn(function* (
   bundle: string,
   identity: string,
@@ -126,15 +140,7 @@ export const bundleHasSigningIdentity = Effect.fn(function* (
     !(yield* fs.exists(codesign))
   )
     return false;
-  const result = yield* run([codesign, "-dvv", bundle], {
-    check: false,
-    capture: true,
-  });
-  if (
-    result.code !== 0 ||
-    !result.stderr.split("\n").some((line) => line.trim() === `Authority=${identity}`)
-  )
-    return false;
+  if (!(yield* bundleAuthorityMatches(bundle, identity))) return false;
   return (
     (yield* run([codesign, "--verify", "--deep", "--strict", bundle], {
       check: false,
@@ -177,7 +183,7 @@ export const signBundle = Effect.fn(function* (
   yield* run([codesign, "--verify", "--deep", "--strict", bundle], {
     capture: true,
   });
-  if (!(yield* bundleHasSigningIdentity(bundle, identity)))
+  if (!(yield* bundleAuthorityMatches(bundle, identity)))
     return yield* Effect.fail(
       new DotfilesError(
         `bundle did not retain code-signing identity ${identity}: ${bundle}`,
