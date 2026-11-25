@@ -42,6 +42,7 @@ in
     environment.systemPackages = attrValues {
       hjem = inputs.hjem.packages.${stdenv.hostPlatform.system}.hjem;
       inherit (pkgs)
+        bun
         mitos
         jj-patched
         just
@@ -62,7 +63,6 @@ in
         biome
         broot
         bubblewrap
-        bun
         chafa
         coreutils
         cargo

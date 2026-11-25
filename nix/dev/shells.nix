@@ -15,7 +15,9 @@
 
       javascriptShell = mkShell {
         packages = lib.attrsets.attrValues {
-          inherit (unstable) bun nodejs;
+          inherit (pkgs) bun;
+          # Match CI's Node ABI when running Renovate's native RE2 addon
+          inherit (unstable) nodejs_26;
           inherit (self'.packages) bun2nix;
         };
       };
