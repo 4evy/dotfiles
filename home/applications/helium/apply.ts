@@ -28,45 +28,39 @@ const PrivateConfigSchema = Schema.Struct({
 
 const avatar = Effect.fn("heliumAvatar")(function* (profile: string, cache: string) {
   const fs = yield* FileSystem.FileSystem;
-  yield* Effect.scoped(
-    Effect.gen(function* () {
-      const temporary = yield* fs.makeTempDirectoryScoped({
-        directory: cache,
-        prefix: "avatar.",
-      });
-      const original = join(temporary, "avatar");
-      const png = join(temporary, "avatar.png");
-      const bytes = yield* download(
-        `https://github.com/4evy.png?size=${AVATAR_SIZE_PX}`,
-        (response) => response.arrayBuffer,
-      );
-      yield* fs.writeFile(original, new Uint8Array(bytes));
-      yield* run(
-        [
-          "magick",
-          original,
-          "-auto-orient",
-          "-strip",
-          "-resize",
-          `${AVATAR_GEOMETRY}^`,
-          "-gravity",
-          "center",
-          "-extent",
-          AVATAR_GEOMETRY,
-          `PNG:${png}`,
-        ],
-        { stderr: "inherit" },
-      );
-      const target = join(profile, "Custom Avatar Picture.png");
-      const generated = yield* fs.readFile(png);
-      const current = (yield* fs.exists(target))
-        ? yield* fs.readFile(target)
-        : undefined;
-      if (!current || Buffer.compare(current, generated) !== 0)
-        yield* fs.copyFile(png, target);
-    }),
+  const temporary = yield* fs.makeTempDirectoryScoped({
+    directory: cache,
+    prefix: "avatar.",
+  });
+  const original = join(temporary, "avatar");
+  const png = join(temporary, "avatar.png");
+  const bytes = yield* download(
+    `https://github.com/4evy.png?size=${AVATAR_SIZE_PX}`,
+    (response) => response.arrayBuffer,
   );
-});
+  yield* fs.writeFile(original, new Uint8Array(bytes));
+  yield* run(
+    [
+      "magick",
+      original,
+      "-auto-orient",
+      "-strip",
+      "-resize",
+      `${AVATAR_GEOMETRY}^`,
+      "-gravity",
+      "center",
+      "-extent",
+      AVATAR_GEOMETRY,
+      `PNG:${png}`,
+    ],
+    { stderr: "inherit" },
+  );
+  const target = join(profile, "Custom Avatar Picture.png");
+  const generated = yield* fs.readFile(png);
+  const current = (yield* fs.exists(target)) ? yield* fs.readFile(target) : undefined;
+  if (!current || Buffer.compare(current, generated) !== 0)
+    yield* fs.copyFile(png, target);
+}, Effect.scoped);
 
 const privatePayload = Effect.fn("heliumPrivatePayload")(function* (root: string) {
   const env = { ...process.env };
