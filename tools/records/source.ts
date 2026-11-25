@@ -2,7 +2,7 @@ import { homedir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { output, run } from "@dotfiles/core/commands";
 import { DotfilesError } from "@dotfiles/core/errors";
-import { Effect, Exit, FileSystem } from "effect";
+import { Effect, Exit, FileSystem, Predicate } from "effect";
 import { split } from "shellwords-ts";
 import {
   isDirectory,
@@ -22,6 +22,7 @@ import {
 import {
   type CollectionSet,
   equalCollections,
+  indexName,
   layoutVersion,
   type RecordRef,
   recordCount,
@@ -43,8 +44,6 @@ type SourceFile = { path: string; body: string; mode: number };
 const privateFileMode = 0o600;
 const privateDirectoryMode = 0o700;
 const privateExecutableMode = 0o700;
-const permissionBits = 0o777;
-const recordIndexDigits = 3;
 const layoutPaddedColumns = 4;
 const layoutColumnGap = 2;
 // The base body precedes the zero-indexed platform variants
@@ -60,7 +59,6 @@ export function check(v: Vault, source = "") {
     yield* v.stdout(`validated ${recordCount(value)} records\n`);
   });
 }
-const pad = (value: number) => String(value).padStart(recordIndexDigits, "0");
 
 function delimitedBlock(begin: string, end: string) {
   const pattern = new RegExp(`^${begin}\\n.*?^${end}\\n?`, "ms");
@@ -99,8 +97,8 @@ function variantSourcePath(
         v.source,
         ".variants",
         current.collection,
-        pad(current.index),
-        pad(variant),
+        indexName(current.index),
+        indexName(variant),
         target,
       );
 }
@@ -131,7 +129,7 @@ function sourceFiles(v: Vault, value: CollectionSet): SourceFile[] {
     for (const source of recordSourceFiles(v, current)) {
       if (seen.has(source.path))
         throw new DotfilesError(
-          `${current.collection} record ${pad(current.index)} has a duplicate source path`,
+          `${current.collection} record ${indexName(current.index)} has a duplicate source path`,
         );
       if (source.path === v.marker || source.path === v.searchIgnore)
         throw new DotfilesError("plaintext records must not overlap records metadata");
@@ -251,7 +249,7 @@ export function layout(v: Vault) {
       const rows: string[][] = [];
       for (const current of records(value)) appendRecordLayoutRows(v, current, rows);
       const widths = Array.from({ length: layoutPaddedColumns }, (_, column) =>
-        Math.max(0, ...rows.map((row) => row[column]?.length ?? 0)),
+        rows.reduce((width, row) => Math.max(width, row[column]?.length ?? 0), 0),
       );
       return rows
         .map(
@@ -276,7 +274,7 @@ function appendRecordLayoutRows(v: Vault, current: RecordRef, rows: string[][]) 
       .join(",") || "-";
   for (const target of item.paths)
     rows.push([
-      `${current.collection}/${pad(current.index)}`,
+      `${current.collection}/${indexName(current.index)}`,
       item.systems.join(",") || "all",
       flags,
       target,
@@ -285,7 +283,7 @@ function appendRecordLayoutRows(v: Vault, current: RecordRef, rows: string[][]) 
   for (const [index, variant] of (item.variants ?? []).entries())
     for (const target of item.paths)
       rows.push([
-        `${current.collection}/${pad(current.index)}.${pad(index)}`,
+        `${current.collection}/${indexName(current.index)}.${indexName(index)}`,
         variant.system,
         `variant${variant.hostname ? ",host-specific" : ""}`,
         target,
@@ -324,7 +322,7 @@ export function editWorkspace(v: Vault, collection = "", index = "") {
           yield* fs.chmod(root, privateDirectoryMode);
           yield* writeWorkspace(root, yield* v.decryptCollections());
           const target = collection
-            ? join(root, collection, ...(index ? [pad(Number(index))] : []))
+            ? join(root, collection, ...(index ? [indexName(Number(index))] : []))
             : root;
           if (!(yield* isDirectory(target)))
             return yield* Effect.fail(new DotfilesError("record does not exist"));
@@ -364,7 +362,7 @@ function collectionsWithSourceBodies(v: Vault, value: CollectionSet) {
         variant < (item.variants?.length ?? 0);
         variant++
       ) {
-        const bodies: string[] = [];
+        const unique = new Set<string>();
         for (const target of item.paths) {
           const path = yield* validate(() =>
             variantSourcePath(v, current, target, variant),
@@ -375,16 +373,15 @@ function collectionsWithSourceBodies(v: Vault, value: CollectionSet) {
             return yield* Effect.fail(
               new DotfilesError(`missing plaintext record: ${label}`),
             );
-          bodies.push(yield* readUTF8(path, `plaintext record ${label}`));
+          unique.add(yield* readUTF8(path, `plaintext record ${label}`));
         }
         yield* validate(() => {
           const entry = variant < 0 ? item : item.variants?.[variant];
           if (!entry) throw new DotfilesError("missing record variant");
-          const unique = new Set(bodies);
           if (unique.size === 2 && unique.has(entry.body)) unique.delete(entry.body);
           if (unique.size !== 1)
             throw new DotfilesError(
-              `plaintext copies for ${current.collection} record ${pad(current.index)} contain conflicting edits`,
+              `plaintext copies for ${current.collection} record ${indexName(current.index)} contain conflicting edits`,
             );
           const body = unique.values().next().value;
           if (body === undefined)
@@ -625,11 +622,8 @@ function requireUnpackedMarker(v: Vault) {
     const content = yield* readUTF8(v.marker, "records marker");
     const marker = yield* validate(() => parseJSON(content, "records marker"));
     if (
-      !marker ||
-      typeof marker !== "object" ||
-      Array.isArray(marker) ||
+      !Predicate.isObject(marker) ||
       Object.keys(marker).some((key) => key !== "version") ||
-      !("version" in marker) ||
       marker.version !== layoutVersion
     )
       return yield* Effect.fail(new DotfilesError("unsupported records marker"));
@@ -662,9 +656,6 @@ function readOptionalTextFile(path: string) {
   return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     if (!(yield* isRegular(path))) return ["", privateFileMode] as const;
-    return [
-      yield* fs.readFileString(path),
-      (yield* fs.stat(path)).mode & permissionBits,
-    ] as const;
+    return [yield* fs.readFileString(path), (yield* fs.stat(path)).mode] as const;
   });
 }

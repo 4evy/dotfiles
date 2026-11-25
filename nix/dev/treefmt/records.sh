@@ -46,16 +46,19 @@ fi
 
 record_paths=()
 git_exclude=$(git rev-parse --git-path info/exclude)
-while IFS= read -r path; do
-	path=${path#/}
-	[[ -f $path && ! -L $path ]] && record_paths+=("$path")
-done < <(
+# Check the manifest reader's status before consuming its output
+record_manifest=$(
 	awk '
     /^# BEGIN dotfiles encrypted records$/ { copy = 1; next }
     /^# END dotfiles encrypted records$/ { copy = 0 }
     copy { print }
   ' "$git_exclude"
-)
+) || exit 1
+while IFS= read -r path; do
+	path=${path#/}
+	[[ -f $path && ! -L $path ]] || continue
+	record_paths+=("$path")
+done <<<"$record_manifest"
 
 if ((${#record_paths[@]})); then
 	# Formatter diagnostics can contain private source snippets

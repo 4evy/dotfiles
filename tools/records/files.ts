@@ -187,16 +187,18 @@ function deterministic(value: unknown): unknown {
   return value;
 }
 
-export function marshalJSON(value: unknown): string {
-  const encoded = JSON.stringify(deterministic(value));
+function marshal(value: unknown, indent?: number): string {
+  const encoded = JSON.stringify(deterministic(value), null, indent);
   if (encoded === undefined) throw new DotfilesError("value cannot be encoded as JSON");
   return encoded;
 }
 
+export function marshalJSON(value: unknown): string {
+  return marshal(value);
+}
+
 export function marshalPrettyJSON(value: unknown): string {
-  const encoded = JSON.stringify(deterministic(value), null, jsonIndentSpaces);
-  if (encoded === undefined) throw new DotfilesError("value cannot be encoded as JSON");
-  return encoded;
+  return marshal(value, jsonIndentSpaces);
 }
 
 export function writeOutput(channel: "stdout" | "stderr", value: string) {

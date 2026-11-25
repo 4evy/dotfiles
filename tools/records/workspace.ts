@@ -18,6 +18,7 @@ import {
   decodeRecord,
   equalCollections,
   formatVersion,
+  indexName,
   type RecordItem,
   recordCount,
   type Vault,
@@ -29,7 +30,6 @@ const groupAndOtherPermissionBits = 0o077;
 const formatFilename = "format.json";
 const metadataFilename = "metadata.json";
 const bodyFilename = "body";
-const recordIndexDigits = 3;
 // Match the signed 64-bit index bound accepted by the records command
 const maxRecordIndex = (1n << 63n) - 1n;
 
@@ -207,8 +207,7 @@ export function readWorkspace(root: string) {
     if (
       format.version !== formatVersion ||
       !Array.isArray(format.collections) ||
-      format.collections.some((name: unknown) => typeof name !== "string") ||
-      !equalNames(format.collections as string[], collectionNames)
+      !equalNames(format.collections, collectionNames)
     )
       return yield* Effect.fail(new DotfilesError("unsupported workspace format"));
     const result: CollectionSet = {};
@@ -265,7 +264,7 @@ function assertEntries(directory: string, expected: readonly string[]) {
   });
 }
 
-function equalNames(actual: readonly string[], expected: readonly string[]): boolean {
+function equalNames(actual: readonly unknown[], expected: readonly string[]): boolean {
   const names = new Set(actual);
   return names.size === expected.length && expected.every((name) => names.has(name));
 }
@@ -280,13 +279,12 @@ export function directoryEmpty(path: string) {
 export function validateEditTarget(collection: string, index: string): void {
   if (index !== "" && collection === "")
     throw new DotfilesError("an index requires a collection");
-  if (collection !== "" && !collectionNames.some((name) => name === collection))
+  if (collection !== "" && !collectionNames.includes(collection))
     throw new DotfilesError(`unknown collection: ${collection}`);
   if (index === "") return;
-  if (!/^[+-]?\d+$/.test(index) || BigInt(index) < 0n || BigInt(index) > maxRecordIndex)
-    throw new DotfilesError("record index must be a non-negative integer");
-}
-
-function indexName(index: number): string {
-  return String(index).padStart(recordIndexDigits, "0");
+  if (/^[+-]?\d+$/.test(index)) {
+    const value = BigInt(index);
+    if (value >= 0n && value <= maxRecordIndex) return;
+  }
+  throw new DotfilesError("record index must be a non-negative integer");
 }

@@ -40,7 +40,6 @@ interface DeploymentManifest {
 
 interface DeploymentPlan {
   files: { path: string; body: string; mode: number }[];
-  manifest: DeploymentManifest;
   encoded: string;
 }
 
@@ -124,7 +123,7 @@ function planDeployment(
     destinations,
     "runtime record destinations must not overlap",
   );
-  return { files, manifest, encoded: `${marshalJSON(manifest)}\n` };
+  return { files, encoded: `${marshalJSON(manifest)}\n` };
 }
 
 function privateDirectory(path: string) {
@@ -240,19 +239,15 @@ function previousSources(
 }
 
 function bodyFor(item: RecordItem, system: string, host: string, home: string): string {
-  let body = item.body;
-  for (const variant of item.variants ?? []) {
-    if (variant.system === system && !variant.hostname) body = variant.body;
-  }
-  for (const variant of item.variants ?? []) {
-    if (variant.system === system && (variant.hostname ?? "") === host)
-      body = variant.body;
-  }
-  if (item.render) {
-    // Expand the two supported runtime placeholders after variant selection
-    body = body.replace(/@HOME@|@HOSTNAME@/g, (placeholder) =>
-      placeholder === "@HOME@" ? home : host,
-    );
-  }
-  return body;
+  const variants = item.variants;
+  const variant =
+    variants?.findLast(
+      (entry) => entry.system === system && (entry.hostname ?? "") === host,
+    ) ?? variants?.findLast((entry) => entry.system === system && !entry.hostname);
+  const body = variant?.body ?? item.body;
+  if (!item.render) return body;
+  // Expand the two supported runtime placeholders after variant selection
+  return body.replace(/@HOME@|@HOSTNAME@/g, (placeholder) =>
+    placeholder === "@HOME@" ? home : host,
+  );
 }

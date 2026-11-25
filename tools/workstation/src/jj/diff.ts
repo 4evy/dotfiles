@@ -24,19 +24,15 @@ const styles: Record<string, string> = {
 
 function safeRelativePath(value: string): boolean {
   return (
-    Boolean(value) &&
     !isAbsolute(value) &&
-    value.split("/").every((part) => !["", ".", ".."].includes(part))
+    value.split("/").every((part) => part !== "" && part !== "." && part !== "..")
   );
 }
 const regularFile = Effect.fn("jjDiff.regularFile")(function* (path: string) {
   const fs = yield* FileSystem.FileSystem;
   return yield* fs.lstat(path).pipe(
     Effect.map((info) => info.type === "File"),
-    Effect.catchIf(
-      (error) => error.reason._tag === "NotFound",
-      () => Effect.succeed(false),
-    ),
+    Effect.catchReason("PlatformError", "NotFound", () => Effect.succeed(false)),
   );
 });
 const directory = Effect.fn("jjDiff.directory")(function* (path: string) {
@@ -100,10 +96,7 @@ const materializeRecords = Effect.fn("jjDiff.materializeRecords")(function* (
   const encrypted = join(dirname(vault), ".records.yaml.encrypted");
   const encryptedExists = yield* fs.lstat(encrypted).pipe(
     Effect.as(true),
-    Effect.catchIf(
-      (error) => error.reason._tag === "NotFound",
-      () => Effect.succeed(false),
-    ),
+    Effect.catchReason("PlatformError", "NotFound", () => Effect.succeed(false)),
   );
   if (encryptedExists)
     return yield* Effect.fail(

@@ -2,7 +2,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { exitCode } from "@dotfiles/runtime/process";
-import { Effect, FileSystem, Stream } from "effect";
+import { Effect, FileSystem, Predicate, Stream } from "effect";
 import { ChildProcess } from "effect/process";
 import * as v from "valibot";
 import {
@@ -22,7 +22,6 @@ export const collectionNames: readonly string[] = ["t0"];
 const collectionNameSet = new Set(collectionNames);
 const recordIndexDigits = 3;
 const privateDirectoryMode = 0o700;
-const permissionBits = 0o777;
 const vaultRelativePath = "secrets/records.yaml";
 const sopsConfigFilename = ".sops.yaml";
 const sopsItemsPath = '["items"]';
@@ -101,8 +100,12 @@ const collectionSchemas: Record<string, v.GenericSchema<unknown, RecordItem>> = 
   }),
 };
 
+export function indexName(index: number): string {
+  return String(index).padStart(recordIndexDigits, "0");
+}
+
 function recordLabel(collection: string, index: number): string {
-  return `${collection} record ${String(index).padStart(recordIndexDigits, "0")}`;
+  return `${collection} record ${indexName(index)}`;
 }
 
 export function decodeRecord(
@@ -274,7 +277,7 @@ export class Vault {
       );
       return yield* validate(() => {
         const items = parseJSON(output, "encrypted manifest");
-        if (items === null || typeof items !== "object" || Array.isArray(items))
+        if (!Predicate.isObject(items))
           throw new DotfilesError("encrypted manifest must be an object");
         const result: CollectionSet = {};
         for (const collection of collectionNames) {
@@ -282,7 +285,7 @@ export class Vault {
             throw new DotfilesError(
               `encrypted manifest is missing a collection (${collection})`,
             );
-          const manifest = (items as Record<string, unknown>)[collection];
+          const manifest = items[collection];
           if (typeof manifest !== "string")
             throw new DotfilesError(
               `encrypted ${collection} manifest must be a string`,
@@ -351,11 +354,7 @@ export class Vault {
           return yield* Effect.fail(
             new DotfilesError("encrypted vault did not round-trip"),
           );
-        yield* replaceTextFile(
-          this.file,
-          yield* fs.readFile(scratch),
-          info.mode & permissionBits,
-        );
+        yield* replaceTextFile(this.file, yield* fs.readFile(scratch), info.mode);
       }),
     );
   }
