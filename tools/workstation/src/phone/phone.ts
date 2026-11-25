@@ -1,4 +1,4 @@
-import { isIP } from "node:net";
+import { isIPv4, isIPv6 } from "node:net";
 import { networkInterfaces } from "node:os";
 import { dirname } from "node:path";
 import type { CommandResult } from "@dotfiles/core/commands";
@@ -18,8 +18,6 @@ import {
 } from "./config.ts";
 import defaults from "./defaults.json";
 
-const IPV4_VERSION = 4;
-const IPV6_VERSION = 6;
 const BITS_PER_OCTET = 8;
 const IPV4_FIRST_OCTET_SHIFT = 24;
 const IPV4_FIRST_TWO_OCTETS_SHIFT = 16;
@@ -71,8 +69,7 @@ const resolveTailscaleIP = Effect.fn("resolveTailscaleIP")(function* (name: stri
     try: () => result.stdout.trim().split(/\r?\n/).filter(Boolean).map(normalizeIP),
     catch: () => new DotfilesError("Tailscale IP lookup returned invalid data"),
   });
-  const address =
-    addresses.find((value) => isIP(value) === IPV4_VERSION) ?? addresses[0];
+  const address = addresses.find(isIPv4) ?? addresses[0];
   if (!address)
     return yield* Effect.fail(
       new DotfilesError(`Tailscale did not report a valid IP for ${name}`),
@@ -91,13 +88,11 @@ const cachedIP = Effect.fn("cachedPhoneIP")(function* (path: string, name: strin
       Schema.decodeUnknownEffect(Schema.fromJsonString(targetCacheSchema)),
     ),
     Effect.map((cached) => (cached.name === name ? cached.ip : undefined)),
-    Effect.catch(() => Effect.succeed(undefined)),
+    Effect.orElseSucceed(() => undefined),
   );
 });
 function endpoint(host: string, port: number): string {
-  return isIP(host.split("%")[0] ?? "") === IPV6_VERSION
-    ? `[${host}]:${port}`
-    : `${host}:${port}`;
+  return isIPv6(host.split("%", 1)[0] ?? "") ? `[${host}]:${port}` : `${host}:${port}`;
 }
 function serialHost(serial: string): string | undefined {
   const colon = serial.startsWith("[") ? serial.indexOf("]:") : serial.lastIndexOf(":");
@@ -111,7 +106,7 @@ function serialHost(serial: string): string | undefined {
 function parseDevices(text: string): Map<string, string> {
   const devices = new Map<string, string>();
   for (const line of text.split(/\r?\n/).slice(1)) {
-    const [serial, state] = line.trim().split(/\s+/);
+    const [serial, state] = line.trim().split(/\s+/, 2);
     if (serial && state) devices.set(serial, state);
   }
   return devices;
@@ -149,7 +144,7 @@ function phoneLANAddresses(text: string): string[] {
       continue;
     const inet = fields.indexOf("inet");
     const address = inet < 0 ? undefined : fields[inet + 1]?.split("/")[0];
-    if (address && isIP(address) === IPV4_VERSION) addresses.add(address);
+    if (address && isIPv4(address)) addresses.add(address);
   }
   return [...addresses];
 }
@@ -285,7 +280,7 @@ const makeStable = Effect.fn("stabilizePhoneConnection")(function* (
 const discover = Effect.fn("discoverPhone")(function* (
   config: PhoneConfig,
   host: string,
-  online: number,
+  multipleOnline: boolean,
 ) {
   yield* requireCommands("nmap");
   yield* Console.error(
@@ -297,7 +292,7 @@ const discover = Effect.fn("discoverPhone")(function* (
   }
   return yield* Effect.fail(
     new DotfilesError(
-      online > 1
+      multipleOnline
         ? "More than one ADB device is connected and none matches the target"
         : "Could not reach ADB; enable Wireless debugging or connect the phone over USB, then retry",
     ),
@@ -313,27 +308,22 @@ const connectPhone = Effect.fn("connectPhone")(function* (
     return yield* Effect.fail(
       new DotfilesError(`Could not start ADB: ${detail(started)}`),
     );
-  const target = [...(yield* devices())]
-    .filter(
-      ([serial, state]) => state === ADB_CONNECTED_STATE && serialHost(serial) === host,
-    )
-    .map(([serial]) => serial);
-  if (target.length)
-    return yield* makeStable(
-      config,
-      target.includes(endpoint(host, config.port))
-        ? endpoint(host, config.port)
-        : (target[0] ?? ""),
-      host,
-    );
+  const stable = endpoint(host, config.port);
+  let firstTarget: string | undefined;
+  for (const [serial, state] of yield* devices()) {
+    if (state !== ADB_CONNECTED_STATE || serialHost(serial) !== host) continue;
+    if (serial === stable) return serial;
+    firstTarget ??= serial;
+  }
+  if (firstTarget !== undefined) return yield* makeStable(config, firstTarget, host);
   const connected = yield* connect(host, config.port);
   if (connected) return connected;
   // One USB or LAN session can bootstrap the stable Tailscale endpoint
-  const online = [...(yield* devices())]
-    .filter(([, state]) => state === ADB_CONNECTED_STATE)
-    .map(([serial]) => serial);
-  if (online.length === 1) return yield* makeStable(config, online[0] ?? "", host);
-  return yield* discover(config, host, online.length);
+  const [first, second] = (yield* devices())
+    .entries()
+    .filter(([, state]) => state === ADB_CONNECTED_STATE);
+  if (first && !second) return yield* makeStable(config, first[0], host);
+  return yield* discover(config, host, second !== undefined);
 });
 
 const preferLAN = Effect.fn("preferPhoneLAN")(function* (
@@ -362,12 +352,8 @@ const preferLAN = Effect.fn("preferPhoneLAN")(function* (
       ),
   });
   for (const address of phoneLANAddresses(result.stdout)) {
-    if (
-      !networks.some(
-        ({ network, mask }) => (ipv4Number(address) & mask) >>> 0 === network,
-      )
-    )
-      continue;
+    const ip = ipv4Number(address);
+    if (!networks.some(({ network, mask }) => (ip & mask) >>> 0 === network)) continue;
     const connected = yield* connect(address, config.port);
     if (connected) {
       yield* Console.error(`phone-mirror: using local network address ${address}`);
@@ -382,26 +368,25 @@ const targetIP = Effect.fn("phoneTargetIP")(function* (
   cache: string,
 ) {
   if (config.ip) return config.ip;
-  const resolved = yield* resolveTailscaleIP(config.name).pipe(
-    Effect.map((host) => ({ host, cached: false })),
-    Effect.catch((error) =>
+  return yield* Effect.matchEffect(resolveTailscaleIP(config.name), {
+    onSuccess: (host) =>
+      Effect.gen(function* () {
+        yield* ensureDirectory(dirname(cache), PRIVATE_CACHE_DIRECTORY_MODE);
+        yield* writeJson(
+          cache,
+          { name: config.name, ip: host },
+          PRIVATE_CACHE_FILE_MODE,
+        );
+        return host;
+      }),
+    onFailure: (error) =>
       Effect.gen(function* () {
         const host = yield* cachedIP(cache, config.name);
         if (!host) return yield* Effect.fail(error);
         yield* Console.error(`phone-mirror: using cached Tailscale address ${host}`);
-        return { host, cached: true };
+        return host;
       }),
-    ),
-  );
-  if (!resolved.cached) {
-    yield* ensureDirectory(dirname(cache), PRIVATE_CACHE_DIRECTORY_MODE);
-    yield* writeJson(
-      cache,
-      { name: config.name, ip: resolved.host },
-      PRIVATE_CACHE_FILE_MODE,
-    );
-  }
-  return resolved.host;
+  });
 });
 
 const hydrateGUIEnvironment = Effect.fn("phoneGUIEnvironment")(function* (
@@ -412,10 +397,10 @@ const hydrateGUIEnvironment = Effect.fn("phoneGUIEnvironment")(function* (
   const runtime = `/run/user/${process.getuid?.()}`;
   if (
     !environment.XDG_RUNTIME_DIR &&
-    (yield* fs.exists(runtime).pipe(Effect.catch(() => Effect.succeed(false))))
+    (yield* fs.exists(runtime).pipe(Effect.orElseSucceed(() => false)))
   )
     environment.XDG_RUNTIME_DIR = runtime;
-  if (!(yield* requireCommands("systemctl").pipe(Effect.isSuccess))) return;
+  if (!Bun.which("systemctl")) return;
   const result = yield* command(["systemctl", "--user", "show-environment"], {
     timeout: GUI_ENVIRONMENT_TIMEOUT_SECONDS,
   });
