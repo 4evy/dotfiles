@@ -27,7 +27,7 @@
     "@girs/gjs": "5.6.0",
     "@girs/gnome-shell": "51.0.1",
     "@types/bun": "1.4.5",
-    "fallow": "3.46.0",
+    "fallow": "3.48.0",
     "typescript": "7.0.2"
   }
 }

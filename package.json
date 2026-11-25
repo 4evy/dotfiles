@@ -38,14 +38,14 @@
     "typecheck": "bun run tsc -p tsconfig.json && bun run --sequential --workspaces typecheck"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.8",
+    "@biomejs/biome": "2.6.9",
     "@catppuccin/palette": "1.8.0",
     "@oh-my-pi/pi-coding-agent": "19.1.1",
     "@types/bun": "catalog:",
     "@types/culori": "4.0.1",
     "culori": "4.0.2",
-    "fallow": "3.46.0",
-    "fallow-type-aware": "3.46.0",
+    "fallow": "3.48.0",
+    "fallow-type-aware": "3.48.0",
     "typescript": "catalog:"
   },
   "dependencies": {
