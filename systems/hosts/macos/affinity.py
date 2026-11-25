@@ -89,7 +89,11 @@ async def call_tool(name, arguments):
         tools = []
         cursor = None
         while True:
-            page = await session.list_tools(cursor=cursor)
+            page = await session.list_tools(
+                params=types.PaginatedRequestParams(cursor=cursor)
+                if cursor is not None
+                else None
+            )
             tools.extend(
                 tool.model_dump(by_alias=True, exclude_none=True) for tool in page.tools
             )
