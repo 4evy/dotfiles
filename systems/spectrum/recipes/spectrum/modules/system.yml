@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://schema.blue-build.org/module-list-v1.json
 modules:
   - type: kargs@v1
-    source: ghcr.io/blue-build/modules/kargs:v1@sha256:df83aed2658ff623a71faa2a7d990d5beaf1f5714ba05c00e7b7327f8a33fabd
+    source: ghcr.io/blue-build/modules/kargs:v1@sha256:8cedcc2386db133dfdfb1fc6b424c471a1f1a4ecabe378f0e4fb60b9954a810f
     kargs:
       - plymouth.enable=0
       - rd.plymouth=0
@@ -10,7 +10,7 @@ modules:
       - nvidia.NVreg_DynamicPowerManagement=0x02
 
   - type: systemd@v1
-    source: ghcr.io/blue-build/modules/systemd:v1@sha256:8647f1fa6eb472b93c23bb5d4c06604e84728432ec520836e045e94b90649401
+    source: ghcr.io/blue-build/modules/systemd:v1@sha256:333c96c7afadfeb163565b7f40cfc050d4cb50c19f2e51cb67dc54e4a99034fd
     system:
       enabled:
         - brew-setup.service
@@ -36,7 +36,7 @@ modules:
         - vicinae.service
 
   - type: script@v2
-    source: ghcr.io/blue-build/modules/script:v2@sha256:7c53921aee3ea68f91edacccac13f793ec63424d1376b0b0c8b1c0b56eca5b4c
+    source: ghcr.io/blue-build/modules/script:v2@sha256:04bff0d405b71c7d49d5c7499ad7a42f1bcf5fa339c6381ddbeef376c332c122
     snippets:
       - |
         install -d -m 0755 /usr/share/selinux/packages/spectrum

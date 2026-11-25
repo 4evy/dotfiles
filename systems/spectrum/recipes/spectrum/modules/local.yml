@@ -8,7 +8,7 @@ modules:
     dest: /
 
   - type: script@v2
-    source: ghcr.io/blue-build/modules/script:v2@sha256:7c53921aee3ea68f91edacccac13f793ec63424d1376b0b0c8b1c0b56eca5b4c
+    source: ghcr.io/blue-build/modules/script:v2@sha256:04bff0d405b71c7d49d5c7499ad7a42f1bcf5fa339c6381ddbeef376c332c122
     snippets:
       - patch --batch --forward -p2 -d "$(/usr/bin/python3 -c 'import importlib.util; from pathlib import Path; print(Path(importlib.util.find_spec("solaar").origin).parent.parent)')" < /tmp/solaar-no-tray.patch
       - rm /tmp/solaar-no-tray.patch

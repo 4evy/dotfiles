@@ -1,6 +1,6 @@
 bun 1.4.5
 nodejs 26.13.1
-uv 0.13.9
+uv 0.13.10
 just 1.59.0
 actionlint 1.7.12
 zizmor 1.33.1

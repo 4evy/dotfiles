@@ -6,7 +6,7 @@ from: ${BASE_IMAGE}
 modules:
   # Keep the Fedora toolchain layer independent of changing source inputs
   - type: dnf@v1
-    source: ghcr.io/blue-build/modules/dnf:v1@sha256:bbbc7755ce64b2a40d7cd4c0c974641d109e3959ff001d88cd5b746b1349ee59
+    source: ghcr.io/blue-build/modules/dnf:v1@sha256:411a59683bf0a8092b15e4d4e406533dc818e42a7b48b46736c6d76a23569c73
     install:
       install-weak-deps: false
       packages:
