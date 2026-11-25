@@ -54,21 +54,15 @@ function executableCandidate(path: string, skipPaths: string[]) {
     const fs = yield* FileSystem.FileSystem;
     const info = yield* fs.stat(path);
     if (info.type !== "File") return undefined;
+    const inode = Option.getOrUndefined(info.ino);
+    if (inode === undefined) return path;
     for (const skipped of skipPaths) {
-      const other = yield* fs
-        .stat(skipped)
-        .pipe(Effect.catch(() => Effect.succeed(undefined)));
-      if (
-        other &&
-        info.dev === other.dev &&
-        Option.isSome(info.ino) &&
-        Option.isSome(other.ino) &&
-        info.ino.value === other.ino.value
-      )
+      const other = yield* fs.stat(skipped).pipe(Effect.orElseSucceed(() => undefined));
+      if (other && info.dev === other.dev && Option.getOrUndefined(other.ino) === inode)
         return undefined;
     }
     return path;
-  }).pipe(Effect.catch(() => Effect.succeed(undefined)));
+  }).pipe(Effect.orElseSucceed(() => undefined));
 }
 
 function candidate(raw: string, skipPaths: string[], env: Variables) {
@@ -124,7 +118,7 @@ function usesInterpreter(interpreter: Interpreter, path: string) {
       const bytesRead = yield* file.read(buffer);
       const line = buffer.toString("utf8", 0, bytesRead).split("\n", 1)[0] ?? "";
       if (!line.startsWith("#!")) return false;
-      const [command, argument] = line.slice(2).trim().split(/\s+/);
+      const [command, argument] = line.slice(2).trim().split(/\s+/, 2);
       return (
         !!command &&
         !!argument &&
@@ -132,7 +126,7 @@ function usesInterpreter(interpreter: Interpreter, path: string) {
         interpreter.shebang_arguments.includes(argument)
       );
     }),
-  ).pipe(Effect.catch(() => Effect.succeed(false)));
+  ).pipe(Effect.orElseSucceed(() => false));
 }
 
 function configArguments(
@@ -172,26 +166,19 @@ function patchAssignment(
   value: string,
 ): string {
   const assignment = `${key} = ${quote}${value}${quote}`;
-  let replaced = false;
-  let output = "";
-  for (const match of contents.matchAll(/[^\n]*\n|[^\n]+$/g)) {
-    const line = match[0];
-    const trimmed = line.replace(/^[ \t]*/, "");
-    if (
-      !replaced &&
-      trimmed.startsWith(key) &&
-      trimmed
-        .slice(key.length)
-        .replace(/^[ \t]*/, "")
-        .startsWith("=")
-    ) {
-      output += assignment + (line.endsWith("\n") ? "\n" : "");
-      replaced = true;
-    } else output += line;
+  if (!/^[ \t]|\n/.test(key)) {
+    const line = new RegExp(
+      String.raw`(?<=^|\n)[ \t]*${RegExp.escape(key)}[ \t]*=[^\n]*`,
+    );
+    const match = line.exec(contents);
+    if (match)
+      return (
+        contents.slice(0, match.index) +
+        assignment +
+        contents.slice(match.index + match[0].length)
+      );
   }
-  if (!replaced)
-    output += `${output && !output.endsWith("\n") ? "\n" : ""}${assignment}\n`;
-  return output;
+  return `${contents}${contents && !contents.endsWith("\n") ? "\n" : ""}${assignment}\n`;
 }
 
 function makeTemporary(integration: Integration, contents: string, env: Variables) {
@@ -368,7 +355,7 @@ function lookPath(command: string, env: Variables) {
         return isAbsolute(executable) ? executable : commandNotExecutableStatus;
       const info = yield* fs
         .stat(candidatePath)
-        .pipe(Effect.catch(() => Effect.succeed(undefined)));
+        .pipe(Effect.orElseSucceed(() => undefined));
       if (info?.type === "File") permissionDenied = true;
     }
     return permissionDenied ? commandNotExecutableStatus : commandNotFoundStatus;
@@ -383,5 +370,5 @@ export function execUnknown(argv: string[], env: Variables) {
     const path = command.includes("/") ? command : yield* lookPath(command, env);
     if (typeof path === "number") return path;
     return yield* replaceProcess(path, argv, env);
-  }).pipe(Effect.catch((error) => Effect.succeed(executionStatus(error))));
+  }).pipe(Effect.orElseSucceed(executionStatus));
 }

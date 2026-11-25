@@ -194,7 +194,7 @@ function probeTerminal(query: string, timeout: number) {
   ).pipe(
     // Interrupt only after scope cleanup, preserving the native signal status
     Effect.catchTag("TerminalSignal", () => Effect.interrupt),
-    Effect.catch(() => Effect.succeed(undefined)),
+    Effect.orElseSucceed(() => undefined),
   );
 }
 
@@ -258,7 +258,7 @@ export function detect(runtime: Runtime, env: Variables, withTerminal: boolean) 
     if (!platform) return yield* Effect.fail(new DotfilesError("no platform fallback"));
     for (const argv of platform.commands) {
       const text = yield* runCommandOutput(runtime, env, argv).pipe(
-        Effect.catch(() => Effect.succeed("")),
+        Effect.orElseSucceed(() => ""),
       );
       const mode = modeFromText(runtime, text);
       if (mode) return mode;

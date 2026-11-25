@@ -9,8 +9,15 @@ import {
 import { DotfilesError } from "@dotfiles/core/errors";
 import { writeJson } from "@dotfiles/core/files";
 import { runMain } from "@dotfiles/core/runtime";
-import { clampChroma, converter, formatHex, type Oklch, wcagContrast } from "culori";
-import { Effect, Schema } from "effect";
+import {
+  clampChroma,
+  converter,
+  formatHex,
+  type Lrgb,
+  type Oklch,
+  wcagContrast,
+} from "culori";
+import { Effect, Record as EffectRecord, Schema } from "effect";
 import parameters from "./parameters.json";
 import roles from "./roles.json";
 
@@ -46,10 +53,7 @@ const rolesSchema = Schema.Struct({
 const MIN_WCAG_CONTRAST = 1;
 const MAX_WCAG_CONTRAST = 21;
 const parametersSchema = Schema.Struct({
-  hueConcentration: Schema.Number.check(
-    Schema.isFinite(),
-    Schema.isGreaterThanOrEqualTo(Number.MIN_VALUE),
-  ),
+  hueConcentration: Schema.Number.check(Schema.isFinite(), Schema.isGreaterThan(0)),
   minimumTextContrast: Schema.Number.check(
     Schema.isFinite(),
     Schema.isBetween({ minimum: MIN_WCAG_CONTRAST, maximum: MAX_WCAG_CONTRAST }),
@@ -93,16 +97,19 @@ const toOklch = converter("oklch");
 
 function roleDefinitions(value: unknown): RoleDefinitions {
   const parsed = parseRoles(value);
-  const common = parsed.common;
-  for (const mode of MODES) {
-    for (const role of Object.keys(parsed.modes[mode].roles)) {
+  const { common, modes } = parsed;
+  const lightRoles = Object.keys(modes.light.roles);
+  const darkRoles = Object.keys(modes.dark.roles);
+  for (const roles of [lightRoles, darkRoles]) {
+    for (const role of roles) {
       if (Object.hasOwn(common, role))
         throw new Error(`Role ${role} must be common or mode-specific, not both`);
     }
   }
-  const lightKeys = new Set(Object.keys({ ...common, ...parsed.modes.light.roles }));
-  const darkKeys = new Set(Object.keys({ ...common, ...parsed.modes.dark.roles }));
-  if (lightKeys.symmetricDifference(darkKeys).size)
+  if (
+    lightRoles.length !== darkRoles.length ||
+    !lightRoles.every((role) => Object.hasOwn(modes.dark.roles, role))
+  )
     throw new Error("Light and dark modes must define the same public roles");
   return parsed;
 }
@@ -119,11 +126,10 @@ function token(colors: CatppuccinColors, name: string): string {
   return colors[name as keyof CatppuccinColors].hex;
 }
 
-function chromaticColor(value: string): Oklch & { h: number } {
-  const color = toOklch(value);
-  if (!color || color.h === undefined)
-    throw new Error(`Expected a chromatic color: ${value}`);
-  return { ...color, h: color.h };
+function referenceHue(value: string): number {
+  const hue = toOklch(value)?.h;
+  if (hue === undefined) throw new Error(`Expected a chromatic color: ${value}`);
+  return hue;
 }
 
 function hex(color: Oklch): string {
@@ -136,13 +142,14 @@ function derive(
   reference: string,
   concentration: number,
 ): Oklch {
-  const hue = chromaticColor(reference).h;
+  const hue = referenceHue(reference);
   let total = 0;
   let lightness = 0;
   let chroma = 0;
   // Circular kernel regression uses every accent without a 0/360-degree seam
   // Half weight occurs at acos(1 - ln(2) / concentration), about 34 degrees at 4
-  for (const color of Object.values(colors).filter((c) => c.accent)) {
+  for (const color of Object.values(colors)) {
+    if (!color.accent) continue;
     const { l, c, h } = color.oklch;
     const angle = (hue - h) * DEGREES_TO_RADIANS;
     const weight = Math.exp(concentration * (Math.cos(angle) - 1));
@@ -154,9 +161,11 @@ function derive(
   return { mode: "oklch", l: lightness / total, c: chroma / total, h: hue };
 }
 
+const toLinearRgb = converter("lrgb");
+
 function foreground(
   color: Oklch,
-  backgrounds: string[],
+  backgrounds: (Lrgb | string)[],
   dark: boolean,
   minimumContrast: number,
 ): string {
@@ -167,7 +176,9 @@ function foreground(
     const lightness = color.l + ((dark ? 1 : -1) * step) / LIGHTNESS_RESOLUTION;
     if (lightness < 0 || lightness > 1) break;
     const result = hex({ ...color, l: lightness });
-    if (backgrounds.every((bg) => wcagContrast(result, bg) >= minimumContrast))
+    // Keep contrast on the same rounded color we return
+    const candidate = toLinearRgb(result) ?? result;
+    if (backgrounds.every((bg) => wcagContrast(candidate, bg) >= minimumContrast))
       return result;
   }
   throw new Error("No readable foreground at this hue");
@@ -178,15 +189,13 @@ function resolveRoles(
   colors: CatppuccinColors,
   derived: Record<string, string>,
 ): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(references).map(([role, reference]) => {
-      const [kind, name] = reference.split(":") as [string, string];
-      if (kind === "token") return [role, token(colors, name)];
-      const value = Object.hasOwn(derived, name) ? derived[name] : undefined;
-      if (value === undefined) throw new Error(`Unresolved derived color: ${name}`);
-      return [role, value];
-    }),
-  );
+  return EffectRecord.map(references, (reference) => {
+    const [kind, name] = reference.split(":") as [string, string];
+    if (kind === "token") return token(colors, name);
+    const value = Object.hasOwn(derived, name) ? derived[name] : undefined;
+    if (value === undefined) throw new Error(`Unresolved derived color: ${name}`);
+    return value;
+  });
 }
 
 // No previous output, filesystem state, or mutation of the supplied inputs
@@ -213,9 +222,11 @@ export function buildPalette(
     MODES.map((mode) => {
       const definition = definitions.modes[mode];
       const selected = flavor(upstream, definition.flavor);
-      const backgrounds = parameters.contrastSurfaces.map((name) =>
-        token(selected.colors, name),
-      );
+      const backgrounds = parameters.contrastSurfaces.map((name) => {
+        const value = token(selected.colors, name);
+        // Reuse linear RGB across the search instead of decoding every step
+        return toLinearRgb(value) ?? value;
+      });
       const derived = {
         pinkFill,
         blueFill,
