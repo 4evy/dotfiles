@@ -1,6 +1,5 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { DotfilesError } from "@dotfiles/core/errors";
 import { runMain } from "@dotfiles/core/runtime";
 import { Effect, FileSystem, Schema } from "effect";
@@ -14,7 +13,7 @@ const MCP_CONFIG_FILE = "mcp_config.json";
 
 const ServerSchema = Schema.Struct({
   type: Schema.Literal("local"),
-  command: Schema.Array(Schema.String).check(Schema.isMinLength(1)),
+  command: Schema.NonEmptyArray(Schema.String),
   environment: Schema.optionalKey(Schema.Record(Schema.String, Schema.String)),
   disabled: Schema.optionalKey(Schema.Boolean),
   timeout: Schema.optionalKey(
@@ -89,10 +88,7 @@ runMain(
       Object.entries(servers).map(([name, server]) => {
         let [command, ...args] = server.command;
         if (name === "farstep_desktop" || name === "farstep_system") {
-          args = [
-            fileURLToPath(new URL("./mcp.ts", import.meta.url)),
-            ...server.command,
-          ];
+          args = [join(import.meta.dir, "mcp.ts"), ...server.command];
           command = process.execPath;
         } else if (name === "ghidra") {
           // Reuse cxg's service-owned backend, including desktop cold starts
@@ -132,11 +128,7 @@ runMain(
     });
     const original = yield* fs
       .readFileString(target)
-      .pipe(
-        Effect.catch((error) =>
-          error.reason._tag === "NotFound" ? Effect.succeed("") : Effect.fail(error),
-        ),
-      );
+      .pipe(Effect.catchReason("PlatformError", "NotFound", () => Effect.succeed("")));
     const current = yield* parseCurrent(original.trim() ? original : "{}");
     const contents = `${JSON.stringify(
       {

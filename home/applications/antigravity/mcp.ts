@@ -55,6 +55,9 @@ const MessageSchema = Schema.StructWithRest(
 
 // JSON-RPC envelopes and nested MCP payloads retain fields not consumed here
 const decode = Schema.decodeUnknownEffect(Schema.fromJsonString(MessageSchema));
+const decodeContent = Schema.decodeUnknownEffect(
+  Schema.optional(Schema.Array(ContentSchema)),
+);
 
 type Message = typeof MessageSchema.Type;
 type Tool = typeof ToolSchema.Type;
@@ -103,9 +106,7 @@ const normalizeResponse = Effect.fn("normalizeResponse")(function* (
     yield* normalizeTools(message.result.tools, names);
   // Antigravity only exposes content blocks, not structured-only results
   if (method === TOOLS_CALL_METHOD && message.result?.structuredContent !== undefined) {
-    const content = yield* Schema.decodeUnknownEffect(
-      Schema.optional(Schema.Array(ContentSchema)),
-    )(message.result.content);
+    const content = yield* decodeContent(message.result.content);
     if (!content?.length)
       message.result.content = [
         {
@@ -144,7 +145,6 @@ runMain(
     // Farstep uses dotted names, which Antigravity rejects even during discovery
     const names = new Map<string, string>();
     const requests: Requests = new Map();
-    const encoder = new TextEncoder();
     const input = messages(stdio.stdin).pipe(
       Stream.map((message) => {
         if (message.id !== undefined && message.method)
@@ -153,17 +153,16 @@ runMain(
           const original = names.get(message.params.name);
           if (original) message.params.name = original;
         }
-        return encoder.encode(`${JSON.stringify(message)}\n`);
+        return `${JSON.stringify(message)}\n`;
       }),
+      Stream.encodeText,
       Stream.run(upstream.stdin),
-      Effect.catch((error) => {
-        if (
+      Effect.catchIf(
+        (error) =>
           error._tag === "PlatformError" &&
-          (error.reason.cause as NodeJS.ErrnoException | undefined)?.code === "EPIPE"
-        )
-          return Effect.void;
-        return Effect.fail(error);
-      }),
+          (error.reason.cause as NodeJS.ErrnoException | undefined)?.code === "EPIPE",
+        () => Effect.void,
+      ),
       Effect.andThen(Effect.never),
     );
     const output = messages(upstream.stdout).pipe(
