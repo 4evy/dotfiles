@@ -55,7 +55,6 @@ let
         "favoriteEmojiFirst"
         "fixCodeblockGap"
         "fixImagesQuality"
-        "fixYoutubeEmbeds"
         "forceOwnerCrown"
         "fullSearchContext"
         "fullVcpfp"
@@ -113,7 +112,6 @@ let
         "viewIcons"
         "voiceChatDoubleClick"
         "volumeBooster"
-        "youtubeAdblock"
       ]
       (_: {
         enable = true;
