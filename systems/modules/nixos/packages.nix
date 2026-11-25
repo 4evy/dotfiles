@@ -101,7 +101,6 @@ in
         hadolint
         imagemagick
         jdk
-        jj
         just-lsp
         less
         libtool
