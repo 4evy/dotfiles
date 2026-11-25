@@ -30,7 +30,7 @@ const verificationSchema = Schema.fromJsonString(
 );
 
 const waitForExit = Effect.fn(function* (pid: number) {
-  const deadline = Date.now() + daemonExitTimeoutMs;
+  const deadline = performance.now() + daemonExitTimeoutMs;
   while (true) {
     const exited = yield* Effect.try({
       try: () => {
@@ -47,7 +47,7 @@ const waitForExit = Effect.fn(function* (pid: number) {
         new DotfilesError(`Could not observe usernoted PID ${pid}`, { cause }),
     });
     if (exited) return;
-    if (Date.now() >= deadline)
+    if (performance.now() >= deadline)
       return yield* Effect.fail(
         new DotfilesError("Old notification daemon did not exit"),
       );
@@ -87,10 +87,11 @@ export const notificationPermissions = Effect.fn(function* (
     identifiers: [...new Set(identifiers)].sort(),
     grants: Object.values(settings.grants),
   };
+  const requestJson = JSON.stringify(request);
   const command = [launchctl, "asuser", uid, "/usr/bin/sudo", "-H", "-u", user, helper];
   const inspect = Effect.fn(function* (action: "inspect" | "synchronize" | "apply") {
     const text = yield* output([...command, action], {
-      input: JSON.stringify(request),
+      input: requestJson,
       timeout: helperTimeoutSeconds,
     });
     return yield* Schema.decodeEffect(reportSchema)(text);
@@ -131,7 +132,7 @@ export const notificationPermissions = Effect.fn(function* (
           );
         for (const pid of remaining.stdout.trim().split(/\s+/).filter(Boolean))
           yield* waitForExit(Number(pid));
-        // Flush the final shutdown writes before taking a physical backup
+        // Check the preferences source before taking a physical backup
         yield* inspect("synchronize");
         const backup = join(
           settings.backups,

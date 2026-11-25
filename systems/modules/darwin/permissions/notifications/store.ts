@@ -3,14 +3,14 @@ import { type Pointer, withCoreFoundation } from "./core-foundation.ts";
 import { type Action, type Input, string, wantedFlags } from "./protocol.ts";
 
 type App = { value: Pointer; identifier: string; flags: bigint; auth: bigint };
+const appsKey = "apps";
 
 export function run(action: Action, input: Input): void {
   withCoreFoundation((foundation) => {
     const {
       cf,
       types,
-      user,
-      host,
+      preference,
       own,
       size,
       createString,
@@ -20,11 +20,7 @@ export function run(action: Action, input: Input): void {
       createNumber,
       readPropertyList,
     } = foundation;
-    const suite = createString(input.suite);
-    // The private preferences API takes the container path as a CFString
-    const container = createString(input.container);
     const keys = {
-      apps: createString("apps"),
       identifier: createString("bundle-id"),
       flags: createString("flags"),
       auth: createString("auth"),
@@ -85,10 +81,11 @@ export function run(action: Action, input: Input): void {
     }
 
     function verify(): void {
+      const key = createString(appsKey);
       const before = apps(
         cf.CFDictionaryGetValue(
           readPropertyList(input.baseline as string, "Baseline"),
-          keys.apps,
+          key,
         ),
         "Baseline",
       );
@@ -98,7 +95,7 @@ export function run(action: Action, input: Input): void {
             join(input.container, "Library", "Preferences", `${input.suite}.plist`),
             "Current",
           ),
-          keys.apps,
+          key,
         ),
         "Current",
       );
@@ -127,36 +124,17 @@ export function run(action: Action, input: Input): void {
       }
     }
 
-    function commit(updated: Pointer): void {
-      cf._CFPreferencesSetValueWithContainer(
-        keys.apps,
-        updated,
-        suite,
-        user,
-        host,
-        container,
-      );
-      if (!cf._CFPreferencesSynchronizeWithContainer(suite, user, host, container)) {
-        throw new Error("Cannot synchronize notification preferences");
-      }
-    }
-
     function reconcile(): void {
+      const prefs = preference(appsKey, input);
       // Caller stops usernoted and awaits its old PID before synchronize or apply
-      if (
-        action === "synchronize" &&
-        !cf._CFPreferencesSynchronizeWithContainer(suite, user, host, container)
-      ) {
-        throw new Error("Cannot synchronize notification preferences before backup");
-      }
-      const copied = cf._CFPreferencesCopyValueWithContainer(
-        keys.apps,
-        suite,
-        user,
-        host,
-        container,
-      );
-      if (copied !== null) own(copied, "apps preferences");
+      if (action === "synchronize") prefs.synchronize();
+      const copied = prefs.copy();
+      // The native NULL result does not distinguish no key from an unreadable
+      // domain. Do not report the affected apps as unregistered on that basis
+      if (copied === null)
+        throw new Error(
+          `No ${appsKey} value returned for ${input.suite} (missing or unreadable)`,
+        );
       const current = apps(copied, "Current");
       const registered = new Set<string>();
       const changes: {
@@ -165,8 +143,7 @@ export function run(action: Action, input: Input): void {
         afterFlags: string;
       }[] = [];
       let updated: Pointer | null = null;
-      for (let index = 0; index < current.length; index++) {
-        const app = current[index] as App;
+      for (const [index, app] of current.entries()) {
         if (!selected.has(app.identifier)) continue;
         registered.add(app.identifier);
         const flags = wantedFlags(app, input.grants);
@@ -184,7 +161,10 @@ export function run(action: Action, input: Input): void {
           cf.CFArraySetValueAtIndex(updated, BigInt(index), replacement(app, flags));
         }
       }
-      if (updated !== null) commit(updated);
+      if (updated !== null) {
+        prefs.set(updated);
+        prefs.synchronize();
+      }
       console.log(
         JSON.stringify({
           pending: changes.length,

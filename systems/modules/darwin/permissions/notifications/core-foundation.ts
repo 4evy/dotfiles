@@ -1,6 +1,25 @@
-import { type Pointer as BunPointer, dlopen, ptr, read } from "bun:ffi";
+import {
+  type Pointer as BunPointer,
+  dlopen,
+  type Library,
+  ptr,
+  read,
+  type Symbols,
+} from "bun:ffi";
+import { isAbsolute } from "node:path";
 
 export type Pointer = BunPointer | bigint;
+
+export interface PreferenceDomain {
+  suite: string;
+  container: string;
+}
+
+export interface ContainerPreference {
+  copy(): Pointer | null;
+  set(value: Pointer): void;
+  synchronize(): void;
+}
 
 export interface CoreFoundation {
   cf: {
@@ -10,7 +29,7 @@ export interface CoreFoundation {
     CFArrayCreateMutableCopy(
       allocator: Pointer | null,
       capacity: bigint,
-      value: Pointer | null,
+      value: Pointer,
     ): Pointer | null;
     CFArraySetValueAtIndex(value: Pointer, index: bigint, entry: Pointer): void;
     CFDictionaryGetValue(value: Pointer, key: Pointer): Pointer | null;
@@ -20,31 +39,9 @@ export interface CoreFoundation {
       value: Pointer,
     ): Pointer | null;
     CFDictionarySetValue(value: Pointer, key: Pointer, entry: Pointer): void;
-    _CFPreferencesCopyValueWithContainer(
-      key: Pointer,
-      suite: Pointer,
-      user: Pointer,
-      host: Pointer,
-      container: Pointer,
-    ): Pointer | null;
-    _CFPreferencesSetValueWithContainer(
-      key: Pointer,
-      value: Pointer,
-      suite: Pointer,
-      user: Pointer,
-      host: Pointer,
-      container: Pointer,
-    ): void;
-    _CFPreferencesSynchronizeWithContainer(
-      suite: Pointer,
-      user: Pointer,
-      host: Pointer,
-      container: Pointer,
-    ): number;
   };
   types: { array: bigint; dictionary: bigint; string: bigint; number: bigint };
-  user: Pointer;
-  host: Pointer;
+  preference(key: string, domain: PreferenceDomain): ContainerPreference;
   own(value: Pointer | null, label: string): Pointer;
   size(value: bigint, label: string): number;
   createString(value: string): Pointer;
@@ -53,25 +50,23 @@ export interface CoreFoundation {
   readNumber(value: Pointer | null, label: string): bigint;
   createNumber(value: bigint): Pointer;
   readPropertyList(path: string, source: string): Pointer;
-  close(): void;
 }
-type SystemLibrary = {
-  symbols: {
-    dlopen(path: string, mode: number): Pointer | null;
-    dlsym(handle: Pointer | null, name: string): Pointer | null;
-    dlclose(handle: Pointer): number;
-  };
-  close(): void;
-};
 
 const framework = "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation";
-const integerBits = 64;
 const rtldLazy = 1;
 const fileUrlIsDirectory = 0;
 const readStreamToEnd = 0n;
 const propertyListImmutable = 0n;
+const propertyListBinaryFormat = 200n;
 
-function openCoreFoundation(): CoreFoundation {
+const systemSymbols = {
+  dlopen: { args: ["cstring", "i32"], returns: "ptr" },
+  dlsym: { args: ["ptr", "cstring"], returns: "ptr" },
+  dlclose: { args: ["ptr"], returns: "i32" },
+} as const satisfies Symbols;
+type SystemLibrary = Library<typeof systemSymbols>;
+
+function openCoreFoundation(): CoreFoundation & { close(): void } {
   if (process.platform !== "darwin") {
     throw new Error("Notification preferences require macOS");
   }
@@ -115,15 +110,24 @@ function openCoreFoundation(): CoreFoundation {
       args: ["ptr", "ptr", "i64", "u64", "ptr", "buffer"],
       returns: "ptr",
     },
+    CFPropertyListIsValid: { args: ["ptr", "i64"], returns: "u8" },
     CFErrorGetCode: { args: ["ptr"], returns: "i64" },
+    // CoreFoundation arm64e, macOS 27.2.1 (26B131)
+    // __copyValueForKey: dictionary lookup → CFRetain, or x0 = 0
+    // The outer block also starts at NULL and has no error out parameter
     _CFPreferencesCopyValueWithContainer: {
       args: ["ptr", "ptr", "ptr", "ptr", "ptr"],
       returns: "ptr",
     },
+    // The setter swaps key/value for setValue:forKey:… and tail-releases
+    // its receiver. The source uses copyValues=1, not transfer of ownership
     _CFPreferencesSetValueWithContainer: {
       args: ["ptr", "ptr", "ptr", "ptr", "ptr", "ptr"],
       returns: "void",
     },
+    // The callback stores with strb and its caller reloads with ldrb
+    // CFPrefsPlistSource tests _lastWriteFailed, _volatile and _readonly
+    // and returns w0 & 1. It reports source state, not a durable flush
     _CFPreferencesSynchronizeWithContainer: {
       args: ["ptr", "ptr", "ptr", "ptr"],
       returns: "u8",
@@ -160,9 +164,11 @@ function openCoreFoundation(): CoreFoundation {
   // CoreFoundation's documented UTF-8 encoding and signed 64-bit number type
   const utf8 = 0x08000100;
   const sint64 = 4;
-  const numberStorage = new BigInt64Array(1);
+  const numberStorage = new BigUint64Array(1);
 
   function createString(value: string): Pointer {
+    if (value.includes("\0"))
+      throw new Error("CFString input contains a NUL character");
     return own(cf.CFStringCreateWithCString(null, value, utf8), "CFString");
   }
 
@@ -204,36 +210,85 @@ function openCoreFoundation(): CoreFoundation {
       ) {
         throw new Error(`${label} must be a signed 64-bit integer bit pattern`);
       }
-      // Read and box signed int64 storage while preserving all unsigned flags bits
-      return BigInt.asUintN(integerBits, numberStorage[0] as bigint);
+      // The native number is signed, but the flags use all 64 bits
+      return numberStorage[0] as bigint;
     }
 
     function createNumber(value: bigint): Pointer {
-      numberStorage[0] = BigInt.asIntN(integerBits, value);
+      numberStorage[0] = value;
       return own(cf.CFNumberCreate(null, sint64, numberStorage), "flags number");
     }
 
-    system = dlopen("/usr/lib/libSystem.B.dylib", {
-      dlopen: { args: ["cstring", "i32"], returns: "ptr" },
-      dlsym: { args: ["ptr", "cstring"], returns: "ptr" },
-      dlclose: { args: ["ptr"], returns: "i32" },
-    });
-    const loader = system;
+    system = dlopen("/usr/lib/libSystem.B.dylib", systemSymbols);
     // Resolve the exported CFString globals, not strings resembling their names
-    frameworkHandle = system.symbols.dlopen(framework, rtldLazy);
-    if (frameworkHandle === null) throw new Error("Cannot open CoreFoundation globals");
+    const loader = system.symbols;
+    const handle = loader.dlopen(framework, rtldLazy);
+    if (handle === null) throw new Error("Cannot open CoreFoundation globals");
+    frameworkHandle = handle;
     function global(name: string): Pointer {
-      const symbol = loader.symbols.dlsym(frameworkHandle, name);
+      const symbol = loader.dlsym(handle, name);
       if (symbol === null) throw new Error(`Missing CoreFoundation global ${name}`);
-      const address = typeof symbol === "bigint" ? Number(symbol) : symbol;
-      if (!Number.isSafeInteger(address))
-        throw new Error(`Unrepresentable CoreFoundation global ${name}`);
-      const value = read.ptr(address);
-      if (value === 0) throw new Error(`Null CoreFoundation global ${name}`);
-      return value as BunPointer;
+      const value = read.u64(symbol);
+      if (value === 0n || cf.CFGetTypeID(value) !== types.string) {
+        throw new Error(`Invalid CoreFoundation string global ${name}`);
+      }
+      return value;
     }
     const user = global("kCFPreferencesCurrentUser");
     const host = global("kCFPreferencesAnyHost");
+
+    function preference(
+      key: string,
+      { suite, container }: PreferenceDomain,
+    ): ContainerPreference {
+      // CFEqual(host, kCFPreferencesCurrentHost) drives the byHost flag
+      // CFPrefsPlistSource receives the CFString container as containerPath:
+      if (!isAbsolute(container))
+        throw new Error("Preference container must be an absolute path");
+      const keyRef = createString(key);
+      const suiteRef = createString(suite);
+      const containerRef = createString(container);
+      return {
+        copy() {
+          const value = cf._CFPreferencesCopyValueWithContainer(
+            keyRef,
+            suiteRef,
+            user,
+            host,
+            containerRef,
+          );
+          return value === null ? null : own(value, key);
+        },
+        set(value: Pointer) {
+          // _CFPrefsValidateValueForKey checks the binary property-list format
+          // Check it before the void setter, which also supports NULL deletion
+          if (!cf.CFPropertyListIsValid(value, propertyListBinaryFormat))
+            throw new Error(`Invalid property-list value for ${suite}:${key}`);
+          cf._CFPreferencesSetValueWithContainer(
+            keyRef,
+            value,
+            suiteRef,
+            user,
+            host,
+            containerRef,
+          );
+        },
+        synchronize() {
+          const status = cf._CFPreferencesSynchronizeWithContainer(
+            suiteRef,
+            user,
+            host,
+            containerRef,
+          );
+          if (status === 1) return;
+          if (status === 0)
+            throw new Error(`Cannot synchronize preferences for ${suite}`);
+          throw new Error(
+            `Unexpected preferences synchronization status ${status} for ${suite}`,
+          );
+        },
+      };
+    }
 
     function readPropertyList(path: string, source: string): Pointer {
       const bytes = Buffer.from(path);
@@ -262,11 +317,11 @@ function openCoreFoundation(): CoreFoundation {
           null,
           error,
         );
-        const errorReference = read.ptr(ptr(error)) as BunPointer;
-        if (errorReference !== 0) owned.push(errorReference);
+        const errorReference = error[0] as bigint;
+        if (errorReference !== 0n) owned.push(errorReference);
         if (root === null) {
           const code =
-            errorReference === 0 ? "unknown" : cf.CFErrorGetCode(errorReference);
+            errorReference === 0n ? "unknown" : cf.CFErrorGetCode(errorReference);
           throw new Error(`Cannot decode ${source} preferences (CF error ${code})`);
         }
         own(root, `${source} preferences`);
@@ -279,8 +334,7 @@ function openCoreFoundation(): CoreFoundation {
     return {
       cf,
       types,
-      user,
-      host,
+      preference,
       own,
       size,
       createString,
@@ -297,10 +351,12 @@ function openCoreFoundation(): CoreFoundation {
   }
 }
 
-export function withCoreFoundation<T>(run: (foundation: CoreFoundation) => T): T {
+export function withCoreFoundation(
+  run: (foundation: CoreFoundation) => undefined,
+): void {
   const foundation = openCoreFoundation();
   try {
-    return run(foundation);
+    run(foundation);
   } finally {
     foundation.close();
   }
