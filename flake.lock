@@ -757,17 +757,17 @@
     "source-oh-my-zsh": {
       "flake": false,
       "locked": {
-        "lastModified": 1795584128,
-        "narHash": "sha256-M2tBEOtt5pIganCLBo+KT1hTm5wLheFcfK02VOMusfU=",
+        "lastModified": 1795706956,
+        "narHash": "sha256-ypv3PhLfFQoT3HY5R/KeV+sxswLIezF+iWwurDpLGQI=",
         "owner": "ohmyzsh",
         "repo": "ohmyzsh",
-        "rev": "799f9a8a8ae16e2b6a46dd3e9a9bd657bf614825",
+        "rev": "abfce729ab56543b976b08ef34a54b3dc57601a4",
         "type": "github"
       },
       "original": {
         "owner": "ohmyzsh",
         "repo": "ohmyzsh",
-        "rev": "799f9a8a8ae16e2b6a46dd3e9a9bd657bf614825",
+        "rev": "abfce729ab56543b976b08ef34a54b3dc57601a4",
         "type": "github"
       }
     },

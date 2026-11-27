@@ -49,10 +49,10 @@ let
   inherit (inputs.nixcord.packages.${system}) discord equicord;
   heliumDarwin = upstreamHelium.overrideAttrs (
     finalAttrs: old: {
-      version = "0.22.4.1";
+      version = "0.22.5.1";
       src = fetchurl {
         url = "https://github.com/imputnet/helium-macos/releases/download/${finalAttrs.version}/helium_${finalAttrs.version}_arm64-macos.dmg";
-        hash = "sha256-MiolsE6dgiIH54reheLyTRTxvvQjOVEeBtBAHKN5XLI=";
+        hash = "sha256-fXgPOc9TLt0FVn0JhNc+Cyvy1Q/Lyd/JsLa0bhlEhLM=";
       };
       passthru = (old.passthru or { }) // {
         upstreamVersion = finalAttrs.version;
